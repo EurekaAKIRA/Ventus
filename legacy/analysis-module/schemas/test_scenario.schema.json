@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AnalysisModuleScenario",
+  "type": "object",
+  "required": ["task_context", "parsed_requirement", "scenarios"],
+  "properties": {
+    "task_context": {
+      "$ref": "./task_context.schema.json"
+    },
+    "raw_requirement": {
+      "type": "string"
+    },
+    "parsed_requirement": {
+      "$ref": "./parsed_requirement.schema.json"
+    },
+    "retrieved_context": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "chunk_id": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scenario_id", "name", "goal", "steps", "assertions", "source_chunks"],
+        "properties": {
+          "scenario_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2", "P3"]
+          },
+          "preconditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "text"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["given", "when", "then", "and"]
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "assertions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_chunks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "validation_report": {
+      "$ref": "./validation_report.schema.json"
+    }
+  },
+  "additionalProperties": true
+}

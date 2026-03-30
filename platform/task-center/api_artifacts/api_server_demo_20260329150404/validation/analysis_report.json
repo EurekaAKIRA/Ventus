@@ -1,0 +1,99 @@
+{
+  "task_id": "api_server_demo_20260329150404",
+  "task_name": "api_server_demo",
+  "quality_status": "passed",
+  "summary": {
+    "scenario_count": 1,
+    "total_steps": 0,
+    "passed_steps": 0,
+    "failed_steps": 0,
+    "success_rate": 0.0,
+    "failure_rate": 0.0,
+    "avg_elapsed_ms": 0.0,
+    "max_elapsed_ms": 0.0,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "not_started"
+  },
+  "dashboard": {
+    "task_id": "api_server_demo_20260329150404",
+    "task_name": "api_server_demo",
+    "quality_status": "passed",
+    "execution_status": "not_started",
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 1
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 0
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 0
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 0
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 0.0
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 0.0
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 0.0
+      }
+    ],
+    "top_failure_reason": null,
+    "headline": "0/0 steps passed"
+  },
+  "failed_steps": [],
+  "failure_reasons": [],
+  "assertion_stats": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "context_stats": {
+    "defined_keys": [],
+    "defined_key_count": 0,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_key_count": 0,
+    "save_rules": {}
+  },
+  "task_summary_text": "任务 api_server_demo 当前状态为 passed，共分析 1 个场景、0 个步骤，成功率 0.0%，平均耗时 0.0ms，最大耗时 0.0ms。",
+  "findings": [],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0
+    },
+    "failure_reasons": {}
+  }
+}

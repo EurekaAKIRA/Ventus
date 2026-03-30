@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AnalysisReport",
+  "type": "object",
+  "required": [
+    "task_id",
+    "task_name",
+    "quality_status",
+    "report_version",
+    "generated_at",
+    "summary",
+    "dashboard",
+    "dashboard_summary",
+    "task_summary",
+    "execution_overview",
+    "failed_steps",
+    "failure_reasons",
+    "assertion_stats",
+    "context_stats",
+    "task_summary_text",
+    "findings",
+    "chart_data"
+    ,
+    "report_sections"
+  ],
+  "properties": {
+    "task_id": { "type": "string" },
+    "task_name": { "type": "string" },
+    "quality_status": { "type": "string" },
+    "report_version": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "summary": {
+      "type": "object",
+      "required": ["total_steps", "passed_steps", "failed_steps", "success_rate", "avg_elapsed_ms", "max_elapsed_ms"],
+      "properties": {
+        "scenario_count": { "type": "number" },
+        "executed_scenarios": { "type": "number" },
+        "passed_scenarios": { "type": "number" },
+        "failed_scenarios": { "type": "number" },
+        "total_steps": { "type": "number" },
+        "executed_steps": { "type": "number" },
+        "passed_steps": { "type": "number" },
+        "failed_steps": { "type": "number" },
+        "success_rate": { "type": "number" },
+        "failure_rate": { "type": "number" },
+        "avg_elapsed_ms": { "type": "number" },
+        "max_elapsed_ms": { "type": "number" },
+        "validation_passed": { "type": "boolean" },
+        "warning_count": { "type": "number" },
+        "error_count": { "type": "number" },
+        "execution_status": { "type": "string" },
+        "assertion_total": { "type": "number" },
+        "assertion_passed": { "type": "number" },
+        "assertion_failed": { "type": "number" },
+        "assertion_pass_rate": { "type": "number" },
+        "context_defined_keys": { "type": "number" },
+        "context_used_keys": { "type": "number" },
+        "context_extracted_keys": { "type": "number" }
+      }
+    },
+    "dashboard": {
+      "type": "object",
+      "required": [
+        "task_id",
+        "task_name",
+        "quality_status",
+        "execution_status",
+        "summary",
+        "cards",
+        "totals",
+        "status_breakdown",
+        "assertion_summary",
+        "context_summary",
+        "failure_reason_breakdown",
+        "headline",
+        "summary_text"
+      ],
+      "properties": {
+        "task_id": { "type": "string" },
+        "task_name": { "type": "string" },
+        "quality_status": { "type": "string" },
+        "execution_status": { "type": "string" },
+        "summary": { "type": "object" },
+        "cards": { "type": "array", "items": { "type": "object" } },
+        "totals": { "type": "object" },
+        "status_breakdown": { "type": "object" },
+        "assertion_summary": { "type": "object" },
+        "context_summary": { "type": "object" },
+        "top_failure_reason": { "type": ["object", "null"] },
+        "failure_reason_breakdown": { "type": "array", "items": { "type": "object" } },
+        "headline": { "type": "string" },
+        "summary_text": { "type": "string" }
+      }
+    },
+    "dashboard_summary": {
+      "type": "object",
+      "required": [
+        "scenario_count",
+        "executed_scenarios",
+        "passed_scenarios",
+        "failed_scenarios",
+        "execution_status",
+        "total_steps",
+        "executed_steps",
+        "passed_steps",
+        "failed_steps",
+        "success_rate",
+        "failure_rate",
+        "avg_elapsed_ms",
+        "max_elapsed_ms",
+        "assertion_total",
+        "assertion_passed",
+        "assertion_failed",
+        "assertion_pass_rate",
+        "context_defined_keys",
+        "context_used_keys",
+        "context_extracted_keys"
+      ],
+      "properties": {
+        "scenario_count": { "type": "number" },
+        "executed_scenarios": { "type": "number" },
+        "passed_scenarios": { "type": "number" },
+        "failed_scenarios": { "type": "number" },
+        "execution_status": { "type": "string" },
+        "total_steps": { "type": "number" },
+        "executed_steps": { "type": "number" },
+        "passed_steps": { "type": "number" },
+        "failed_steps": { "type": "number" },
+        "success_rate": { "type": "number" },
+        "failure_rate": { "type": "number" },
+        "avg_elapsed_ms": { "type": "number" },
+        "max_elapsed_ms": { "type": "number" },
+        "assertion_total": { "type": "number" },
+        "assertion_passed": { "type": "number" },
+        "assertion_failed": { "type": "number" },
+        "assertion_pass_rate": { "type": "number" },
+        "context_defined_keys": { "type": "number" },
+        "context_used_keys": { "type": "number" },
+        "context_extracted_keys": { "type": "number" }
+      }
+    },
+    "task_summary": {
+      "type": "object",
+      "required": [
+        "task_name",
+        "quality_status",
+        "execution_status",
+        "headline",
+        "success_rate",
+        "failed_steps",
+        "next_action"
+      ],
+      "properties": {
+        "task_name": { "type": "string" },
+        "quality_status": { "type": "string" },
+        "execution_status": { "type": "string" },
+        "headline": { "type": "string" },
+        "success_rate": { "type": "number" },
+        "failed_steps": { "type": "number" },
+        "top_failure_reason": { "type": ["object", "null"] },
+        "next_action": { "type": "string" }
+      }
+    },
+    "execution_overview": {
+      "type": "object",
+      "required": ["status", "scenario_count", "passed_scenarios", "failed_scenarios", "log_count", "has_failures"],
+      "properties": {
+        "executor": { "type": ["string", "null"] },
+        "status": { "type": "string" },
+        "scenario_count": { "type": "number" },
+        "passed_scenarios": { "type": "number" },
+        "failed_scenarios": { "type": "number" },
+        "log_count": { "type": "number" },
+        "has_failures": { "type": "boolean" },
+        "top_failure_category": { "type": ["string", "null"] }
+      }
+    },
+    "failed_steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scenario_name", "step_id", "step_index", "status", "category", "request_summary", "response_summary"],
+        "properties": {
+          "scenario_id": { "type": ["string", "null"] },
+          "scenario_name": { "type": ["string", "null"] },
+          "step_id": { "type": ["string", "null"] },
+          "step_index": { "type": "number" },
+          "step_type": { "type": ["string", "null"] },
+          "text": { "type": ["string", "null"] },
+          "status": { "type": "string" },
+          "message": { "type": "string" },
+          "category": { "type": "string" },
+          "reason_detail": { "type": "string" },
+          "elapsed_ms": { "type": ["number", "null"] },
+          "request": { "type": "object" },
+          "response": { "type": "object" },
+          "request_summary": { "type": "object" },
+          "response_summary": { "type": "object" }
+        }
+      }
+    },
+    "failure_reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["category", "label", "count", "examples"],
+        "properties": {
+          "category": { "type": "string" },
+          "label": { "type": "string" },
+          "count": { "type": "number" },
+          "examples": { "type": "array", "items": { "type": "object" } }
+        }
+      }
+    },
+    "assertion_stats": {
+      "type": "object",
+      "required": ["total", "passed", "failed", "pass_rate", "validation_errors", "validation_warnings"],
+      "properties": {
+        "total": { "type": "number" },
+        "passed": { "type": "number" },
+        "failed": { "type": "number" },
+        "pass_rate": { "type": "number" },
+        "validation_errors": { "type": "number" },
+        "validation_warnings": { "type": "number" }
+      }
+    },
+    "context_stats": {
+      "type": "object",
+      "required": [
+        "defined_keys",
+        "defined_key_count",
+        "used_keys",
+        "used_key_count",
+        "extracted_keys",
+        "extracted_key_count",
+        "unused_defined_keys",
+        "undefined_used_keys",
+        "save_rules"
+      ],
+      "properties": {
+        "defined_keys": { "type": "array", "items": { "type": "string" } },
+        "defined_key_count": { "type": "number" },
+        "used_keys": { "type": "array", "items": { "type": "string" } },
+        "used_key_count": { "type": "number" },
+        "extracted_keys": { "type": "array", "items": { "type": "string" } },
+        "extracted_key_count": { "type": "number" },
+        "unused_defined_keys": { "type": "array", "items": { "type": "string" } },
+        "undefined_used_keys": { "type": "array", "items": { "type": "string" } },
+        "save_rules": { "type": "object" }
+      }
+    },
+    "task_summary_text": { "type": "string" },
+    "findings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "chart_data": { "type": "object" },
+    "report_sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "title", "items"],
+        "properties": {
+          "key": { "type": "string" },
+          "title": { "type": "string" },
+          "items": { "type": "object" }
+        }
+      }
+    }
+  }
+}

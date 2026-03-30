@@ -1,0 +1,472 @@
+{
+  "task_context": {
+    "task_id": "smoke_test_20260330070259",
+    "task_name": "smoke_test",
+    "source_type": "text",
+    "source_path": null,
+    "created_at": "2026-03-30T07:02:59.128991+00:00",
+    "language": "zh-CN",
+    "status": "received",
+    "notes": []
+  },
+  "raw_requirement": "用户打开首页后应看到搜索框和标题",
+  "parsed_requirement": {
+    "objective": "用户打开首页后应看到搜索框和标题",
+    "actors": [
+      "用户"
+    ],
+    "entities": [
+      "用户打开首页后应看到搜索框和标题"
+    ],
+    "preconditions": [],
+    "actions": [
+      "用户打开首页后应看到搜索框和标题"
+    ],
+    "expected_results": [
+      "System returns an observable result aligned with the requirement"
+    ],
+    "constraints": [],
+    "ambiguities": [],
+    "source_chunks": [
+      "chunk_001"
+    ]
+  },
+  "retrieved_context": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户打开首页后应看到搜索框和标题",
+      "score": 3.5,
+      "section_title": "未命名章节",
+      "source_file": ""
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "用户打开首页后应看到搜索框和标题",
+      "goal": "用户打开首页后应看到搜索框和标题",
+      "steps": [
+        {
+          "type": "given",
+          "text": "Start from a valid API entry point"
+        },
+        {
+          "type": "when",
+          "text": "用户打开首页后应看到搜索框和标题"
+        },
+        {
+          "type": "then",
+          "text": "System returns an observable result aligned with the requirement"
+        }
+      ],
+      "assertions": [
+        "System returns an observable result aligned with the requirement"
+      ],
+      "source_chunks": [
+        "chunk_001"
+      ],
+      "priority": "P1",
+      "preconditions": [
+        "Start from a valid API entry point"
+      ]
+    }
+  ],
+  "test_case_dsl": {
+    "dsl_version": "0.2.0",
+    "task_id": "smoke_test_20260330070259",
+    "task_name": "smoke_test",
+    "feature_name": "smoke_test",
+    "execution_mode": "api",
+    "scenarios": [
+      {
+        "scenario_id": "scenario_001",
+        "name": "用户打开首页后应看到搜索框和标题",
+        "goal": "用户打开首页后应看到搜索框和标题",
+        "priority": "P1",
+        "preconditions": [
+          "Start from a valid API entry point"
+        ],
+        "source_chunks": [
+          "chunk_001"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "step_type": "given",
+            "text": "Start from a valid API entry point",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "step_type": "when",
+            "text": "用户打开首页后应看到搜索框和标题",
+            "request": {
+              "method": "POST",
+              "url": "/users",
+              "json": {
+                "input": "用户打开首页后应看到搜索框和标题"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "step_type": "then",
+            "text": "System returns an observable result aligned with the requirement",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "System returns an observable result aligned with the requirement"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "source_type": "text",
+      "language": "zh-CN",
+      "case_generation": {
+        "api_scenario_count": 1,
+        "scenario_count": 1,
+        "parsed_entities": [
+          "用户打开首页后应看到搜索框和标题"
+        ]
+      }
+    }
+  },
+  "validation_report": {
+    "feature_name": "smoke_test",
+    "passed": true,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "scenario_count": 1,
+      "average_step_count": 4.0,
+      "step_count": 4
+    }
+  },
+  "analysis_report": {
+    "task_id": "smoke_test_20260330070259",
+    "task_name": "smoke_test",
+    "quality_status": "passed",
+    "report_version": "1.1.0",
+    "generated_at": "2026-03-30T07:02:59.147600+00:00",
+    "summary": {
+      "scenario_count": 1,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "total_steps": 3,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "validation_passed": true,
+      "warning_count": 0,
+      "error_count": 0,
+      "execution_status": "not_started",
+      "assertion_total": 2,
+      "assertion_passed": 2,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 0,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "dashboard": {
+      "task_id": "smoke_test_20260330070259",
+      "task_name": "smoke_test",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "summary": {
+        "scenario_count": 1,
+        "executed_scenarios": 0,
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0,
+        "assertion_total": 2,
+        "assertion_pass_rate": 100.0,
+        "context_defined_keys": 0,
+        "context_used_keys": 0,
+        "context_extracted_keys": 0,
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0
+      },
+      "cards": [
+        {
+          "key": "scenarios",
+          "label": "Scenarios",
+          "value": 1
+        },
+        {
+          "key": "steps",
+          "label": "Total Steps",
+          "value": 3
+        },
+        {
+          "key": "passed_steps",
+          "label": "Passed",
+          "value": 0
+        },
+        {
+          "key": "failed_steps",
+          "label": "Failed",
+          "value": 0
+        },
+        {
+          "key": "success_rate",
+          "label": "Success Rate",
+          "value": 0.0
+        },
+        {
+          "key": "avg_elapsed_ms",
+          "label": "Avg Elapsed(ms)",
+          "value": 0.0
+        },
+        {
+          "key": "max_elapsed_ms",
+          "label": "Max Elapsed(ms)",
+          "value": 0.0
+        }
+      ],
+      "totals": {
+        "scenarios": 1,
+        "steps": 3,
+        "assertions": 2,
+        "requests": 0
+      },
+      "status_breakdown": {
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "passed_steps": 0,
+        "failed_steps": 0
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "performance_summary": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "is_load_test": false
+      },
+      "context_summary": {
+        "defined_keys": 0,
+        "defined_key_names": [],
+        "used_keys": 0,
+        "used_key_names": [],
+        "extracted_keys": 0,
+        "extracted_key_names": [],
+        "unused_defined_keys": [],
+        "undefined_used_keys": []
+      },
+      "top_failure_reason": null,
+      "failure_reason_breakdown": [],
+      "headline": "0/3 steps passed",
+      "summary_text": "任务 smoke_test 当前状态为 passed，已生成 1 个场景、3 个步骤，尚未开始执行。"
+    },
+    "dashboard_summary": {
+      "scenario_count": 1,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "execution_status": "not_started",
+      "total_steps": 3,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "assertion_total": 2,
+      "assertion_passed": 2,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 0,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "task_summary": {
+      "task_name": "smoke_test",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "headline": "任务 smoke_test 当前状态为 passed，已生成 1 个场景、3 个步骤，尚未开始执行。",
+      "success_rate": 0.0,
+      "failed_steps": 0,
+      "total_requests": 0,
+      "throughput": 0.0,
+      "top_failure_reason": null,
+      "next_action": "执行任务以生成运行报告"
+    },
+    "execution_overview": {
+      "executor": null,
+      "status": "not_started",
+      "scenario_count": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "log_count": 0,
+      "has_failures": false,
+      "top_failure_category": null
+    },
+    "performance_stats": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "failed_steps": [],
+    "failure_reasons": [],
+    "assertion_stats": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "validation_errors": 0,
+      "validation_warnings": 0
+    },
+    "context_stats": {
+      "defined_keys": [],
+      "defined_key_count": 0,
+      "used_keys": [],
+      "used_key_count": 0,
+      "extracted_keys": [],
+      "extracted_key_count": 0,
+      "unused_defined_keys": [],
+      "undefined_used_keys": [],
+      "save_rules": {}
+    },
+    "task_summary_text": "任务 smoke_test 当前状态为 passed，已生成 1 个场景、3 个步骤，尚未开始执行。",
+    "findings": [],
+    "chart_data": {
+      "validation": {
+        "passed": 1,
+        "failed": 0,
+        "warnings": 0,
+        "errors": 0
+      },
+      "execution": {
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      },
+      "assertions": {
+        "passed": 2,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "context": {
+        "defined": 0,
+        "used": 0,
+        "extracted": 0
+      },
+      "failure_reasons": {}
+    },
+    "report_sections": [
+      {
+        "key": "overview",
+        "title": "执行概览",
+        "items": {
+          "scenario_count": 1,
+          "total_steps": 3,
+          "passed_steps": 0,
+          "failed_steps": 0,
+          "success_rate": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      },
+      {
+        "key": "failures",
+        "title": "失败分析",
+        "items": {
+          "failure_reason_count": 0,
+          "failure_reasons": []
+        }
+      },
+      {
+        "key": "assertions",
+        "title": "断言统计",
+        "items": {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "pass_rate": 100.0,
+          "validation_errors": 0,
+          "validation_warnings": 0
+        }
+      },
+      {
+        "key": "context",
+        "title": "上下文提取",
+        "items": {
+          "defined_keys": [],
+          "defined_key_count": 0,
+          "used_keys": [],
+          "used_key_count": 0,
+          "extracted_keys": [],
+          "extracted_key_count": 0,
+          "unused_defined_keys": [],
+          "undefined_used_keys": [],
+          "save_rules": {}
+        }
+      },
+      {
+        "key": "performance",
+        "title": "性能摘要",
+        "items": {
+          "total_requests": 0,
+          "success_count": 0,
+          "failure_count": 0,
+          "throughput": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      }
+    ]
+  }
+}

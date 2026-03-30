@@ -1,0 +1,13 @@
+{
+  "query": "用户打开首页后应看到标题和搜索框",
+  "hits": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户打开首页后应看到标题和搜索框",
+      "score": 3.5,
+      "section_title": "未命名章节",
+      "source_file": ""
+    }
+  ],
+  "retrieval_notes": []
+}

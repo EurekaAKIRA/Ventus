@@ -1,0 +1,95 @@
+{
+  "dsl_version": "0.1.0",
+  "task_id": "api_sample_001",
+  "task_name": "api_sample",
+  "feature_name": "api_sample",
+  "execution_mode": "api",
+  "metadata": {
+    "source_type": "manual",
+    "language": "zh-CN",
+    "execution": {
+      "base_url": "http://127.0.0.1:8010",
+      "default_headers": {
+        "X-Test-Client": "platform-api-runner"
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "创建会话并读取资源",
+      "goal": "验证接口请求和上下文传递",
+      "priority": "P1",
+      "preconditions": [],
+      "source_chunks": [],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "when",
+          "text": "创建测试会话",
+          "request": {
+            "method": "POST",
+            "url": "/session",
+            "json": {
+              "name": "demo-user"
+            }
+          },
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            },
+            {
+              "source": "json.token",
+              "op": "exists"
+            },
+            {
+              "source": "elapsed_ms",
+              "op": "le",
+              "expected": 1000
+            }
+          ],
+          "save_context": {
+            "token": "json.token"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "查询受保护资源",
+          "uses_context": ["token"],
+          "request": {
+            "method": "GET",
+            "url": "/profile",
+            "headers": {
+              "Authorization": "Bearer {{token}}"
+            }
+          },
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            },
+            {
+              "source": "json.user",
+              "op": "eq",
+              "expected": "demo-user"
+            },
+            {
+              "source": "json.roles",
+              "op": "len_eq",
+              "expected": 2
+            },
+            {
+              "source": "body_text",
+              "op": "contains",
+              "expected": "demo-user"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

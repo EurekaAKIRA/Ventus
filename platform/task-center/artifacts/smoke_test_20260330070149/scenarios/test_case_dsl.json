@@ -1,0 +1,81 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "smoke_test_20260330070149",
+  "task_name": "smoke_test",
+  "feature_name": "smoke_test",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "用户打开首页后应看到搜索框和标题",
+      "goal": "用户打开首页后应看到搜索框和标题",
+      "priority": "P1",
+      "preconditions": [
+        "Start from a valid API entry point"
+      ],
+      "source_chunks": [
+        "chunk_001"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "Start from a valid API entry point",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "用户打开首页后应看到搜索框和标题",
+          "request": {
+            "method": "POST",
+            "url": "/users",
+            "json": {
+              "input": "用户打开首页后应看到搜索框和标题"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "System returns an observable result aligned with the requirement",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "System returns an observable result aligned with the requirement"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 1,
+      "scenario_count": 1,
+      "parsed_entities": [
+        "用户打开首页后应看到搜索框和标题"
+      ]
+    }
+  }
+}

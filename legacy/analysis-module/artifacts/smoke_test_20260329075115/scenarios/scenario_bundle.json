@@ -1,0 +1,82 @@
+{
+  "task_context": {
+    "task_id": "smoke_test_20260329075115",
+    "task_name": "smoke_test",
+    "source_type": "text",
+    "source_path": null,
+    "created_at": "2026-03-29T07:51:15.131824+00:00",
+    "language": "zh-CN",
+    "status": "received",
+    "notes": []
+  },
+  "raw_requirement": "????????????????",
+  "parsed_requirement": {
+    "objective": "????????????????",
+    "actors": [],
+    "entities": [
+      "????????????????"
+    ],
+    "preconditions": [],
+    "actions": [
+      "按需求描述执行核心业务动作"
+    ],
+    "expected_results": [
+      "系统呈现与需求描述一致的可观察结果"
+    ],
+    "constraints": [],
+    "ambiguities": [],
+    "source_chunks": [
+      "chunk_001"
+    ]
+  },
+  "retrieved_context": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "????????????????",
+      "score": 1.0,
+      "section_title": "",
+      "source_file": ""
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "????????????????",
+      "goal": "????????????????",
+      "steps": [
+        {
+          "type": "given",
+          "text": "输入需求对应的页面或流程可被访问"
+        },
+        {
+          "type": "when",
+          "text": "????????????????"
+        },
+        {
+          "type": "then",
+          "text": "系统呈现与需求描述一致的可观察结果"
+        }
+      ],
+      "assertions": [
+        "系统呈现与需求描述一致的可观察结果"
+      ],
+      "source_chunks": [
+        "chunk_001"
+      ],
+      "priority": "P1",
+      "preconditions": [
+        "输入需求对应的页面或流程可被访问"
+      ]
+    }
+  ],
+  "validation_report": {
+    "feature_name": "smoke_test",
+    "passed": true,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "scenario_count": 1,
+      "average_step_count": 3.0
+    }
+  }
+}

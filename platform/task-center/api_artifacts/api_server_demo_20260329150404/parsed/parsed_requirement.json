@@ -1,0 +1,23 @@
+{
+  "objective": "用户登录后进入用户中心并看到昵称",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "用户登录后进入用户中心并看到昵称"
+  ],
+  "preconditions": [
+    "用户登录后进入用户中心并看到昵称"
+  ],
+  "actions": [
+    "用户登录后进入用户中心并看到昵称"
+  ],
+  "expected_results": [
+    "用户登录后进入用户中心并看到昵称"
+  ],
+  "constraints": [],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_001"
+  ]
+}

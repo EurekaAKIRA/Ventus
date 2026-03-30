@@ -1,0 +1,13 @@
+{
+  "query": "# 用户中心\n用户登录后进入个人中心。\n用户点击编辑按钮。\n系统应显示资料编辑表单。",
+  "hits": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户登录后进入个人中心。\n用户点击编辑按钮。\n系统应显示资料编辑表单。",
+      "score": 11.0,
+      "section_title": "用户中心",
+      "source_file": "tmp_requirement.md"
+    }
+  ],
+  "retrieval_notes": []
+}

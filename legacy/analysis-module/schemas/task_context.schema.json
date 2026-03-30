@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AnalysisModuleTaskContext",
+  "type": "object",
+  "required": [
+    "task_id",
+    "task_name",
+    "source_type",
+    "created_at",
+    "language",
+    "status"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "task_name": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["text", "markdown", "document"]
+    },
+    "source_path": {
+      "type": ["string", "null"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "language": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "received",
+        "loaded",
+        "parsed",
+        "indexed",
+        "scenarios_built",
+        "validated"
+      ]
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

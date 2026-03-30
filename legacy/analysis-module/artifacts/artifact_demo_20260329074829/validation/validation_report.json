@@ -1,0 +1,10 @@
+{
+  "feature_name": "artifact_demo",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 1,
+    "average_step_count": 3.0
+  }
+}

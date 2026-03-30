@@ -1,0 +1,61 @@
+{
+  "task_id": "api_server_demo_20260329151225",
+  "executor": "api-runner",
+  "status": "passed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "用户登录后进入用户中心并看到昵称",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "用户登录后进入用户中心并看到昵称",
+          "status": "passed",
+          "message": "Assertions passed"
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "用户登录后进入用户中心并看到昵称",
+          "status": "passed",
+          "message": "Assertions passed"
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "用户登录后进入用户中心并看到昵称",
+          "status": "passed",
+          "message": "Assertions passed"
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "scenario_count": 1,
+    "step_count": 3,
+    "passed_step_count": 3,
+    "failed_step_count": 0,
+    "context_key_count": 0,
+    "avg_elapsed_ms": 0,
+    "max_elapsed_ms": 0
+  },
+  "logs": [
+    {
+      "level": "info",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed"
+    },
+    {
+      "level": "info",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed"
+    },
+    {
+      "level": "info",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed"
+    }
+  ]
+}

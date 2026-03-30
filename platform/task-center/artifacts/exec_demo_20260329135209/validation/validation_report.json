@@ -1,0 +1,11 @@
+{
+  "feature_name": "exec_demo",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 1,
+    "average_step_count": 4.0,
+    "step_count": 4
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "feature_name": "user_center_demo_v2",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 2,
+    "average_step_count": 3.5,
+    "step_count": 7
+  }
+}

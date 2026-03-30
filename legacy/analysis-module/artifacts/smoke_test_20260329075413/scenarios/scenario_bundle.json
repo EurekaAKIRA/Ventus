@@ -1,0 +1,84 @@
+{
+  "task_context": {
+    "task_id": "smoke_test_20260329075413",
+    "task_name": "smoke_test",
+    "source_type": "text",
+    "source_path": null,
+    "created_at": "2026-03-29T07:54:13.831903+00:00",
+    "language": "zh-CN",
+    "status": "received",
+    "notes": []
+  },
+  "raw_requirement": "用户打开首页后应看到搜索框和标题",
+  "parsed_requirement": {
+    "objective": "用户打开首页后应看到搜索框和标题",
+    "actors": [
+      "用户"
+    ],
+    "entities": [
+      "用户打开首页后应看到搜索框和标题"
+    ],
+    "preconditions": [],
+    "actions": [
+      "用户打开首页后应看到搜索框和标题"
+    ],
+    "expected_results": [
+      "用户打开首页后应看到搜索框和标题"
+    ],
+    "constraints": [],
+    "ambiguities": [],
+    "source_chunks": [
+      "chunk_001"
+    ]
+  },
+  "retrieved_context": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户打开首页后应看到搜索框和标题",
+      "score": 1.0,
+      "section_title": "",
+      "source_file": ""
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "用户打开首页后应看到搜索框和标题",
+      "goal": "用户打开首页后应看到搜索框和标题",
+      "steps": [
+        {
+          "type": "given",
+          "text": "输入需求对应的页面或流程可被访问"
+        },
+        {
+          "type": "when",
+          "text": "用户打开首页后应看到搜索框和标题"
+        },
+        {
+          "type": "then",
+          "text": "用户打开首页后应看到搜索框和标题"
+        }
+      ],
+      "assertions": [
+        "用户打开首页后应看到搜索框和标题"
+      ],
+      "source_chunks": [
+        "chunk_001"
+      ],
+      "priority": "P1",
+      "preconditions": [
+        "输入需求对应的页面或流程可被访问"
+      ]
+    }
+  ],
+  "validation_report": {
+    "feature_name": "smoke_test",
+    "passed": true,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "scenario_count": 1,
+      "average_step_count": 3.0
+    }
+  }
+}

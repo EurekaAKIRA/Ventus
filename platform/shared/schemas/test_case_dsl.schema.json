@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TestCaseDSL",
+  "type": "object",
+  "required": [
+    "dsl_version",
+    "task_id",
+    "task_name",
+    "feature_name",
+    "execution_mode",
+    "scenarios"
+  ],
+  "properties": {
+    "dsl_version": { "type": "string" },
+    "task_id": { "type": "string" },
+    "task_name": { "type": "string" },
+    "feature_name": { "type": "string" },
+    "execution_mode": { "type": "string" },
+    "metadata": { "type": "object" },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scenario_id", "name", "steps"],
+        "properties": {
+          "scenario_id": { "type": "string" },
+          "name": { "type": "string" },
+          "goal": { "type": "string" },
+          "priority": { "type": "string" },
+          "preconditions": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "source_chunks": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["step_id", "step_type", "text"],
+              "properties": {
+                "step_id": { "type": "string" },
+                "step_type": { "type": "string" },
+                "text": { "type": "string" },
+                "request": {
+                  "type": "object",
+                  "properties": {
+                    "method": { "type": "string" },
+                    "url": { "type": "string" },
+                    "headers": { "type": "object" },
+                    "params": { "type": "object" },
+                    "json": {},
+                    "data": {},
+                    "timeout": { "type": "number" }
+                  }
+                },
+                "assertions": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      { "type": "string" },
+                      {
+                        "type": "object",
+                        "required": ["source", "op"],
+                        "properties": {
+                          "source": { "type": "string" },
+                          "op": { "type": "string" },
+                          "expected": {}
+                        }
+                      }
+                    ]
+                  }
+                },
+                "uses_context": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "saves_context": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "save_context": {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

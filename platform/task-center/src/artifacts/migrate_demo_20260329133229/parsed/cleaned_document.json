@@ -1,0 +1,26 @@
+{
+  "cleaned_text": "# 用户中心\n用户登录后进入个人中心。\n用户点击编辑按钮。\n系统应显示资料编辑表单。",
+  "outline": [
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "用户中心",
+      "line": 1
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户登录后进入个人中心。\n用户点击编辑按钮。\n系统应显示资料编辑表单。",
+      "section_title": "用户中心",
+      "source_file": "tmp_requirement.md",
+      "source_block": "section_1_paragraph_1_part_1",
+      "tokens_estimate": 17,
+      "keywords": [
+        "用户登录后进入个人中心",
+        "用户点击编辑按钮",
+        "系统应显示资料编辑表单"
+      ]
+    }
+  ]
+}

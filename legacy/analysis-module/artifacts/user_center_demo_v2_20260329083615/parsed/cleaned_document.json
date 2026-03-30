@@ -1,0 +1,118 @@
+{
+  "cleaned_text": "# 用户中心需求示例\n\n## 背景\n\n普通用户登录后进入用户中心页面。\n\n## 展示要求\n\n- 页面应显示用户昵称和会员等级。\n- 页面应显示最近订单入口。\n\n## 操作要求\n\n1. 用户点击“最近订单”后，应跳转到订单列表页。\n2. 用户在搜索框输入订单号后，应显示匹配的订单结果。\n\n## 约束\n\n- 未登录用户不能访问用户中心。\n- 搜索结果为空时应提示“未找到相关订单”。",
+  "outline": [
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "用户中心需求示例",
+      "line": 1
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "背景",
+      "line": 3
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "展示要求",
+      "line": 7
+    },
+    {
+      "type": "bullet",
+      "text": "页面应显示用户昵称和会员等级。",
+      "line": 9
+    },
+    {
+      "type": "bullet",
+      "text": "页面应显示最近订单入口。",
+      "line": 10
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "操作要求",
+      "line": 12
+    },
+    {
+      "type": "ordered_item",
+      "text": "用户点击“最近订单”后，应跳转到订单列表页。",
+      "line": 14
+    },
+    {
+      "type": "ordered_item",
+      "text": "用户在搜索框输入订单号后，应显示匹配的订单结果。",
+      "line": 15
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "约束",
+      "line": 17
+    },
+    {
+      "type": "bullet",
+      "text": "未登录用户不能访问用户中心。",
+      "line": 19
+    },
+    {
+      "type": "bullet",
+      "text": "搜索结果为空时应提示“未找到相关订单”。",
+      "line": 20
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "普通用户登录后进入用户中心页面。",
+      "section_title": "背景",
+      "source_file": "analysis-module/examples/sample_requirement.md",
+      "source_block": "section_1_paragraph_1_part_1",
+      "tokens_estimate": 8,
+      "keywords": [
+        "普通用户登录后进入用户中心页面"
+      ]
+    },
+    {
+      "chunk_id": "chunk_002",
+      "content": "- 页面应显示用户昵称和会员等级。\n- 页面应显示最近订单入口。",
+      "section_title": "展示要求",
+      "source_file": "analysis-module/examples/sample_requirement.md",
+      "source_block": "section_2_paragraph_1_part_1",
+      "tokens_estimate": 16,
+      "keywords": [
+        "页面应显示用户昵称和会员等级",
+        "页面应显示最近订单入口"
+      ]
+    },
+    {
+      "chunk_id": "chunk_003",
+      "content": "1. 用户点击“最近订单”后，应跳转到订单列表页。\n2. 用户在搜索框输入订单号后，应显示匹配的订单结果。",
+      "section_title": "操作要求",
+      "source_file": "analysis-module/examples/sample_requirement.md",
+      "source_block": "section_3_paragraph_1_part_1",
+      "tokens_estimate": 26,
+      "keywords": [
+        "1.",
+        "用户点击“最近订单”后",
+        "应跳转到订单列表页",
+        "2.",
+        "用户在搜索框输入订单号后",
+        "应显示匹配的订单结果"
+      ]
+    },
+    {
+      "chunk_id": "chunk_004",
+      "content": "- 未登录用户不能访问用户中心。\n- 搜索结果为空时应提示“未找到相关订单”。",
+      "section_title": "约束",
+      "source_file": "analysis-module/examples/sample_requirement.md",
+      "source_block": "section_4_paragraph_1_part_1",
+      "tokens_estimate": 19,
+      "keywords": [
+        "未登录用户不能访问用户中心",
+        "搜索结果为空时应提示“未找到相关订单”"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "objective": "用户中心",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "用户中心",
+    "用户登录后进入个人中心",
+    "用户点击编辑按钮",
+    "系统应显示资料编辑表单"
+  ],
+  "preconditions": [
+    "用户中心\n用户登录后进入个人中心",
+    "用户登录后进入个人中心"
+  ],
+  "actions": [
+    "用户点击编辑按钮"
+  ],
+  "expected_results": [
+    "系统应显示资料编辑表单"
+  ],
+  "constraints": [],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_001"
+  ]
+}

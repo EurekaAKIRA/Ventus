@@ -1,0 +1,11 @@
+{
+  "feature_name": "cli_smoke_test",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 2,
+    "average_step_count": 3.5,
+    "step_count": 7
+  }
+}

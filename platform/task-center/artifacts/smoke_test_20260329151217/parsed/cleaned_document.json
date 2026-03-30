@@ -1,0 +1,17 @@
+{
+  "cleaned_text": "用户打开首页后应看到搜索框和标题",
+  "outline": [],
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户打开首页后应看到搜索框和标题",
+      "section_title": "未命名章节",
+      "source_file": "",
+      "source_block": "section_1_paragraph_1_part_1",
+      "tokens_estimate": 8,
+      "keywords": [
+        "用户打开首页后应看到搜索框和标题"
+      ]
+    }
+  ]
+}

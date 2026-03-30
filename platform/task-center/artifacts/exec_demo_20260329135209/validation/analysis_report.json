@@ -1,0 +1,19 @@
+{
+  "task_id": "exec_demo_20260329135209",
+  "task_name": "exec_demo",
+  "quality_status": "passed",
+  "summary": {
+    "scenario_count": 1,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0
+  },
+  "findings": [],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0
+    }
+  }
+}

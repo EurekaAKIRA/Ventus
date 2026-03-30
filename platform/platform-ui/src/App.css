@@ -1,0 +1,148 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, "Noto Sans SC", sans-serif;
+  background: #f0f2f5;
+}
+
+.logo {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.logo svg {
+  flex-shrink: 0;
+}
+
+.page-container {
+  padding: 24px;
+  min-height: calc(100vh - 64px - 48px);
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1f1f1f;
+}
+
+.json-viewer {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: "Fira Code", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.feature-text {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: "Fira Code", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.log-panel {
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: "Fira Code", "Consolas", monospace;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.log-line {
+  color: #d4d4d4;
+}
+
+.log-line .log-time {
+  color: #6a9955;
+  margin-right: 8px;
+}
+
+.log-line .log-level {
+  margin-right: 8px;
+  font-weight: 600;
+}
+
+.log-line .log-level.INFO {
+  color: #4fc1ff;
+}
+
+.log-line .log-level.WARN {
+  color: #ce9178;
+}
+
+.log-line .log-level.ERROR {
+  color: #f44747;
+}
+
+.scenario-card {
+  margin-bottom: 12px;
+}
+
+.scenario-card .ant-card-head-title {
+  font-weight: 600;
+}
+
+.step-item {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.step-keyword {
+  font-weight: 700;
+  text-transform: uppercase;
+  min-width: 60px;
+  color: #4f46e5;
+  font-size: 12px;
+}
+
+.artifact-card {
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.artifact-card:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.empty-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}

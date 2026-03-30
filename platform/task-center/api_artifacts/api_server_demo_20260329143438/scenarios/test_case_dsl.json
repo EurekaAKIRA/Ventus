@@ -1,0 +1,59 @@
+{
+  "dsl_version": "0.1.0",
+  "task_id": "api_server_demo_20260329143438",
+  "task_name": "api_server_demo",
+  "feature_name": "api_server_demo",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "用户登录后进入用户中心并看到昵称",
+      "goal": "用户登录后进入用户中心并看到昵称",
+      "priority": "P0",
+      "preconditions": [
+        "用户登录后进入用户中心并看到昵称"
+      ],
+      "source_chunks": [
+        "chunk_001"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "用户登录后进入用户中心并看到昵称",
+          "request": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "用户登录后进入用户中心并看到昵称",
+          "request": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "用户登录后进入用户中心并看到昵称",
+          "request": {},
+          "assertions": [
+            "用户登录后进入用户中心并看到昵称"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN"
+  }
+}

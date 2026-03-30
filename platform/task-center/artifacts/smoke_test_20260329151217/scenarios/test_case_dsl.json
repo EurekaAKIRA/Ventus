@@ -1,0 +1,59 @@
+{
+  "dsl_version": "0.1.0",
+  "task_id": "smoke_test_20260329151217",
+  "task_name": "smoke_test",
+  "feature_name": "smoke_test",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "用户打开首页后应看到搜索框和标题",
+      "goal": "用户打开首页后应看到搜索框和标题",
+      "priority": "P1",
+      "preconditions": [
+        "用户已进入需求对应页面或流程入口"
+      ],
+      "source_chunks": [
+        "chunk_001"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "用户已进入需求对应页面或流程入口",
+          "request": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "用户打开首页后应看到搜索框和标题",
+          "request": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "用户打开首页后应看到搜索框和标题",
+          "request": {},
+          "assertions": [
+            "用户打开首页后应看到搜索框和标题"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN"
+  }
+}
