@@ -398,7 +398,7 @@ export default function Dashboard() {
     [executionTrend],
   );
 
-  const taskFunnel = useMemo(() => {
+  const taskFunnelCumulative = useMemo(() => {
     const counts = {
       received: taskDataset.length,
       parsed: 0,
@@ -421,27 +421,78 @@ export default function Dashboard() {
         counts.reported += 1;
       }
     });
-    const rows = [
+    return [
       { key: "received", label: "接收", value: counts.received, color: "#8c8c8c" },
       { key: "parsed", label: "解析", value: counts.parsed, color: "#722ed1" },
       { key: "generated", label: "生成", value: counts.generated, color: "#13c2c2" },
       { key: "running", label: "执行", value: counts.running, color: "#2f54eb" },
       { key: "reported", label: "报告", value: counts.reported, color: "#52c41a" },
     ];
-    const total = rows.reduce((sum, row) => sum + row.value, 0);
-    return rows.map((row) => ({
-      ...row,
-      percent: total ? Math.round((row.value / total) * 100) : 0,
-    }));
   }, [taskDataset]);
 
+  const taskFunnelPieRows = useMemo(() => {
+    const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+    const received = Math.max(0, taskFunnelCumulative.find((item) => item.key === "received")?.value ?? 0);
+    const parsed = clamp(taskFunnelCumulative.find((item) => item.key === "parsed")?.value ?? 0, 0, received);
+    const generated = clamp(taskFunnelCumulative.find((item) => item.key === "generated")?.value ?? 0, 0, parsed);
+    const running = clamp(taskFunnelCumulative.find((item) => item.key === "running")?.value ?? 0, 0, generated);
+    const reported = clamp(taskFunnelCumulative.find((item) => item.key === "reported")?.value ?? 0, 0, running);
+
+    const exclusive = [
+      {
+        key: "received",
+        label: "接收",
+        value: Math.max(0, received - parsed),
+        cumulative: received,
+        color: "#8c8c8c",
+      },
+      {
+        key: "parsed",
+        label: "解析",
+        value: Math.max(0, parsed - generated),
+        cumulative: parsed,
+        color: "#722ed1",
+      },
+      {
+        key: "generated",
+        label: "生成",
+        value: Math.max(0, generated - running),
+        cumulative: generated,
+        color: "#13c2c2",
+      },
+      {
+        key: "running",
+        label: "执行",
+        value: Math.max(0, running - reported),
+        cumulative: running,
+        color: "#2f54eb",
+      },
+      {
+        key: "reported",
+        label: "报告",
+        value: reported,
+        cumulative: reported,
+        color: "#52c41a",
+      },
+    ];
+    const total = exclusive.reduce((sum, row) => sum + row.value, 0);
+    return {
+      total,
+      received,
+      rows: exclusive.map((row) => ({
+        ...row,
+        percent: total ? Math.round((row.value / total) * 100) : 0,
+      })),
+    };
+  }, [taskFunnelCumulative]);
+
   const taskFunnelPieStyle = useMemo(() => {
-    const total = taskFunnel.reduce((sum, row) => sum + row.value, 0);
+    const total = taskFunnelPieRows.total;
     if (!total) {
       return { background: "#f0f0f0", total };
     }
     let offset = 0;
-    const segments = taskFunnel.map((row) => {
+    const segments = taskFunnelPieRows.rows.map((row) => {
       const span = (row.value / total) * 100;
       const start = offset;
       const end = offset + span;
@@ -452,7 +503,7 @@ export default function Dashboard() {
       background: `conic-gradient(${segments.join(", ")})`,
       total,
     };
-  }, [taskFunnel]);
+  }, [taskFunnelPieRows]);
 
   const todoColumns = [
     {
@@ -642,12 +693,12 @@ export default function Dashboard() {
                 <div className="dashboard-funnel-pie" style={{ background: taskFunnelPieStyle.background }}>
                   <div className="dashboard-funnel-pie-center">
                     <Text type="secondary">总计</Text>
-                    <Text strong>{taskFunnelPieStyle.total}</Text>
+                    <Text strong>{taskFunnelPieRows.received}</Text>
                   </div>
                 </div>
               </div>
               <Space direction="vertical" size={8} style={{ width: "100%" }}>
-                {taskFunnel.map((row) => (
+                {taskFunnelPieRows.rows.map((row) => (
                   <div key={row.key} className="dashboard-funnel-legend-row">
                     <Space size={8}>
                       <span className="dashboard-funnel-legend-dot" style={{ backgroundColor: row.color }} />
