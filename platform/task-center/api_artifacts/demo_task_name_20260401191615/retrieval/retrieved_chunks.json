@@ -1,0 +1,13 @@
+{
+  "query": "demo_requirement_text",
+  "hits": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "demo_requirement_text",
+      "score": 10.0,
+      "section_title": "未命名章节",
+      "source_file": ""
+    }
+  ],
+  "retrieval_notes": []
+}

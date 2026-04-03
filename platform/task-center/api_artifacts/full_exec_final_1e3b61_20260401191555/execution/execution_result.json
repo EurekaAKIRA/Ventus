@@ -1,0 +1,2722 @@
+{
+  "task_id": "full_exec_final_1e3b61_20260401191544",
+  "executor": "api-runner",
+  "status": "failed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`en",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`environment` 字段",
+          "status": "passed",
+          "message": "POST http://127.0.0.1:8001/api/tasks -> 201",
+          "error_category": "",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "requirement_text",
+              "source_type",
+              "task_name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 201,
+            "headers": {
+              "date": "Wed, 01 Apr 2026 19:15:55 GMT",
+              "server": "uvicorn",
+              "content-length": "399",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_CREATED",
+              "message": "task created",
+              "data": {
+                "task_id": "demo_task_name_20260401191555",
+                "task_context": {
+                  "task_id": "demo_task_name_20260401191555",
+                  "task_name": "demo_task_name",
+                  "source_type": "demo_source_type",
+                  "source_path": null,
+                  "created_at": "2026-04-01T19:15:55.468083+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                }
+              },
+              "timestamp": "2026-04-01T19:15:55.662166+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_context\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_name\":\"demo_task_name\",",
+            "elapsed_ms": 207.99,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 201,
+            "elapsed_ms": 207.99,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_c",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 399
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 201,
+              "headers": {
+                "date": "Wed, 01 Apr 2026 19:15:55 GMT",
+                "server": "uvicorn",
+                "content-length": "399",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_context\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_name\":\"demo_task_name\",\"source_type\":\"demo_source_type\",\"source_path\":null,\"created_at\":\"2026-04-01T19:15:55.468083+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]}},\"timestamp\":\"2026-04-01T19:15:55.662166+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_CREATED",
+                "message": "task created",
+                "data": {
+                  "task_id": "demo_task_name_20260401191555",
+                  "task_context": {
+                    "task_id": "demo_task_name_20260401191555",
+                    "task_name": "demo_task_name",
+                    "source_type": "demo_source_type",
+                    "source_path": null,
+                    "created_at": "2026-04-01T19:15:55.468083+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  }
+                },
+                "timestamp": "2026-04-01T19:15:55.662166+00:00"
+              },
+              "elapsed_ms": 207.99,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 201,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "requirement_text",
+                "source_type",
+                "task_name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260401191555",
+            "resource_id": "demo_task_name_20260401191555"
+          },
+          "saved_context": {
+            "task_id": "demo_task_name_20260401191555",
+            "resource_id": "demo_task_name_20260401191555"
+          },
+          "assertion_summary": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retrieval_top_k`、`rerank_enabled` 字段",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=422",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parse",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parse",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "rag_enabled",
+              "rerank_enabled",
+              "retrieval_top_k",
+              "use_llm"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 422,
+            "headers": {
+              "date": "Wed, 01 Apr 2026 19:15:55 GMT",
+              "server": "uvicorn",
+              "content-length": "616",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "detail": [
+                {
+                  "type": "bool_parsing",
+                  "loc": [
+                    "body",
+                    "use_llm"
+                  ],
+                  "msg": "Input should be a valid boolean, unable to interpret input",
+                  "input": "demo_use_llm"
+                },
+                {
+                  "type": "bool_parsing",
+                  "loc": [
+                    "body",
+                    "rag_enabled"
+                  ],
+                  "msg": "Input should be a valid boolean, unable to interpret input",
+                  "input": "demo_rag_enabled"
+                },
+                {
+                  "type": "int_parsing",
+                  "loc": [
+                    "body",
+                    "retrieval_top_k"
+                  ],
+                  "msg": "Input should be a valid integer, unable to parse string as an integer",
+                  "input": "demo_retrieval_top_k"
+                },
+                {
+                  "type": "bool_parsing",
+                  "loc": [
+                    "body",
+                    "rerank_enabled"
+                  ],
+                  "msg": "Input should be a valid boolean, unable to interpret input",
+                  "input": "demo_rerank_enabled"
+                }
+              ]
+            },
+            "body_preview": "{\"detail\":[{\"type\":\"bool_parsing\",\"loc\":[\"body\",\"use_llm\"],\"msg\":\"Input should be a valid boolean, unable to interpret input\",\"input\":\"demo_use_llm\"},{\"type\":\"bool_parsing\",\"loc\":[\"body\",\"rag_enabled\"",
+            "elapsed_ms": 0.0,
+            "error": "HTTP Error 422: Unprocessable Entity",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 422,
+            "elapsed_ms": 0.0,
+            "content_type": "application/json",
+            "json_keys": [
+              "detail"
+            ],
+            "body_preview": "{\"detail\":[{\"type\":\"bool_parsing\",\"loc\":[\"body\",\"use_llm\"],\"msg\":\"Input should be a valid boolean, unable to interpret i",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 616
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 422,
+              "headers": {
+                "date": "Wed, 01 Apr 2026 19:15:55 GMT",
+                "server": "uvicorn",
+                "content-length": "616",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"detail\":[{\"type\":\"bool_parsing\",\"loc\":[\"body\",\"use_llm\"],\"msg\":\"Input should be a valid boolean, unable to interpret input\",\"input\":\"demo_use_llm\"},{\"type\":\"bool_parsing\",\"loc\":[\"body\",\"rag_enabled\"],\"msg\":\"Input should be a valid boolean, unable to interpret input\",\"input\":\"demo_rag_enabled\"},{\"type\":\"int_parsing\",\"loc\":[\"body\",\"retrieval_top_k\"],\"msg\":\"Input should be a valid integer, unable to parse string as an integer\",\"input\":\"demo_retrieval_top_k\"},{\"type\":\"bool_parsing\",\"loc\":[\"body\",\"rerank_enabled\"],\"msg\":\"Input should be a valid boolean, unable to interpret input\",\"input\":\"demo_rerank_enabled\"}]}",
+              "json": {
+                "detail": [
+                  {
+                    "type": "bool_parsing",
+                    "loc": [
+                      "body",
+                      "use_llm"
+                    ],
+                    "msg": "Input should be a valid boolean, unable to interpret input",
+                    "input": "demo_use_llm"
+                  },
+                  {
+                    "type": "bool_parsing",
+                    "loc": [
+                      "body",
+                      "rag_enabled"
+                    ],
+                    "msg": "Input should be a valid boolean, unable to interpret input",
+                    "input": "demo_rag_enabled"
+                  },
+                  {
+                    "type": "int_parsing",
+                    "loc": [
+                      "body",
+                      "retrieval_top_k"
+                    ],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "demo_retrieval_top_k"
+                  },
+                  {
+                    "type": "bool_parsing",
+                    "loc": [
+                      "body",
+                      "rerank_enabled"
+                    ],
+                    "msg": "Input should be a valid boolean, unable to interpret input",
+                    "input": "demo_rerank_enabled"
+                  }
+                ]
+              },
+              "elapsed_ms": 0.0,
+              "error": "HTTP Error 422: Unprocessable Entity",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 422,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parse",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "rag_enabled",
+                "rerank_enabled",
+                "retrieval_top_k",
+                "use_llm"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260401191555",
+            "resource_id": "demo_task_name_20260401191555"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=422"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_04",
+          "step_type": "and",
+          "text": "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`",
+          "status": "failed",
+          "message": "timed out",
+          "error_category": "unexpected_error"
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555 -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Wed, 01 Apr 2026 19:16:10 GMT",
+              "server": "uvicorn",
+              "content-length": "1789",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_DETAIL_OK",
+              "message": "task detail",
+              "data": {
+                "task_id": "demo_task_name_20260401191555",
+                "task_name": "demo_task_name",
+                "source_type": "demo_source_type",
+                "target_system": null,
+                "environment": "demo_environment",
+                "created_at": "2026-04-01T19:15:55.468083+00:00",
+                "status": "received",
+                "archived": false,
+                "task_context": {
+                  "task_id": "demo_task_name_20260401191555",
+                  "task_name": "demo_task_name",
+                  "source_type": "demo_source_type",
+                  "source_path": null,
+                  "created_at": "2026-04-01T19:15:55.468083+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                },
+                "artifact_dir": null,
+                "parse_metadata": {
+                  "parse_mode": "rules",
+                  "llm_attempted": false,
+                  "llm_used": false,
+                  "rag_used": true,
+                  "rag_fallback_reason": "",
+                  "fallback_reason": "",
+                  "llm_error_type": "",
+                  "llm_provider_profile": "tencent_hunyuan_openai_compat",
+                  "model_profile": "default",
+                  "retrieval_mode": "keyword",
+                  "retrieval_top_k": 5,
+                  "rerank_enabled": false,
+                  "document_char_count": 0,
+                  "cleaned_char_count": 0,
+                  "chunk_count": 0,
+                  "embedding_batch_size": 32,
+                  "estimated_embedding_calls": 0,
+                  "processing_tier": "realtime",
+                  "large_document_warning": "",
+                  "retrieval_metrics": {
+                    "returned_count": 0,
+                    "requested_top_k": 0,
+                    "coverage_ratio": 0.0,
+                    "duplicate_ratio": 0.0,
+                    "score_avg": 0.0,
+                    "rerank_applied": false,
+                    "embedded_chunk_count": 0,
+                    "embedding_coverage": 0.0,
+                    "embedding_error": "",
+                    "embedding_error_detail": ""
+                  },
+                  "retrieval_scoring": {
+                    "lexical_weight": 4.0,
+                    "vector_weight": 6.0,
+                    "rerank_vector_weight": 7.0,
+                    "rerank_lexical_weight": 2.0,
+                    "rerank_title_boost": 0.2,
+                    "rerank_content_boost": 0.2
+                  },
+                  "performance": {
+                    "elapsed_ms": 0.0,
+                    "target_ms": 0.0,
+                    "within_target": true,
+                    "slow_reason": ""
+                  }
+                },
+                "parsed_requirement": null,
+                "retrieved_context": null,
+                "scenarios": null,
+                "test_case_dsl": null,
+                "validation_report": null,
+                "analysis_report": null,
+                "feature_text": null,
+                "execution_result": null
+              },
+              "timestamp": "2026-04-01T19:16:10.698871+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_name\":\"demo_task_name\",\"source_type\":\"demo_source_type\",\"target_system\":null,\"en",
+            "elapsed_ms": 0.0,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 0.0,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 1789
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Wed, 01 Apr 2026 19:16:10 GMT",
+                "server": "uvicorn",
+                "content-length": "1789",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_name\":\"demo_task_name\",\"source_type\":\"demo_source_type\",\"target_system\":null,\"environment\":\"demo_environment\",\"created_at\":\"2026-04-01T19:15:55.468083+00:00\",\"status\":\"received\",\"archived\":false,\"task_context\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_name\":\"demo_task_name\",\"source_type\":\"demo_source_type\",\"source_path\":null,\"created_at\":\"2026-04-01T19:15:55.468083+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]},\"artifact_dir\":null,\"parse_metadata\":{\"parse_mode\":\"rules\",\"llm_attempted\":false,\"llm_used\":false,\"rag_used\":true,\"rag_fallback_reason\":\"\",\"fallback_reason\":\"\",\"llm_error_type\":\"\",\"llm_provider_profile\":\"tencent_hunyuan_openai_compat\",\"model_profile\":\"default\",\"retrieval_mode\":\"keyword\",\"retrieval_top_k\":5,\"rerank_enabled\":false,\"document_char_count\":0,\"cleaned_char_count\":0,\"chunk_count\":0,\"embedding_batch_size\":32,\"estimated_embedding_calls\":0,\"processing_tier\":\"realtime\",\"large_document_warning\":\"\",\"retrieval_metrics\":{\"returned_count\":0,\"requested_top_k\":0,\"coverage_ratio\":0.0,\"duplicate_ratio\":0.0,\"score_avg\":0.0,\"rerank_applied\":false,\"embedded_chunk_count\":0,\"embedding_coverage\":0.0,\"embedding_error\":\"\",\"embedding_error_detail\":\"\"},\"retrieval_scoring\":{\"lexical_weight\":4.0,\"vector_weight\":6.0,\"rerank_vector_weight\":7.0,\"rerank_lexical_weight\":2.0,\"rerank_title_boost\":0.2,\"rerank_content_boost\":0.2},\"performance\":{\"elapsed_ms\":0.0,\"target_ms\":0.0,\"within_target\":true,\"slow_reason\":\"\"}},\"parsed_requirement\":null,\"retrieved_context\":null,\"scenarios\":null,\"test_case_dsl\":null,\"validation_report\":null,\"analysis_report\":null,\"feature_text\":null,\"execution_result\":null},\"timestamp\":\"2026-04-01T19:16:10.698871+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_DETAIL_OK",
+                "message": "task detail",
+                "data": {
+                  "task_id": "demo_task_name_20260401191555",
+                  "task_name": "demo_task_name",
+                  "source_type": "demo_source_type",
+                  "target_system": null,
+                  "environment": "demo_environment",
+                  "created_at": "2026-04-01T19:15:55.468083+00:00",
+                  "status": "received",
+                  "archived": false,
+                  "task_context": {
+                    "task_id": "demo_task_name_20260401191555",
+                    "task_name": "demo_task_name",
+                    "source_type": "demo_source_type",
+                    "source_path": null,
+                    "created_at": "2026-04-01T19:15:55.468083+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  },
+                  "artifact_dir": null,
+                  "parse_metadata": {
+                    "parse_mode": "rules",
+                    "llm_attempted": false,
+                    "llm_used": false,
+                    "rag_used": true,
+                    "rag_fallback_reason": "",
+                    "fallback_reason": "",
+                    "llm_error_type": "",
+                    "llm_provider_profile": "tencent_hunyuan_openai_compat",
+                    "model_profile": "default",
+                    "retrieval_mode": "keyword",
+                    "retrieval_top_k": 5,
+                    "rerank_enabled": false,
+                    "document_char_count": 0,
+                    "cleaned_char_count": 0,
+                    "chunk_count": 0,
+                    "embedding_batch_size": 32,
+                    "estimated_embedding_calls": 0,
+                    "processing_tier": "realtime",
+                    "large_document_warning": "",
+                    "retrieval_metrics": {
+                      "returned_count": 0,
+                      "requested_top_k": 0,
+                      "coverage_ratio": 0.0,
+                      "duplicate_ratio": 0.0,
+                      "score_avg": 0.0,
+                      "rerank_applied": false,
+                      "embedded_chunk_count": 0,
+                      "embedding_coverage": 0.0,
+                      "embedding_error": "",
+                      "embedding_error_detail": ""
+                    },
+                    "retrieval_scoring": {
+                      "lexical_weight": 4.0,
+                      "vector_weight": 6.0,
+                      "rerank_vector_weight": 7.0,
+                      "rerank_lexical_weight": 2.0,
+                      "rerank_title_boost": 0.2,
+                      "rerank_content_boost": 0.2
+                    },
+                    "performance": {
+                      "elapsed_ms": 0.0,
+                      "target_ms": 0.0,
+                      "within_target": true,
+                      "slow_reason": ""
+                    }
+                  },
+                  "parsed_requirement": null,
+                  "retrieved_context": null,
+                  "scenarios": null,
+                  "test_case_dsl": null,
+                  "validation_report": null,
+                  "analysis_report": null,
+                  "feature_text": null,
+                  "execution_result": null
+                },
+                "timestamp": "2026-04-01T19:16:10.698871+00:00"
+              },
+              "elapsed_ms": 0.0,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260401191555",
+            "resource_id": "demo_task_name_20260401191555"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actio",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actions`、`expected_results`",
+          "status": "failed",
+          "message": "timed out",
+          "error_category": "unexpected_error"
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/scenarios -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/scenarios",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/scenarios",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Wed, 01 Apr 2026 19:16:25 GMT",
+              "server": "uvicorn",
+              "content-length": "630",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "SCENARIOS_OK",
+              "message": "scenarios fetched",
+              "data": [
+                {
+                  "scenario_id": "scenario_001",
+                  "name": "Execute the core business action",
+                  "goal": "demo_requirement_text",
+                  "steps": [
+                    {
+                      "type": "given",
+                      "text": "Start from a valid API entry point"
+                    },
+                    {
+                      "type": "when",
+                      "text": "Execute the core business action"
+                    },
+                    {
+                      "type": "then",
+                      "text": "System returns an observable result aligned with the requirement"
+                    }
+                  ],
+                  "assertions": [
+                    "System returns an observable result aligned with the requirement"
+                  ],
+                  "source_chunks": [
+                    "chunk_001"
+                  ],
+                  "priority": "P2",
+                  "preconditions": [
+                    "Start from a valid API entry point"
+                  ]
+                }
+              ],
+              "timestamp": "2026-04-01T19:16:25.725542+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"Execute the core business action\",\"goal\":\"demo_requirement_text\",\"steps\":[{\"type\":\"giv",
+            "elapsed_ms": 14.98,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 14.98,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"Execut",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 630
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Wed, 01 Apr 2026 19:16:25 GMT",
+                "server": "uvicorn",
+                "content-length": "630",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"Execute the core business action\",\"goal\":\"demo_requirement_text\",\"steps\":[{\"type\":\"given\",\"text\":\"Start from a valid API entry point\"},{\"type\":\"when\",\"text\":\"Execute the core business action\"},{\"type\":\"then\",\"text\":\"System returns an observable result aligned with the requirement\"}],\"assertions\":[\"System returns an observable result aligned with the requirement\"],\"source_chunks\":[\"chunk_001\"],\"priority\":\"P2\",\"preconditions\":[\"Start from a valid API entry point\"]}],\"timestamp\":\"2026-04-01T19:16:25.725542+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "SCENARIOS_OK",
+                "message": "scenarios fetched",
+                "data": [
+                  {
+                    "scenario_id": "scenario_001",
+                    "name": "Execute the core business action",
+                    "goal": "demo_requirement_text",
+                    "steps": [
+                      {
+                        "type": "given",
+                        "text": "Start from a valid API entry point"
+                      },
+                      {
+                        "type": "when",
+                        "text": "Execute the core business action"
+                      },
+                      {
+                        "type": "then",
+                        "text": "System returns an observable result aligned with the requirement"
+                      }
+                    ],
+                    "assertions": [
+                      "System returns an observable result aligned with the requirement"
+                    ],
+                    "source_chunks": [
+                      "chunk_001"
+                    ],
+                    "priority": "P2",
+                    "preconditions": [
+                      "Start from a valid API entry point"
+                    ]
+                  }
+                ],
+                "timestamp": "2026-04-01T19:16:25.725542+00:00"
+              },
+              "elapsed_ms": 14.98,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/scenarios",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260401191555",
+            "resource_id": "demo_task_name_20260401191555"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_006_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/dsl -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/dsl",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/dsl",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Wed, 01 Apr 2026 19:16:25 GMT",
+              "server": "uvicorn",
+              "content-length": "1489",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "DSL_OK",
+              "message": "dsl fetched",
+              "data": {
+                "dsl_version": "0.2.0",
+                "task_id": "demo_task_name_20260401191555",
+                "task_name": "demo_task_name",
+                "feature_name": "demo_task_name",
+                "execution_mode": "api",
+                "scenarios": [
+                  {
+                    "scenario_id": "scenario_001",
+                    "name": "Execute the core business action",
+                    "goal": "demo_requirement_text",
+                    "priority": "P2",
+                    "preconditions": [
+                      "Start from a valid API entry point"
+                    ],
+                    "source_chunks": [
+                      "chunk_001"
+                    ],
+                    "steps": [
+                      {
+                        "step_id": "scenario_001_step_01",
+                        "step_type": "given",
+                        "text": "Start from a valid API entry point",
+                        "request": {},
+                        "load_profile": {},
+                        "assertions": [],
+                        "uses_context": [],
+                        "saves_context": [],
+                        "save_context": {}
+                      },
+                      {
+                        "step_id": "scenario_001_step_02",
+                        "step_type": "when",
+                        "text": "Execute the core business action",
+                        "request": {
+                          "method": "POST",
+                          "url": "/resource",
+                          "json": {
+                            "input": "Execute the core business action"
+                          }
+                        },
+                        "load_profile": {},
+                        "assertions": [
+                          {
+                            "source": "status_code",
+                            "op": "eq",
+                            "expected": 200
+                          }
+                        ],
+                        "uses_context": [],
+                        "saves_context": [],
+                        "save_context": {}
+                      },
+                      {
+                        "step_id": "scenario_001_step_03",
+                        "step_type": "then",
+                        "text": "System returns an observable result aligned with the requirement",
+                        "request": {},
+                        "load_profile": {},
+                        "assertions": [
+                          "System returns an observable result aligned with the requirement"
+                        ],
+                        "uses_context": [],
+                        "saves_context": [],
+                        "save_context": {}
+                      }
+                    ]
+                  }
+                ],
+                "metadata": {
+                  "source_type": "demo_source_type",
+                  "language": "zh-CN",
+                  "case_generation": {
+                    "api_scenario_count": 1,
+                    "scenario_count": 1,
+                    "parsed_entities": [
+                      "demo_requirement_text"
+                    ]
+                  }
+                }
+              },
+              "timestamp": "2026-04-01T19:16:25.742516+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260401191555\",\"task_name\":\"demo_task_name\",\"feature_name\":\"demo_task_name\",\"execution_",
+            "elapsed_ms": 17.22,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 17.22,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260401",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 1489
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Wed, 01 Apr 2026 19:16:25 GMT",
+                "server": "uvicorn",
+                "content-length": "1489",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260401191555\",\"task_name\":\"demo_task_name\",\"feature_name\":\"demo_task_name\",\"execution_mode\":\"api\",\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"Execute the core business action\",\"goal\":\"demo_requirement_text\",\"priority\":\"P2\",\"preconditions\":[\"Start from a valid API entry point\"],\"source_chunks\":[\"chunk_001\"],\"steps\":[{\"step_id\":\"scenario_001_step_01\",\"step_type\":\"given\",\"text\":\"Start from a valid API entry point\",\"request\":{},\"load_profile\":{},\"assertions\":[],\"uses_context\":[],\"saves_context\":[],\"save_context\":{}},{\"step_id\":\"scenario_001_step_02\",\"step_type\":\"when\",\"text\":\"Execute the core business action\",\"request\":{\"method\":\"POST\",\"url\":\"/resource\",\"json\":{\"input\":\"Execute the core business action\"}},\"load_profile\":{},\"assertions\":[{\"source\":\"status_code\",\"op\":\"eq\",\"expected\":200}],\"uses_context\":[],\"saves_context\":[],\"save_context\":{}},{\"step_id\":\"scenario_001_step_03\",\"step_type\":\"then\",\"text\":\"System returns an observable result aligned with the requirement\",\"request\":{},\"load_profile\":{},\"assertions\":[\"System returns an observable result aligned with the requirement\"],\"uses_context\":[],\"saves_context\":[],\"save_context\":{}}]}],\"metadata\":{\"source_type\":\"demo_source_type\",\"language\":\"zh-CN\",\"case_generation\":{\"api_scenario_count\":1,\"scenario_count\":1,\"parsed_entities\":[\"demo_requirement_text\"]}}},\"timestamp\":\"2026-04-01T19:16:25.742516+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "DSL_OK",
+                "message": "dsl fetched",
+                "data": {
+                  "dsl_version": "0.2.0",
+                  "task_id": "demo_task_name_20260401191555",
+                  "task_name": "demo_task_name",
+                  "feature_name": "demo_task_name",
+                  "execution_mode": "api",
+                  "scenarios": [
+                    {
+                      "scenario_id": "scenario_001",
+                      "name": "Execute the core business action",
+                      "goal": "demo_requirement_text",
+                      "priority": "P2",
+                      "preconditions": [
+                        "Start from a valid API entry point"
+                      ],
+                      "source_chunks": [
+                        "chunk_001"
+                      ],
+                      "steps": [
+                        {
+                          "step_id": "scenario_001_step_01",
+                          "step_type": "given",
+                          "text": "Start from a valid API entry point",
+                          "request": {},
+                          "load_profile": {},
+                          "assertions": [],
+                          "uses_context": [],
+                          "saves_context": [],
+                          "save_context": {}
+                        },
+                        {
+                          "step_id": "scenario_001_step_02",
+                          "step_type": "when",
+                          "text": "Execute the core business action",
+                          "request": {
+                            "method": "POST",
+                            "url": "/resource",
+                            "json": {
+                              "input": "Execute the core business action"
+                            }
+                          },
+                          "load_profile": {},
+                          "assertions": [
+                            {
+                              "source": "status_code",
+                              "op": "eq",
+                              "expected": 200
+                            }
+                          ],
+                          "uses_context": [],
+                          "saves_context": [],
+                          "save_context": {}
+                        },
+                        {
+                          "step_id": "scenario_001_step_03",
+                          "step_type": "then",
+                          "text": "System returns an observable result aligned with the requirement",
+                          "request": {},
+                          "load_profile": {},
+                          "assertions": [
+                            "System returns an observable result aligned with the requirement"
+                          ],
+                          "uses_context": [],
+                          "saves_context": [],
+                          "save_context": {}
+                        }
+                      ]
+                    }
+                  ],
+                  "metadata": {
+                    "source_type": "demo_source_type",
+                    "language": "zh-CN",
+                    "case_generation": {
+                      "api_scenario_count": 1,
+                      "scenario_count": 1,
+                      "parsed_entities": [
+                        "demo_requirement_text"
+                      ]
+                    }
+                  }
+                },
+                "timestamp": "2026-04-01T19:16:25.742516+00:00"
+              },
+              "elapsed_ms": 17.22,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/dsl",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260401191555",
+            "resource_id": "demo_task_name_20260401191555"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_007_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/feature -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/feature",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/feature",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Wed, 01 Apr 2026 19:16:25 GMT",
+              "server": "uvicorn",
+              "content-length": "493",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "FEATURE_OK",
+              "message": "feature fetched",
+              "data": {
+                "feature_text": "Feature: demo_task_name\n  Background: 分析结果来自当前需求文档\n    Given 已加载当前任务的需求说明\n\n  # priority: P2\n  Scenario: Execute the core business action\n    Given Start from a valid API entry point\n    When Execute the core business action\n    Then System returns an observable result aligned with the requirement\n"
+              },
+              "timestamp": "2026-04-01T19:16:25.758839+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"FEATURE_OK\",\"message\":\"feature fetched\",\"data\":{\"feature_text\":\"Feature: demo_task_name\\n  Background: 分析结果来自当前需求文档\\n    Given 已加载当前任务的需求说明\\n\\n  # priority: P2\\n  Scenario: Exe",
+            "elapsed_ms": 17.55,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 17.55,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"FEATURE_OK\",\"message\":\"feature fetched\",\"data\":{\"feature_text\":\"Feature: demo_task_name\\n  Backg",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 445
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Wed, 01 Apr 2026 19:16:25 GMT",
+                "server": "uvicorn",
+                "content-length": "493",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"FEATURE_OK\",\"message\":\"feature fetched\",\"data\":{\"feature_text\":\"Feature: demo_task_name\\n  Background: 分析结果来自当前需求文档\\n    Given 已加载当前任务的需求说明\\n\\n  # priority: P2\\n  Scenario: Execute the core business action\\n    Given Start from a valid API entry point\\n    When Execute the core business action\\n    Then System returns an observable result aligned with the requirement\\n\"},\"timestamp\":\"2026-04-01T19:16:25.758839+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "FEATURE_OK",
+                "message": "feature fetched",
+                "data": {
+                  "feature_text": "Feature: demo_task_name\n  Background: 分析结果来自当前需求文档\n    Given 已加载当前任务的需求说明\n\n  # priority: P2\n  Scenario: Execute the core business action\n    Given Start from a valid API entry point\n    When Execute the core business action\n    Then System returns an observable result aligned with the requirement\n"
+                },
+                "timestamp": "2026-04-01T19:16:25.758839+00:00"
+              },
+              "elapsed_ms": 17.55,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/feature",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260401191555",
+            "resource_id": "demo_task_name_20260401191555"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_008_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_008_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` 字段",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/execute",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/execute",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "execution_mode"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Wed, 01 Apr 2026 19:16:25 GMT",
+              "server": "uvicorn",
+              "content-length": "200",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Environment not found: demo_environment",
+              "data": {
+                "detail": "Environment not found: demo_environment"
+              },
+              "timestamp": "2026-04-01T19:16:25.784252+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Environment not found: demo_environment\",\"data\":{\"detail\":\"Environment not found: demo_environment\"},\"timestamp\":\"2026-04-01T19:16:25.784252+00:00\"}",
+            "elapsed_ms": 24.77,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 24.77,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Environment not found: demo_environment\",\"data\":{\"detail\":\"Environme",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 200
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Wed, 01 Apr 2026 19:16:25 GMT",
+                "server": "uvicorn",
+                "content-length": "200",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Environment not found: demo_environment\",\"data\":{\"detail\":\"Environment not found: demo_environment\"},\"timestamp\":\"2026-04-01T19:16:25.784252+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Environment not found: demo_environment",
+                "data": {
+                  "detail": "Environment not found: demo_environment"
+                },
+                "timestamp": "2026-04-01T19:16:25.784252+00:00"
+              },
+              "elapsed_ms": 24.77,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/execute",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "execution_mode"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260401191555",
+            "resource_id": "demo_task_name_20260401191555"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_008_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "scenario_count": 8,
+    "step_count": 25,
+    "passed_step_count": 21,
+    "failed_step_count": 4,
+    "context_key_count": 5,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 40.36,
+    "max_elapsed_ms": 207.99
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`environment` 字段"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 201",
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 207.99,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 399
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: resource_id, task_id",
+      "saved_context": {
+        "task_id": "demo_task_name_20260401191555",
+        "resource_id": "demo_task_name_20260401191555"
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=2 failed=0",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "POST http://127.0.0.1:8001/api/tasks -> 201",
+      "status": "passed",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 207.99,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 399
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_02",
+      "step_type": "when",
+      "message": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retrieval_top_k`、`rerank_enabled` 字段"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parse",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "rag_enabled",
+          "rerank_enabled",
+          "retrieval_top_k",
+          "use_llm"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_002_step_02",
+      "message": "Received 422",
+      "response_summary": {
+        "status_code": 422,
+        "elapsed_ms": 0.0,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":[{\"type\":\"bool_parsing\",\"loc\":[\"body\",\"use_llm\"],\"msg\":\"Input should be a valid boolean, unable to interpret i",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 616
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=422"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=422",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "rag_enabled",
+          "rerank_enabled",
+          "retrieval_top_k",
+          "use_llm"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 422,
+        "elapsed_ms": 0.0,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":[{\"type\":\"bool_parsing\",\"loc\":[\"body\",\"use_llm\"],\"msg\":\"Input should be a valid boolean, unable to interpret i",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 616
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=422"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_04",
+      "step_type": "and",
+      "message": "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_04",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parse",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_002_step_04",
+      "message": "timed out",
+      "status": "failed",
+      "error_category": "unexpected_error"
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_02",
+      "step_type": "when",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_003_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_003_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 0.0,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1789
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_003_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555 -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 0.0,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260401191555\",\"task_",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1789
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_02",
+      "step_type": "when",
+      "message": "调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actions`、`expected_results`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_004_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parsed-requirement",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_004_step_02",
+      "message": "timed out",
+      "status": "failed",
+      "error_category": "unexpected_error"
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_02",
+      "step_type": "when",
+      "message": "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_005_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/scenarios",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_005_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 14.98,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"Execut",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 630
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_005_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/scenarios -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 14.98,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"Execut",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 630
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_02",
+      "step_type": "when",
+      "message": "调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_006_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/dsl",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_006_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.22,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260401",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1489
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_006_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/dsl -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.22,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260401",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1489
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_02",
+      "step_type": "when",
+      "message": "调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_007_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/feature",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/feature",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_007_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.55,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"FEATURE_OK\",\"message\":\"feature fetched\",\"data\":{\"feature_text\":\"Feature: demo_task_name\\n  Backg",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 445
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_007_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/feature -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/feature",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.55,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"FEATURE_OK\",\"message\":\"feature fetched\",\"data\":{\"feature_text\":\"Feature: demo_task_name\\n  Backg",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 445
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_02",
+      "step_type": "when",
+      "message": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` 字段"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_008_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/execute",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/execute",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "execution_mode"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_008_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 24.77,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Environment not found: demo_environment\",\"data\":{\"detail\":\"Environme",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 200
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_008_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_008_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260401191555/execute",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "execution_mode"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 24.77,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Environment not found: demo_environment\",\"data\":{\"detail\":\"Environme",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 200
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "full_exec_final_1e3b61_20260401191544"
+      }
+    },
+    "executed_at": "2026-04-01T19:16:25.788368+00:00"
+  }
+}

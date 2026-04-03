@@ -1,0 +1,700 @@
+{
+  "task_id": "端到端任务1_20260402140804",
+  "task_name": "端到端任务1",
+  "quality_status": "failed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-02T14:08:51.189755+00:00",
+  "summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 5,
+    "failed_scenarios": 3,
+    "total_steps": 25,
+    "executed_steps": 25,
+    "passed_steps": 21,
+    "failed_steps": 4,
+    "success_rate": 84.0,
+    "failure_rate": 16.0,
+    "avg_elapsed_ms": 14.29,
+    "max_elapsed_ms": 27.09,
+    "validation_passed": true,
+    "warning_count": 5,
+    "error_count": 0,
+    "execution_status": "failed",
+    "assertion_total": 19,
+    "assertion_passed": 15,
+    "assertion_failed": 4,
+    "assertion_pass_rate": 78.95,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "dashboard": {
+    "task_id": "端到端任务1_20260402140804",
+    "task_name": "端到端任务1",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 8,
+      "passed_scenarios": 5,
+      "failed_scenarios": 3,
+      "success_rate": 84.0,
+      "failure_rate": 16.0,
+      "passed_steps": 21,
+      "failed_steps": 4,
+      "avg_elapsed_ms": 14.29,
+      "max_elapsed_ms": 27.09,
+      "assertion_total": 19,
+      "assertion_pass_rate": 78.95,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 3,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 8
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 25
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 21
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 4
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 84.0
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 14.29
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 27.09
+      }
+    ],
+    "totals": {
+      "scenarios": 8,
+      "steps": 25,
+      "assertions": 19,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 5,
+      "failed_scenarios": 3,
+      "passed_steps": 21,
+      "failed_steps": 4
+    },
+    "assertion_summary": {
+      "total": 19,
+      "passed": 15,
+      "failed": 4,
+      "pass_rate": 78.95
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 2,
+      "defined_key_names": [
+        "resource_id",
+        "task_id"
+      ],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 3,
+      "extracted_key_names": [
+        "last_request",
+        "resource_id",
+        "task_id"
+      ],
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": {
+      "category": "validation_warning",
+      "label": "Validation Warning",
+      "count": 5,
+      "examples": [
+        {
+          "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks` 创建任务，请求体包含 `task_..."
+        },
+        {
+          "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks/{task_id}/parse` 执..."
+        },
+        {
+          "message": "步骤过长，建议拆分：当 调用 `GET /api/tasks/{task_id}/parsed-re..."
+        }
+      ]
+    },
+    "failure_reason_breakdown": [
+      {
+        "category": "validation_warning",
+        "label": "Validation Warning",
+        "count": 5,
+        "examples": [
+          {
+            "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks` 创建任务，请求体包含 `task_..."
+          },
+          {
+            "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks/{task_id}/parse` 执..."
+          },
+          {
+            "message": "步骤过长，建议拆分：当 调用 `GET /api/tasks/{task_id}/parsed-re..."
+          }
+        ]
+      },
+      {
+        "category": "assertion_failed",
+        "label": "Assertion Failed",
+        "count": 4,
+        "examples": [
+          {
+            "step_id": "scenario_001_step_02",
+            "scenario_name": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`en",
+            "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.data.task_id exists None, actual=None"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+            "message": "Assertion failed: status_code eq 200, actual=404"
+          },
+          {
+            "step_id": "scenario_002_step_04",
+            "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+            "message": "Assertion failed: status_code eq 200, actual=404"
+          }
+        ]
+      }
+    ],
+    "headline": "21/25 steps passed",
+    "summary_text": "任务 端到端任务1 当前状态为 failed，共分析 8 个场景，执行 25 个步骤；其中通过 21 个、失败 4 个，成功率 84.0%，平均耗时 14.29ms，最大耗时 27.09ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 5,
+    "failed_scenarios": 3,
+    "execution_status": "failed",
+    "total_steps": 25,
+    "executed_steps": 25,
+    "passed_steps": 21,
+    "failed_steps": 4,
+    "success_rate": 84.0,
+    "failure_rate": 16.0,
+    "avg_elapsed_ms": 14.29,
+    "max_elapsed_ms": 27.09,
+    "assertion_total": 19,
+    "assertion_passed": 15,
+    "assertion_failed": 4,
+    "assertion_pass_rate": 78.95,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "端到端任务1",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "headline": "任务 端到端任务1 当前状态为 failed，共分析 8 个场景，执行 25 个步骤；其中通过 21 个、失败 4 个，成功率 84.0%，平均耗时 14.29ms，最大耗时 27.09ms。",
+    "success_rate": 84.0,
+    "failed_steps": 4,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": {
+      "category": "validation_warning",
+      "label": "Validation Warning",
+      "count": 5,
+      "examples": [
+        {
+          "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks` 创建任务，请求体包含 `task_..."
+        },
+        {
+          "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks/{task_id}/parse` 执..."
+        },
+        {
+          "message": "步骤过长，建议拆分：当 调用 `GET /api/tasks/{task_id}/parsed-re..."
+        }
+      ]
+    },
+    "next_action": "优先处理失败步骤与失败原因分类"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "failed",
+    "scenario_count": 8,
+    "passed_scenarios": 5,
+    "failed_scenarios": 3,
+    "log_count": 78,
+    "has_failures": true,
+    "top_failure_category": "validation_warning"
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [
+    {
+      "scenario_id": "scenario_001",
+      "scenario_name": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`en",
+      "step_id": "scenario_001_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`environment`、`target_system` 字段，其中 `target_system` 固定为 `http://127.0.0.1:8001`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.data.task_id exists None, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.data.task_id exists None, actual=None",
+      "elapsed_ms": 27.09,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "Vary": "Origin",
+          "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+          "Connection": "close",
+          "Content-Length": "0"
+        },
+        "json": null,
+        "body_preview": "",
+        "elapsed_ms": 27.09,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 27.09,
+        "has_json": false,
+        "header_count": 4,
+        "body_preview": ""
+      }
+    },
+    {
+      "scenario_id": "scenario_002",
+      "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+      "step_id": "scenario_002_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retrieval_top_k`、`rerank_enabled` 字段",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 13.99,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "Vary": "Origin",
+          "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+          "Connection": "close",
+          "Content-Length": "0"
+        },
+        "json": null,
+        "body_preview": "",
+        "elapsed_ms": 13.99,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 13.99,
+        "has_json": false,
+        "header_count": 4,
+        "body_preview": ""
+      }
+    },
+    {
+      "scenario_id": "scenario_002",
+      "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+      "step_id": "scenario_002_step_04",
+      "step_index": 4,
+      "step_type": "and",
+      "text": "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 3.16,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "Vary": "Origin",
+          "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+          "Connection": "close",
+          "Content-Length": "0"
+        },
+        "json": null,
+        "body_preview": "",
+        "elapsed_ms": 3.16,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 3.16,
+        "has_json": false,
+        "header_count": 4,
+        "body_preview": ""
+      }
+    },
+    {
+      "scenario_id": "scenario_008",
+      "scenario_name": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment`",
+      "step_id": "scenario_008_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` 字段",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 17.95,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/execute",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "Vary": "Origin",
+          "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+          "Connection": "close",
+          "Content-Length": "0"
+        },
+        "json": null,
+        "body_preview": "",
+        "elapsed_ms": 17.95,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/execute",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 17.95,
+        "has_json": false,
+        "header_count": 4,
+        "body_preview": ""
+      }
+    }
+  ],
+  "failure_reasons": [
+    {
+      "category": "validation_warning",
+      "label": "Validation Warning",
+      "count": 5,
+      "examples": [
+        {
+          "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks` 创建任务，请求体包含 `task_..."
+        },
+        {
+          "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks/{task_id}/parse` 执..."
+        },
+        {
+          "message": "步骤过长，建议拆分：当 调用 `GET /api/tasks/{task_id}/parsed-re..."
+        }
+      ]
+    },
+    {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 4,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`en",
+          "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.data.task_id exists None, actual=None"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        },
+        {
+          "step_id": "scenario_002_step_04",
+          "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        }
+      ]
+    }
+  ],
+  "assertion_stats": {
+    "total": 19,
+    "passed": 15,
+    "failed": 4,
+    "pass_rate": 78.95,
+    "validation_errors": 0,
+    "validation_warnings": 5
+  },
+  "context_stats": {
+    "defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "defined_key_count": 2,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [
+      "last_request",
+      "resource_id",
+      "task_id"
+    ],
+    "extracted_key_count": 3,
+    "unused_defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "task_id": "json.data.task_id",
+      "resource_id": "json.data.task_id"
+    }
+  },
+  "task_summary_text": "任务 端到端任务1 当前状态为 failed，共分析 8 个场景，执行 25 个步骤；其中通过 21 个、失败 4 个，成功率 84.0%，平均耗时 14.29ms，最大耗时 27.09ms。",
+  "findings": [
+    "步骤过长，建议拆分：当 调用 `POST /api/tasks` 创建任务，请求体包含 `task_...",
+    "步骤过长，建议拆分：当 调用 `POST /api/tasks/{task_id}/parse` 执...",
+    "步骤过长，建议拆分：当 调用 `GET /api/tasks/{task_id}/parsed-re...",
+    "步骤过长，建议拆分：当 调用 `GET /api/tasks/{task_id}/feature` ...",
+    "步骤过长，建议拆分：当 调用 `POST /api/tasks/{task_id}/execute`...",
+    "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`en / scenario_001_step_02: Assertion failed: status_code eq 201, actual=404; Assertion failed: json.data.task_id exists None, actual=None",
+    "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev / scenario_002_step_02: Assertion failed: status_code eq 200, actual=404",
+    "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev / scenario_002_step_04: Assertion failed: status_code eq 200, actual=404",
+    "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` / scenario_008_step_02: Assertion failed: status_code eq 200, actual=404",
+    "Failure categories: validation_warning=5, assertion_failed=4"
+  ],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 5,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 21,
+      "failed_steps": 4,
+      "success_rate": 84.0,
+      "failure_rate": 16.0,
+      "avg_elapsed_ms": 14.29,
+      "max_elapsed_ms": 27.09
+    },
+    "assertions": {
+      "passed": 15,
+      "failed": 4,
+      "pass_rate": 78.95
+    },
+    "context": {
+      "defined": 2,
+      "used": 0,
+      "extracted": 3
+    },
+    "failure_reasons": {
+      "validation_warning": 5,
+      "assertion_failed": 4
+    }
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 8,
+        "total_steps": 25,
+        "passed_steps": 21,
+        "failed_steps": 4,
+        "success_rate": 84.0,
+        "avg_elapsed_ms": 14.29,
+        "max_elapsed_ms": 27.09
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 2,
+        "failure_reasons": [
+          {
+            "category": "validation_warning",
+            "label": "Validation Warning",
+            "count": 5,
+            "examples": [
+              {
+                "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks` 创建任务，请求体包含 `task_..."
+              },
+              {
+                "message": "步骤过长，建议拆分：当 调用 `POST /api/tasks/{task_id}/parse` 执..."
+              },
+              {
+                "message": "步骤过长，建议拆分：当 调用 `GET /api/tasks/{task_id}/parsed-re..."
+              }
+            ]
+          },
+          {
+            "category": "assertion_failed",
+            "label": "Assertion Failed",
+            "count": 4,
+            "examples": [
+              {
+                "step_id": "scenario_001_step_02",
+                "scenario_name": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`en",
+                "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.data.task_id exists None, actual=None"
+              },
+              {
+                "step_id": "scenario_002_step_02",
+                "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+                "message": "Assertion failed: status_code eq 200, actual=404"
+              },
+              {
+                "step_id": "scenario_002_step_04",
+                "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+                "message": "Assertion failed: status_code eq 200, actual=404"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 19,
+        "passed": 15,
+        "failed": 4,
+        "pass_rate": 78.95,
+        "validation_errors": 0,
+        "validation_warnings": 5
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "defined_key_count": 2,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [
+          "last_request",
+          "resource_id",
+          "task_id"
+        ],
+        "extracted_key_count": 3,
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "task_id": "json.data.task_id",
+          "resource_id": "json.data.task_id"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 14.29,
+        "max_elapsed_ms": 27.09
+      }
+    }
+  ]
+}

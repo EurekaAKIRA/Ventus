@@ -1,0 +1,19 @@
+{
+  "cleaned_text": "demo requirement text",
+  "outline": [],
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "demo requirement text",
+      "section_title": "未命名章节",
+      "source_file": "",
+      "source_block": "section_1_paragraph_1_part_1",
+      "tokens_estimate": 10,
+      "keywords": [
+        "demo",
+        "requirement",
+        "text"
+      ]
+    }
+  ]
+}

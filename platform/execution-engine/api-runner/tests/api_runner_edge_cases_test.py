@@ -117,6 +117,36 @@ def main() -> int:
                 }
             ]
         }
+        relative_items_payload = {
+            "dsl_version": "0.1.0",
+            "task_id": "edge_relative_items",
+            "task_name": "edge_relative_items",
+            "feature_name": "edge_relative_items",
+            "execution_mode": "api",
+            "metadata": {
+                "execution": {
+                    "base_url": "http://127.0.0.1:8011"
+                }
+            },
+            "scenarios": [
+                {
+                    "scenario_id": "s2b",
+                    "name": "items relative path",
+                    "steps": [
+                        {
+                            "step_id": "s2b_01",
+                            "step_type": "when",
+                            "text": "get items relative",
+                            "request": {"method": "GET", "url": "items"},
+                            "assertions": [
+                                {"source": "status_code", "op": "eq", "expected": 200},
+                                {"source": "json.items", "op": "len_eq", "expected": 3},
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
         missing_context_payload = {
             "dsl_version": "0.1.0",
             "task_id": "edge_context",
@@ -170,10 +200,40 @@ def main() -> int:
                 }
             ]
         }
+        seeded_context_payload = {
+            "dsl_version": "0.2.0",
+            "task_id": "edge_context_seed",
+            "task_name": "edge_context_seed",
+            "feature_name": "edge_context_seed",
+            "execution_mode": "api",
+            "metadata": {
+                "execution": {
+                    "base_url": "http://127.0.0.1:8011",
+                    "context": {"task_id": "demo-task-id"},
+                }
+            },
+            "scenarios": [
+                {
+                    "scenario_id": "s5",
+                    "name": "seeded task id path",
+                    "steps": [
+                        {
+                            "step_id": "s5_01",
+                            "step_type": "when",
+                            "text": "get task detail with seeded id",
+                            "request": {"method": "GET", "url": "/items/{{task_id}}"},
+                            "assertions": [{"source": "status_code", "op": "eq", "expected": 200}],
+                        }
+                    ],
+                }
+            ],
+        }
 
         assert execute_test_case_dsl(text_payload)["status"] == "passed"
         items_result = execute_test_case_dsl(items_payload)
         assert items_result["status"] == "passed"
+        relative_items_result = execute_test_case_dsl(relative_items_payload)
+        assert relative_items_result["status"] == "passed"
         item_step = items_result["scenario_results"][0]["steps"][0]
         assert item_step["response_summary"]["body_size"] > 0
         missing_result = execute_test_case_dsl(missing_context_payload)
@@ -183,6 +243,8 @@ def main() -> int:
         network_step = network_result["scenario_results"][0]["steps"][0]
         assert network_step["response_summary"]["error_category"] in {"network_error", "timeout_error"}
         assert network_step["response_summary"]["parse_error"] == ""
+        seeded_context_result = execute_test_case_dsl(seeded_context_payload)
+        assert seeded_context_result["status"] == "passed"
         assert any(log["event"] == "assertions_evaluated" for log in items_result["logs"])
         print("api runner edge cases test passed")
         return 0

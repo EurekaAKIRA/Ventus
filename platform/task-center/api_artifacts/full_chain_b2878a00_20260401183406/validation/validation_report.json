@@ -1,0 +1,19 @@
+{
+  "feature_name": "full_chain_b2878a00",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 3,
+    "average_step_count": 4.33,
+    "step_count": 13,
+    "parse_metrics": {
+      "actor_count": 2,
+      "entity_count": 10,
+      "action_count": 6,
+      "expected_count": 4,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "rules"
+  }
+}

@@ -1,0 +1,1527 @@
+{
+  "task_context": {
+    "task_id": "platform_e2e_regression_fb9cf7d3_20260402154635",
+    "task_name": "platform_e2e_regression_fb9cf7d3",
+    "source_type": "text",
+    "source_path": null,
+    "created_at": "2026-04-02T15:46:35.389370+00:00",
+    "language": "zh-CN",
+    "status": "received",
+    "notes": []
+  },
+  "raw_requirement": "# Platform 主链路联调需求说明（企业版草案）\n\n## 1. 背景与目的\n\n当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：\n\n- 平台主流程是否可在同一任务生命周期内闭环完成；\n- 关键中间产物是否可追踪、可复核、可回放；\n- 执行与分析结果是否满足演示与验收所需的最小可信度。\n\n本文档用于指导一次完整的后端链路验收，不作为接口手册或自动化脚本说明书。\n\n## 2. 适用范围\n\n### 2.1 本次纳入\n\n- 任务接入与任务状态流转；\n- 需求解析与检索增强；\n- 场景、DSL、Feature 的产物生成；\n- API 执行、日志、报告与历史可查询能力；\n- 任务归档后的可见性与一致性检查。\n\n### 2.2 本次不纳入\n\n- 压测云平台对接能力；\n- 多租户与权限边界；\n- 生产级高并发与容量基准；\n- 第三方系统稳定性背书。\n\n## 3. 角色与职责\n\n- **产品/项目负责人**：确认验收范围、签收最终结论。\n- **后端研发**：保障主链路可运行，处理阻断性缺陷。\n- **前端研发**：验证页面主路径与真实接口数据一致性。\n- **测试工程师**：执行回归流程并输出问题清单。\n- **运维或环境负责人**：保障测试环境地址、网络和依赖可达。\n\n## 4. 业务过程描述（非接口步骤版）\n\n从业务视角看，一次标准任务应经历以下过程：\n\n1. 用户提交待分析的需求内容并形成任务实体；\n2. 系统完成需求结构化，补充检索上下文，形成可供后续生成的语义基础；\n3. 系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅；\n4. 系统在指定环境中执行任务，输出过程日志与结果状态；\n5. 系统聚合校验与分析报告，支持从任务维度查看历史与产物；\n6. 任务结束后可归档，归档后不应继续作为活跃任务参与主流程。\n\n> 说明：上述过程强调业务闭环，不要求阅读者记忆具体路径与方法名。\n\n## 5. 接口基线（来源：`docs/frontend_api_list.md`）\n\n为避免联调过程出现“口径不一致”，本需求文档采用 `docs/frontend_api_list.md` 作为接口基线。  \n本次端到端验收默认至少覆盖以下接口组。\n\n### 5.1 任务与解析（必测）\n\n- `POST /api/tasks`\n- `GET /api/tasks/{task_id}`\n- `POST /api/tasks/{task_id}/parse`\n- `GET /api/tasks/{task_id}/parsed-requirement`\n- `GET /api/tasks/{task_id}/retrieved-context`\n\n### 5.2 场景与 DSL（必测）\n\n- `POST /api/tasks/{task_id}/scenarios/generate`\n- `GET /api/tasks/{task_id}/scenarios`\n- `GET /api/tasks/{task_id}/dsl`\n- `GET /api/tasks/{task_id}/feature`\n\n### 5.3 执行与结果（必测）\n\n- `POST /api/tasks/{task_id}/execute`\n- `GET /api/tasks/{task_id}/execution`\n- `GET /api/tasks/{task_id}/execution/logs`\n- `GET /api/tasks/{task_id}/validation-report`\n- `GET /api/tasks/{task_id}/analysis-report`\n\n### 5.4 产物与历史（建议纳入）\n\n- `GET /api/tasks/{task_id}/artifacts`\n- `GET /api/tasks/{task_id}/artifacts/{type}`\n- `GET /api/history/tasks`\n- `GET /api/history/executions`\n- `DELETE /api/tasks/{task_id}`（归档）\n\n### 5.5 环境与扩展能力（按需）\n\n- `GET /api/environments`\n- `POST /api/environments`\n- `PUT /api/environments/{environment_name}`\n- `DELETE /api/environments/{environment_name}`\n- `POST /api/analysis/parse`（独立解析链路）\n- `GET /health`、`GET /version`（服务健康与版本核对）\n\n### 5.6 执行模式说明（与项目现状一致）\n\n- `execution_mode=api`：当前主执行路径，联调与验收优先使用；\n- `execution_mode=cloud-load`：当前为本地并发压测模拟，不作为本轮主验收路径；\n- `execution_mode=web-ui`：适配中，默认不纳入本轮通过标准。\n\n## 6. 验收关注点\n\n### 6.1 必须满足\n\n- 单任务从“提交到报告”应可完整走通；\n- 关键中间产物（解析结果、场景、DSL、Feature）应可回读；\n- 报告数据与执行数据口径基本一致，不出现明显自相矛盾；\n- 归档动作生效后，任务应从活跃视图中消失；\n- 返回结构需保持统一 envelope，便于前端统一处理。\n\n### 6.2 可接受但需记录\n\n- 少量场景执行失败但不阻断整体链路；\n- 检索策略在不同输入下出现回退；\n- 报告存在提示级告警（如步骤表达偏长）。\n\n## 7. 非功能与治理要求\n\n- **可追踪性**：同一任务 ID 可串联输入、产物、执行、报告与历史。\n- **可解释性**：解析结果应能说明来自哪些上下文片段。\n- **一致性**：前后端对状态字段、错误消息、时间字段含义保持一致。\n- **可维护性**：配置项通过统一配置管理，不在流程中硬编码环境地址。\n\n## 8. 风险与已知限制\n\n- 同步执行模式下，长任务会占用请求时长；\n- 复杂断言与字段映射尚存在误判空间；\n- 当前持久化方案偏向 MVP，尚未达到生产级可靠性；\n- 在外部依赖波动情况下，检索与执行耗时可能明显抖动。\n\n## 9. 环境前置条件\n\n- 默认联调基地址使用 `http://127.0.0.1:8001`；\n- 执行时应提供明确目标系统来源（任务目标地址或环境配置）；\n- 测试数据需避免依赖不可控的外部实时状态；\n- 若启用模型增强能力，应提前完成密钥与模型配置核验。\n\n## 10. 输出物要求\n\n验收结束后需至少沉淀以下内容：\n\n- 一份执行结论（通过/有条件通过/不通过）；\n- 一份问题清单（按阻断、主要、次要分级）；\n- 一份回归记录（包含环境、版本、时间窗口、任务样本）；\n- 对未闭环项给出下一迭代处理建议与责任人。",
+  "parsed_requirement": {
+    "objective": "Platform 主链路联调需求说明（企业版草案）",
+    "actors": [
+      "用户"
+    ],
+    "entities": [
+      "platform",
+      "主链路联调需求说明",
+      "企业版草案",
+      "背景与目的",
+      "当前平台已进入联调阶段",
+      "研发",
+      "测试与前端需要基于统一口径确认以下事项",
+      "平台主流程是否可在同一任务生命周期内闭环完成",
+      "关键中间产物是否可追踪",
+      "可复核"
+    ],
+    "preconditions": [
+      "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    ],
+    "actions": [
+      "用户提交待分析的需求内容并形成任务实体",
+      "单任务从“提交到报告”应可完整走通",
+      "检索策略在不同输入下出现回退",
+      "*可追踪性**：同一任务 ID 可串联输入、产物、执行、报告与历史",
+      "`POST /api/tasks`",
+      "`GET /api/tasks/{task_id}`",
+      "`POST /api/tasks/{task_id}/parse`",
+      "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "`GET /api/tasks/{task_id}/retrieved-context`",
+      "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "`GET /api/tasks/{task_id}/scenarios`",
+      "`GET /api/tasks/{task_id}/dsl`",
+      "`GET /api/tasks/{task_id}/feature`",
+      "`POST /api/tasks/{task_id}/execute`",
+      "`GET /api/tasks/{task_id}/execution`",
+      "`GET /api/tasks/{task_id}/execution/logs`",
+      "`GET /api/tasks/{task_id}/validation-report`",
+      "`GET /api/tasks/{task_id}/analysis-report`",
+      "`GET /api/tasks/{task_id}/artifacts`",
+      "`GET /api/tasks/{task_id}/artifacts/{type}`",
+      "`GET /api/history/tasks`",
+      "`GET /api/history/executions`",
+      "`DELETE /api/tasks/{task_id}`（归档）",
+      "`GET /api/environments`",
+      "`POST /api/environments`",
+      "`PUT /api/environments/{environment_name}`",
+      "`DELETE /api/environments/{environment_name}`",
+      "`POST /api/analysis/parse`（独立解析链路）",
+      "`GET /health`、`GET /version`（服务健康与版本核对）"
+    ],
+    "expected_results": [
+      "任务归档后的可见性与一致性检查",
+      "从业务视角看，一次标准任务应经历以下过程：",
+      "任务结束后可归档，归档后不应继续作为活跃任务参与主流程",
+      "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+      "归档动作生效后，任务应从活跃视图中消失",
+      "返回结构需保持统一 envelope，便于前端统一处理",
+      "少量场景执行失败但不阻断整体链路",
+      "报告存在提示级告警（如步骤表达偏长）",
+      "*可解释性**：解析结果应能说明来自哪些上下文片段",
+      "执行时应提供明确目标系统来源（任务目标地址或环境配置）",
+      "若启用模型增强能力，应提前完成密钥与模型配置核验"
+    ],
+    "constraints": [
+      "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "1 必须满足",
+      "风险与已知限制",
+      "测试数据需避免依赖不可控的外部实时状态"
+    ],
+    "ambiguities": [],
+    "source_chunks": [
+      "chunk_019",
+      "chunk_006",
+      "chunk_008",
+      "chunk_017",
+      "chunk_023"
+    ],
+    "api_endpoints": [
+      {
+        "method": "POST",
+        "path": "/api/tasks",
+        "description": "### 5.1 任务与解析（必测）"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}",
+        "description": "/api/tasks"
+      },
+      {
+        "method": "POST",
+        "path": "/api/tasks/{task_id}/parse",
+        "description": "/api/tasks/{task_id}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/parsed-requirement",
+        "description": "/api/tasks/{task_id}/parse"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/retrieved-context",
+        "description": "/api/tasks/{task_id}/parsed-requirement"
+      },
+      {
+        "method": "POST",
+        "path": "/api/tasks/{task_id}/scenarios/generate",
+        "description": "### 5.2 场景与 DSL（必测）"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/scenarios",
+        "description": "/generate"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/dsl",
+        "description": "/api/tasks/{task_id}/scenarios"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/feature",
+        "description": "/api/tasks/{task_id}/dsl"
+      },
+      {
+        "method": "POST",
+        "path": "/api/tasks/{task_id}/execute",
+        "description": "### 5.3 执行与结果（必测）"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/execution",
+        "description": "/api/tasks/{task_id}/execute"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/execution/logs",
+        "description": "/api/tasks/{task_id}/execution"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/validation-report",
+        "description": "/api/tasks/{task_id}/execution/logs"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/analysis-report",
+        "description": "/api/tasks/{task_id}/validation-report"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/artifacts",
+        "description": "### 5.4 产物与历史（建议纳入）"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/artifacts/{type}",
+        "description": "/api/tasks/{task_id}/artifacts"
+      },
+      {
+        "method": "GET",
+        "path": "/api/history/tasks",
+        "description": "/api/tasks/{task_id}/artifacts/{type}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/history/executions",
+        "description": "/api/history/tasks"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/tasks/{task_id}",
+        "description": "（归档）"
+      },
+      {
+        "method": "GET",
+        "path": "/api/environments",
+        "description": "### 5.5 环境与扩展能力（按需）"
+      },
+      {
+        "method": "POST",
+        "path": "/api/environments",
+        "description": ""
+      },
+      {
+        "method": "PUT",
+        "path": "/api/environments/{environment_name}",
+        "description": "/api/environments"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/environments/{environment_name}",
+        "description": ""
+      },
+      {
+        "method": "POST",
+        "path": "/api/analysis/parse",
+        "description": "（独立解析链路）"
+      },
+      {
+        "method": "GET",
+        "path": "/health",
+        "description": "、 /version（服务健康与版本核对）"
+      },
+      {
+        "method": "GET",
+        "path": "/version",
+        "description": "/health、 （服务健康与版本核对）"
+      }
+    ]
+  },
+  "retrieved_context": [
+    {
+      "chunk_id": "chunk_019",
+      "content": "- **可追踪性**：同一任务 ID 可串联输入、产物、执行、报告与历史。\n- **可解释性**：解析结果应能说明来自哪些上下文片段。\n- **一致性**：前后端对状态字段、错误消息、时间字段含义保持一致。\n- **可维护性**：配置项通过统一配置管理，不在流程中硬编码环境地址。",
+      "score": 8.876,
+      "section_title": "7. 非功能与治理要求",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_006",
+      "content": "- **产品/项目负责人**：确认验收范围、签收最终结论。\n- **后端研发**：保障主链路可运行，处理阻断性缺陷。\n- **前端研发**：验证页面主路径与真实接口数据一致性。\n- **测试工程师**：执行回归流程并输出问题清单。\n- **运维或环境负责人**：保障测试环境地址、网络和依赖可达。",
+      "score": 8.73,
+      "section_title": "3. 角色与职责",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_008",
+      "content": "1. 用户提交待分析的需求内容并形成任务实体；\n2. 系统完成需求结构化，补充检索上下文，形成可供后续生成的语义基础；\n3. 系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅；\n4. 系统在指定环境中执行任务，输出过程日志与结果状态；\n5. 系统聚合校验与分析报告，支持从任务维度查看历史与产物；\n6. 任务结束后可归档，归档后不应继续作为活跃任务参与主流程。",
+      "score": 8.514,
+      "section_title": "4. 业务过程描述（非接口步骤版）",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_017",
+      "content": "- 单任务从“提交到报告”应可完整走通；\n- 关键中间产物（解析结果、场景、DSL、Feature）应可回读；\n- 报告数据与执行数据口径基本一致，不出现明显自相矛盾；\n- 归档动作生效后，任务应从活跃视图中消失；\n- 返回结构需保持统一 envelope，便于前端统一处理。",
+      "score": 8.44,
+      "section_title": "6.1 必须满足",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_023",
+      "content": "- 一份执行结论（通过/有条件通过/不通过）；\n- 一份问题清单（按阻断、主要、次要分级）；\n- 一份回归记录（包含环境、版本、时间窗口、任务样本）；\n- 对未闭环项给出下一迭代处理建议与责任人。",
+      "score": 8.207,
+      "section_title": "10. 输出物要求",
+      "source_file": ""
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "`POST /api/tasks`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "steps": [
+        {
+          "type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        },
+        {
+          "type": "when",
+          "text": "`POST /api/tasks`"
+        },
+        {
+          "type": "then",
+          "text": "任务归档后的可见性与一致性检查"
+        }
+      ],
+      "assertions": [
+        "任务归档后的可见性与一致性检查"
+      ],
+      "source_chunks": [
+        "chunk_019",
+        "chunk_006",
+        "chunk_008",
+        "chunk_017",
+        "chunk_023"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "steps": [
+        {
+          "type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}`"
+        },
+        {
+          "type": "then",
+          "text": "从业务视角看，一次标准任务应经历以下过程："
+        }
+      ],
+      "assertions": [
+        "从业务视角看，一次标准任务应经历以下过程："
+      ],
+      "source_chunks": [
+        "chunk_019",
+        "chunk_006",
+        "chunk_008",
+        "chunk_017",
+        "chunk_023"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "`POST /api/tasks/{task_id}/parse`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "steps": [
+        {
+          "type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        },
+        {
+          "type": "when",
+          "text": "`POST /api/tasks/{task_id}/parse`"
+        },
+        {
+          "type": "then",
+          "text": "任务结束后可归档，归档后不应继续作为活跃任务参与主流程"
+        }
+      ],
+      "assertions": [
+        "任务结束后可归档，归档后不应继续作为活跃任务参与主流程"
+      ],
+      "source_chunks": [
+        "chunk_019",
+        "chunk_006",
+        "chunk_008",
+        "chunk_017",
+        "chunk_023"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "steps": [
+        {
+          "type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}/parsed-requirement`"
+        },
+        {
+          "type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+        }
+      ],
+      "assertions": [
+        "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+      ],
+      "source_chunks": [
+        "chunk_019",
+        "chunk_006",
+        "chunk_008",
+        "chunk_017",
+        "chunk_023"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "steps": [
+        {
+          "type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}/retrieved-context`"
+        },
+        {
+          "type": "then",
+          "text": "归档动作生效后，任务应从活跃视图中消失"
+        }
+      ],
+      "assertions": [
+        "归档动作生效后，任务应从活跃视图中消失"
+      ],
+      "source_chunks": [
+        "chunk_019",
+        "chunk_006",
+        "chunk_008",
+        "chunk_017",
+        "chunk_023"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "steps": [
+        {
+          "type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        },
+        {
+          "type": "when",
+          "text": "`POST /api/tasks/{task_id}/scenarios/generate`"
+        },
+        {
+          "type": "then",
+          "text": "返回结构需保持统一 envelope，便于前端统一处理"
+        }
+      ],
+      "assertions": [
+        "返回结构需保持统一 envelope，便于前端统一处理"
+      ],
+      "source_chunks": [
+        "chunk_019",
+        "chunk_006",
+        "chunk_008",
+        "chunk_017",
+        "chunk_023"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "`GET /api/tasks/{task_id}/scenarios`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "steps": [
+        {
+          "type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}/scenarios`"
+        },
+        {
+          "type": "then",
+          "text": "少量场景执行失败但不阻断整体链路"
+        }
+      ],
+      "assertions": [
+        "少量场景执行失败但不阻断整体链路"
+      ],
+      "source_chunks": [
+        "chunk_019",
+        "chunk_006",
+        "chunk_008",
+        "chunk_017",
+        "chunk_023"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "`GET /api/tasks/{task_id}/dsl`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "steps": [
+        {
+          "type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}/dsl`"
+        },
+        {
+          "type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+        }
+      ],
+      "assertions": [
+        "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+      ],
+      "source_chunks": [
+        "chunk_019",
+        "chunk_006",
+        "chunk_008",
+        "chunk_017",
+        "chunk_023"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ]
+    }
+  ],
+  "test_case_dsl": {
+    "dsl_version": "0.2.0",
+    "task_id": "platform_e2e_regression_fb9cf7d3_20260402154635",
+    "task_name": "platform_e2e_regression_fb9cf7d3",
+    "feature_name": "platform_e2e_regression_fb9cf7d3",
+    "execution_mode": "api",
+    "scenarios": [
+      {
+        "scenario_id": "scenario_001",
+        "name": "`POST /api/tasks`",
+        "goal": "Platform 主链路联调需求说明（企业版草案）",
+        "priority": "P2",
+        "preconditions": [
+          "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        ],
+        "source_chunks": [
+          "chunk_019",
+          "chunk_006",
+          "chunk_008",
+          "chunk_017",
+          "chunk_023"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "step_type": "given",
+            "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "step_type": "when",
+            "text": "`POST /api/tasks`",
+            "request": {
+              "method": "POST",
+              "url": "/api/tasks",
+              "json": {
+                "task_name": "demo_task_name",
+                "source_type": "text",
+                "requirement_text": "demo requirement text",
+                "target_system": "http://127.0.0.1:8001",
+                "environment": "test"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 201
+              },
+              {
+                "source": "json.data.task_id",
+                "op": "exists"
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [
+              "resource_id",
+              "task_id"
+            ],
+            "save_context": {
+              "task_id": "json.data.task_id",
+              "resource_id": "json.data.task_id"
+            }
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "step_type": "then",
+            "text": "任务归档后的可见性与一致性检查",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "任务归档后的可见性与一致性检查"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_002",
+        "name": "`GET /api/tasks/{task_id}`",
+        "goal": "Platform 主链路联调需求说明（企业版草案）",
+        "priority": "P2",
+        "preconditions": [
+          "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        ],
+        "source_chunks": [
+          "chunk_019",
+          "chunk_006",
+          "chunk_008",
+          "chunk_017",
+          "chunk_023"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_002_step_01",
+            "step_type": "given",
+            "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "step_type": "then",
+            "text": "从业务视角看，一次标准任务应经历以下过程：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "从业务视角看，一次标准任务应经历以下过程："
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_003",
+        "name": "`POST /api/tasks/{task_id}/parse`",
+        "goal": "Platform 主链路联调需求说明（企业版草案）",
+        "priority": "P2",
+        "preconditions": [
+          "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        ],
+        "source_chunks": [
+          "chunk_019",
+          "chunk_006",
+          "chunk_008",
+          "chunk_017",
+          "chunk_023"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_003_step_01",
+            "step_type": "given",
+            "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "step_type": "when",
+            "text": "`POST /api/tasks/{task_id}/parse`",
+            "request": {
+              "method": "POST",
+              "url": "/api/tasks/{{task_id}}/parse",
+              "json": {
+                "use_llm": false,
+                "rag_enabled": true,
+                "retrieval_top_k": 5,
+                "rerank_enabled": false
+              },
+              "timeout": 180
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "step_type": "then",
+            "text": "任务结束后可归档，归档后不应继续作为活跃任务参与主流程",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "任务结束后可归档，归档后不应继续作为活跃任务参与主流程"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_004",
+        "name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+        "goal": "Platform 主链路联调需求说明（企业版草案）",
+        "priority": "P2",
+        "preconditions": [
+          "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        ],
+        "source_chunks": [
+          "chunk_019",
+          "chunk_006",
+          "chunk_008",
+          "chunk_017",
+          "chunk_023"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_004_step_01",
+            "step_type": "given",
+            "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}/parsed-requirement`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}/parsed-requirement"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "step_type": "then",
+            "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_005",
+        "name": "`GET /api/tasks/{task_id}/retrieved-context`",
+        "goal": "Platform 主链路联调需求说明（企业版草案）",
+        "priority": "P2",
+        "preconditions": [
+          "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        ],
+        "source_chunks": [
+          "chunk_019",
+          "chunk_006",
+          "chunk_008",
+          "chunk_017",
+          "chunk_023"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_005_step_01",
+            "step_type": "given",
+            "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}/retrieved-context`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}/retrieved-context"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "step_type": "then",
+            "text": "归档动作生效后，任务应从活跃视图中消失",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "归档动作生效后，任务应从活跃视图中消失"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_006",
+        "name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+        "goal": "Platform 主链路联调需求说明（企业版草案）",
+        "priority": "P2",
+        "preconditions": [
+          "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        ],
+        "source_chunks": [
+          "chunk_019",
+          "chunk_006",
+          "chunk_008",
+          "chunk_017",
+          "chunk_023"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_006_step_01",
+            "step_type": "given",
+            "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_006_step_02",
+            "step_type": "when",
+            "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+            "request": {
+              "method": "POST",
+              "url": "/api/tasks/{{task_id}}/scenarios/generate"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 201
+              },
+              {
+                "source": "json.id",
+                "op": "exists"
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [
+              "resource_id"
+            ],
+            "save_context": {
+              "resource_id": "json.id"
+            }
+          },
+          {
+            "step_id": "scenario_006_step_03",
+            "step_type": "then",
+            "text": "返回结构需保持统一 envelope，便于前端统一处理",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "返回结构需保持统一 envelope，便于前端统一处理"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_007",
+        "name": "`GET /api/tasks/{task_id}/scenarios`",
+        "goal": "Platform 主链路联调需求说明（企业版草案）",
+        "priority": "P2",
+        "preconditions": [
+          "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        ],
+        "source_chunks": [
+          "chunk_019",
+          "chunk_006",
+          "chunk_008",
+          "chunk_017",
+          "chunk_023"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_007_step_01",
+            "step_type": "given",
+            "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_007_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}/scenarios`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}/scenarios"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_007_step_03",
+            "step_type": "then",
+            "text": "少量场景执行失败但不阻断整体链路",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "少量场景执行失败但不阻断整体链路"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_008",
+        "name": "`GET /api/tasks/{task_id}/dsl`",
+        "goal": "Platform 主链路联调需求说明（企业版草案）",
+        "priority": "P2",
+        "preconditions": [
+          "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+        ],
+        "source_chunks": [
+          "chunk_019",
+          "chunk_006",
+          "chunk_008",
+          "chunk_017",
+          "chunk_023"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_008_step_01",
+            "step_type": "given",
+            "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_008_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}/dsl`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}/dsl"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          },
+          {
+            "step_id": "scenario_008_step_03",
+            "step_type": "then",
+            "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {}
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "source_type": "text",
+      "language": "zh-CN",
+      "case_generation": {
+        "api_scenario_count": 8,
+        "scenario_count": 8,
+        "parsed_entities": [
+          "platform",
+          "主链路联调需求说明",
+          "企业版草案",
+          "背景与目的",
+          "当前平台已进入联调阶段",
+          "研发",
+          "测试与前端需要基于统一口径确认以下事项",
+          "平台主流程是否可在同一任务生命周期内闭环完成",
+          "关键中间产物是否可追踪",
+          "可复核"
+        ]
+      }
+    }
+  },
+  "validation_report": {
+    "feature_name": "platform_e2e_regression_fb9cf7d3",
+    "passed": true,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "scenario_count": 8,
+      "average_step_count": 3.12,
+      "step_count": 25,
+      "parse_metrics": {
+        "actor_count": 1,
+        "entity_count": 10,
+        "action_count": 29,
+        "expected_count": 11,
+        "ambiguity_count": 0
+      },
+      "parse_mode": "rules"
+    }
+  },
+  "analysis_report": {
+    "task_id": "platform_e2e_regression_fb9cf7d3_20260402154635",
+    "task_name": "platform_e2e_regression_fb9cf7d3",
+    "quality_status": "passed",
+    "report_version": "1.1.0",
+    "generated_at": "2026-04-02T15:47:12.199670+00:00",
+    "summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "total_steps": 24,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "validation_passed": true,
+      "warning_count": 0,
+      "error_count": 0,
+      "execution_status": "not_started",
+      "assertion_total": 18,
+      "assertion_passed": 18,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "enhancement": {
+        "parse_mode": "rules",
+        "llm_attempted": true,
+        "llm_used": false,
+        "rag_used": true,
+        "rag_fallback_reason": "",
+        "fallback_reason": "llm_timeout",
+        "llm_error_type": "ModelGatewayTimeoutError",
+        "llm_provider_profile": "tencent_hunyuan_openai_compat",
+        "model_profile": "default",
+        "retrieval_mode": "vector+keyword",
+        "retrieval_top_k": 5,
+        "rerank_enabled": false,
+        "retrieval_metrics": {
+          "returned_count": 5,
+          "requested_top_k": 5,
+          "coverage_ratio": 1.0,
+          "duplicate_ratio": 0.0,
+          "score_avg": 8.553,
+          "rerank_applied": false,
+          "embedded_chunk_count": 23,
+          "embedding_coverage": 1.0,
+          "embedding_error": "",
+          "embedding_error_detail": ""
+        },
+        "retrieval_scoring": {
+          "lexical_weight": 4.0,
+          "vector_weight": 6.0,
+          "rerank_vector_weight": 7.0,
+          "rerank_lexical_weight": 2.0,
+          "rerank_title_boost": 0.2,
+          "rerank_content_boost": 0.2
+        },
+        "performance": {
+          "elapsed_ms": 36810.44,
+          "target_ms": 20000.0,
+          "within_target": false,
+          "slow_reason": "network_or_model_latency"
+        },
+        "document_char_count": 2960,
+        "cleaned_char_count": 2958,
+        "chunk_count": 23,
+        "embedding_batch_size": 32,
+        "estimated_embedding_calls": 1,
+        "processing_tier": "realtime",
+        "large_document_warning": ""
+      }
+    },
+    "dashboard": {
+      "task_id": "platform_e2e_regression_fb9cf7d3_20260402154635",
+      "task_name": "platform_e2e_regression_fb9cf7d3",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "summary": {
+        "scenario_count": 8,
+        "executed_scenarios": 0,
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0,
+        "assertion_total": 18,
+        "assertion_pass_rate": 100.0,
+        "context_defined_keys": 2,
+        "context_used_keys": 0,
+        "context_extracted_keys": 0,
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0
+      },
+      "cards": [
+        {
+          "key": "scenarios",
+          "label": "Scenarios",
+          "value": 8
+        },
+        {
+          "key": "steps",
+          "label": "Total Steps",
+          "value": 24
+        },
+        {
+          "key": "passed_steps",
+          "label": "Passed",
+          "value": 0
+        },
+        {
+          "key": "failed_steps",
+          "label": "Failed",
+          "value": 0
+        },
+        {
+          "key": "success_rate",
+          "label": "Success Rate",
+          "value": 0.0
+        },
+        {
+          "key": "avg_elapsed_ms",
+          "label": "Avg Elapsed(ms)",
+          "value": 0.0
+        },
+        {
+          "key": "max_elapsed_ms",
+          "label": "Max Elapsed(ms)",
+          "value": 0.0
+        }
+      ],
+      "totals": {
+        "scenarios": 8,
+        "steps": 24,
+        "assertions": 18,
+        "requests": 0
+      },
+      "status_breakdown": {
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "passed_steps": 0,
+        "failed_steps": 0
+      },
+      "assertion_summary": {
+        "total": 18,
+        "passed": 18,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "performance_summary": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "is_load_test": false
+      },
+      "context_summary": {
+        "defined_keys": 2,
+        "defined_key_names": [
+          "resource_id",
+          "task_id"
+        ],
+        "used_keys": 0,
+        "used_key_names": [],
+        "extracted_keys": 0,
+        "extracted_key_names": [],
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": []
+      },
+      "top_failure_reason": null,
+      "failure_reason_breakdown": [],
+      "headline": "0/24 steps passed",
+      "summary_text": "任务 platform_e2e_regression_fb9cf7d3 当前状态为 passed，已生成 8 个场景、24 个步骤，尚未开始执行。"
+    },
+    "dashboard_summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "execution_status": "not_started",
+      "total_steps": 24,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "assertion_total": 18,
+      "assertion_passed": 18,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "task_summary": {
+      "task_name": "platform_e2e_regression_fb9cf7d3",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "headline": "任务 platform_e2e_regression_fb9cf7d3 当前状态为 passed，已生成 8 个场景、24 个步骤，尚未开始执行。",
+      "success_rate": 0.0,
+      "failed_steps": 0,
+      "total_requests": 0,
+      "throughput": 0.0,
+      "top_failure_reason": null,
+      "next_action": "执行任务以生成运行报告"
+    },
+    "execution_overview": {
+      "executor": null,
+      "status": "not_started",
+      "scenario_count": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "log_count": 0,
+      "has_failures": false,
+      "top_failure_category": null
+    },
+    "performance_stats": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "failed_steps": [],
+    "failure_reasons": [],
+    "assertion_stats": {
+      "total": 18,
+      "passed": 18,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "validation_errors": 0,
+      "validation_warnings": 0
+    },
+    "context_stats": {
+      "defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "defined_key_count": 2,
+      "used_keys": [],
+      "used_key_count": 0,
+      "extracted_keys": [],
+      "extracted_key_count": 0,
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": [],
+      "save_rules": {
+        "task_id": "json.data.task_id",
+        "resource_id": "json.id"
+      }
+    },
+    "task_summary_text": "任务 platform_e2e_regression_fb9cf7d3 当前状态为 passed，已生成 8 个场景、24 个步骤，尚未开始执行。",
+    "findings": [],
+    "chart_data": {
+      "validation": {
+        "passed": 1,
+        "failed": 0,
+        "warnings": 0,
+        "errors": 0
+      },
+      "execution": {
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      },
+      "assertions": {
+        "passed": 18,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "context": {
+        "defined": 2,
+        "used": 0,
+        "extracted": 0
+      },
+      "failure_reasons": {}
+    },
+    "report_sections": [
+      {
+        "key": "overview",
+        "title": "执行概览",
+        "items": {
+          "scenario_count": 8,
+          "total_steps": 24,
+          "passed_steps": 0,
+          "failed_steps": 0,
+          "success_rate": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      },
+      {
+        "key": "failures",
+        "title": "失败分析",
+        "items": {
+          "failure_reason_count": 0,
+          "failure_reasons": []
+        }
+      },
+      {
+        "key": "assertions",
+        "title": "断言统计",
+        "items": {
+          "total": 18,
+          "passed": 18,
+          "failed": 0,
+          "pass_rate": 100.0,
+          "validation_errors": 0,
+          "validation_warnings": 0
+        }
+      },
+      {
+        "key": "context",
+        "title": "上下文提取",
+        "items": {
+          "defined_keys": [
+            "resource_id",
+            "task_id"
+          ],
+          "defined_key_count": 2,
+          "used_keys": [],
+          "used_key_count": 0,
+          "extracted_keys": [],
+          "extracted_key_count": 0,
+          "unused_defined_keys": [
+            "resource_id",
+            "task_id"
+          ],
+          "undefined_used_keys": [],
+          "save_rules": {
+            "task_id": "json.data.task_id",
+            "resource_id": "json.id"
+          }
+        }
+      },
+      {
+        "key": "performance",
+        "title": "性能摘要",
+        "items": {
+          "total_requests": 0,
+          "success_count": 0,
+          "failure_count": 0,
+          "throughput": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      }
+    ]
+  },
+  "parse_metadata": {
+    "parse_mode": "rules",
+    "llm_attempted": true,
+    "llm_used": false,
+    "rag_used": true,
+    "rag_fallback_reason": "",
+    "fallback_reason": "llm_timeout",
+    "llm_error_type": "ModelGatewayTimeoutError",
+    "llm_provider_profile": "tencent_hunyuan_openai_compat",
+    "model_profile": "default",
+    "retrieval_mode": "vector+keyword",
+    "retrieval_top_k": 5,
+    "rerank_enabled": false,
+    "retrieval_metrics": {
+      "returned_count": 5,
+      "requested_top_k": 5,
+      "coverage_ratio": 1.0,
+      "duplicate_ratio": 0.0,
+      "score_avg": 8.553,
+      "rerank_applied": false,
+      "embedded_chunk_count": 23,
+      "embedding_coverage": 1.0,
+      "embedding_error": "",
+      "embedding_error_detail": ""
+    },
+    "retrieval_scoring": {
+      "lexical_weight": 4.0,
+      "vector_weight": 6.0,
+      "rerank_vector_weight": 7.0,
+      "rerank_lexical_weight": 2.0,
+      "rerank_title_boost": 0.2,
+      "rerank_content_boost": 0.2
+    },
+    "performance": {
+      "elapsed_ms": 36810.44,
+      "target_ms": 20000.0,
+      "within_target": false,
+      "slow_reason": "network_or_model_latency"
+    },
+    "document_char_count": 2960,
+    "cleaned_char_count": 2958,
+    "chunk_count": 23,
+    "embedding_batch_size": 32,
+    "estimated_embedding_calls": 1,
+    "processing_tier": "realtime",
+    "large_document_warning": ""
+  }
+}

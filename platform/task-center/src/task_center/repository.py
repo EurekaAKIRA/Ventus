@@ -26,12 +26,15 @@ class JsonRepository:
             return {}
         raw = self.path.read_text(encoding="utf-8").strip()
         if not raw:
+            # self-heal empty files to avoid repeated recovery warnings
+            self.save({})
             return {}
         try:
             return json.loads(raw)
         except JSONDecodeError:
             corrupt_path = self.path.with_suffix(f"{self.path.suffix}.corrupt.{_utc_suffix()}")
             self.path.replace(corrupt_path)
+            self.save({})
             return {}
 
     def save(self, payload: dict[str, Any]) -> None:

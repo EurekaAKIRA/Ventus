@@ -1,0 +1,431 @@
+{
+  "task_id": "demo_task_name_20260401191822",
+  "task_name": "demo_task_name",
+  "quality_status": "failed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-01T19:18:41.508433+00:00",
+  "summary": {
+    "scenario_count": 1,
+    "executed_scenarios": 1,
+    "passed_scenarios": 0,
+    "failed_scenarios": 1,
+    "total_steps": 3,
+    "executed_steps": 3,
+    "passed_steps": 2,
+    "failed_steps": 1,
+    "success_rate": 66.67,
+    "failure_rate": 33.33,
+    "avg_elapsed_ms": 18.84,
+    "max_elapsed_ms": 18.84,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "failed",
+    "assertion_total": 2,
+    "assertion_passed": 1,
+    "assertion_failed": 1,
+    "assertion_pass_rate": 50.0,
+    "context_defined_keys": 0,
+    "context_used_keys": 0,
+    "context_extracted_keys": 1,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "dashboard": {
+    "task_id": "demo_task_name_20260401191822",
+    "task_name": "demo_task_name",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "summary": {
+      "scenario_count": 1,
+      "executed_scenarios": 1,
+      "passed_scenarios": 0,
+      "failed_scenarios": 1,
+      "success_rate": 66.67,
+      "failure_rate": 33.33,
+      "passed_steps": 2,
+      "failed_steps": 1,
+      "avg_elapsed_ms": 18.84,
+      "max_elapsed_ms": 18.84,
+      "assertion_total": 2,
+      "assertion_pass_rate": 50.0,
+      "context_defined_keys": 0,
+      "context_used_keys": 0,
+      "context_extracted_keys": 1,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 1
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 3
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 2
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 1
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 66.67
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 18.84
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 18.84
+      }
+    ],
+    "totals": {
+      "scenarios": 1,
+      "steps": 3,
+      "assertions": 2,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 0,
+      "failed_scenarios": 1,
+      "passed_steps": 2,
+      "failed_steps": 1
+    },
+    "assertion_summary": {
+      "total": 2,
+      "passed": 1,
+      "failed": 1,
+      "pass_rate": 50.0
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 0,
+      "defined_key_names": [],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 1,
+      "extracted_key_names": [
+        "last_request"
+      ],
+      "unused_defined_keys": [],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "Execute the core business action",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        }
+      ]
+    },
+    "failure_reason_breakdown": [
+      {
+        "category": "assertion_failed",
+        "label": "Assertion Failed",
+        "count": 1,
+        "examples": [
+          {
+            "step_id": "scenario_001_step_02",
+            "scenario_name": "Execute the core business action",
+            "message": "Assertion failed: status_code eq 200, actual=404"
+          }
+        ]
+      }
+    ],
+    "headline": "2/3 steps passed",
+    "summary_text": "任务 demo_task_name 当前状态为 failed，共分析 1 个场景，执行 3 个步骤；其中通过 2 个、失败 1 个，成功率 66.67%，平均耗时 18.84ms，最大耗时 18.84ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 1,
+    "executed_scenarios": 1,
+    "passed_scenarios": 0,
+    "failed_scenarios": 1,
+    "execution_status": "failed",
+    "total_steps": 3,
+    "executed_steps": 3,
+    "passed_steps": 2,
+    "failed_steps": 1,
+    "success_rate": 66.67,
+    "failure_rate": 33.33,
+    "avg_elapsed_ms": 18.84,
+    "max_elapsed_ms": 18.84,
+    "assertion_total": 2,
+    "assertion_passed": 1,
+    "assertion_failed": 1,
+    "assertion_pass_rate": 50.0,
+    "context_defined_keys": 0,
+    "context_used_keys": 0,
+    "context_extracted_keys": 1,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "demo_task_name",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "headline": "任务 demo_task_name 当前状态为 failed，共分析 1 个场景，执行 3 个步骤；其中通过 2 个、失败 1 个，成功率 66.67%，平均耗时 18.84ms，最大耗时 18.84ms。",
+    "success_rate": 66.67,
+    "failed_steps": 1,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "Execute the core business action",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        }
+      ]
+    },
+    "next_action": "优先处理失败步骤与失败原因分类"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "failed",
+    "scenario_count": 1,
+    "passed_scenarios": 0,
+    "failed_scenarios": 1,
+    "log_count": 9,
+    "has_failures": true,
+    "top_failure_category": "assertion_failed"
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [
+    {
+      "scenario_id": "scenario_001",
+      "scenario_name": "Execute the core business action",
+      "step_id": "scenario_001_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "Execute the core business action",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 18.84,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/resource",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Wed, 01 Apr 2026 19:18:40 GMT",
+          "server": "uvicorn",
+          "content-length": "22",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "detail": "Not Found"
+        },
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "elapsed_ms": 18.84,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/resource",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 18.84,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"detail\":\"Not Found\"}"
+      }
+    }
+  ],
+  "failure_reasons": [
+    {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "Execute the core business action",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        }
+      ]
+    }
+  ],
+  "assertion_stats": {
+    "total": 2,
+    "passed": 1,
+    "failed": 1,
+    "pass_rate": 50.0,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "context_stats": {
+    "defined_keys": [],
+    "defined_key_count": 0,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [
+      "last_request"
+    ],
+    "extracted_key_count": 1,
+    "unused_defined_keys": [],
+    "undefined_used_keys": [],
+    "save_rules": {}
+  },
+  "task_summary_text": "任务 demo_task_name 当前状态为 failed，共分析 1 个场景，执行 3 个步骤；其中通过 2 个、失败 1 个，成功率 66.67%，平均耗时 18.84ms，最大耗时 18.84ms。",
+  "findings": [
+    "Execute the core business action / scenario_001_step_02: Assertion failed: status_code eq 200, actual=404",
+    "Failure categories: assertion_failed=1"
+  ],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 2,
+      "failed_steps": 1,
+      "success_rate": 66.67,
+      "failure_rate": 33.33,
+      "avg_elapsed_ms": 18.84,
+      "max_elapsed_ms": 18.84
+    },
+    "assertions": {
+      "passed": 1,
+      "failed": 1,
+      "pass_rate": 50.0
+    },
+    "context": {
+      "defined": 0,
+      "used": 0,
+      "extracted": 1
+    },
+    "failure_reasons": {
+      "assertion_failed": 1
+    }
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 1,
+        "total_steps": 3,
+        "passed_steps": 2,
+        "failed_steps": 1,
+        "success_rate": 66.67,
+        "avg_elapsed_ms": 18.84,
+        "max_elapsed_ms": 18.84
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 1,
+        "failure_reasons": [
+          {
+            "category": "assertion_failed",
+            "label": "Assertion Failed",
+            "count": 1,
+            "examples": [
+              {
+                "step_id": "scenario_001_step_02",
+                "scenario_name": "Execute the core business action",
+                "message": "Assertion failed: status_code eq 200, actual=404"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "pass_rate": 50.0,
+        "validation_errors": 0,
+        "validation_warnings": 0
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [],
+        "defined_key_count": 0,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [
+          "last_request"
+        ],
+        "extracted_key_count": 1,
+        "unused_defined_keys": [],
+        "undefined_used_keys": [],
+        "save_rules": {}
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 18.84,
+        "max_elapsed_ms": 18.84
+      }
+    }
+  ]
+}

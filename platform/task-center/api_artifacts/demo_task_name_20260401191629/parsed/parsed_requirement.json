@@ -1,0 +1,24 @@
+{
+  "objective": "demo_requirement_text",
+  "actors": [
+    "user"
+  ],
+  "entities": [
+    "demo_requirement_text"
+  ],
+  "preconditions": [],
+  "actions": [
+    "Execute the core business action"
+  ],
+  "expected_results": [
+    "System returns an observable result aligned with the requirement"
+  ],
+  "constraints": [
+    "demo_requirement_text"
+  ],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_001"
+  ],
+  "api_endpoints": []
+}

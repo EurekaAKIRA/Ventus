@@ -1,0 +1,419 @@
+{
+  "task_id": "ui_smoke_1775072190779_20260401193631",
+  "task_name": "ui_smoke_1775072190779",
+  "quality_status": "failed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-01T19:36:42.302434+00:00",
+  "summary": {
+    "scenario_count": 1,
+    "executed_scenarios": 1,
+    "passed_scenarios": 0,
+    "failed_scenarios": 1,
+    "total_steps": 3,
+    "executed_steps": 3,
+    "passed_steps": 2,
+    "failed_steps": 1,
+    "success_rate": 66.67,
+    "failure_rate": 33.33,
+    "avg_elapsed_ms": 0.0,
+    "max_elapsed_ms": 0.0,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "failed",
+    "assertion_total": 3,
+    "assertion_passed": 3,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 1,
+    "context_used_keys": 0,
+    "context_extracted_keys": 0,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "dashboard": {
+    "task_id": "ui_smoke_1775072190779_20260401193631",
+    "task_name": "ui_smoke_1775072190779",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "summary": {
+      "scenario_count": 1,
+      "executed_scenarios": 1,
+      "passed_scenarios": 0,
+      "failed_scenarios": 1,
+      "success_rate": 66.67,
+      "failure_rate": 33.33,
+      "passed_steps": 2,
+      "failed_steps": 1,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "assertion_total": 3,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 1,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 1
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 3
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 2
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 1
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 66.67
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 0.0
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 0.0
+      }
+    ],
+    "totals": {
+      "scenarios": 1,
+      "steps": 3,
+      "assertions": 3,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 0,
+      "failed_scenarios": 1,
+      "passed_steps": 2,
+      "failed_steps": 1
+    },
+    "assertion_summary": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 1,
+      "defined_key_names": [
+        "token"
+      ],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 0,
+      "extracted_key_names": [],
+      "unused_defined_keys": [
+        "token"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": {
+      "category": "execution_error",
+      "label": "Execution Error",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "用户登录后进入个人中心并看到昵称",
+          "message": "[WinError 10054] 远程主机强迫关闭了一个现有的连接。"
+        }
+      ]
+    },
+    "failure_reason_breakdown": [
+      {
+        "category": "execution_error",
+        "label": "Execution Error",
+        "count": 1,
+        "examples": [
+          {
+            "step_id": "scenario_001_step_02",
+            "scenario_name": "用户登录后进入个人中心并看到昵称",
+            "message": "[WinError 10054] 远程主机强迫关闭了一个现有的连接。"
+          }
+        ]
+      }
+    ],
+    "headline": "2/3 steps passed",
+    "summary_text": "任务 ui_smoke_1775072190779 当前状态为 failed，共分析 1 个场景，执行 3 个步骤；其中通过 2 个、失败 1 个，成功率 66.67%，平均耗时 0.0ms，最大耗时 0.0ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 1,
+    "executed_scenarios": 1,
+    "passed_scenarios": 0,
+    "failed_scenarios": 1,
+    "execution_status": "failed",
+    "total_steps": 3,
+    "executed_steps": 3,
+    "passed_steps": 2,
+    "failed_steps": 1,
+    "success_rate": 66.67,
+    "failure_rate": 33.33,
+    "avg_elapsed_ms": 0.0,
+    "max_elapsed_ms": 0.0,
+    "assertion_total": 3,
+    "assertion_passed": 3,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 1,
+    "context_used_keys": 0,
+    "context_extracted_keys": 0,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "ui_smoke_1775072190779",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "headline": "任务 ui_smoke_1775072190779 当前状态为 failed，共分析 1 个场景，执行 3 个步骤；其中通过 2 个、失败 1 个，成功率 66.67%，平均耗时 0.0ms，最大耗时 0.0ms。",
+    "success_rate": 66.67,
+    "failed_steps": 1,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": {
+      "category": "execution_error",
+      "label": "Execution Error",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "用户登录后进入个人中心并看到昵称",
+          "message": "[WinError 10054] 远程主机强迫关闭了一个现有的连接。"
+        }
+      ]
+    },
+    "next_action": "优先处理失败步骤与失败原因分类"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "failed",
+    "scenario_count": 1,
+    "passed_scenarios": 0,
+    "failed_scenarios": 1,
+    "log_count": 7,
+    "has_failures": true,
+    "top_failure_category": "execution_error"
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [
+    {
+      "scenario_id": "scenario_001",
+      "scenario_name": "用户登录后进入个人中心并看到昵称",
+      "step_id": "scenario_001_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "用户登录后进入个人中心并看到昵称",
+      "status": "failed",
+      "message": "[WinError 10054] 远程主机强迫关闭了一个现有的连接。",
+      "category": "execution_error",
+      "reason_detail": "[WinError 10054] 远程主机强迫关闭了一个现有的连接。",
+      "elapsed_ms": null,
+      "request": {},
+      "response": {},
+      "request_summary": {
+        "method": null,
+        "url": null,
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": null,
+        "elapsed_ms": null,
+        "has_json": false,
+        "header_count": 0,
+        "body_preview": ""
+      }
+    }
+  ],
+  "failure_reasons": [
+    {
+      "category": "execution_error",
+      "label": "Execution Error",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "用户登录后进入个人中心并看到昵称",
+          "message": "[WinError 10054] 远程主机强迫关闭了一个现有的连接。"
+        }
+      ]
+    }
+  ],
+  "assertion_stats": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "pass_rate": 100.0,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "context_stats": {
+    "defined_keys": [
+      "token"
+    ],
+    "defined_key_count": 1,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [],
+    "extracted_key_count": 0,
+    "unused_defined_keys": [
+      "token"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "token": "json.token"
+    }
+  },
+  "task_summary_text": "任务 ui_smoke_1775072190779 当前状态为 failed，共分析 1 个场景，执行 3 个步骤；其中通过 2 个、失败 1 个，成功率 66.67%，平均耗时 0.0ms，最大耗时 0.0ms。",
+  "findings": [
+    "用户登录后进入个人中心并看到昵称 / scenario_001_step_02: [WinError 10054] 远程主机强迫关闭了一个现有的连接。",
+    "Failure categories: execution_error=1"
+  ],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 2,
+      "failed_steps": 1,
+      "success_rate": 66.67,
+      "failure_rate": 33.33,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0
+    },
+    "assertions": {
+      "passed": 3,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "context": {
+      "defined": 1,
+      "used": 0,
+      "extracted": 0
+    },
+    "failure_reasons": {
+      "execution_error": 1
+    }
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 1,
+        "total_steps": 3,
+        "passed_steps": 2,
+        "failed_steps": 1,
+        "success_rate": 66.67,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 1,
+        "failure_reasons": [
+          {
+            "category": "execution_error",
+            "label": "Execution Error",
+            "count": 1,
+            "examples": [
+              {
+                "step_id": "scenario_001_step_02",
+                "scenario_name": "用户登录后进入个人中心并看到昵称",
+                "message": "[WinError 10054] 远程主机强迫关闭了一个现有的连接。"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pass_rate": 100.0,
+        "validation_errors": 0,
+        "validation_warnings": 0
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "token"
+        ],
+        "defined_key_count": 1,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [],
+        "extracted_key_count": 0,
+        "unused_defined_keys": [
+          "token"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "token": "json.token"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      }
+    }
+  ]
+}

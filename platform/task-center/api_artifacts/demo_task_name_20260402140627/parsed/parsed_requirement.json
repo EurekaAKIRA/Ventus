@@ -1,0 +1,26 @@
+{
+  "objective": "demo requirement text",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "demo",
+    "requirement",
+    "text"
+  ],
+  "preconditions": [],
+  "actions": [
+    "执行核心业务动作"
+  ],
+  "expected_results": [
+    "系统返回符合需求的可观察结果"
+  ],
+  "constraints": [
+    "demo requirement text"
+  ],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_001"
+  ],
+  "api_endpoints": []
+}

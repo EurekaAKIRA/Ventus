@@ -1,0 +1,43 @@
+{
+  "objective": "demo",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "demo",
+    "post",
+    "api",
+    "tasks",
+    "task_id"
+  ],
+  "preconditions": [],
+  "actions": [
+    "执行核心业务动作"
+  ],
+  "expected_results": [
+    "系统返回符合需求的可观察结果"
+  ],
+  "constraints": [],
+  "ambiguities": [
+    "需求文本较短，建议补充业务目标、接口路径和断言细节"
+  ],
+  "source_chunks": [
+    "chunk_001",
+    "contract_execute",
+    "contract_task_list",
+    "contract_execution_explanations",
+    "contract_preflight"
+  ],
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/tasks/{task_id}/execute",
+      "description": "触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks",
+      "description": "支持分页与筛选，用于控制台列表页展示历史任务。"
+    }
+  ]
+}

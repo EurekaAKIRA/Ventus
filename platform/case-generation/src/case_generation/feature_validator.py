@@ -13,12 +13,12 @@ def validate_feature_text(feature_text: str) -> dict:
     warnings: list[str] = []
     lines = [line.rstrip() for line in feature_text.splitlines() if line.strip()]
 
-    if "Feature:" not in feature_text:
-        errors.append("缺少 Feature 头部")
-    if "Scenario:" not in feature_text:
-        errors.append("缺少 Scenario 定义")
-    if "Then " not in feature_text:
-        errors.append("缺少 Then 断言步骤")
+    if ("功能:" not in feature_text) and ("Feature:" not in feature_text):
+        errors.append("缺少 功能（Feature）头部")
+    if ("场景:" not in feature_text) and ("Scenario:" not in feature_text):
+        errors.append("缺少 场景（Scenario）定义")
+    if ("那么 " not in feature_text) and ("Then " not in feature_text):
+        errors.append("缺少 那么（Then）断言步骤")
 
     scenario_count = 0
     step_count = 0
@@ -26,27 +26,27 @@ def validate_feature_text(feature_text: str) -> dict:
     has_then_in_current = False
     for line in lines:
         stripped = line.strip()
-        if stripped.startswith("Scenario:"):
+        if stripped.startswith(("场景:", "Scenario:")):
             if scenario_count > 0 and not has_then_in_current:
-                errors.append("存在缺少 Then 的场景")
+                errors.append("存在缺少 那么（Then） 的场景")
             scenario_count += 1
             scenario_step_count = 0
             has_then_in_current = False
             continue
-        if stripped.startswith(("Given ", "When ", "Then ", "And ")):
+        if stripped.startswith(("假如 ", "当 ", "那么 ", "并且 ", "Given ", "When ", "Then ", "And ")):
             step_count += 1
             scenario_step_count += 1
             if len(stripped) > 80:
                 warnings.append(f"步骤过长，建议拆分：{stripped[:40]}...")
-            if any(word in stripped for word in VAGUE_WORDS) and stripped.startswith(("Then ", "And ")):
+            if any(word in stripped for word in VAGUE_WORDS) and stripped.startswith(("那么 ", "并且 ", "Then ", "And ")):
                 warnings.append(f"断言表达偏抽象，建议改为可观察结果：{stripped}")
-            if stripped.startswith("Then "):
+            if stripped.startswith(("那么 ", "Then ")):
                 has_then_in_current = True
             if scenario_step_count > 8:
                 warnings.append("单个场景步骤较多，建议进一步拆分")
 
     if scenario_count > 0 and not has_then_in_current:
-        errors.append("最后一个场景缺少 Then 断言")
+        errors.append("最后一个场景缺少 那么（Then） 断言")
 
     report = ValidationReport(
         feature_name=_extract_feature_name(feature_text),
@@ -65,6 +65,8 @@ def validate_feature_text(feature_text: str) -> dict:
 def _extract_feature_name(feature_text: str) -> str:
     """Extract feature name from gherkin text."""
     for line in feature_text.splitlines():
+        if line.startswith("功能:"):
+            return line.replace("功能:", "", 1).strip()
         if line.startswith("Feature:"):
             return line.replace("Feature:", "", 1).strip()
     return "unknown_feature"

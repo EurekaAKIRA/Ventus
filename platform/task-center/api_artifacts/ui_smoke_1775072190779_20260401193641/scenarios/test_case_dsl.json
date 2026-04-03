@@ -1,0 +1,90 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "ui_smoke_1775072190779_20260401193631",
+  "task_name": "ui_smoke_1775072190779",
+  "feature_name": "ui_smoke_1775072190779",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "用户登录后进入个人中心并看到昵称",
+      "goal": "用户登录后进入个人中心并看到昵称",
+      "priority": "P0",
+      "preconditions": [
+        "用户登录后进入个人中心并看到昵称"
+      ],
+      "source_chunks": [
+        "chunk_001"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "用户登录后进入个人中心并看到昵称",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "用户登录后进入个人中心并看到昵称",
+          "request": {
+            "method": "POST",
+            "url": "/login",
+            "json": {
+              "username": "demo_user",
+              "password": "demo_pass"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            },
+            {
+              "source": "json.token",
+              "op": "exists"
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [
+            "token"
+          ],
+          "save_context": {
+            "token": "json.token"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "System returns an observable result aligned with the requirement",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "System returns an observable result aligned with the requirement"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 1,
+      "scenario_count": 1,
+      "parsed_entities": [
+        "用户登录后进入个人中心并看到昵称"
+      ]
+    }
+  }
+}

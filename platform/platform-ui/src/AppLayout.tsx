@@ -6,6 +6,7 @@ import {
   UnorderedListOutlined,
   PlusCircleOutlined,
   ExperimentOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content, Footer } = Layout;
@@ -13,6 +14,7 @@ const { Sider, Content, Footer } = Layout;
 const menuItems = [
   { key: "/dashboard", icon: <DashboardOutlined />, label: "仪表盘" },
   { key: "/tasks", icon: <UnorderedListOutlined />, label: "任务列表" },
+  { key: "/tasks/history", icon: <HistoryOutlined />, label: "历史任务" },
   { key: "/tasks/create", icon: <PlusCircleOutlined />, label: "创建任务" },
 ];
 
@@ -21,9 +23,11 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Prefer the most specific match so `/tasks/create` doesn't get overridden by `/tasks`.
   const selectedKey =
-    menuItems.find((m) => location.pathname.startsWith(m.key))?.key ??
-    "/dashboard";
+    menuItems
+      .filter((m) => location.pathname.startsWith(m.key))
+      .sort((a, b) => b.key.length - a.key.length)[0]?.key ?? "/dashboard";
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -33,6 +37,12 @@ export default function AppLayout() {
         onCollapse={setCollapsed}
         theme="dark"
         width={220}
+        style={{
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflow: "auto",
+        }}
       >
         <div
           className="logo"
@@ -40,7 +50,7 @@ export default function AppLayout() {
           onClick={() => navigate("/dashboard")}
         >
           <ExperimentOutlined style={{ fontSize: 22 }} />
-          {!collapsed && <span>LaVague 测试平台</span>}
+          {!collapsed && <span>Ventus 测试平台</span>}
         </div>
         <Menu
           theme="dark"
@@ -55,7 +65,7 @@ export default function AppLayout() {
           <Outlet />
         </Content>
         <Footer style={{ textAlign: "center", color: "#999", fontSize: 13 }}>
-          LaVague QA Platform &copy; {new Date().getFullYear()}
+          Ventus QA Platform &copy; {new Date().getFullYear()}
         </Footer>
       </Layout>
     </Layout>

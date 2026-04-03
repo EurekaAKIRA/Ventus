@@ -4,10 +4,13 @@ import type { TaskStatus } from "../types";
 const statusConfig: Record<string, { color: string; label: string }> = {
   received: { color: "default", label: "已接收" },
   parsed: { color: "blue", label: "已解析" },
+  generated: { color: "cyan", label: "用例已生成" },
   scenario_generated: { color: "cyan", label: "用例已生成" },
   running: { color: "processing", label: "执行中" },
   passed: { color: "success", label: "通过" },
   failed: { color: "error", label: "失败" },
+  stopped: { color: "warning", label: "已停止" },
+  archived: { color: "default", label: "已归档" },
 };
 
 export default function StatusTag({ status }: { status: TaskStatus | string }) {

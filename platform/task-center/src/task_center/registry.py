@@ -96,10 +96,48 @@ class TaskRegistry:
         executions = self.execution_repository.load_executions()
         self._load_environments()
         self._execution_history = self.execution_history_repository.load_history()
+        if not tasks:
+            tasks = self._recover_tasks_from_artifacts()
         for record in tasks:
             record.execution_result = executions.get(record.task_id, record.execution_result)
             self._hydrate_task(record)
             self._tasks[record.task_id] = record
+        if tasks:
+            self._persist_tasks()
+
+    def _recover_tasks_from_artifacts(self) -> list[TaskRecord]:
+        recovered: list[TaskRecord] = []
+        root = Path(self.artifacts_root)
+        if not root.exists():
+            return recovered
+        for candidate in sorted(root.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True):
+            if not candidate.is_dir():
+                continue
+            pipeline_result = load_pipeline_artifacts(str(candidate))
+            task_context = pipeline_result.get("task_context") or {}
+            task_id = str(task_context.get("task_id") or "")
+            task_name = str(task_context.get("task_name") or candidate.name)
+            if not task_id:
+                continue
+            status = "parsed"
+            execution = pipeline_result.get("execution_result") or {}
+            if execution.get("status"):
+                status = str(execution.get("status"))
+            record = TaskRecord(
+                task_id=task_id,
+                task_name=task_name,
+                source_type=str(task_context.get("source_type") or "text"),
+                requirement_text=str(pipeline_result.get("raw_requirement") or ""),
+                source_path=task_context.get("source_path"),
+                created_at=str(task_context.get("created_at") or _utc_now_iso()),
+                status=status,
+                task_context=task_context,
+                pipeline_result=pipeline_result,
+                execution_result=execution if execution else None,
+                artifact_dir=str(candidate),
+            )
+            recovered.append(record)
+        return recovered
 
     def _load_environments(self) -> None:
         loaded = self.environment_repository.load_environments()
@@ -265,6 +303,7 @@ class TaskRegistry:
 
 DEFAULT_ARTIFACT_TYPES = {
     "raw": lambda result: result.get("raw_requirement"),
+    "parse-metadata": lambda result: result.get("parse_metadata", {}),
     "parsed-requirement": lambda result: result.get("parsed_requirement"),
     "retrieved-context": lambda result: result.get("retrieved_context"),
     "scenarios": lambda result: result.get("scenarios"),

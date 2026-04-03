@@ -1,0 +1,24 @@
+{
+  "objective": "用户登录后进入个人中心并看到昵称",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "用户登录后进入个人中心并看到昵称"
+  ],
+  "preconditions": [
+    "用户登录后进入个人中心并看到昵称"
+  ],
+  "actions": [
+    "用户登录后进入个人中心并看到昵称"
+  ],
+  "expected_results": [
+    "System returns an observable result aligned with the requirement"
+  ],
+  "constraints": [],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_001"
+  ],
+  "api_endpoints": []
+}

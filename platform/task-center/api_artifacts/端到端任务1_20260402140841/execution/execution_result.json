@@ -1,0 +1,2373 @@
+{
+  "task_id": "端到端任务1_20260402140804",
+  "executor": "api-runner",
+  "status": "failed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`en",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`environment`、`target_system` 字段，其中 `target_system` 固定为 `http://127.0.0.1:8001`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.data.task_id exists None, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:3000/api/tasks",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:3000/api/tasks",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "requirement_text",
+              "source_type",
+              "target_system",
+              "task_name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "Vary": "Origin",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "0"
+            },
+            "json": null,
+            "body_preview": "",
+            "elapsed_ms": 27.09,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 27.09,
+            "content_type": "",
+            "json_keys": [],
+            "body_preview": "",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 0
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "Vary": "Origin",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "0"
+              },
+              "body_text": "",
+              "json": null,
+              "elapsed_ms": 27.09,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:3000/api/tasks",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "requirement_text",
+                "source_type",
+                "target_system",
+                "task_name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {
+            "task_id": null,
+            "resource_id": null
+          },
+          "assertion_summary": {
+            "total": 2,
+            "passed": 0,
+            "failed": 2,
+            "failures": [
+              "Assertion failed: status_code eq 201, actual=404",
+              "Assertion failed: json.data.task_id exists None, actual=None"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retrieval_top_k`、`rerank_enabled` 字段",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "rag_enabled",
+              "rerank_enabled",
+              "retrieval_top_k",
+              "use_llm"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "Vary": "Origin",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "0"
+            },
+            "json": null,
+            "body_preview": "",
+            "elapsed_ms": 13.99,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 13.99,
+            "content_type": "",
+            "json_keys": [],
+            "body_preview": "",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 0
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "Vary": "Origin",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "0"
+              },
+              "body_text": "",
+              "json": null,
+              "elapsed_ms": 13.99,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "rag_enabled",
+                "rerank_enabled",
+                "retrieval_top_k",
+                "use_llm"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_04",
+          "step_type": "and",
+          "text": "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "input"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "Vary": "Origin",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "0"
+            },
+            "json": null,
+            "body_preview": "",
+            "elapsed_ms": 3.16,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 3.16,
+            "content_type": "",
+            "json_keys": [],
+            "body_preview": "",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 0
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "Vary": "Origin",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "0"
+              },
+              "body_text": "",
+              "json": null,
+              "elapsed_ms": 3.16,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "input"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:3000/api/tasks/None -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "Vary": "Origin",
+              "Content-Type": "text/html",
+              "Cache-Control": "no-cache",
+              "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "626"
+            },
+            "json": null,
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$Ref",
+            "elapsed_ms": 17.93,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 17.93,
+            "content_type": "text/html",
+            "json_keys": [],
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+            "error_category": "",
+            "parse_error": "Expecting value: line 1 column 1 (char 0)",
+            "body_size": 618
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "Vary": "Origin",
+                "Content-Type": "text/html",
+                "Cache-Control": "no-cache",
+                "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "626"
+              },
+              "body_text": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$RefreshSig$ = () => (type) => type;</script>\n\n    <script type=\"module\" src=\"/@vite/client\"></script>\n\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Ventus 测试平台</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n",
+              "json": null,
+              "elapsed_ms": 17.93,
+              "error": "",
+              "error_category": "",
+              "parse_error": "Expecting value: line 1 column 1 (char 0)"
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:3000/api/tasks/None",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actio",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actions`、`expected_results`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:3000/api/tasks/None/parsed-requirement -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None/parsed-requirement",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None/parsed-requirement",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "Vary": "Origin",
+              "Content-Type": "text/html",
+              "Cache-Control": "no-cache",
+              "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "626"
+            },
+            "json": null,
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$Ref",
+            "elapsed_ms": 18.36,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 18.36,
+            "content_type": "text/html",
+            "json_keys": [],
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+            "error_category": "",
+            "parse_error": "Expecting value: line 1 column 1 (char 0)",
+            "body_size": 618
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "Vary": "Origin",
+                "Content-Type": "text/html",
+                "Cache-Control": "no-cache",
+                "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "626"
+              },
+              "body_text": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$RefreshSig$ = () => (type) => type;</script>\n\n    <script type=\"module\" src=\"/@vite/client\"></script>\n\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Ventus 测试平台</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n",
+              "json": null,
+              "elapsed_ms": 18.36,
+              "error": "",
+              "error_category": "",
+              "parse_error": "Expecting value: line 1 column 1 (char 0)"
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:3000/api/tasks/None/parsed-requirement",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:3000/api/tasks/None/scenarios -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None/scenarios",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None/scenarios",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "Vary": "Origin",
+              "Content-Type": "text/html",
+              "Cache-Control": "no-cache",
+              "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "626"
+            },
+            "json": null,
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$Ref",
+            "elapsed_ms": 18.51,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 18.51,
+            "content_type": "text/html",
+            "json_keys": [],
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+            "error_category": "",
+            "parse_error": "Expecting value: line 1 column 1 (char 0)",
+            "body_size": 618
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "Vary": "Origin",
+                "Content-Type": "text/html",
+                "Cache-Control": "no-cache",
+                "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "626"
+              },
+              "body_text": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$RefreshSig$ = () => (type) => type;</script>\n\n    <script type=\"module\" src=\"/@vite/client\"></script>\n\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Ventus 测试平台</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n",
+              "json": null,
+              "elapsed_ms": 18.51,
+              "error": "",
+              "error_category": "",
+              "parse_error": "Expecting value: line 1 column 1 (char 0)"
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:3000/api/tasks/None/scenarios",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_006_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:3000/api/tasks/None/dsl -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None/dsl",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None/dsl",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "Vary": "Origin",
+              "Content-Type": "text/html",
+              "Cache-Control": "no-cache",
+              "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "626"
+            },
+            "json": null,
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$Ref",
+            "elapsed_ms": 6.04,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 6.04,
+            "content_type": "text/html",
+            "json_keys": [],
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+            "error_category": "",
+            "parse_error": "Expecting value: line 1 column 1 (char 0)",
+            "body_size": 618
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "Vary": "Origin",
+                "Content-Type": "text/html",
+                "Cache-Control": "no-cache",
+                "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "626"
+              },
+              "body_text": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$RefreshSig$ = () => (type) => type;</script>\n\n    <script type=\"module\" src=\"/@vite/client\"></script>\n\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Ventus 测试平台</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n",
+              "json": null,
+              "elapsed_ms": 6.04,
+              "error": "",
+              "error_category": "",
+              "parse_error": "Expecting value: line 1 column 1 (char 0)"
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:3000/api/tasks/None/dsl",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_007_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:3000/api/tasks/None/feature -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None/feature",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:3000/api/tasks/None/feature",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "Vary": "Origin",
+              "Content-Type": "text/html",
+              "Cache-Control": "no-cache",
+              "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "626"
+            },
+            "json": null,
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$Ref",
+            "elapsed_ms": 5.62,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 5.62,
+            "content_type": "text/html",
+            "json_keys": [],
+            "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+            "error_category": "",
+            "parse_error": "Expecting value: line 1 column 1 (char 0)",
+            "body_size": 618
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "Vary": "Origin",
+                "Content-Type": "text/html",
+                "Cache-Control": "no-cache",
+                "Etag": "W/\"272-slNhStuI3kCmBG0FMDG21zVR14c\"",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "626"
+              },
+              "body_text": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$RefreshSig$ = () => (type) => type;</script>\n\n    <script type=\"module\" src=\"/@vite/client\"></script>\n\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Ventus 测试平台</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n",
+              "json": null,
+              "elapsed_ms": 5.62,
+              "error": "",
+              "error_category": "",
+              "parse_error": "Expecting value: line 1 column 1 (char 0)"
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:3000/api/tasks/None/feature",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_008_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_008_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` 字段",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:3000/api/tasks/None/execute",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:3000/api/tasks/None/execute",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "execution_mode"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "Vary": "Origin",
+              "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+              "Connection": "close",
+              "Content-Length": "0"
+            },
+            "json": null,
+            "body_preview": "",
+            "elapsed_ms": 17.95,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 17.95,
+            "content_type": "",
+            "json_keys": [],
+            "body_preview": "",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 0
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "Vary": "Origin",
+                "Date": "Thu, 02 Apr 2026 14:08:50 GMT",
+                "Connection": "close",
+                "Content-Length": "0"
+              },
+              "body_text": "",
+              "json": null,
+              "elapsed_ms": 17.95,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:3000/api/tasks/None/execute",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "execution_mode"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_008_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "scenario_count": 8,
+    "step_count": 25,
+    "passed_step_count": 21,
+    "failed_step_count": 4,
+    "context_key_count": 5,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 14.29,
+    "max_elapsed_ms": 27.09
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`environment`、`target_system` 字段，其中 `target_system` 固定为 `http://127.0.0.1:8001`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:3000/api/tasks",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 27.09,
+        "content_type": "",
+        "json_keys": [],
+        "body_preview": "",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 0
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: resource_id, task_id",
+      "saved_context": {
+        "task_id": null,
+        "resource_id": null
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=0 failed=2",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed: status_code eq 201, actual=404",
+          "Assertion failed: json.data.task_id exists None, actual=None"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.data.task_id exists None, actual=None",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 27.09,
+        "content_type": "",
+        "json_keys": [],
+        "body_preview": "",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 0
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed: status_code eq 201, actual=404",
+          "Assertion failed: json.data.task_id exists None, actual=None"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_02",
+      "step_type": "when",
+      "message": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retrieval_top_k`、`rerank_enabled` 字段"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_02",
+      "message": "Dispatching POST http://127.0.0.1:3000/api/tasks/None/parse",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "rag_enabled",
+          "rerank_enabled",
+          "retrieval_top_k",
+          "use_llm"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_002_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 13.99,
+        "content_type": "",
+        "json_keys": [],
+        "body_preview": "",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 0
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "rag_enabled",
+          "rerank_enabled",
+          "retrieval_top_k",
+          "use_llm"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 13.99,
+        "content_type": "",
+        "json_keys": [],
+        "body_preview": "",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 0
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_04",
+      "step_type": "and",
+      "message": "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_04",
+      "message": "Dispatching POST http://127.0.0.1:3000/api/tasks/None/parse",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_002_step_04",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 3.16,
+        "content_type": "",
+        "json_keys": [],
+        "body_preview": "",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 0
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_04",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_002_step_04",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 3.16,
+        "content_type": "",
+        "json_keys": [],
+        "body_preview": "",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 0
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_02",
+      "step_type": "when",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_003_step_02",
+      "message": "Dispatching GET http://127.0.0.1:3000/api/tasks/None",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_003_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.93,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_003_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_02",
+      "message": "GET http://127.0.0.1:3000/api/tasks/None -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.93,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_02",
+      "step_type": "when",
+      "message": "调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actions`、`expected_results`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_004_step_02",
+      "message": "Dispatching GET http://127.0.0.1:3000/api/tasks/None/parsed-requirement",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_004_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 18.36,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_004_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_02",
+      "message": "GET http://127.0.0.1:3000/api/tasks/None/parsed-requirement -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 18.36,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_02",
+      "step_type": "when",
+      "message": "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_005_step_02",
+      "message": "Dispatching GET http://127.0.0.1:3000/api/tasks/None/scenarios",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_005_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 18.51,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_005_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_02",
+      "message": "GET http://127.0.0.1:3000/api/tasks/None/scenarios -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 18.51,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_02",
+      "step_type": "when",
+      "message": "调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_006_step_02",
+      "message": "Dispatching GET http://127.0.0.1:3000/api/tasks/None/dsl",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_006_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 6.04,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_006_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_02",
+      "message": "GET http://127.0.0.1:3000/api/tasks/None/dsl -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 6.04,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_02",
+      "step_type": "when",
+      "message": "调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_007_step_02",
+      "message": "Dispatching GET http://127.0.0.1:3000/api/tasks/None/feature",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None/feature",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_007_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 5.62,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_007_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_02",
+      "message": "GET http://127.0.0.1:3000/api/tasks/None/feature -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:3000/api/tasks/None/feature",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 5.62,
+        "content_type": "text/html",
+        "json_keys": [],
+        "body_preview": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-ref",
+        "error_category": "",
+        "parse_error": "Expecting value: line 1 column 1 (char 0)",
+        "body_size": 618
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_01",
+      "step_type": "given",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_02",
+      "step_type": "when",
+      "message": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` 字段"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_008_step_02",
+      "message": "Dispatching POST http://127.0.0.1:3000/api/tasks/None/execute",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/execute",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "execution_mode"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_008_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 17.95,
+        "content_type": "",
+        "json_keys": [],
+        "body_preview": "",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 0
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_008_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_008_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/tasks/None/execute",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "execution_mode"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 17.95,
+        "content_type": "",
+        "json_keys": [],
+        "body_preview": "",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 0
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_03",
+      "step_type": "then",
+      "message": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:3000",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "端到端任务1_20260402140804"
+      }
+    },
+    "executed_at": "2026-04-02T14:08:50.125421+00:00"
+  }
+}

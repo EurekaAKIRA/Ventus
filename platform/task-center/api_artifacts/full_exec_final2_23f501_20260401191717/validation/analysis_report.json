@@ -1,0 +1,501 @@
+{
+  "task_id": "full_exec_final2_23f501_20260401191706",
+  "task_name": "full_exec_final2_23f501",
+  "quality_status": "failed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-01T19:17:33.066304+00:00",
+  "summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "total_steps": 25,
+    "executed_steps": 25,
+    "passed_steps": 24,
+    "failed_steps": 1,
+    "success_rate": 96.0,
+    "failure_rate": 4.0,
+    "avg_elapsed_ms": 74.63,
+    "max_elapsed_ms": 232.74,
+    "validation_passed": true,
+    "warning_count": 5,
+    "error_count": 0,
+    "execution_status": "failed",
+    "assertion_total": 19,
+    "assertion_passed": 19,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "dashboard": {
+    "task_id": "full_exec_final2_23f501_20260401191706",
+    "task_name": "full_exec_final2_23f501",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 8,
+      "passed_scenarios": 7,
+      "failed_scenarios": 1,
+      "success_rate": 96.0,
+      "failure_rate": 4.0,
+      "passed_steps": 24,
+      "failed_steps": 1,
+      "avg_elapsed_ms": 74.63,
+      "max_elapsed_ms": 232.74,
+      "assertion_total": 19,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 3,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 8
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 25
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 24
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 1
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 96.0
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 74.63
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 232.74
+      }
+    ],
+    "totals": {
+      "scenarios": 8,
+      "steps": 25,
+      "assertions": 19,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 7,
+      "failed_scenarios": 1,
+      "passed_steps": 24,
+      "failed_steps": 1
+    },
+    "assertion_summary": {
+      "total": 19,
+      "passed": 19,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 2,
+      "defined_key_names": [
+        "resource_id",
+        "task_id"
+      ],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 3,
+      "extracted_key_names": [
+        "last_request",
+        "resource_id",
+        "task_id"
+      ],
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": {
+      "category": "validation_warning",
+      "label": "Validation Warning",
+      "count": 5,
+      "examples": [
+        {
+          "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks` 创建任务，请求体包含 `ta..."
+        },
+        {
+          "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/parse..."
+        },
+        {
+          "message": "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/parsed..."
+        }
+      ]
+    },
+    "failure_reason_breakdown": [
+      {
+        "category": "validation_warning",
+        "label": "Validation Warning",
+        "count": 5,
+        "examples": [
+          {
+            "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks` 创建任务，请求体包含 `ta..."
+          },
+          {
+            "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/parse..."
+          },
+          {
+            "message": "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/parsed..."
+          }
+        ]
+      },
+      {
+        "category": "timeout",
+        "label": "Timeout",
+        "count": 1,
+        "examples": [
+          {
+            "step_id": "scenario_002_step_04",
+            "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+            "message": "timed out"
+          }
+        ]
+      }
+    ],
+    "headline": "24/25 steps passed",
+    "summary_text": "任务 full_exec_final2_23f501 当前状态为 failed，共分析 8 个场景，执行 25 个步骤；其中通过 24 个、失败 1 个，成功率 96.0%，平均耗时 74.63ms，最大耗时 232.74ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "execution_status": "failed",
+    "total_steps": 25,
+    "executed_steps": 25,
+    "passed_steps": 24,
+    "failed_steps": 1,
+    "success_rate": 96.0,
+    "failure_rate": 4.0,
+    "avg_elapsed_ms": 74.63,
+    "max_elapsed_ms": 232.74,
+    "assertion_total": 19,
+    "assertion_passed": 19,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "full_exec_final2_23f501",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "headline": "任务 full_exec_final2_23f501 当前状态为 failed，共分析 8 个场景，执行 25 个步骤；其中通过 24 个、失败 1 个，成功率 96.0%，平均耗时 74.63ms，最大耗时 232.74ms。",
+    "success_rate": 96.0,
+    "failed_steps": 1,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": {
+      "category": "validation_warning",
+      "label": "Validation Warning",
+      "count": 5,
+      "examples": [
+        {
+          "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks` 创建任务，请求体包含 `ta..."
+        },
+        {
+          "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/parse..."
+        },
+        {
+          "message": "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/parsed..."
+        }
+      ]
+    },
+    "next_action": "优先处理失败步骤与失败原因分类"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "failed",
+    "scenario_count": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "log_count": 76,
+    "has_failures": true,
+    "top_failure_category": "validation_warning"
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [
+    {
+      "scenario_id": "scenario_002",
+      "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+      "step_id": "scenario_002_step_04",
+      "step_index": 4,
+      "step_type": "and",
+      "text": "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`",
+      "status": "failed",
+      "message": "timed out",
+      "category": "timeout",
+      "reason_detail": "timed out",
+      "elapsed_ms": null,
+      "request": {},
+      "response": {},
+      "request_summary": {
+        "method": null,
+        "url": null,
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": null,
+        "elapsed_ms": null,
+        "has_json": false,
+        "header_count": 0,
+        "body_preview": ""
+      }
+    }
+  ],
+  "failure_reasons": [
+    {
+      "category": "validation_warning",
+      "label": "Validation Warning",
+      "count": 5,
+      "examples": [
+        {
+          "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks` 创建任务，请求体包含 `ta..."
+        },
+        {
+          "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/parse..."
+        },
+        {
+          "message": "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/parsed..."
+        }
+      ]
+    },
+    {
+      "category": "timeout",
+      "label": "Timeout",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_002_step_04",
+          "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+          "message": "timed out"
+        }
+      ]
+    }
+  ],
+  "assertion_stats": {
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "pass_rate": 100.0,
+    "validation_errors": 0,
+    "validation_warnings": 5
+  },
+  "context_stats": {
+    "defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "defined_key_count": 2,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [
+      "last_request",
+      "resource_id",
+      "task_id"
+    ],
+    "extracted_key_count": 3,
+    "unused_defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "task_id": "json.data.task_id",
+      "resource_id": "json.data.task_id"
+    }
+  },
+  "task_summary_text": "任务 full_exec_final2_23f501 当前状态为 failed，共分析 8 个场景，执行 25 个步骤；其中通过 24 个、失败 1 个，成功率 96.0%，平均耗时 74.63ms，最大耗时 232.74ms。",
+  "findings": [
+    "步骤过长，建议拆分：When 调用 `POST /api/tasks` 创建任务，请求体包含 `ta...",
+    "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/parse...",
+    "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/parsed...",
+    "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/featur...",
+    "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/execu...",
+    "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev / scenario_002_step_04: timed out",
+    "Failure categories: validation_warning=5, timeout=1"
+  ],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 5,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 24,
+      "failed_steps": 1,
+      "success_rate": 96.0,
+      "failure_rate": 4.0,
+      "avg_elapsed_ms": 74.63,
+      "max_elapsed_ms": 232.74
+    },
+    "assertions": {
+      "passed": 19,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "context": {
+      "defined": 2,
+      "used": 0,
+      "extracted": 3
+    },
+    "failure_reasons": {
+      "validation_warning": 5,
+      "timeout": 1
+    }
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 8,
+        "total_steps": 25,
+        "passed_steps": 24,
+        "failed_steps": 1,
+        "success_rate": 96.0,
+        "avg_elapsed_ms": 74.63,
+        "max_elapsed_ms": 232.74
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 2,
+        "failure_reasons": [
+          {
+            "category": "validation_warning",
+            "label": "Validation Warning",
+            "count": 5,
+            "examples": [
+              {
+                "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks` 创建任务，请求体包含 `ta..."
+              },
+              {
+                "message": "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/parse..."
+              },
+              {
+                "message": "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/parsed..."
+              }
+            ]
+          },
+          {
+            "category": "timeout",
+            "label": "Timeout",
+            "count": 1,
+            "examples": [
+              {
+                "step_id": "scenario_002_step_04",
+                "scenario_name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+                "message": "timed out"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 19,
+        "passed": 19,
+        "failed": 0,
+        "pass_rate": 100.0,
+        "validation_errors": 0,
+        "validation_warnings": 5
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "defined_key_count": 2,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [
+          "last_request",
+          "resource_id",
+          "task_id"
+        ],
+        "extracted_key_count": 3,
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "task_id": "json.data.task_id",
+          "resource_id": "json.data.task_id"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 74.63,
+        "max_elapsed_ms": 232.74
+      }
+    }
+  ]
+}

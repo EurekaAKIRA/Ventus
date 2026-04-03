@@ -1,4 +1,4 @@
-﻿"""Scenario construction helpers with API dependency grouping."""
+"""Scenario construction helpers with API dependency grouping."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from platform_shared.models import ScenarioModel, ScenarioStep
 
 
 def _normalize_preconditions(parsed_requirement: dict) -> list[str]:
-    return parsed_requirement.get("preconditions") or ["Start from a valid API entry point"]
+    return parsed_requirement.get("preconditions") or ["从有效的 API 入口开始执行"]
 
 
 def _priority_from_text(text: str) -> str:
@@ -52,7 +52,7 @@ def _build_scenario(
         for extra_expectation in expected_results[1:3]:
             steps.append(ScenarioStep(type="and", text=extra_expectation))
     else:
-        steps.append(ScenarioStep(type="then", text="System returns an observable result aligned with the requirement"))
+        steps.append(ScenarioStep(type="then", text="系统返回符合需求的可观察结果"))
 
     scenario = ScenarioModel(
         scenario_id=f"scenario_{scenario_index:03d}",
@@ -60,7 +60,7 @@ def _build_scenario(
         goal=parsed_requirement.get("objective", primary_action),
         preconditions=preconditions,
         steps=steps,
-        assertions=expected_results or ["System returns an observable result aligned with the requirement"],
+        assertions=expected_results or ["系统返回符合需求的可观察结果"],
         source_chunks=parsed_requirement.get("source_chunks", []),
         priority=_priority_from_text(" ".join(actions)),
     )
@@ -87,10 +87,84 @@ def _group_actions(actions: list[str]) -> list[list[str]]:
     return grouped_actions
 
 
+def _build_action_for_endpoint(endpoint: dict, actions: list[str]) -> str:
+    method = str(endpoint.get("method", "")).upper()
+    path = str(endpoint.get("path", "")).strip()
+    lowered_method = method.lower()
+    lowered_path = path.lower()
+    path_segments = [segment for segment in lowered_path.split("/") if segment]
+
+    for action in actions:
+        lowered_action = action.lower()
+        if lowered_method and lowered_method in lowered_action and lowered_path and lowered_path in lowered_action:
+            return action
+
+    for action in actions:
+        lowered_action = action.lower()
+        if lowered_method and lowered_method in lowered_action:
+            if any(segment in lowered_action for segment in path_segments):
+                return action
+
+    has_path_match = False
+    for action in actions:
+        lowered_action = action.lower()
+        if lowered_path and lowered_path in lowered_action:
+            has_path_match = True
+            break
+    if has_path_match and method and path:
+        # Avoid mapping GET endpoint to a PUT action when path is shared.
+        return f"调用 {method} {path}"
+
+    for action in actions:
+        lowered_action = action.lower()
+        if any(segment in lowered_action for segment in path_segments):
+            return action
+
+    if method and path:
+        return f"调用 {method} {path}"
+    if path:
+        return f"调用接口 {path}"
+    return actions[0] if actions else "执行核心业务动作"
+
+
+def _select_expectations_for_endpoint(endpoint: dict, expectations: list[str], scenario_index: int) -> list[str]:
+    if not expectations:
+        return ["系统返回符合需求的可观察结果"]
+    path = str(endpoint.get("path", "")).lower()
+    path_segments = [segment for segment in path.split("/") if segment]
+    matched = []
+    for expectation in expectations:
+        lowered_expectation = expectation.lower()
+        if path and path in lowered_expectation:
+            matched.append(expectation)
+            continue
+        if any(segment in lowered_expectation for segment in path_segments):
+            matched.append(expectation)
+    if matched:
+        return matched[:2]
+    return [expectations[min(scenario_index - 1, len(expectations) - 1)]]
+
+
+def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expectations: list[str]) -> list[dict]:
+    endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
+    if not endpoints:
+        return []
+    scenarios: list[dict] = []
+    for index, endpoint in enumerate(endpoints[:8], start=1):
+        endpoint_action = _build_action_for_endpoint(endpoint, actions)
+        endpoint_expectations = _select_expectations_for_endpoint(endpoint, expectations, index)
+        scenarios.append(_build_scenario(index, [endpoint_action], endpoint_expectations, parsed_requirement))
+    return scenarios
+
+
 def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dict]:
     """Build scenario list from parsed requirement."""
-    actions = parsed_requirement.get("actions") or [parsed_requirement.get("objective", "Execute the core business action")]
-    expectations = parsed_requirement.get("expected_results") or ["System returns an observable result aligned with the requirement"]
+    actions = parsed_requirement.get("actions") or [parsed_requirement.get("objective", "执行核心业务动作")]
+    expectations = parsed_requirement.get("expected_results") or ["系统返回符合需求的可观察结果"]
+    endpoint_scenarios = _build_endpoint_scenarios(parsed_requirement, actions, expectations)
+    if endpoint_scenarios:
+        return endpoint_scenarios
+
     scenarios: list[dict] = []
 
     grouped_actions = _group_actions(actions[:6])
@@ -102,6 +176,6 @@ def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dic
         scenarios.append(_build_scenario(index, action_group, scenario_expectations, parsed_requirement))
 
     if use_llm:
-        parsed_requirement.setdefault("ambiguities", []).append("LLM enhancement is not wired yet; current scenarios come from rule-based grouping")
+        parsed_requirement.setdefault("ambiguities", []).append("LLM 场景增强尚未接入，本次使用规则拆分结果")
 
     return scenarios

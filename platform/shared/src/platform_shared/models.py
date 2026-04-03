@@ -39,6 +39,7 @@ class DocumentChunk:
     source_block: str = ""
     tokens_estimate: int = 0
     keywords: list[str] = field(default_factory=list)
+    doc_type: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -53,6 +54,7 @@ class RetrievedChunk:
     score: float
     section_title: str = ""
     source_file: str = ""
+    doc_type: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -71,6 +73,7 @@ class ParsedRequirement:
     constraints: list[str] = field(default_factory=list)
     ambiguities: list[str] = field(default_factory=list)
     source_chunks: list[str] = field(default_factory=list)
+    api_endpoints: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)

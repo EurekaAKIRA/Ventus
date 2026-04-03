@@ -62,6 +62,25 @@ def main() -> int:
     assert version_resp.status_code == 200
     assert version_resp.json()["data"]["service"] == "platform-task-center"
 
+    analysis_parse_resp = client.post(
+        "/api/analysis/parse",
+        json={
+            "task_name": "analysis_api_demo",
+            "source_type": "text",
+            "requirement_text": "用户登录后应看到个人中心昵称",
+            "use_llm": False,
+            "rag_enabled": True,
+            "retrieval_top_k": 4,
+            "rerank_enabled": False,
+        },
+    )
+    assert analysis_parse_resp.status_code == 200
+    analysis_payload = analysis_parse_resp.json()["data"]
+    assert "parsed_requirement" in analysis_payload
+    assert "retrieved_context" in analysis_payload
+    assert "validation_report" in analysis_payload
+    assert "parse_metadata" in analysis_payload
+
     environments_resp = client.get("/api/environments")
     assert environments_resp.status_code == 200
     assert any(item["name"] == "test" for item in environments_resp.json()["data"])
@@ -74,9 +93,18 @@ def main() -> int:
     assert detail_resp.status_code == 200
     assert detail_resp.json()["data"]["task_id"] == task_id
 
-    parse_resp = client.post(f"/api/tasks/{task_id}/parse")
+    parse_resp = client.post(
+        f"/api/tasks/{task_id}/parse",
+        json={"use_llm": False, "rag_enabled": True, "retrieval_top_k": 3, "rerank_enabled": False},
+    )
     assert parse_resp.status_code == 200
     assert parse_resp.json()["data"]["status"] == "parsed"
+    assert "parse_metadata" in parse_resp.json()["data"]
+    detail_after_parse = client.get(f"/api/tasks/{task_id}")
+    assert detail_after_parse.status_code == 200
+    detail_payload = detail_after_parse.json()["data"]
+    assert "parse_metadata" in detail_payload
+    assert detail_payload["parse_metadata"]["parse_mode"] in {"rules", "llm"}
 
     assert client.get(f"/api/tasks/{task_id}/parsed-requirement").status_code == 200
     assert client.get(f"/api/tasks/{task_id}/retrieved-context").status_code == 200
@@ -90,6 +118,32 @@ def main() -> int:
     )
     assert execute_resp.status_code == 200
     assert execute_resp.json()["success"] is True
+    execution_payload = execute_resp.json()["data"]
+    assert execution_payload["metadata"]["execution"]["base_url"] == "http://127.0.0.1:8010"
+    create_no_base = client.post(
+        "/api/tasks",
+        json={
+            "task_name": "api_server_no_base_url",
+            "source_type": "text",
+            "requirement_text": "用户登录后进入用户中心并看到昵称",
+            "environment": "test",
+        },
+    )
+    assert create_no_base.status_code == 201
+    task_id_no_base = create_no_base.json()["data"]["task_id"]
+    parse_no_base = client.post(
+        f"/api/tasks/{task_id_no_base}/parse",
+        json={"use_llm": False, "rag_enabled": True, "retrieval_top_k": 3, "rerank_enabled": False},
+    )
+    assert parse_no_base.status_code == 200
+    execute_no_base = client.post(
+        f"/api/tasks/{task_id_no_base}/execute",
+        json={"execution_mode": "api", "environment": "test"},
+    )
+    assert execute_no_base.status_code == 400
+    execute_no_base_payload = execute_no_base.json()
+    assert "Missing execution base_url" in execute_no_base_payload["message"]
+    assert "Missing execution base_url" in execute_no_base_payload["data"]["detail"]
     assert client.get(f"/api/tasks/{task_id}/validation-report").status_code == 200
     analysis_report_resp = client.get(f"/api/tasks/{task_id}/analysis-report")
     assert analysis_report_resp.status_code == 200
@@ -130,6 +184,7 @@ def main() -> int:
     delete_resp = client.delete(f"/api/tasks/{task_id}")
     assert delete_resp.status_code == 200
     assert delete_resp.json()["data"]["archived"] is True
+    assert client.delete(f"/api/tasks/{task_id_no_base}").status_code == 200
     missing_resp = client.get("/api/tasks/not-found")
     assert missing_resp.status_code == 404
     assert missing_resp.json()["success"] is False

@@ -10,6 +10,9 @@ Current recommended entrypoints and documents:
 - `docs/migration_plan.md`
 - `docs/platform_quickstart.md`
 - `run_platform.py`
+- `platform/platform-ui/README.md`
+- `platform/platform-ui/FRONTEND_DEVELOPMENT_GUIDE.md`
+- `platform/platform-ui/FRONTEND_PAGE_PLAN.md`
 
 Current platform flow:
 

@@ -1,0 +1,330 @@
+{
+  "task_id": "ui_exec_probe_1775071983407_20260401193303",
+  "executor": "api-runner",
+  "status": "failed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "用户登录后进入个人中心并看到昵称",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "用户登录后进入个人中心并看到昵称",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "用户登录后进入个人中心并看到昵称",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404; Assertion failed: json.token exists None, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/login",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/login",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "password",
+              "username"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Wed, 01 Apr 2026 19:33:14 GMT",
+              "server": "uvicorn",
+              "content-length": "22",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "detail": "Not Found"
+            },
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "elapsed_ms": 18.46,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 18.46,
+            "content_type": "application/json",
+            "json_keys": [
+              "detail"
+            ],
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 22
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Wed, 01 Apr 2026 19:33:14 GMT",
+                "server": "uvicorn",
+                "content-length": "22",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"detail\":\"Not Found\"}",
+              "json": {
+                "detail": "Not Found"
+              },
+              "elapsed_ms": 18.46,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/login",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "password",
+                "username"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "token": null
+          },
+          "saved_context": {
+            "token": null
+          },
+          "assertion_summary": {
+            "total": 2,
+            "passed": 0,
+            "failed": 2,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404",
+              "Assertion failed: json.token exists None, actual=None"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "System returns an observable result aligned with the requirement",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "scenario_count": 1,
+    "step_count": 3,
+    "passed_step_count": 2,
+    "failed_step_count": 1,
+    "context_key_count": 4,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 18.46,
+    "max_elapsed_ms": 18.46
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "用户登录后进入个人中心并看到昵称"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "用户登录后进入个人中心并看到昵称"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/login",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/login",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "password",
+          "username"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 18.46,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: token",
+      "saved_context": {
+        "token": null
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=0 failed=2",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404",
+          "Assertion failed: json.token exists None, actual=None"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404; Assertion failed: json.token exists None, actual=None",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/login",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "password",
+          "username"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 18.46,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404",
+          "Assertion failed: json.token exists None, actual=None"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "System returns an observable result aligned with the requirement"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "ui_exec_probe_1775071983407_20260401193303"
+      }
+    },
+    "executed_at": "2026-04-01T19:33:14.681555+00:00"
+  }
+}

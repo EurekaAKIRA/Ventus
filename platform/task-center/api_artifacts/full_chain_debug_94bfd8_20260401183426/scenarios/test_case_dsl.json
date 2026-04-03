@@ -1,0 +1,258 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "full_chain_debug_94bfd8_20260401183415",
+  "task_name": "full_chain_debug_94bfd8",
+  "feature_name": "full_chain_debug_94bfd8",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "调用 `POST /api/auth/login`，请求体包含 `username` 和 `password` 字段",
+      "goal": "用户登录与个人中心功能需求",
+      "priority": "P0",
+      "preconditions": [
+        "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息"
+      ],
+      "source_chunks": [
+        "chunk_003",
+        "chunk_002",
+        "chunk_004",
+        "chunk_005",
+        "chunk_001"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/auth/login`，请求体包含 `username` 和 `password` 字段",
+          "request": {
+            "method": "POST",
+            "url": "/api/auth/login",
+            "json": {
+              "username": "demo_user",
+              "password": "demo_pass"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            },
+            {
+              "source": "json.token",
+              "op": "exists"
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [
+            "token"
+          ],
+          "save_context": {
+            "token": "json.token"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403",
+            "登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\""
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_04",
+          "step_type": "and",
+          "text": "登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "用户跳转至个人中心，调用 `GET /api/user/profile`，携带 Authorization header",
+      "goal": "用户登录与个人中心功能需求",
+      "priority": "P2",
+      "preconditions": [
+        "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息"
+      ],
+      "source_chunks": [
+        "chunk_003",
+        "chunk_002",
+        "chunk_004",
+        "chunk_005",
+        "chunk_001"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "用户跳转至个人中心，调用 `GET /api/user/profile`，携带 Authorization header",
+          "request": {
+            "method": "GET",
+            "url": "/api/user/profile"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            },
+            {
+              "source": "json.user",
+              "op": "exists"
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403",
+            "登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\""
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_002_step_04",
+          "step_type": "and",
+          "text": "登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "用户点击\"编辑\"，修改昵称后调用 `PUT /api/user/profile`，系统返回 200 并刷新页面",
+      "goal": "用户登录与个人中心功能需求",
+      "priority": "P2",
+      "preconditions": [
+        "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息"
+      ],
+      "source_chunks": [
+        "chunk_003",
+        "chunk_002",
+        "chunk_004",
+        "chunk_005",
+        "chunk_001"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "用户点击\"编辑\"，修改昵称后调用 `PUT /api/user/profile`，系统返回 200 并刷新页面",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403",
+            "登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\""
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_003_step_04",
+          "step_type": "and",
+          "text": "登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 3,
+      "scenario_count": 3,
+      "parsed_entities": [
+        "用户登录与个人中心功能需求",
+        "功能目标",
+        "用户通过用户名和密码登录平台",
+        "登录成功后进入个人中心页面",
+        "查看并修改个人信息",
+        "接口清单",
+        "接口",
+        "方法",
+        "路径",
+        "用户登录"
+      ]
+    }
+  }
+}

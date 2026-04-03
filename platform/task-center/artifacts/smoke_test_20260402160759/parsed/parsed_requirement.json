@@ -1,0 +1,23 @@
+{
+  "objective": "用户打开首页后应看到搜索框和标题",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "搜索框",
+    "标题"
+  ],
+  "preconditions": [],
+  "actions": [
+    "用户打开首页"
+  ],
+  "expected_results": [
+    "用户能看到搜索框和标题"
+  ],
+  "constraints": [],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_001"
+  ],
+  "api_endpoints": []
+}

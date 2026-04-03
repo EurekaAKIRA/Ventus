@@ -1,0 +1,83 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "demo_task_name_20260402074739",
+  "task_name": "demo_task_name",
+  "feature_name": "demo_task_name",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "Execute the core business action",
+      "goal": "demo requirement text",
+      "priority": "P2",
+      "preconditions": [
+        "Start from a valid API entry point"
+      ],
+      "source_chunks": [
+        "chunk_001"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "Start from a valid API entry point",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "Execute the core business action",
+          "request": {
+            "method": "POST",
+            "url": "/resource",
+            "json": {
+              "input": "Execute the core business action"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "System returns an observable result aligned with the requirement",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "System returns an observable result aligned with the requirement"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 1,
+      "scenario_count": 1,
+      "parsed_entities": [
+        "demo",
+        "requirement",
+        "text"
+      ]
+    }
+  }
+}

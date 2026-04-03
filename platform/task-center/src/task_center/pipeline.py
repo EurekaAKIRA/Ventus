@@ -1,4 +1,4 @@
-﻿"""Minimal orchestrated pipeline for platform task center."""
+"""Minimal orchestrated pipeline for platform task center."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from .artifact_manager import build_task_artifact_dir, ensure_task_subdirs, writ
 from case_generation import build_scenarios, build_test_case_dsl, generate_feature, validate_feature_text
 from platform_shared.models import (
     AnalysisReport,
+    DocumentChunk,
     ParsedRequirement,
     PipelineResult,
     RetrievedChunk,
@@ -20,7 +21,7 @@ from platform_shared.models import (
     ValidationReport,
 )
 from result_analysis import build_analysis_report
-from requirement_analysis import build_index, chunk_text, load_document, parse_document, parse_requirement, retrieve_relevant_chunks
+from requirement_analysis import AnalysisParseOptions, parse_requirement_bundle
 
 
 def _build_scenario_model(payload: dict) -> ScenarioModel:
@@ -44,9 +45,22 @@ def run_analysis_pipeline(
     source_type: str = "text",
     source_path: str | None = None,
     artifacts_base_dir: str | None = None,
-    use_llm: bool = False,
+    use_llm: bool | None = None,
+    rag_enabled: bool | None = None,
+    retrieval_top_k: int | None = None,
+    rerank_enabled: bool | None = None,
+    model_profile: str | None = None,
 ) -> dict:
     """Run the current minimal end-to-end platform pipeline."""
+    parse_options = AnalysisParseOptions.resolve(
+        {
+            "use_llm": use_llm,
+            "rag_enabled": rag_enabled,
+            "retrieval_top_k": retrieval_top_k,
+            "rerank_enabled": rerank_enabled,
+            "model_profile": model_profile,
+        }
+    )
     payload = normalize_input(
         task_name=task_name,
         requirement_text=requirement_text,
@@ -55,28 +69,22 @@ def run_analysis_pipeline(
     )
     task_context = TaskContext(**payload["task_context"])
 
-    raw_requirement = payload["raw_requirement"]
-    loaded_text = load_document(source_path=source_path, inline_text=raw_requirement)
-    parsed_document = parse_document(loaded_text)
-
-    chunks = chunk_text(
-        parsed_document["cleaned_text"],
-        source_file=source_path or "",
+    parse_bundle = parse_requirement_bundle(
+        requirement_text=payload["raw_requirement"],
+        source_path=source_path,
+        options=parse_options,
     )
-    index = build_index(chunks)
-    query = raw_requirement or parsed_document["cleaned_text"]
-    retrieved_context = [RetrievedChunk(**item) for item in retrieve_relevant_chunks(index, query)]
+    raw_requirement = parse_bundle["raw_requirement"]
+    cleaned_text = parse_bundle["cleaned_text"]
+    outline = parse_bundle["outline"]
+    chunks = [DocumentChunk(**item) for item in parse_bundle["chunks"]]
+    retrieved_context = [RetrievedChunk(**item) for item in parse_bundle["retrieved_context"]]
 
-    parsed_requirement = ParsedRequirement(
-        **parse_requirement(
-            raw_requirement or parsed_document["cleaned_text"],
-            [item.to_dict() for item in retrieved_context],
-            use_llm=use_llm,
-        )
-    )
+    parsed_requirement = ParsedRequirement(**parse_bundle["parsed_requirement"])
+    parse_validation_report = ValidationReport(**parse_bundle["validation_report"])
     scenarios = [
         _build_scenario_model(scenario)
-        for scenario in build_scenarios(parsed_requirement.to_dict(), use_llm=use_llm)
+        for scenario in build_scenarios(parsed_requirement.to_dict(), use_llm=parse_options.use_llm)
     ]
     test_case_dsl = TestCaseDSL(
         **build_test_case_dsl(
@@ -86,7 +94,18 @@ def run_analysis_pipeline(
         )
     )
     feature_text = generate_feature(task_context.task_name, [scenario.to_dict() for scenario in scenarios])
-    validation_report = ValidationReport(**validate_feature_text(feature_text))
+    feature_validation_report = ValidationReport(**validate_feature_text(feature_text))
+    validation_report = ValidationReport(
+        feature_name=feature_validation_report.feature_name,
+        passed=parse_validation_report.passed and feature_validation_report.passed,
+        errors=parse_validation_report.errors + feature_validation_report.errors,
+        warnings=parse_validation_report.warnings + feature_validation_report.warnings,
+        metrics={
+            **feature_validation_report.metrics,
+            "parse_metrics": parse_validation_report.metrics,
+            "parse_mode": parse_bundle.get("parse_metadata", {}).get("parse_mode", "rules"),
+        },
+    )
     analysis_report = AnalysisReport(
         **build_analysis_report(
             task_context=task_context,
@@ -98,9 +117,9 @@ def run_analysis_pipeline(
 
     result = PipelineResult(
         task_context=task_context,
-        raw_requirement=raw_requirement or loaded_text,
-        cleaned_text=parsed_document["cleaned_text"],
-        outline=parsed_document["outline"],
+        raw_requirement=raw_requirement,
+        cleaned_text=cleaned_text,
+        outline=outline,
         chunks=chunks,
         retrieved_context=retrieved_context,
         parsed_requirement=parsed_requirement,
@@ -110,71 +129,81 @@ def run_analysis_pipeline(
         validation_report=validation_report,
         analysis_report=analysis_report,
     )
+    result.analysis_report.summary["enhancement"] = parse_bundle.get("parse_metadata", {})
+
+    result_payload = result.to_dict()
+    result_payload["parse_metadata"] = parse_bundle.get("parse_metadata", {})
 
     if artifacts_base_dir:
-        persist_pipeline_artifacts(result, artifacts_base_dir)
+        persist_pipeline_artifacts(result_payload, artifacts_base_dir)
 
-    return result.to_dict()
+    return result_payload
 
 
-def persist_pipeline_artifacts(result: PipelineResult, artifacts_base_dir: str) -> str:
+def persist_pipeline_artifacts(result: dict, artifacts_base_dir: str) -> str:
     """Persist the standard artifacts for one analysis task."""
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    task_dir = build_task_artifact_dir(artifacts_base_dir, result.task_context.task_name, timestamp)
+    task_context = result["task_context"]
+    task_dir = build_task_artifact_dir(artifacts_base_dir, task_context["task_name"], timestamp)
     subdirs = ensure_task_subdirs(task_dir)
 
     write_text_artifact(
         str(Path(subdirs["raw"]) / "requirement.txt"),
-        result.raw_requirement,
+        result["raw_requirement"],
     )
     write_json_artifact(
         str(Path(subdirs["metadata"]) / "task_context.json"),
-        result.task_context.to_dict(),
+        task_context,
     )
     write_json_artifact(
         str(Path(subdirs["parsed"]) / "cleaned_document.json"),
         {
-            "cleaned_text": result.cleaned_text,
-            "outline": result.outline,
-            "chunks": [item.to_dict() for item in result.chunks],
+            "cleaned_text": result["cleaned_text"],
+            "outline": result["outline"],
+            "chunks": result["chunks"],
         },
     )
     write_json_artifact(
         str(Path(subdirs["parsed"]) / "parsed_requirement.json"),
-        result.parsed_requirement.to_dict(),
+        result["parsed_requirement"],
+    )
+    write_json_artifact(
+        str(Path(subdirs["parsed"]) / "parse_metadata.json"),
+        result.get("parse_metadata", {}),
     )
     write_json_artifact(
         str(Path(subdirs["retrieval"]) / "retrieved_chunks.json"),
         {
-            "query": result.raw_requirement,
-            "hits": [item.to_dict() for item in result.retrieved_context],
+            "query": result["raw_requirement"],
+            "hits": result["retrieved_context"],
             "retrieval_notes": [],
         },
     )
     write_json_artifact(
         str(Path(subdirs["scenarios"]) / "scenario_bundle.json"),
         {
-            "task_context": result.task_context.to_dict(),
-            "raw_requirement": result.raw_requirement,
-            "parsed_requirement": result.parsed_requirement.to_dict(),
-            "retrieved_context": [item.to_dict() for item in result.retrieved_context],
-            "scenarios": [item.to_dict() for item in result.scenarios],
-            "test_case_dsl": result.test_case_dsl.to_dict(),
-            "validation_report": result.validation_report.to_dict(),
-            "analysis_report": result.analysis_report.to_dict(),
+            "task_context": task_context,
+            "raw_requirement": result["raw_requirement"],
+            "parsed_requirement": result["parsed_requirement"],
+            "retrieved_context": result["retrieved_context"],
+            "scenarios": result["scenarios"],
+            "test_case_dsl": result["test_case_dsl"],
+            "validation_report": result["validation_report"],
+            "analysis_report": result["analysis_report"],
+            "parse_metadata": result.get("parse_metadata", {}),
         },
     )
     write_json_artifact(
         str(Path(subdirs["validation"]) / "validation_report.json"),
-        result.validation_report.to_dict(),
+        result["validation_report"],
     )
     write_json_artifact(
         str(Path(subdirs["scenarios"]) / "test_case_dsl.json"),
-        result.test_case_dsl.to_dict(),
+        result["test_case_dsl"],
     )
     write_json_artifact(
         str(Path(subdirs["validation"]) / "analysis_report.json"),
-        result.analysis_report.to_dict(),
+        result["analysis_report"],
     )
     write_json_artifact(
         str(Path(subdirs["execution"]) / "execution_result.json"),
@@ -182,6 +211,6 @@ def persist_pipeline_artifacts(result: PipelineResult, artifacts_base_dir: str) 
     )
     write_text_artifact(
         str(Path(task_dir) / "generated.feature"),
-        result.feature_text,
+        result["feature_text"],
     )
     return task_dir

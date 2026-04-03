@@ -1,0 +1,14 @@
+{
+  "query": "demo",
+  "hits": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "demo",
+      "score": 4.0,
+      "section_title": "未命名章节",
+      "source_file": "",
+      "doc_type": ""
+    }
+  ],
+  "retrieval_notes": []
+}

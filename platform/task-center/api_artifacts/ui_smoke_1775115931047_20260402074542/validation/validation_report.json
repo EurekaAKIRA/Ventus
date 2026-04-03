@@ -1,0 +1,25 @@
+{
+  "feature_name": "ui_smoke_1775115931047",
+  "passed": true,
+  "errors": [],
+  "warnings": [
+    "步骤过长，建议拆分：When 调用 `POST /api/tasks` 创建任务，请求体包含 `ta...",
+    "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/parse...",
+    "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/parsed...",
+    "步骤过长，建议拆分：When 调用 `GET /api/tasks/{task_id}/featur...",
+    "步骤过长，建议拆分：When 调用 `POST /api/tasks/{task_id}/execu..."
+  ],
+  "metrics": {
+    "scenario_count": 8,
+    "average_step_count": 3.25,
+    "step_count": 26,
+    "parse_metrics": {
+      "actor_count": 1,
+      "entity_count": 10,
+      "action_count": 17,
+      "expected_count": 6,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "rules"
+  }
+}

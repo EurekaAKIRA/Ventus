@@ -1,0 +1,605 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "5_20260403082644",
+  "task_name": "5",
+  "feature_name": "5",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "`POST /api/tasks`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "contract_execute",
+        "contract_preflight",
+        "chunk_019",
+        "contract_execution_explanations",
+        "contract_get_task",
+        "contract_post_tasks",
+        "chunk_017"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks`",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks",
+            "json": {
+              "task_name": "demo_task_name",
+              "source_type": "text",
+              "requirement_text": "demo requirement text",
+              "target_system": "http://127.0.0.1:8001",
+              "environment": "test"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 201
+            },
+            {
+              "source": "json.data.task_id",
+              "op": "exists"
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [
+            "resource_id",
+            "task_id"
+          ],
+          "save_context": {
+            "task_id": "json.data.task_id",
+            "resource_id": "json.data.task_id"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "contract_execute",
+        "contract_preflight",
+        "chunk_019",
+        "contract_execution_explanations",
+        "contract_get_task",
+        "contract_post_tasks",
+        "chunk_017"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "`POST /api/tasks/{task_id}/parse`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "contract_execute",
+        "contract_preflight",
+        "chunk_019",
+        "contract_execution_explanations",
+        "contract_get_task",
+        "contract_post_tasks",
+        "chunk_017"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/parse`",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks/{{task_id}}/parse",
+            "json": {
+              "use_llm": false,
+              "rag_enabled": true,
+              "retrieval_top_k": 5,
+              "rerank_enabled": false
+            },
+            "timeout": 180
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "contract_execute",
+        "contract_preflight",
+        "chunk_019",
+        "contract_execution_explanations",
+        "contract_get_task",
+        "contract_post_tasks",
+        "chunk_017"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/parsed-requirement`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/parsed-requirement"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "contract_execute",
+        "contract_preflight",
+        "chunk_019",
+        "contract_execution_explanations",
+        "contract_get_task",
+        "contract_post_tasks",
+        "chunk_017"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/retrieved-context`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/retrieved-context"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "contract_execute",
+        "contract_preflight",
+        "chunk_019",
+        "contract_execution_explanations",
+        "contract_get_task",
+        "contract_post_tasks",
+        "chunk_017"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_006_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_006_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks/{{task_id}}/scenarios/generate"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_006_step_03",
+          "step_type": "then",
+          "text": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "`GET /api/tasks/{task_id}/scenarios`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "contract_execute",
+        "contract_preflight",
+        "chunk_019",
+        "contract_execution_explanations",
+        "contract_get_task",
+        "contract_post_tasks",
+        "chunk_017"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_007_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_007_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/scenarios`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/scenarios"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_007_step_03",
+          "step_type": "then",
+          "text": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "`GET /api/tasks/{task_id}/dsl`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "contract_execute",
+        "contract_preflight",
+        "chunk_019",
+        "contract_execution_explanations",
+        "contract_get_task",
+        "contract_post_tasks",
+        "chunk_017"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_008_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_008_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/dsl`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/dsl"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_008_step_03",
+          "step_type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+            "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_008_step_04",
+          "step_type": "and",
+          "text": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks/{{task_id}}/preflight-check",
+            "json": {
+              "name": "preflight-check-demo"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 201
+            },
+            {
+              "source": "json.id",
+              "op": "exists"
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [
+            "resource_id"
+          ],
+          "save_context": {
+            "resource_id": "json.id"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 8,
+      "scenario_count": 8,
+      "parsed_entities": [
+        "platform",
+        "主链路联调需求说明",
+        "企业版草案",
+        "背景与目的",
+        "当前平台已进入联调阶段",
+        "研发",
+        "测试与前端需要基于统一口径确认以下事项",
+        "平台主流程是否可在同一任务生命周期内闭环完成",
+        "关键中间产物是否可追踪",
+        "可复核"
+      ]
+    }
+  }
+}

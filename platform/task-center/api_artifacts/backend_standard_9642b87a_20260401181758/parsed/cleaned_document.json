@@ -1,0 +1,183 @@
+{
+  "cleaned_text": "# 用户登录与个人中心功能需求\n\n## 1. 功能目标\n\n用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息。\n\n## 2. 接口清单\n\n| 接口 | 方法 | 路径 |\n|------|------|------|\n| 用户登录 | POST | /api/auth/login |\n| 获取个人中心 | GET | /api/user/profile |\n| 修改昵称 | PUT | /api/user/profile |\n\n## 3. 主流程\n\n1. 用户在登录页输入用户名和密码，点击\"登录\"按钮。\n2. 调用 `POST /api/auth/login`，请求体包含 `username` 和 `password` 字段。\n3. 系统校验凭据，返回 200 及 `token` 字段。\n4. 用户跳转至个人中心，调用 `GET /api/user/profile`，携带 Authorization header。\n5. 页面展示 `nickname`、`avatar` 和 `email` 字段。\n6. 用户点击\"编辑\"，修改昵称后调用 `PUT /api/user/profile`，系统返回 200 并刷新页面。\n\n## 4. 异常流程\n\n- 密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403。\n- 登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"。\n\n## 5. 约束\n\n- 所有接口必须在 500ms 内响应。\n- 用户名长度为 4–20 字符，密码须包含数字和字母。\n- 所有需鉴权接口需携带 `Authorization: Bearer <token>` header。",
+  "outline": [
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "用户登录与个人中心功能需求",
+      "line": 1
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "1. 功能目标",
+      "line": 3
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "2. 接口清单",
+      "line": 7
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "3. 主流程",
+      "line": 15
+    },
+    {
+      "type": "ordered_item",
+      "text": "用户在登录页输入用户名和密码，点击\"登录\"按钮。",
+      "line": 17
+    },
+    {
+      "type": "ordered_item",
+      "text": "调用 `POST /api/auth/login`，请求体包含 `username` 和 `password` 字段。",
+      "line": 18
+    },
+    {
+      "type": "ordered_item",
+      "text": "系统校验凭据，返回 200 及 `token` 字段。",
+      "line": 19
+    },
+    {
+      "type": "ordered_item",
+      "text": "用户跳转至个人中心，调用 `GET /api/user/profile`，携带 Authorization header。",
+      "line": 20
+    },
+    {
+      "type": "ordered_item",
+      "text": "页面展示 `nickname`、`avatar` 和 `email` 字段。",
+      "line": 21
+    },
+    {
+      "type": "ordered_item",
+      "text": "用户点击\"编辑\"，修改昵称后调用 `PUT /api/user/profile`，系统返回 200 并刷新页面。",
+      "line": 22
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4. 异常流程",
+      "line": 24
+    },
+    {
+      "type": "bullet",
+      "text": "密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403。",
+      "line": 26
+    },
+    {
+      "type": "bullet",
+      "text": "登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"。",
+      "line": 27
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "5. 约束",
+      "line": 29
+    },
+    {
+      "type": "bullet",
+      "text": "所有接口必须在 500ms 内响应。",
+      "line": 31
+    },
+    {
+      "type": "bullet",
+      "text": "用户名长度为 4–20 字符，密码须包含数字和字母。",
+      "line": 32
+    },
+    {
+      "type": "bullet",
+      "text": "所有需鉴权接口需携带 `Authorization: Bearer <token>` header。",
+      "line": 33
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息。",
+      "section_title": "1. 功能目标",
+      "source_file": "docs/sample_requirement.md",
+      "source_block": "section_1_paragraph_1_part_1",
+      "tokens_estimate": 19,
+      "keywords": [
+        "用户通过用户名和密码登录平台",
+        "登录成功后进入个人中心页面",
+        "查看并修改个人信息"
+      ]
+    },
+    {
+      "chunk_id": "chunk_002",
+      "content": "| 接口 | 方法 | 路径 |\n|------|------|------|\n| 用户登录 | POST | /api/auth/login |\n| 获取个人中心 | GET | /api/user/profile |\n| 修改昵称 | PUT | /api/user/profile |",
+      "section_title": "2. 接口清单",
+      "source_file": "docs/sample_requirement.md",
+      "source_block": "section_2_paragraph_1_part_1",
+      "tokens_estimate": 72,
+      "keywords": [
+        "接口",
+        "方法",
+        "路径",
+        "用户登录",
+        "post",
+        "api",
+        "auth",
+        "login"
+      ]
+    },
+    {
+      "chunk_id": "chunk_003",
+      "content": "1. 用户在登录页输入用户名和密码，点击\"登录\"按钮。\n2. 调用 `POST /api/auth/login`，请求体包含 `username` 和 `password` 字段。\n3. 系统校验凭据，返回 200 及 `token` 字段。\n4. 用户跳转至个人中心，调用 `GET /api/user/profile`，携带 Authorization header。\n5. 页面展示 `nickname`、`avatar` 和 `email` 字段。\n6. 用户点击\"编辑\"，修改昵称后调用 `PUT /api/user/profile`，系统返回 200 并刷新页面。",
+      "section_title": "3. 主流程",
+      "source_file": "docs/sample_requirement.md",
+      "source_block": "section_3_paragraph_1_part_1",
+      "tokens_estimate": 144,
+      "keywords": [
+        "用户在登录页输入用户名和密码",
+        "点击",
+        "登录",
+        "按钮",
+        "调用",
+        "post",
+        "api",
+        "auth"
+      ]
+    },
+    {
+      "chunk_id": "chunk_004",
+      "content": "- 密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403。\n- 登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"。",
+      "section_title": "4. 异常流程",
+      "source_file": "docs/sample_requirement.md",
+      "source_block": "section_4_paragraph_1_part_1",
+      "tokens_estimate": 55,
+      "keywords": [
+        "密码错误三次",
+        "账号锁定",
+        "分钟",
+        "post",
+        "api",
+        "auth",
+        "login",
+        "返回"
+      ]
+    },
+    {
+      "chunk_id": "chunk_005",
+      "content": "- 所有接口必须在 500ms 内响应。\n- 用户名长度为 4–20 字符，密码须包含数字和字母。\n- 所有需鉴权接口需携带 `Authorization: Bearer <token>` header。",
+      "section_title": "5. 约束",
+      "source_file": "docs/sample_requirement.md",
+      "source_block": "section_5_paragraph_1_part_1",
+      "tokens_estimate": 51,
+      "keywords": [
+        "所有接口必须在",
+        "500ms",
+        "内响应",
+        "用户名长度为",
+        "4–20",
+        "字符",
+        "密码须包含数字和字母",
+        "所有需鉴权接口需携带"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2455 @@
+{
+  "task_id": "platform_e2e_regression_1663f48b_20260402150136",
+  "executor": "api-runner",
+  "status": "failed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "`POST /api/tasks`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 422,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+              "server": "uvicorn",
+              "content-length": "141",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "detail": [
+                {
+                  "type": "missing",
+                  "loc": [
+                    "body",
+                    "task_name"
+                  ],
+                  "msg": "Field required",
+                  "input": {
+                    "name": "### 5.1 任务与解析（必测）-demo"
+                  }
+                }
+              ]
+            },
+            "body_preview": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"task_name\"],\"msg\":\"Field required\",\"input\":{\"name\":\"### 5.1 任务与解析（必测）-demo\"}}]}",
+            "elapsed_ms": 2.05,
+            "error": "HTTP Error 422: Unprocessable Entity",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 422,
+            "elapsed_ms": 2.05,
+            "content_type": "application/json",
+            "json_keys": [
+              "detail"
+            ],
+            "body_preview": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"task_name\"],\"msg\":\"Field required\",\"input\":{\"name\":\"### 5.1 任务与解析（必测）-demo\"}",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 123
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 422,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+                "server": "uvicorn",
+                "content-length": "141",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"task_name\"],\"msg\":\"Field required\",\"input\":{\"name\":\"### 5.1 任务与解析（必测）-demo\"}}]}",
+              "json": {
+                "detail": [
+                  {
+                    "type": "missing",
+                    "loc": [
+                      "body",
+                      "task_name"
+                    ],
+                    "msg": "Field required",
+                    "input": {
+                      "name": "### 5.1 任务与解析（必测）-demo"
+                    }
+                  }
+                ]
+              },
+              "elapsed_ms": 2.05,
+              "error": "HTTP Error 422: Unprocessable Entity",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 422,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {
+            "task_id": null,
+            "resource_id": null
+          },
+          "assertion_summary": {
+            "total": 2,
+            "passed": 0,
+            "failed": 2,
+            "failures": [
+              "Assertion failed: status_code eq 201, actual=422",
+              "Assertion failed: json.data.task_id exists None, actual=None"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "任务归档后的可见性与一致性检查",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+              "server": "uvicorn",
+              "content-length": "162",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Task not found: None",
+              "data": {
+                "detail": "Task not found: None"
+              },
+              "timestamp": "2026-04-02T15:02:13.427166+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.427166+00:00\"}",
+            "elapsed_ms": 23.04,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 23.04,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 162
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+                "server": "uvicorn",
+                "content-length": "162",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.427166+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Task not found: None",
+                "data": {
+                  "detail": "Task not found: None"
+                },
+                "timestamp": "2026-04-02T15:02:13.427166+00:00"
+              },
+              "elapsed_ms": 23.04,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/None",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "从业务视角看，一次标准任务应经历以下过程：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "`POST /api/tasks/{task_id}/parse`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/parse`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/None/parse",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/None/parse",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+              "server": "uvicorn",
+              "content-length": "162",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Task not found: None",
+              "data": {
+                "detail": "Task not found: None"
+              },
+              "timestamp": "2026-04-02T15:02:13.457913+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.457913+00:00\"}",
+            "elapsed_ms": 29.83,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 29.83,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 162
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+                "server": "uvicorn",
+                "content-length": "162",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.457913+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Task not found: None",
+                "data": {
+                  "detail": "Task not found: None"
+                },
+                "timestamp": "2026-04-02T15:02:13.457913+00:00"
+              },
+              "elapsed_ms": 29.83,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks/None/parse",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "任务结束后可归档，归档后不应继续作为活跃任务参与主流程",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/parsed-requirement`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None/parsed-requirement",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None/parsed-requirement",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+              "server": "uvicorn",
+              "content-length": "162",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Task not found: None",
+              "data": {
+                "detail": "Task not found: None"
+              },
+              "timestamp": "2026-04-02T15:02:13.482201+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.482201+00:00\"}",
+            "elapsed_ms": 23.78,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 23.78,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 162
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+                "server": "uvicorn",
+                "content-length": "162",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.482201+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Task not found: None",
+                "data": {
+                  "detail": "Task not found: None"
+                },
+                "timestamp": "2026-04-02T15:02:13.482201+00:00"
+              },
+              "elapsed_ms": 23.78,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/None/parsed-requirement",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/retrieved-context`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None/retrieved-context",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None/retrieved-context",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+              "server": "uvicorn",
+              "content-length": "162",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Task not found: None",
+              "data": {
+                "detail": "Task not found: None"
+              },
+              "timestamp": "2026-04-02T15:02:13.500214+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.500214+00:00\"}",
+            "elapsed_ms": 17.23,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 17.23,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 162
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+                "server": "uvicorn",
+                "content-length": "162",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.500214+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Task not found: None",
+                "data": {
+                  "detail": "Task not found: None"
+                },
+                "timestamp": "2026-04-02T15:02:13.500214+00:00"
+              },
+              "elapsed_ms": 17.23,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/None/retrieved-context",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "归档动作生效后，任务应从活跃视图中消失",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_006_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.id exists None, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/None/scenarios/generate",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/None/scenarios/generate",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+              "server": "uvicorn",
+              "content-length": "162",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Task not found: None",
+              "data": {
+                "detail": "Task not found: None"
+              },
+              "timestamp": "2026-04-02T15:02:13.503177+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.503177+00:00\"}",
+            "elapsed_ms": 3.25,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 3.25,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 162
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+                "server": "uvicorn",
+                "content-length": "162",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.503177+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Task not found: None",
+                "data": {
+                  "detail": "Task not found: None"
+                },
+                "timestamp": "2026-04-02T15:02:13.503177+00:00"
+              },
+              "elapsed_ms": 3.25,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks/None/scenarios/generate",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {
+            "resource_id": null
+          },
+          "assertion_summary": {
+            "total": 2,
+            "passed": 0,
+            "failed": 2,
+            "failures": [
+              "Assertion failed: status_code eq 201, actual=404",
+              "Assertion failed: json.id exists None, actual=None"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_006_step_03",
+          "step_type": "then",
+          "text": "返回结构需保持统一 envelope，便于前端统一处理",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "`GET /api/tasks/{task_id}/scenarios`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_007_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/scenarios`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None/scenarios",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None/scenarios",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+              "server": "uvicorn",
+              "content-length": "162",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Task not found: None",
+              "data": {
+                "detail": "Task not found: None"
+              },
+              "timestamp": "2026-04-02T15:02:13.524531+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.524531+00:00\"}",
+            "elapsed_ms": 21.07,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 21.07,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 162
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+                "server": "uvicorn",
+                "content-length": "162",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.524531+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Task not found: None",
+                "data": {
+                  "detail": "Task not found: None"
+                },
+                "timestamp": "2026-04-02T15:02:13.524531+00:00"
+              },
+              "elapsed_ms": 21.07,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/None/scenarios",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_007_step_03",
+          "step_type": "then",
+          "text": "少量场景执行失败但不阻断整体链路",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "`GET /api/tasks/{task_id}/dsl`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_008_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_008_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/dsl`",
+          "status": "failed",
+          "message": "Assertion failed: status_code eq 200, actual=404",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None/dsl",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None/dsl",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+              "server": "uvicorn",
+              "content-length": "162",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Task not found: None",
+              "data": {
+                "detail": "Task not found: None"
+              },
+              "timestamp": "2026-04-02T15:02:13.536798+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.536798+00:00\"}",
+            "elapsed_ms": 12.27,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 12.27,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 162
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+                "server": "uvicorn",
+                "content-length": "162",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.536798+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Task not found: None",
+                "data": {
+                  "detail": "Task not found: None"
+                },
+                "timestamp": "2026-04-02T15:02:13.536798+00:00"
+              },
+              "elapsed_ms": 12.27,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/None/dsl",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 0,
+            "failed": 1,
+            "failures": [
+              "Assertion failed: status_code eq 200, actual=404"
+            ]
+          }
+        },
+        {
+          "step_id": "scenario_008_step_03",
+          "step_type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "scenario_count": 8,
+    "step_count": 24,
+    "passed_step_count": 16,
+    "failed_step_count": 8,
+    "context_key_count": 5,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 16.57,
+    "max_elapsed_ms": 29.83
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 422",
+      "response_summary": {
+        "status_code": 422,
+        "elapsed_ms": 2.05,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"task_name\"],\"msg\":\"Field required\",\"input\":{\"name\":\"### 5.1 任务与解析（必测）-demo\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 123
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: resource_id, task_id",
+      "saved_context": {
+        "task_id": null,
+        "resource_id": null
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=0 failed=2",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed: status_code eq 201, actual=422",
+          "Assertion failed: json.data.task_id exists None, actual=None"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 422,
+        "elapsed_ms": 2.05,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"task_name\"],\"msg\":\"Field required\",\"input\":{\"name\":\"### 5.1 任务与解析（必测）-demo\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 123
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed: status_code eq 201, actual=422",
+          "Assertion failed: json.data.task_id exists None, actual=None"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "任务归档后的可见性与一致性检查"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/None",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_002_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 23.04,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 23.04,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_03",
+      "step_type": "then",
+      "message": "从业务视角看，一次标准任务应经历以下过程："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks/{task_id}/parse`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_003_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/None/parse",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_003_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 29.83,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_003_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_003_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 29.83,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_03",
+      "step_type": "then",
+      "message": "任务结束后可归档，归档后不应继续作为活跃任务参与主流程"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/parsed-requirement`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_004_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/None/parsed-requirement",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_004_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 23.78,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_004_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_004_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 23.78,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_03",
+      "step_type": "then",
+      "message": "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/retrieved-context`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_005_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/None/retrieved-context",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/retrieved-context",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_005_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 17.23,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_005_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_005_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/retrieved-context",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 17.23,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_03",
+      "step_type": "then",
+      "message": "归档动作生效后，任务应从活跃视图中消失"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks/{task_id}/scenarios/generate`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_006_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/None/scenarios/generate",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/None/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_006_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 3.25,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_006_step_02",
+      "message": "Saved context keys: resource_id",
+      "saved_context": {
+        "resource_id": null
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_006_step_02",
+      "message": "Assertions passed=0 failed=2",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed: status_code eq 201, actual=404",
+          "Assertion failed: json.id exists None, actual=None"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_006_step_02",
+      "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.id exists None, actual=None",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/None/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 3.25,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed: status_code eq 201, actual=404",
+          "Assertion failed: json.id exists None, actual=None"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_03",
+      "step_type": "then",
+      "message": "返回结构需保持统一 envelope，便于前端统一处理"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/scenarios`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_007_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/None/scenarios",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_007_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 21.07,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_007_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_007_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 21.07,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_03",
+      "step_type": "then",
+      "message": "少量场景执行失败但不阻断整体链路"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/dsl`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_008_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/None/dsl",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_008_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 12.27,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_008_step_02",
+      "message": "Assertions passed=0 failed=1",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_008_step_02",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "status": "failed",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 12.27,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "failures": [
+          "Assertion failed: status_code eq 200, actual=404"
+        ]
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_03",
+      "step_type": "then",
+      "message": "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "platform_e2e_regression_1663f48b_20260402150135"
+      }
+    },
+    "executed_at": "2026-04-02T15:02:13.540376+00:00"
+  }
+}

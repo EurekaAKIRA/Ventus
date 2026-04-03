@@ -1,0 +1,933 @@
+{
+  "task_id": "platform_e2e_regression_1663f48b_20260402150136",
+  "task_name": "platform_e2e_regression_1663f48b",
+  "quality_status": "failed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-02T15:02:13.540376+00:00",
+  "summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 0,
+    "failed_scenarios": 8,
+    "total_steps": 24,
+    "executed_steps": 24,
+    "passed_steps": 16,
+    "failed_steps": 8,
+    "success_rate": 66.67,
+    "failure_rate": 33.33,
+    "avg_elapsed_ms": 16.57,
+    "max_elapsed_ms": 29.83,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "failed",
+    "assertion_total": 18,
+    "assertion_passed": 10,
+    "assertion_failed": 8,
+    "assertion_pass_rate": 55.56,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "dashboard": {
+    "task_id": "platform_e2e_regression_1663f48b_20260402150136",
+    "task_name": "platform_e2e_regression_1663f48b",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 8,
+      "passed_scenarios": 0,
+      "failed_scenarios": 8,
+      "success_rate": 66.67,
+      "failure_rate": 33.33,
+      "passed_steps": 16,
+      "failed_steps": 8,
+      "avg_elapsed_ms": 16.57,
+      "max_elapsed_ms": 29.83,
+      "assertion_total": 18,
+      "assertion_pass_rate": 55.56,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 3,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 8
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 24
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 16
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 8
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 66.67
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 16.57
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 29.83
+      }
+    ],
+    "totals": {
+      "scenarios": 8,
+      "steps": 24,
+      "assertions": 18,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 0,
+      "failed_scenarios": 8,
+      "passed_steps": 16,
+      "failed_steps": 8
+    },
+    "assertion_summary": {
+      "total": 18,
+      "passed": 10,
+      "failed": 8,
+      "pass_rate": 55.56
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 2,
+      "defined_key_names": [
+        "resource_id",
+        "task_id"
+      ],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 3,
+      "extracted_key_names": [
+        "last_request",
+        "resource_id",
+        "task_id"
+      ],
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 8,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "`POST /api/tasks`",
+          "message": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "scenario_name": "`GET /api/tasks/{task_id}`",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        }
+      ]
+    },
+    "failure_reason_breakdown": [
+      {
+        "category": "assertion_failed",
+        "label": "Assertion Failed",
+        "count": 8,
+        "examples": [
+          {
+            "step_id": "scenario_001_step_02",
+            "scenario_name": "`POST /api/tasks`",
+            "message": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "scenario_name": "`GET /api/tasks/{task_id}`",
+            "message": "Assertion failed: status_code eq 200, actual=404"
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+            "message": "Assertion failed: status_code eq 200, actual=404"
+          }
+        ]
+      }
+    ],
+    "headline": "16/24 steps passed",
+    "summary_text": "任务 platform_e2e_regression_1663f48b 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 16 个、失败 8 个，成功率 66.67%，平均耗时 16.57ms，最大耗时 29.83ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 0,
+    "failed_scenarios": 8,
+    "execution_status": "failed",
+    "total_steps": 24,
+    "executed_steps": 24,
+    "passed_steps": 16,
+    "failed_steps": 8,
+    "success_rate": 66.67,
+    "failure_rate": 33.33,
+    "avg_elapsed_ms": 16.57,
+    "max_elapsed_ms": 29.83,
+    "assertion_total": 18,
+    "assertion_passed": 10,
+    "assertion_failed": 8,
+    "assertion_pass_rate": 55.56,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "platform_e2e_regression_1663f48b",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "headline": "任务 platform_e2e_regression_1663f48b 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 16 个、失败 8 个，成功率 66.67%，平均耗时 16.57ms，最大耗时 29.83ms。",
+    "success_rate": 66.67,
+    "failed_steps": 8,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 8,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "`POST /api/tasks`",
+          "message": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "scenario_name": "`GET /api/tasks/{task_id}`",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        }
+      ]
+    },
+    "next_action": "优先处理失败步骤与失败原因分类"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "failed",
+    "scenario_count": 8,
+    "passed_scenarios": 0,
+    "failed_scenarios": 8,
+    "log_count": 74,
+    "has_failures": true,
+    "top_failure_category": "assertion_failed"
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [
+    {
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "step_id": "scenario_001_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`POST /api/tasks`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None",
+      "elapsed_ms": 2.05,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 422,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+          "server": "uvicorn",
+          "content-length": "141",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "detail": [
+            {
+              "type": "missing",
+              "loc": [
+                "body",
+                "task_name"
+              ],
+              "msg": "Field required",
+              "input": {
+                "name": "### 5.1 任务与解析（必测）-demo"
+              }
+            }
+          ]
+        },
+        "body_preview": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"task_name\"],\"msg\":\"Field required\",\"input\":{\"name\":\"### 5.1 任务与解析（必测）-demo\"}}]}",
+        "elapsed_ms": 2.05,
+        "error": "HTTP Error 422: Unprocessable Entity",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 422,
+        "elapsed_ms": 2.05,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"task_name\"],\"msg\":\"Field required\",\"input\":{\"name\":\"### 5.1 任务与解析（必测）-demo\"}}]}"
+      }
+    },
+    {
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "step_id": "scenario_002_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`GET /api/tasks/{task_id}`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 23.04,
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+          "server": "uvicorn",
+          "content-length": "162",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": false,
+          "code": "TASK_NOT_FOUND",
+          "message": "Task not found: None",
+          "data": {
+            "detail": "Task not found: None"
+          },
+          "timestamp": "2026-04-02T15:02:13.427166+00:00"
+        },
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.427166+00:00\"}",
+        "elapsed_ms": 23.04,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 23.04,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.427166+00:00\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_003",
+      "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+      "step_id": "scenario_003_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`POST /api/tasks/{task_id}/parse`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 29.83,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/None/parse",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+          "server": "uvicorn",
+          "content-length": "162",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": false,
+          "code": "TASK_NOT_FOUND",
+          "message": "Task not found: None",
+          "data": {
+            "detail": "Task not found: None"
+          },
+          "timestamp": "2026-04-02T15:02:13.457913+00:00"
+        },
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.457913+00:00\"}",
+        "elapsed_ms": 29.83,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/None/parse",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 29.83,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.457913+00:00\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_004",
+      "scenario_name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "step_id": "scenario_004_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 23.78,
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+          "server": "uvicorn",
+          "content-length": "162",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": false,
+          "code": "TASK_NOT_FOUND",
+          "message": "Task not found: None",
+          "data": {
+            "detail": "Task not found: None"
+          },
+          "timestamp": "2026-04-02T15:02:13.482201+00:00"
+        },
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.482201+00:00\"}",
+        "elapsed_ms": 23.78,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/parsed-requirement",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 23.78,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.482201+00:00\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_005",
+      "scenario_name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "step_id": "scenario_005_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 17.23,
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/retrieved-context",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+          "server": "uvicorn",
+          "content-length": "162",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": false,
+          "code": "TASK_NOT_FOUND",
+          "message": "Task not found: None",
+          "data": {
+            "detail": "Task not found: None"
+          },
+          "timestamp": "2026-04-02T15:02:13.500214+00:00"
+        },
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.500214+00:00\"}",
+        "elapsed_ms": 17.23,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/retrieved-context",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 17.23,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.500214+00:00\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "step_id": "scenario_006_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.id exists None, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 201, actual=404; Assertion failed: json.id exists None, actual=None",
+      "elapsed_ms": 3.25,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/None/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+          "server": "uvicorn",
+          "content-length": "162",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": false,
+          "code": "TASK_NOT_FOUND",
+          "message": "Task not found: None",
+          "data": {
+            "detail": "Task not found: None"
+          },
+          "timestamp": "2026-04-02T15:02:13.503177+00:00"
+        },
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.503177+00:00\"}",
+        "elapsed_ms": 3.25,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/None/scenarios/generate",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 3.25,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.503177+00:00\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_007",
+      "scenario_name": "`GET /api/tasks/{task_id}/scenarios`",
+      "step_id": "scenario_007_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`GET /api/tasks/{task_id}/scenarios`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 21.07,
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/scenarios",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+          "server": "uvicorn",
+          "content-length": "162",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": false,
+          "code": "TASK_NOT_FOUND",
+          "message": "Task not found: None",
+          "data": {
+            "detail": "Task not found: None"
+          },
+          "timestamp": "2026-04-02T15:02:13.524531+00:00"
+        },
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.524531+00:00\"}",
+        "elapsed_ms": 21.07,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/scenarios",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 21.07,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.524531+00:00\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_008",
+      "scenario_name": "`GET /api/tasks/{task_id}/dsl`",
+      "step_id": "scenario_008_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`GET /api/tasks/{task_id}/dsl`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=404",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=404",
+      "elapsed_ms": 12.27,
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/dsl",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:02:12 GMT",
+          "server": "uvicorn",
+          "content-length": "162",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": false,
+          "code": "TASK_NOT_FOUND",
+          "message": "Task not found: None",
+          "data": {
+            "detail": "Task not found: None"
+          },
+          "timestamp": "2026-04-02T15:02:13.536798+00:00"
+        },
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.536798+00:00\"}",
+        "elapsed_ms": 12.27,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None/dsl",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 12.27,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-02T15:02:13.536798+00:00\"}"
+      }
+    }
+  ],
+  "failure_reasons": [
+    {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 8,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "`POST /api/tasks`",
+          "message": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "scenario_name": "`GET /api/tasks/{task_id}`",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+          "message": "Assertion failed: status_code eq 200, actual=404"
+        }
+      ]
+    }
+  ],
+  "assertion_stats": {
+    "total": 18,
+    "passed": 10,
+    "failed": 8,
+    "pass_rate": 55.56,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "context_stats": {
+    "defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "defined_key_count": 2,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [
+      "last_request",
+      "resource_id",
+      "task_id"
+    ],
+    "extracted_key_count": 3,
+    "unused_defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "task_id": "json.data.task_id",
+      "resource_id": "json.id"
+    }
+  },
+  "task_summary_text": "任务 platform_e2e_regression_1663f48b 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 16 个、失败 8 个，成功率 66.67%，平均耗时 16.57ms，最大耗时 29.83ms。",
+  "findings": [
+    "`POST /api/tasks` / scenario_001_step_02: Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None",
+    "`GET /api/tasks/{task_id}` / scenario_002_step_02: Assertion failed: status_code eq 200, actual=404",
+    "`POST /api/tasks/{task_id}/parse` / scenario_003_step_02: Assertion failed: status_code eq 200, actual=404",
+    "`GET /api/tasks/{task_id}/parsed-requirement` / scenario_004_step_02: Assertion failed: status_code eq 200, actual=404",
+    "`GET /api/tasks/{task_id}/retrieved-context` / scenario_005_step_02: Assertion failed: status_code eq 200, actual=404",
+    "Failure categories: assertion_failed=8"
+  ],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 16,
+      "failed_steps": 8,
+      "success_rate": 66.67,
+      "failure_rate": 33.33,
+      "avg_elapsed_ms": 16.57,
+      "max_elapsed_ms": 29.83
+    },
+    "assertions": {
+      "passed": 10,
+      "failed": 8,
+      "pass_rate": 55.56
+    },
+    "context": {
+      "defined": 2,
+      "used": 0,
+      "extracted": 3
+    },
+    "failure_reasons": {
+      "assertion_failed": 8
+    }
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 8,
+        "total_steps": 24,
+        "passed_steps": 16,
+        "failed_steps": 8,
+        "success_rate": 66.67,
+        "avg_elapsed_ms": 16.57,
+        "max_elapsed_ms": 29.83
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 1,
+        "failure_reasons": [
+          {
+            "category": "assertion_failed",
+            "label": "Assertion Failed",
+            "count": 8,
+            "examples": [
+              {
+                "step_id": "scenario_001_step_02",
+                "scenario_name": "`POST /api/tasks`",
+                "message": "Assertion failed: status_code eq 201, actual=422; Assertion failed: json.data.task_id exists None, actual=None"
+              },
+              {
+                "step_id": "scenario_002_step_02",
+                "scenario_name": "`GET /api/tasks/{task_id}`",
+                "message": "Assertion failed: status_code eq 200, actual=404"
+              },
+              {
+                "step_id": "scenario_003_step_02",
+                "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+                "message": "Assertion failed: status_code eq 200, actual=404"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 18,
+        "passed": 10,
+        "failed": 8,
+        "pass_rate": 55.56,
+        "validation_errors": 0,
+        "validation_warnings": 0
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "defined_key_count": 2,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [
+          "last_request",
+          "resource_id",
+          "task_id"
+        ],
+        "extracted_key_count": 3,
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "task_id": "json.data.task_id",
+          "resource_id": "json.id"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 16.57,
+        "max_elapsed_ms": 29.83
+      }
+    }
+  ]
+}

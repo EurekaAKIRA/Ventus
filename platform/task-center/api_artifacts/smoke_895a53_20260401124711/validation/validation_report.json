@@ -1,0 +1,19 @@
+{
+  "feature_name": "smoke_895a53",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 1,
+    "average_step_count": 7.0,
+    "step_count": 7,
+    "parse_metrics": {
+      "actor_count": 2,
+      "entity_count": 10,
+      "action_count": 2,
+      "expected_count": 4,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "rules"
+  }
+}

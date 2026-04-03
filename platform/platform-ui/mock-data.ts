@@ -1,7 +1,11 @@
 import type {
   AnalysisReport,
   ExecutionResult,
+  HistoryTaskItem,
   ParsedRequirement,
+  ParseMetadata,
+  TaskArtifactContent,
+  TaskArtifactItem,
   RetrievedChunk,
   ScenarioModel,
   TaskContext,
@@ -162,6 +166,17 @@ export const mockExecutionResult: ExecutionResult = {
   ],
 };
 
+export const mockArtifacts: TaskArtifactItem[] = [
+  { type: "raw_requirement", label: "原始需求文本", updated_at: "2026-03-29T10:00:03Z" },
+  { type: "parsed_requirement", label: "结构化需求", updated_at: "2026-03-29T10:00:05Z" },
+  { type: "retrieved_context", label: "检索上下文", updated_at: "2026-03-29T10:00:07Z" },
+  { type: "scenarios", label: "测试场景", updated_at: "2026-03-29T10:00:09Z" },
+  { type: "dsl", label: "DSL 文件", updated_at: "2026-03-29T10:00:10Z" },
+  { type: "feature", label: "Feature 文件", updated_at: "2026-03-29T10:00:11Z" },
+  { type: "validation_report", label: "校验报告", updated_at: "2026-03-29T10:00:12Z" },
+  { type: "analysis_report", label: "分析报告", updated_at: "2026-03-29T10:00:13Z" },
+];
+
 export const mockValidationReport: ValidationReport = {
   feature_name: "用户登录功能测试",
   passed: true,
@@ -171,6 +186,53 @@ export const mockValidationReport: ValidationReport = {
     scenario_count: 1,
     step_count: 3,
     average_step_count: 3,
+  },
+};
+
+export const mockParseMetadata: ParseMetadata = {
+  parse_mode: "rules",
+  llm_attempted: true,
+  llm_used: false,
+  rag_used: true,
+  rag_fallback_reason: "",
+  fallback_reason: "llm_config_missing",
+  llm_error_type: "configuration_error",
+  llm_provider_profile: "tencent_hunyuan_openai_compat",
+  retrieval_mode: "keyword",
+  retrieval_top_k: 5,
+  rerank_enabled: false,
+  document_char_count: 120,
+  cleaned_char_count: 116,
+  chunk_count: 2,
+  embedding_batch_size: 32,
+  estimated_embedding_calls: 1,
+  processing_tier: "realtime",
+  large_document_warning: "",
+  retrieval_metrics: {
+    returned_count: 2,
+    requested_top_k: 5,
+    coverage_ratio: 0.4,
+    duplicate_ratio: 0,
+    score_avg: 3.2,
+    rerank_applied: false,
+    embedded_chunk_count: 0,
+    embedding_coverage: 0,
+    embedding_error: "",
+    embedding_error_detail: "",
+  },
+  retrieval_scoring: {
+    lexical_weight: 4,
+    vector_weight: 6,
+    rerank_vector_weight: 7,
+    rerank_lexical_weight: 2,
+    rerank_title_boost: 0.2,
+    rerank_content_boost: 0.2,
+  },
+  performance: {
+    elapsed_ms: 120.5,
+    target_ms: 8000,
+    within_target: true,
+    slow_reason: "",
   },
 };
 
@@ -194,8 +256,49 @@ export const mockAnalysisReport: AnalysisReport = {
   },
 };
 
+export const mockArtifactContentByType: Record<string, TaskArtifactContent> = {
+  raw_requirement: {
+    type: "raw_requirement",
+    content: "用户输入正确账号密码后登录成功并进入个人中心",
+  },
+  parsed_requirement: {
+    type: "parsed_requirement",
+    content: mockParsedRequirement,
+  },
+  retrieved_context: {
+    type: "retrieved_context",
+    content: mockRetrievedContext,
+  },
+  scenarios: {
+    type: "scenarios",
+    content: mockScenarios,
+  },
+  dsl: {
+    type: "dsl",
+    content: mockTestCaseDSL,
+  },
+  feature: {
+    type: "feature",
+    content: `Feature: 用户登录功能测试
+
+  Scenario: 正常账号密码登录成功
+    Given 用户已注册且账号状态正常
+    When 用户输入正确账号和密码并点击登录
+    Then 系统跳转到个人中心并显示用户昵称`,
+  },
+  validation_report: {
+    type: "validation_report",
+    content: mockValidationReport,
+  },
+  analysis_report: {
+    type: "analysis_report",
+    content: mockAnalysisReport,
+  },
+};
+
 export const mockTaskDetail: TaskDetailPayload = {
   task_context: mockTaskContext,
+  parse_metadata: mockParseMetadata,
   parsed_requirement: mockParsedRequirement,
   retrieved_context: mockRetrievedContext,
   scenarios: mockScenarios,
@@ -210,3 +313,28 @@ export const mockTaskDetail: TaskDetailPayload = {
     When 用户输入正确账号和密码并点击登录
     Then 系统跳转到个人中心并显示用户昵称`,
 };
+
+export const mockHistoryTaskList: HistoryTaskItem[] = [
+  {
+    task_id: "task_20260328_003",
+    task_name: "支付回调流程测试",
+    source_type: "file",
+    source_path: "/docs/payment_requirement.md",
+    created_at: "2026-03-28T15:10:00Z",
+    language: "zh-CN",
+    status: "passed",
+    notes: [],
+    finished_at: "2026-03-28T15:26:00Z",
+  },
+  {
+    task_id: "task_20260328_004",
+    task_name: "订单取消流程测试",
+    source_type: "text",
+    source_path: null,
+    created_at: "2026-03-28T16:00:00Z",
+    language: "zh-CN",
+    status: "failed",
+    notes: ["断言不通过"],
+    finished_at: "2026-03-28T16:08:00Z",
+  },
+];

@@ -1,0 +1,499 @@
+{
+  "task_id": "platform_e2e_regression_fb9cf7d3_20260402154635",
+  "task_name": "platform_e2e_regression_fb9cf7d3",
+  "quality_status": "failed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-02T15:47:25.697520+00:00",
+  "summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "total_steps": 24,
+    "executed_steps": 24,
+    "passed_steps": 23,
+    "failed_steps": 1,
+    "success_rate": 95.83,
+    "failure_rate": 4.17,
+    "avg_elapsed_ms": 1528.04,
+    "max_elapsed_ms": 11146.62,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "failed",
+    "assertion_total": 18,
+    "assertion_passed": 17,
+    "assertion_failed": 1,
+    "assertion_pass_rate": 94.44,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "dashboard": {
+    "task_id": "platform_e2e_regression_fb9cf7d3_20260402154635",
+    "task_name": "platform_e2e_regression_fb9cf7d3",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 8,
+      "passed_scenarios": 7,
+      "failed_scenarios": 1,
+      "success_rate": 95.83,
+      "failure_rate": 4.17,
+      "passed_steps": 23,
+      "failed_steps": 1,
+      "avg_elapsed_ms": 1528.04,
+      "max_elapsed_ms": 11146.62,
+      "assertion_total": 18,
+      "assertion_pass_rate": 94.44,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 3,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 8
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 24
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 23
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 1
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 95.83
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 1528.04
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 11146.62
+      }
+    ],
+    "totals": {
+      "scenarios": 8,
+      "steps": 24,
+      "assertions": 18,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 7,
+      "failed_scenarios": 1,
+      "passed_steps": 23,
+      "failed_steps": 1
+    },
+    "assertion_summary": {
+      "total": 18,
+      "passed": 17,
+      "failed": 1,
+      "pass_rate": 94.44
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 2,
+      "defined_key_names": [
+        "resource_id",
+        "task_id"
+      ],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 3,
+      "extracted_key_names": [
+        "last_request",
+        "resource_id",
+        "task_id"
+      ],
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_006_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "message": "Assertion failed: status_code eq 201, actual=200; Assertion failed: json.id exists None, actual=None"
+        }
+      ]
+    },
+    "failure_reason_breakdown": [
+      {
+        "category": "assertion_failed",
+        "label": "Assertion Failed",
+        "count": 1,
+        "examples": [
+          {
+            "step_id": "scenario_006_step_02",
+            "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+            "message": "Assertion failed: status_code eq 201, actual=200; Assertion failed: json.id exists None, actual=None"
+          }
+        ]
+      }
+    ],
+    "headline": "23/24 steps passed",
+    "summary_text": "任务 platform_e2e_regression_fb9cf7d3 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 23 个、失败 1 个，成功率 95.83%，平均耗时 1528.04ms，最大耗时 11146.62ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "execution_status": "failed",
+    "total_steps": 24,
+    "executed_steps": 24,
+    "passed_steps": 23,
+    "failed_steps": 1,
+    "success_rate": 95.83,
+    "failure_rate": 4.17,
+    "avg_elapsed_ms": 1528.04,
+    "max_elapsed_ms": 11146.62,
+    "assertion_total": 18,
+    "assertion_passed": 17,
+    "assertion_failed": 1,
+    "assertion_pass_rate": 94.44,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "platform_e2e_regression_fb9cf7d3",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "headline": "任务 platform_e2e_regression_fb9cf7d3 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 23 个、失败 1 个，成功率 95.83%，平均耗时 1528.04ms，最大耗时 11146.62ms。",
+    "success_rate": 95.83,
+    "failed_steps": 1,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_006_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "message": "Assertion failed: status_code eq 201, actual=200; Assertion failed: json.id exists None, actual=None"
+        }
+      ]
+    },
+    "next_action": "优先处理失败步骤与失败原因分类"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "failed",
+    "scenario_count": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "log_count": 74,
+    "has_failures": true,
+    "top_failure_category": "assertion_failed"
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [
+    {
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "step_id": "scenario_006_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 201, actual=200; Assertion failed: json.id exists None, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 201, actual=200; Assertion failed: json.id exists None, actual=None",
+      "elapsed_ms": 396.58,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402154712/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 200,
+        "headers": {
+          "date": "Thu, 02 Apr 2026 15:47:23 GMT",
+          "server": "uvicorn",
+          "content-length": "652",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": true,
+          "code": "SCENARIOS_READY",
+          "message": "scenarios generated",
+          "data": {
+            "task_id": "demo_task_name_20260402154712",
+            "scenario_count": 1,
+            "scenarios": [
+              {
+                "scenario_id": "scenario_001",
+                "name": "执行核心业务动作",
+                "goal": "demo requirement text",
+                "steps": [
+                  {
+                    "type": "given",
+                    "text": "从有效的 API 入口开始执行"
+                  },
+                  {
+                    "type": "when",
+                    "text": "执行核心业务动作"
+                  },
+                  {
+                    "type": "then",
+                    "text": "系统返回符合需求的可观察结果"
+                  }
+                ],
+                "assertions": [
+                  "系统返回符合需求的可观察结果"
+                ],
+                "source_chunks": [
+                  "chunk_001"
+                ],
+                "priority": "P2",
+                "preconditions": [
+                  "从有效的 API 入口开始执行"
+                ]
+              }
+            ]
+          },
+          "timestamp": "2026-04-02T15:47:24.859619+00:00"
+        },
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_20260402154712\",\"scenario_count\":1,\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务动",
+        "elapsed_ms": 396.58,
+        "error": "",
+        "error_category": ""
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402154712/scenarios/generate",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 396.58,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_20260402154712\",\"scenario_count\":1,\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务动"
+      }
+    }
+  ],
+  "failure_reasons": [
+    {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_006_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "message": "Assertion failed: status_code eq 201, actual=200; Assertion failed: json.id exists None, actual=None"
+        }
+      ]
+    }
+  ],
+  "assertion_stats": {
+    "total": 18,
+    "passed": 17,
+    "failed": 1,
+    "pass_rate": 94.44,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "context_stats": {
+    "defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "defined_key_count": 2,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [
+      "last_request",
+      "resource_id",
+      "task_id"
+    ],
+    "extracted_key_count": 3,
+    "unused_defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "task_id": "json.data.task_id",
+      "resource_id": "json.id"
+    }
+  },
+  "task_summary_text": "任务 platform_e2e_regression_fb9cf7d3 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 23 个、失败 1 个，成功率 95.83%，平均耗时 1528.04ms，最大耗时 11146.62ms。",
+  "findings": [
+    "`POST /api/tasks/{task_id}/scenarios/generate` / scenario_006_step_02: Assertion failed: status_code eq 201, actual=200; Assertion failed: json.id exists None, actual=None",
+    "Failure categories: assertion_failed=1"
+  ],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 23,
+      "failed_steps": 1,
+      "success_rate": 95.83,
+      "failure_rate": 4.17,
+      "avg_elapsed_ms": 1528.04,
+      "max_elapsed_ms": 11146.62
+    },
+    "assertions": {
+      "passed": 17,
+      "failed": 1,
+      "pass_rate": 94.44
+    },
+    "context": {
+      "defined": 2,
+      "used": 0,
+      "extracted": 3
+    },
+    "failure_reasons": {
+      "assertion_failed": 1
+    }
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 8,
+        "total_steps": 24,
+        "passed_steps": 23,
+        "failed_steps": 1,
+        "success_rate": 95.83,
+        "avg_elapsed_ms": 1528.04,
+        "max_elapsed_ms": 11146.62
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 1,
+        "failure_reasons": [
+          {
+            "category": "assertion_failed",
+            "label": "Assertion Failed",
+            "count": 1,
+            "examples": [
+              {
+                "step_id": "scenario_006_step_02",
+                "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+                "message": "Assertion failed: status_code eq 201, actual=200; Assertion failed: json.id exists None, actual=None"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 18,
+        "passed": 17,
+        "failed": 1,
+        "pass_rate": 94.44,
+        "validation_errors": 0,
+        "validation_warnings": 0
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "defined_key_count": 2,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [
+          "last_request",
+          "resource_id",
+          "task_id"
+        ],
+        "extracted_key_count": 3,
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "task_id": "json.data.task_id",
+          "resource_id": "json.id"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 1528.04,
+        "max_elapsed_ms": 11146.62
+      }
+    }
+  ]
+}

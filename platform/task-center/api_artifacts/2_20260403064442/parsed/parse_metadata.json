@@ -1,0 +1,56 @@
+{
+  "parse_mode": "rules",
+  "llm_attempted": true,
+  "llm_used": false,
+  "rag_used": true,
+  "rag_fallback_reason": "",
+  "fallback_reason": "llm_timeout",
+  "llm_error_type": "ModelGatewayTimeoutError",
+  "llm_provider_profile": "tencent_hunyuan_openai_compat",
+  "model_profile": "default",
+  "retrieval_mode": "vector+keyword",
+  "retrieval_top_k": 5,
+  "rerank_enabled": false,
+  "retrieval_metrics": {
+    "returned_count": 5,
+    "requested_top_k": 5,
+    "coverage_ratio": 1.0,
+    "duplicate_ratio": 0.0,
+    "score_avg": 8.553,
+    "rerank_applied": false,
+    "embedded_chunk_count": 31,
+    "embedding_coverage": 1.0,
+    "embedding_error": "",
+    "embedding_error_detail": "",
+    "retrieval_min_final_score": 0.0,
+    "retrieval_candidates_before_threshold": 5,
+    "retrieval_low_score_rejection": false
+  },
+  "contract_knowledge": {
+    "enabled": true,
+    "merged_snippet_count": 8,
+    "official_score_boost": 2.0,
+    "min_retrieval_score": 0.0
+  },
+  "retrieval_scoring": {
+    "lexical_weight": 4.0,
+    "vector_weight": 6.0,
+    "rerank_vector_weight": 7.0,
+    "rerank_lexical_weight": 2.0,
+    "rerank_title_boost": 0.2,
+    "rerank_content_boost": 0.2
+  },
+  "performance": {
+    "elapsed_ms": 36732.42,
+    "target_ms": 20000.0,
+    "within_target": false,
+    "slow_reason": "network_or_model_latency"
+  },
+  "document_char_count": 2960,
+  "cleaned_char_count": 2958,
+  "chunk_count": 31,
+  "embedding_batch_size": 32,
+  "estimated_embedding_calls": 1,
+  "processing_tier": "realtime",
+  "large_document_warning": ""
+}

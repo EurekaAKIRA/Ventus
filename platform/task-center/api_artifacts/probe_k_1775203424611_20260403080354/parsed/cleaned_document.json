@@ -1,0 +1,144 @@
+{
+  "cleaned_text": "demo",
+  "outline": [],
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "demo",
+      "section_title": "未命名章节",
+      "source_file": "",
+      "source_block": "section_1_paragraph_1_part_1",
+      "tokens_estimate": 2,
+      "keywords": [
+        "demo"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "contract_post_tasks",
+      "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+      "section_title": "创建任务 POST /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 65,
+      "keywords": [
+        "POST",
+        "/api/tasks",
+        "task_name",
+        "创建任务",
+        "task_id",
+        "requirement"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_get_task",
+      "content": "GET /api/tasks/{task_id} 返回任务状态、流水线阶段、artifact 路径等。路径参数 task_id 为创建任务接口返回的标识。",
+      "section_title": "任务详情 GET /api/tasks/{task_id}",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 38,
+      "keywords": [
+        "GET",
+        "/api/tasks",
+        "task_id",
+        "详情",
+        "状态"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_task_list",
+      "content": "GET /api/tasks 支持分页与筛选，用于控制台列表页展示历史任务。",
+      "section_title": "任务列表 GET /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 19,
+      "keywords": [
+        "GET",
+        "/api/tasks",
+        "列表",
+        "分页"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execute",
+      "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+      "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 43,
+      "keywords": [
+        "POST",
+        "execute",
+        "执行",
+        "task_id",
+        "dry_run"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_preflight",
+      "content": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行。",
+      "section_title": "预检 POST /api/tasks/{task_id}/preflight-check",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 35,
+      "keywords": [
+        "preflight",
+        "预检",
+        "task_id",
+        "校验"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execution_explanations",
+      "content": "GET /api/tasks/{task_id}/execution/explanations 返回步骤级说明与上下文，用于排错与审计。",
+      "section_title": "执行说明 GET /api/tasks/{task_id}/execution/explanations",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 34,
+      "keywords": [
+        "explanations",
+        "执行说明",
+        "task_id",
+        "步骤"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_parse_requirement",
+      "content": "需求分析模块将自然语言或文档解析为结构化字段：objective、actors、actions、expected_results、ambiguities 等；可结合 RAG 检索上下文提升准确度。",
+      "section_title": "需求解析（分析服务）",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 49,
+      "keywords": [
+        "解析",
+        "requirement",
+        "RAG",
+        "objective",
+        "actions"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_envelope_errors",
+      "content": "平台 HTTP API 错误宜使用统一 envelope（如 code、message、details），前端与自动化应优先解析该结构而非裸文本。",
+      "section_title": "统一错误响应",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 36,
+      "keywords": [
+        "错误",
+        "envelope",
+        "422",
+        "message",
+        "code"
+      ],
+      "doc_type": "platform_contract"
+    }
+  ]
+}

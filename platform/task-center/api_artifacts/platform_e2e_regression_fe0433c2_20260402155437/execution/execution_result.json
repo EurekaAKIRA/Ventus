@@ -1,0 +1,3054 @@
+{
+  "task_id": "platform_e2e_regression_fe0433c2_20260402155405",
+  "executor": "api-runner",
+  "status": "passed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "`POST /api/tasks`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks`",
+          "status": "passed",
+          "message": "POST http://127.0.0.1:8001/api/tasks -> 201",
+          "error_category": "",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "requirement_text",
+              "source_type",
+              "target_system",
+              "task_name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 201,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:54:37 GMT",
+              "server": "uvicorn",
+              "content-length": "387",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_CREATED",
+              "message": "task created",
+              "data": {
+                "task_id": "demo_task_name_20260402155438",
+                "task_context": {
+                  "task_id": "demo_task_name_20260402155438",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "source_path": null,
+                  "created_at": "2026-04-02T15:54:38.161111+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                }
+              },
+              "timestamp": "2026-04-02T15:54:38.932959+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_context\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_name\":\"demo_task_name\",",
+            "elapsed_ms": 772.36,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 201,
+            "elapsed_ms": 772.36,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_c",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 387
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 201,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:54:37 GMT",
+                "server": "uvicorn",
+                "content-length": "387",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_context\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-02T15:54:38.161111+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]}},\"timestamp\":\"2026-04-02T15:54:38.932959+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_CREATED",
+                "message": "task created",
+                "data": {
+                  "task_id": "demo_task_name_20260402155438",
+                  "task_context": {
+                    "task_id": "demo_task_name_20260402155438",
+                    "task_name": "demo_task_name",
+                    "source_type": "text",
+                    "source_path": null,
+                    "created_at": "2026-04-02T15:54:38.161111+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  }
+                },
+                "timestamp": "2026-04-02T15:54:38.932959+00:00"
+              },
+              "elapsed_ms": 772.36,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 201,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "requirement_text",
+                "source_type",
+                "target_system",
+                "task_name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "saved_context": {
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "assertion_summary": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "任务归档后的可见性与一致性检查",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438 -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:54:38 GMT",
+              "server": "uvicorn",
+              "content-length": "1772",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_DETAIL_OK",
+              "message": "task detail",
+              "data": {
+                "task_id": "demo_task_name_20260402155438",
+                "task_name": "demo_task_name",
+                "source_type": "text",
+                "target_system": "http://127.0.0.1:8001",
+                "environment": "test",
+                "created_at": "2026-04-02T15:54:38.161111+00:00",
+                "status": "received",
+                "archived": false,
+                "task_context": {
+                  "task_id": "demo_task_name_20260402155438",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "source_path": null,
+                  "created_at": "2026-04-02T15:54:38.161111+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                },
+                "artifact_dir": null,
+                "parse_metadata": {
+                  "parse_mode": "rules",
+                  "llm_attempted": false,
+                  "llm_used": false,
+                  "rag_used": true,
+                  "rag_fallback_reason": "",
+                  "fallback_reason": "",
+                  "llm_error_type": "",
+                  "llm_provider_profile": "tencent_hunyuan_openai_compat",
+                  "model_profile": "default",
+                  "retrieval_mode": "keyword",
+                  "retrieval_top_k": 5,
+                  "rerank_enabled": false,
+                  "document_char_count": 0,
+                  "cleaned_char_count": 0,
+                  "chunk_count": 0,
+                  "embedding_batch_size": 32,
+                  "estimated_embedding_calls": 0,
+                  "processing_tier": "realtime",
+                  "large_document_warning": "",
+                  "retrieval_metrics": {
+                    "returned_count": 0,
+                    "requested_top_k": 0,
+                    "coverage_ratio": 0.0,
+                    "duplicate_ratio": 0.0,
+                    "score_avg": 0.0,
+                    "rerank_applied": false,
+                    "embedded_chunk_count": 0,
+                    "embedding_coverage": 0.0,
+                    "embedding_error": "",
+                    "embedding_error_detail": ""
+                  },
+                  "retrieval_scoring": {
+                    "lexical_weight": 4.0,
+                    "vector_weight": 6.0,
+                    "rerank_vector_weight": 7.0,
+                    "rerank_lexical_weight": 2.0,
+                    "rerank_title_boost": 0.2,
+                    "rerank_content_boost": 0.2
+                  },
+                  "performance": {
+                    "elapsed_ms": 0.0,
+                    "target_ms": 0.0,
+                    "within_target": true,
+                    "slow_reason": ""
+                  }
+                },
+                "parsed_requirement": null,
+                "retrieved_context": null,
+                "scenarios": null,
+                "test_case_dsl": null,
+                "validation_report": null,
+                "analysis_report": null,
+                "feature_text": null,
+                "execution_result": null
+              },
+              "timestamp": "2026-04-02T15:54:38.949533+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:80",
+            "elapsed_ms": 17.64,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 17.64,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 1772
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:54:38 GMT",
+                "server": "uvicorn",
+                "content-length": "1772",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:8001\",\"environment\":\"test\",\"created_at\":\"2026-04-02T15:54:38.161111+00:00\",\"status\":\"received\",\"archived\":false,\"task_context\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-02T15:54:38.161111+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]},\"artifact_dir\":null,\"parse_metadata\":{\"parse_mode\":\"rules\",\"llm_attempted\":false,\"llm_used\":false,\"rag_used\":true,\"rag_fallback_reason\":\"\",\"fallback_reason\":\"\",\"llm_error_type\":\"\",\"llm_provider_profile\":\"tencent_hunyuan_openai_compat\",\"model_profile\":\"default\",\"retrieval_mode\":\"keyword\",\"retrieval_top_k\":5,\"rerank_enabled\":false,\"document_char_count\":0,\"cleaned_char_count\":0,\"chunk_count\":0,\"embedding_batch_size\":32,\"estimated_embedding_calls\":0,\"processing_tier\":\"realtime\",\"large_document_warning\":\"\",\"retrieval_metrics\":{\"returned_count\":0,\"requested_top_k\":0,\"coverage_ratio\":0.0,\"duplicate_ratio\":0.0,\"score_avg\":0.0,\"rerank_applied\":false,\"embedded_chunk_count\":0,\"embedding_coverage\":0.0,\"embedding_error\":\"\",\"embedding_error_detail\":\"\"},\"retrieval_scoring\":{\"lexical_weight\":4.0,\"vector_weight\":6.0,\"rerank_vector_weight\":7.0,\"rerank_lexical_weight\":2.0,\"rerank_title_boost\":0.2,\"rerank_content_boost\":0.2},\"performance\":{\"elapsed_ms\":0.0,\"target_ms\":0.0,\"within_target\":true,\"slow_reason\":\"\"}},\"parsed_requirement\":null,\"retrieved_context\":null,\"scenarios\":null,\"test_case_dsl\":null,\"validation_report\":null,\"analysis_report\":null,\"feature_text\":null,\"execution_result\":null},\"timestamp\":\"2026-04-02T15:54:38.949533+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_DETAIL_OK",
+                "message": "task detail",
+                "data": {
+                  "task_id": "demo_task_name_20260402155438",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "target_system": "http://127.0.0.1:8001",
+                  "environment": "test",
+                  "created_at": "2026-04-02T15:54:38.161111+00:00",
+                  "status": "received",
+                  "archived": false,
+                  "task_context": {
+                    "task_id": "demo_task_name_20260402155438",
+                    "task_name": "demo_task_name",
+                    "source_type": "text",
+                    "source_path": null,
+                    "created_at": "2026-04-02T15:54:38.161111+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  },
+                  "artifact_dir": null,
+                  "parse_metadata": {
+                    "parse_mode": "rules",
+                    "llm_attempted": false,
+                    "llm_used": false,
+                    "rag_used": true,
+                    "rag_fallback_reason": "",
+                    "fallback_reason": "",
+                    "llm_error_type": "",
+                    "llm_provider_profile": "tencent_hunyuan_openai_compat",
+                    "model_profile": "default",
+                    "retrieval_mode": "keyword",
+                    "retrieval_top_k": 5,
+                    "rerank_enabled": false,
+                    "document_char_count": 0,
+                    "cleaned_char_count": 0,
+                    "chunk_count": 0,
+                    "embedding_batch_size": 32,
+                    "estimated_embedding_calls": 0,
+                    "processing_tier": "realtime",
+                    "large_document_warning": "",
+                    "retrieval_metrics": {
+                      "returned_count": 0,
+                      "requested_top_k": 0,
+                      "coverage_ratio": 0.0,
+                      "duplicate_ratio": 0.0,
+                      "score_avg": 0.0,
+                      "rerank_applied": false,
+                      "embedded_chunk_count": 0,
+                      "embedding_coverage": 0.0,
+                      "embedding_error": "",
+                      "embedding_error_detail": ""
+                    },
+                    "retrieval_scoring": {
+                      "lexical_weight": 4.0,
+                      "vector_weight": 6.0,
+                      "rerank_vector_weight": 7.0,
+                      "rerank_lexical_weight": 2.0,
+                      "rerank_title_boost": 0.2,
+                      "rerank_content_boost": 0.2
+                    },
+                    "performance": {
+                      "elapsed_ms": 0.0,
+                      "target_ms": 0.0,
+                      "within_target": true,
+                      "slow_reason": ""
+                    }
+                  },
+                  "parsed_requirement": null,
+                  "retrieved_context": null,
+                  "scenarios": null,
+                  "test_case_dsl": null,
+                  "validation_report": null,
+                  "analysis_report": null,
+                  "feature_text": null,
+                  "execution_result": null
+                },
+                "timestamp": "2026-04-02T15:54:38.949533+00:00"
+              },
+              "elapsed_ms": 17.64,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "从业务视角看，一次标准任务应经历以下过程：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "`POST /api/tasks/{task_id}/parse`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/parse`",
+          "status": "passed",
+          "message": "POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parse -> 200",
+          "error_category": "",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parse",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parse",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "rag_enabled",
+              "rerank_enabled",
+              "retrieval_top_k",
+              "use_llm"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:54:38 GMT",
+              "server": "uvicorn",
+              "content-length": "1530",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_PARSED",
+              "message": "task parsed",
+              "data": {
+                "task_id": "demo_task_name_20260402155438",
+                "status": "parsed",
+                "parsed_requirement": {
+                  "objective": "demo requirement text",
+                  "actors": [
+                    "用户"
+                  ],
+                  "entities": [
+                    "demo",
+                    "requirement",
+                    "text"
+                  ],
+                  "preconditions": [],
+                  "actions": [
+                    "执行核心业务动作"
+                  ],
+                  "expected_results": [
+                    "系统返回符合需求的可观察结果"
+                  ],
+                  "constraints": [
+                    "demo requirement text"
+                  ],
+                  "ambiguities": [],
+                  "source_chunks": [
+                    "chunk_001"
+                  ],
+                  "api_endpoints": []
+                },
+                "parse_metadata": {
+                  "parse_mode": "rules",
+                  "llm_attempted": false,
+                  "llm_used": false,
+                  "rag_used": true,
+                  "rag_fallback_reason": "",
+                  "fallback_reason": "",
+                  "llm_error_type": "",
+                  "llm_provider_profile": "tencent_hunyuan_openai_compat",
+                  "model_profile": "default",
+                  "retrieval_mode": "vector+keyword",
+                  "retrieval_top_k": 5,
+                  "rerank_enabled": false,
+                  "document_char_count": 21,
+                  "cleaned_char_count": 21,
+                  "chunk_count": 1,
+                  "embedding_batch_size": 32,
+                  "estimated_embedding_calls": 1,
+                  "processing_tier": "realtime",
+                  "large_document_warning": "",
+                  "retrieval_metrics": {
+                    "returned_count": 1,
+                    "requested_top_k": 5,
+                    "coverage_ratio": 0.2,
+                    "duplicate_ratio": 0.0,
+                    "score_avg": 10.0,
+                    "rerank_applied": false,
+                    "embedded_chunk_count": 1,
+                    "embedding_coverage": 1.0,
+                    "embedding_error": "",
+                    "embedding_error_detail": ""
+                  },
+                  "retrieval_scoring": {
+                    "lexical_weight": 4.0,
+                    "vector_weight": 6.0,
+                    "rerank_vector_weight": 7.0,
+                    "rerank_lexical_weight": 2.0,
+                    "rerank_title_boost": 0.2,
+                    "rerank_content_boost": 0.2
+                  },
+                  "performance": {
+                    "elapsed_ms": 852.57,
+                    "target_ms": 8000.0,
+                    "within_target": true,
+                    "slow_reason": ""
+                  }
+                }
+              },
+              "timestamp": "2026-04-02T15:54:40.252066+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"status\":\"parsed\",\"parsed_requirement\":{\"objective\":\"demo requirement text\",\"actors\":[\"用户",
+            "elapsed_ms": 1300.96,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 1300.96,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"status\":",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 1482
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:54:38 GMT",
+                "server": "uvicorn",
+                "content-length": "1530",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"status\":\"parsed\",\"parsed_requirement\":{\"objective\":\"demo requirement text\",\"actors\":[\"用户\"],\"entities\":[\"demo\",\"requirement\",\"text\"],\"preconditions\":[],\"actions\":[\"执行核心业务动作\"],\"expected_results\":[\"系统返回符合需求的可观察结果\"],\"constraints\":[\"demo requirement text\"],\"ambiguities\":[],\"source_chunks\":[\"chunk_001\"],\"api_endpoints\":[]},\"parse_metadata\":{\"parse_mode\":\"rules\",\"llm_attempted\":false,\"llm_used\":false,\"rag_used\":true,\"rag_fallback_reason\":\"\",\"fallback_reason\":\"\",\"llm_error_type\":\"\",\"llm_provider_profile\":\"tencent_hunyuan_openai_compat\",\"model_profile\":\"default\",\"retrieval_mode\":\"vector+keyword\",\"retrieval_top_k\":5,\"rerank_enabled\":false,\"document_char_count\":21,\"cleaned_char_count\":21,\"chunk_count\":1,\"embedding_batch_size\":32,\"estimated_embedding_calls\":1,\"processing_tier\":\"realtime\",\"large_document_warning\":\"\",\"retrieval_metrics\":{\"returned_count\":1,\"requested_top_k\":5,\"coverage_ratio\":0.2,\"duplicate_ratio\":0.0,\"score_avg\":10.0,\"rerank_applied\":false,\"embedded_chunk_count\":1,\"embedding_coverage\":1.0,\"embedding_error\":\"\",\"embedding_error_detail\":\"\"},\"retrieval_scoring\":{\"lexical_weight\":4.0,\"vector_weight\":6.0,\"rerank_vector_weight\":7.0,\"rerank_lexical_weight\":2.0,\"rerank_title_boost\":0.2,\"rerank_content_boost\":0.2},\"performance\":{\"elapsed_ms\":852.57,\"target_ms\":8000.0,\"within_target\":true,\"slow_reason\":\"\"}}},\"timestamp\":\"2026-04-02T15:54:40.252066+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_PARSED",
+                "message": "task parsed",
+                "data": {
+                  "task_id": "demo_task_name_20260402155438",
+                  "status": "parsed",
+                  "parsed_requirement": {
+                    "objective": "demo requirement text",
+                    "actors": [
+                      "用户"
+                    ],
+                    "entities": [
+                      "demo",
+                      "requirement",
+                      "text"
+                    ],
+                    "preconditions": [],
+                    "actions": [
+                      "执行核心业务动作"
+                    ],
+                    "expected_results": [
+                      "系统返回符合需求的可观察结果"
+                    ],
+                    "constraints": [
+                      "demo requirement text"
+                    ],
+                    "ambiguities": [],
+                    "source_chunks": [
+                      "chunk_001"
+                    ],
+                    "api_endpoints": []
+                  },
+                  "parse_metadata": {
+                    "parse_mode": "rules",
+                    "llm_attempted": false,
+                    "llm_used": false,
+                    "rag_used": true,
+                    "rag_fallback_reason": "",
+                    "fallback_reason": "",
+                    "llm_error_type": "",
+                    "llm_provider_profile": "tencent_hunyuan_openai_compat",
+                    "model_profile": "default",
+                    "retrieval_mode": "vector+keyword",
+                    "retrieval_top_k": 5,
+                    "rerank_enabled": false,
+                    "document_char_count": 21,
+                    "cleaned_char_count": 21,
+                    "chunk_count": 1,
+                    "embedding_batch_size": 32,
+                    "estimated_embedding_calls": 1,
+                    "processing_tier": "realtime",
+                    "large_document_warning": "",
+                    "retrieval_metrics": {
+                      "returned_count": 1,
+                      "requested_top_k": 5,
+                      "coverage_ratio": 0.2,
+                      "duplicate_ratio": 0.0,
+                      "score_avg": 10.0,
+                      "rerank_applied": false,
+                      "embedded_chunk_count": 1,
+                      "embedding_coverage": 1.0,
+                      "embedding_error": "",
+                      "embedding_error_detail": ""
+                    },
+                    "retrieval_scoring": {
+                      "lexical_weight": 4.0,
+                      "vector_weight": 6.0,
+                      "rerank_vector_weight": 7.0,
+                      "rerank_lexical_weight": 2.0,
+                      "rerank_title_boost": 0.2,
+                      "rerank_content_boost": 0.2
+                    },
+                    "performance": {
+                      "elapsed_ms": 852.57,
+                      "target_ms": 8000.0,
+                      "within_target": true,
+                      "slow_reason": ""
+                    }
+                  }
+                },
+                "timestamp": "2026-04-02T15:54:40.252066+00:00"
+              },
+              "elapsed_ms": 1300.96,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parse",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "rag_enabled",
+                "rerank_enabled",
+                "retrieval_top_k",
+                "use_llm"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "任务结束后可归档，归档后不应继续作为活跃任务参与主流程",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/parsed-requirement`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parsed-requirement -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parsed-requirement",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parsed-requirement",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+              "server": "uvicorn",
+              "content-length": "461",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "PARSED_REQUIREMENT_OK",
+              "message": "parsed requirement",
+              "data": {
+                "objective": "demo requirement text",
+                "actors": [
+                  "用户"
+                ],
+                "entities": [
+                  "demo",
+                  "requirement",
+                  "text"
+                ],
+                "preconditions": [],
+                "actions": [
+                  "执行核心业务动作"
+                ],
+                "expected_results": [
+                  "系统返回符合需求的可观察结果"
+                ],
+                "constraints": [
+                  "demo requirement text"
+                ],
+                "ambiguities": [],
+                "source_chunks": [
+                  "chunk_001"
+                ],
+                "api_endpoints": []
+              },
+              "timestamp": "2026-04-02T15:54:40.264267+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text\",\"actors\":[\"用户\"],\"entities\":[\"demo\",\"requirement\",\"text\"],\"preconditions\":[],\"a",
+            "elapsed_ms": 13.7,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 13.7,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 413
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+                "server": "uvicorn",
+                "content-length": "461",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text\",\"actors\":[\"用户\"],\"entities\":[\"demo\",\"requirement\",\"text\"],\"preconditions\":[],\"actions\":[\"执行核心业务动作\"],\"expected_results\":[\"系统返回符合需求的可观察结果\"],\"constraints\":[\"demo requirement text\"],\"ambiguities\":[],\"source_chunks\":[\"chunk_001\"],\"api_endpoints\":[]},\"timestamp\":\"2026-04-02T15:54:40.264267+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "PARSED_REQUIREMENT_OK",
+                "message": "parsed requirement",
+                "data": {
+                  "objective": "demo requirement text",
+                  "actors": [
+                    "用户"
+                  ],
+                  "entities": [
+                    "demo",
+                    "requirement",
+                    "text"
+                  ],
+                  "preconditions": [],
+                  "actions": [
+                    "执行核心业务动作"
+                  ],
+                  "expected_results": [
+                    "系统返回符合需求的可观察结果"
+                  ],
+                  "constraints": [
+                    "demo requirement text"
+                  ],
+                  "ambiguities": [],
+                  "source_chunks": [
+                    "chunk_001"
+                  ],
+                  "api_endpoints": []
+                },
+                "timestamp": "2026-04-02T15:54:40.264267+00:00"
+              },
+              "elapsed_ms": 13.7,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parsed-requirement",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/retrieved-context`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/retrieved-context -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/retrieved-context",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/retrieved-context",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+              "server": "uvicorn",
+              "content-length": "255",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "RETRIEVED_CONTEXT_OK",
+              "message": "retrieved context",
+              "data": [
+                {
+                  "chunk_id": "chunk_001",
+                  "content": "demo requirement text",
+                  "score": 10.0,
+                  "section_title": "未命名章节",
+                  "source_file": ""
+                }
+              ],
+              "timestamp": "2026-04-02T15:54:40.287964+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"demo requirement text\",\"score\":10.0,\"section_title\":\"未命名章节\",\"source_file\":\"\"}],\"t",
+            "elapsed_ms": 22.2,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 22.2,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"d",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 245
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+                "server": "uvicorn",
+                "content-length": "255",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"demo requirement text\",\"score\":10.0,\"section_title\":\"未命名章节\",\"source_file\":\"\"}],\"timestamp\":\"2026-04-02T15:54:40.287964+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "RETRIEVED_CONTEXT_OK",
+                "message": "retrieved context",
+                "data": [
+                  {
+                    "chunk_id": "chunk_001",
+                    "content": "demo requirement text",
+                    "score": 10.0,
+                    "section_title": "未命名章节",
+                    "source_file": ""
+                  }
+                ],
+                "timestamp": "2026-04-02T15:54:40.287964+00:00"
+              },
+              "elapsed_ms": 22.2,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/retrieved-context",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "归档动作生效后，任务应从活跃视图中消失",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_006_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "status": "passed",
+          "message": "POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios/generate -> 200",
+          "error_category": "",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios/generate",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios/generate",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+              "server": "uvicorn",
+              "content-length": "652",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "SCENARIOS_READY",
+              "message": "scenarios generated",
+              "data": {
+                "task_id": "demo_task_name_20260402155438",
+                "scenario_count": 1,
+                "scenarios": [
+                  {
+                    "scenario_id": "scenario_001",
+                    "name": "执行核心业务动作",
+                    "goal": "demo requirement text",
+                    "steps": [
+                      {
+                        "type": "given",
+                        "text": "从有效的 API 入口开始执行"
+                      },
+                      {
+                        "type": "when",
+                        "text": "执行核心业务动作"
+                      },
+                      {
+                        "type": "then",
+                        "text": "系统返回符合需求的可观察结果"
+                      }
+                    ],
+                    "assertions": [
+                      "系统返回符合需求的可观察结果"
+                    ],
+                    "source_chunks": [
+                      "chunk_001"
+                    ],
+                    "priority": "P2",
+                    "preconditions": [
+                      "从有效的 API 入口开始执行"
+                    ]
+                  }
+                ]
+              },
+              "timestamp": "2026-04-02T15:54:40.712963+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"scenario_count\":1,\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务动",
+            "elapsed_ms": 425.0,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 425.0,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_2026040215543",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 524
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+                "server": "uvicorn",
+                "content-length": "652",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"scenario_count\":1,\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务动作\",\"goal\":\"demo requirement text\",\"steps\":[{\"type\":\"given\",\"text\":\"从有效的 API 入口开始执行\"},{\"type\":\"when\",\"text\":\"执行核心业务动作\"},{\"type\":\"then\",\"text\":\"系统返回符合需求的可观察结果\"}],\"assertions\":[\"系统返回符合需求的可观察结果\"],\"source_chunks\":[\"chunk_001\"],\"priority\":\"P2\",\"preconditions\":[\"从有效的 API 入口开始执行\"]}]},\"timestamp\":\"2026-04-02T15:54:40.712963+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "SCENARIOS_READY",
+                "message": "scenarios generated",
+                "data": {
+                  "task_id": "demo_task_name_20260402155438",
+                  "scenario_count": 1,
+                  "scenarios": [
+                    {
+                      "scenario_id": "scenario_001",
+                      "name": "执行核心业务动作",
+                      "goal": "demo requirement text",
+                      "steps": [
+                        {
+                          "type": "given",
+                          "text": "从有效的 API 入口开始执行"
+                        },
+                        {
+                          "type": "when",
+                          "text": "执行核心业务动作"
+                        },
+                        {
+                          "type": "then",
+                          "text": "系统返回符合需求的可观察结果"
+                        }
+                      ],
+                      "assertions": [
+                        "系统返回符合需求的可观察结果"
+                      ],
+                      "source_chunks": [
+                        "chunk_001"
+                      ],
+                      "priority": "P2",
+                      "preconditions": [
+                        "从有效的 API 入口开始执行"
+                      ]
+                    }
+                  ]
+                },
+                "timestamp": "2026-04-02T15:54:40.712963+00:00"
+              },
+              "elapsed_ms": 425.0,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios/generate",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_03",
+          "step_type": "then",
+          "text": "返回结构需保持统一 envelope，便于前端统一处理",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "`GET /api/tasks/{task_id}/scenarios`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_007_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/scenarios`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+              "server": "uvicorn",
+              "content-length": "572",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "SCENARIOS_OK",
+              "message": "scenarios fetched",
+              "data": [
+                {
+                  "scenario_id": "scenario_001",
+                  "name": "执行核心业务动作",
+                  "goal": "demo requirement text",
+                  "steps": [
+                    {
+                      "type": "given",
+                      "text": "从有效的 API 入口开始执行"
+                    },
+                    {
+                      "type": "when",
+                      "text": "执行核心业务动作"
+                    },
+                    {
+                      "type": "then",
+                      "text": "系统返回符合需求的可观察结果"
+                    }
+                  ],
+                  "assertions": [
+                    "系统返回符合需求的可观察结果"
+                  ],
+                  "source_chunks": [
+                    "chunk_001"
+                  ],
+                  "priority": "P2",
+                  "preconditions": [
+                    "从有效的 API 入口开始执行"
+                  ]
+                }
+              ],
+              "timestamp": "2026-04-02T15:54:40.731243+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务动作\",\"goal\":\"demo requirement text\",\"steps\":[{\"type\":\"given\",\"text\":\"从有效的 API 入口开",
+            "elapsed_ms": 18.28,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 18.28,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 444
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+                "server": "uvicorn",
+                "content-length": "572",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务动作\",\"goal\":\"demo requirement text\",\"steps\":[{\"type\":\"given\",\"text\":\"从有效的 API 入口开始执行\"},{\"type\":\"when\",\"text\":\"执行核心业务动作\"},{\"type\":\"then\",\"text\":\"系统返回符合需求的可观察结果\"}],\"assertions\":[\"系统返回符合需求的可观察结果\"],\"source_chunks\":[\"chunk_001\"],\"priority\":\"P2\",\"preconditions\":[\"从有效的 API 入口开始执行\"]}],\"timestamp\":\"2026-04-02T15:54:40.731243+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "SCENARIOS_OK",
+                "message": "scenarios fetched",
+                "data": [
+                  {
+                    "scenario_id": "scenario_001",
+                    "name": "执行核心业务动作",
+                    "goal": "demo requirement text",
+                    "steps": [
+                      {
+                        "type": "given",
+                        "text": "从有效的 API 入口开始执行"
+                      },
+                      {
+                        "type": "when",
+                        "text": "执行核心业务动作"
+                      },
+                      {
+                        "type": "then",
+                        "text": "系统返回符合需求的可观察结果"
+                      }
+                    ],
+                    "assertions": [
+                      "系统返回符合需求的可观察结果"
+                    ],
+                    "source_chunks": [
+                      "chunk_001"
+                    ],
+                    "priority": "P2",
+                    "preconditions": [
+                      "从有效的 API 入口开始执行"
+                    ]
+                  }
+                ],
+                "timestamp": "2026-04-02T15:54:40.731243+00:00"
+              },
+              "elapsed_ms": 18.28,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_03",
+          "step_type": "then",
+          "text": "少量场景执行失败但不阻断整体链路",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "`GET /api/tasks/{task_id}/dsl`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_008_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_008_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/dsl`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/dsl -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/dsl",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/dsl",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+              "server": "uvicorn",
+              "content-length": "1415",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "DSL_OK",
+              "message": "dsl fetched",
+              "data": {
+                "dsl_version": "0.2.0",
+                "task_id": "demo_task_name_20260402155438",
+                "task_name": "demo_task_name",
+                "feature_name": "demo_task_name",
+                "execution_mode": "api",
+                "scenarios": [
+                  {
+                    "scenario_id": "scenario_001",
+                    "name": "执行核心业务动作",
+                    "goal": "demo requirement text",
+                    "priority": "P2",
+                    "preconditions": [
+                      "从有效的 API 入口开始执行"
+                    ],
+                    "source_chunks": [
+                      "chunk_001"
+                    ],
+                    "steps": [
+                      {
+                        "step_id": "scenario_001_step_01",
+                        "step_type": "given",
+                        "text": "从有效的 API 入口开始执行",
+                        "request": {},
+                        "load_profile": {},
+                        "assertions": [],
+                        "uses_context": [],
+                        "saves_context": [],
+                        "save_context": {}
+                      },
+                      {
+                        "step_id": "scenario_001_step_02",
+                        "step_type": "when",
+                        "text": "执行核心业务动作",
+                        "request": {
+                          "method": "POST",
+                          "url": "/resource",
+                          "json": {
+                            "input": "执行核心业务动作"
+                          }
+                        },
+                        "load_profile": {},
+                        "assertions": [
+                          {
+                            "source": "status_code",
+                            "op": "eq",
+                            "expected": 200
+                          }
+                        ],
+                        "uses_context": [],
+                        "saves_context": [],
+                        "save_context": {}
+                      },
+                      {
+                        "step_id": "scenario_001_step_03",
+                        "step_type": "then",
+                        "text": "系统返回符合需求的可观察结果",
+                        "request": {},
+                        "load_profile": {},
+                        "assertions": [
+                          "系统返回符合需求的可观察结果"
+                        ],
+                        "uses_context": [],
+                        "saves_context": [],
+                        "save_context": {}
+                      }
+                    ]
+                  }
+                ],
+                "metadata": {
+                  "source_type": "text",
+                  "language": "zh-CN",
+                  "case_generation": {
+                    "api_scenario_count": 1,
+                    "scenario_count": 1,
+                    "parsed_entities": [
+                      "demo",
+                      "requirement",
+                      "text"
+                    ]
+                  }
+                }
+              },
+              "timestamp": "2026-04-02T15:54:40.749212+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260402155438\",\"task_name\":\"demo_task_name\",\"feature_name\":\"demo_task_name\",\"execution_",
+            "elapsed_ms": 18.43,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 18.43,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260402",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 1271
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Thu, 02 Apr 2026 15:54:39 GMT",
+                "server": "uvicorn",
+                "content-length": "1415",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260402155438\",\"task_name\":\"demo_task_name\",\"feature_name\":\"demo_task_name\",\"execution_mode\":\"api\",\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务动作\",\"goal\":\"demo requirement text\",\"priority\":\"P2\",\"preconditions\":[\"从有效的 API 入口开始执行\"],\"source_chunks\":[\"chunk_001\"],\"steps\":[{\"step_id\":\"scenario_001_step_01\",\"step_type\":\"given\",\"text\":\"从有效的 API 入口开始执行\",\"request\":{},\"load_profile\":{},\"assertions\":[],\"uses_context\":[],\"saves_context\":[],\"save_context\":{}},{\"step_id\":\"scenario_001_step_02\",\"step_type\":\"when\",\"text\":\"执行核心业务动作\",\"request\":{\"method\":\"POST\",\"url\":\"/resource\",\"json\":{\"input\":\"执行核心业务动作\"}},\"load_profile\":{},\"assertions\":[{\"source\":\"status_code\",\"op\":\"eq\",\"expected\":200}],\"uses_context\":[],\"saves_context\":[],\"save_context\":{}},{\"step_id\":\"scenario_001_step_03\",\"step_type\":\"then\",\"text\":\"系统返回符合需求的可观察结果\",\"request\":{},\"load_profile\":{},\"assertions\":[\"系统返回符合需求的可观察结果\"],\"uses_context\":[],\"saves_context\":[],\"save_context\":{}}]}],\"metadata\":{\"source_type\":\"text\",\"language\":\"zh-CN\",\"case_generation\":{\"api_scenario_count\":1,\"scenario_count\":1,\"parsed_entities\":[\"demo\",\"requirement\",\"text\"]}}},\"timestamp\":\"2026-04-02T15:54:40.749212+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "DSL_OK",
+                "message": "dsl fetched",
+                "data": {
+                  "dsl_version": "0.2.0",
+                  "task_id": "demo_task_name_20260402155438",
+                  "task_name": "demo_task_name",
+                  "feature_name": "demo_task_name",
+                  "execution_mode": "api",
+                  "scenarios": [
+                    {
+                      "scenario_id": "scenario_001",
+                      "name": "执行核心业务动作",
+                      "goal": "demo requirement text",
+                      "priority": "P2",
+                      "preconditions": [
+                        "从有效的 API 入口开始执行"
+                      ],
+                      "source_chunks": [
+                        "chunk_001"
+                      ],
+                      "steps": [
+                        {
+                          "step_id": "scenario_001_step_01",
+                          "step_type": "given",
+                          "text": "从有效的 API 入口开始执行",
+                          "request": {},
+                          "load_profile": {},
+                          "assertions": [],
+                          "uses_context": [],
+                          "saves_context": [],
+                          "save_context": {}
+                        },
+                        {
+                          "step_id": "scenario_001_step_02",
+                          "step_type": "when",
+                          "text": "执行核心业务动作",
+                          "request": {
+                            "method": "POST",
+                            "url": "/resource",
+                            "json": {
+                              "input": "执行核心业务动作"
+                            }
+                          },
+                          "load_profile": {},
+                          "assertions": [
+                            {
+                              "source": "status_code",
+                              "op": "eq",
+                              "expected": 200
+                            }
+                          ],
+                          "uses_context": [],
+                          "saves_context": [],
+                          "save_context": {}
+                        },
+                        {
+                          "step_id": "scenario_001_step_03",
+                          "step_type": "then",
+                          "text": "系统返回符合需求的可观察结果",
+                          "request": {},
+                          "load_profile": {},
+                          "assertions": [
+                            "系统返回符合需求的可观察结果"
+                          ],
+                          "uses_context": [],
+                          "saves_context": [],
+                          "save_context": {}
+                        }
+                      ]
+                    }
+                  ],
+                  "metadata": {
+                    "source_type": "text",
+                    "language": "zh-CN",
+                    "case_generation": {
+                      "api_scenario_count": 1,
+                      "scenario_count": 1,
+                      "parsed_entities": [
+                        "demo",
+                        "requirement",
+                        "text"
+                      ]
+                    }
+                  }
+                },
+                "timestamp": "2026-04-02T15:54:40.749212+00:00"
+              },
+              "elapsed_ms": 18.43,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/dsl",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260402155438",
+            "resource_id": "demo_task_name_20260402155438"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_008_step_03",
+          "step_type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "scenario_count": 8,
+    "step_count": 24,
+    "passed_step_count": 24,
+    "failed_step_count": 0,
+    "context_key_count": 5,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 323.57,
+    "max_elapsed_ms": 1300.96
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 201",
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 772.36,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 387
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: resource_id, task_id",
+      "saved_context": {
+        "task_id": "demo_task_name_20260402155438",
+        "resource_id": "demo_task_name_20260402155438"
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=2 failed=0",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "POST http://127.0.0.1:8001/api/tasks -> 201",
+      "status": "passed",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 772.36,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 387
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "任务归档后的可见性与一致性检查"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_002_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.64,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1772
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438 -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.64,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"task_",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1772
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_03",
+      "step_type": "then",
+      "message": "从业务视角看，一次标准任务应经历以下过程："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks/{task_id}/parse`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_003_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parse",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "rag_enabled",
+          "rerank_enabled",
+          "retrieval_top_k",
+          "use_llm"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_003_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 1300.96,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"status\":",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1482
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_003_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_02",
+      "message": "POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parse -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "rag_enabled",
+          "rerank_enabled",
+          "retrieval_top_k",
+          "use_llm"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 1300.96,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260402155438\",\"status\":",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1482
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_03",
+      "step_type": "then",
+      "message": "任务结束后可归档，归档后不应继续作为活跃任务参与主流程"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/parsed-requirement`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_004_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parsed-requirement",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_004_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 13.7,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 413
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_004_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parsed-requirement -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 13.7,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 413
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_03",
+      "step_type": "then",
+      "message": "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/retrieved-context`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_005_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/retrieved-context",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/retrieved-context",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_005_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 22.2,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"d",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 245
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_005_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/retrieved-context -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/retrieved-context",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 22.2,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"d",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 245
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_03",
+      "step_type": "then",
+      "message": "归档动作生效后，任务应从活跃视图中消失"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks/{task_id}/scenarios/generate`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_006_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios/generate",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_006_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 425.0,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_2026040215543",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 524
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_006_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_02",
+      "message": "POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios/generate -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 425.0,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_2026040215543",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 524
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_03",
+      "step_type": "then",
+      "message": "返回结构需保持统一 envelope，便于前端统一处理"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/scenarios`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_007_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_007_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 18.28,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 444
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_007_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 18.28,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"执行核心业务",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 444
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_03",
+      "step_type": "then",
+      "message": "少量场景执行失败但不阻断整体链路"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项："
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/dsl`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_008_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/dsl",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_008_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 18.43,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260402",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1271
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_008_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/dsl -> 200",
+      "status": "passed",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260402155438/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 18.43,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260402",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1271
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_03",
+      "step_type": "then",
+      "message": "关键中间产物（解析结果、场景、DSL、Feature）应可回读"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "platform_e2e_regression_fe0433c2_20260402155404"
+      }
+    },
+    "executed_at": "2026-04-02T15:54:40.754235+00:00"
+  }
+}

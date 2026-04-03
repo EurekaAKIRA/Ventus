@@ -1,10 +1,12 @@
 export type TaskStatus =
   | "received"
   | "parsed"
-  | "scenario_generated"
+  | "generated"
   | "running"
   | "passed"
-  | "failed";
+  | "failed"
+  | "stopped"
+  | "archived";
 
 export interface TaskContext {
   task_id: string;
@@ -123,12 +125,76 @@ export interface ExecutionResult {
   logs: ExecutionLog[];
 }
 
+export interface TaskArtifactItem {
+  type: string;
+  label: string;
+  updated_at: string;
+}
+
+export interface TaskArtifactContent {
+  type: string;
+  content: unknown;
+}
+
 export interface ValidationReport {
   feature_name: string;
   passed: boolean;
   errors: string[];
   warnings: string[];
   metrics: Record<string, unknown>;
+}
+
+export interface ParsePerformance {
+  elapsed_ms: number;
+  target_ms: number;
+  within_target: boolean;
+  slow_reason: string;
+}
+
+export interface ParseRetrievalMetrics {
+  returned_count: number;
+  requested_top_k: number;
+  coverage_ratio: number;
+  duplicate_ratio: number;
+  score_avg: number;
+  rerank_applied: boolean;
+  embedded_chunk_count: number;
+  embedding_coverage: number;
+  embedding_error: string;
+  embedding_error_detail: string;
+}
+
+export interface ParseRetrievalScoring {
+  lexical_weight: number;
+  vector_weight: number;
+  rerank_vector_weight: number;
+  rerank_lexical_weight: number;
+  rerank_title_boost: number;
+  rerank_content_boost: number;
+}
+
+export interface ParseMetadata {
+  parse_mode: string;
+  llm_attempted: boolean;
+  llm_used: boolean;
+  rag_used: boolean;
+  rag_fallback_reason: string;
+  fallback_reason: string;
+  llm_error_type: string;
+  llm_provider_profile: string;
+  retrieval_mode: string;
+  retrieval_top_k: number;
+  rerank_enabled: boolean;
+  document_char_count: number;
+  cleaned_char_count: number;
+  chunk_count: number;
+  embedding_batch_size: number;
+  estimated_embedding_calls: number;
+  processing_tier: string;
+  large_document_warning: string;
+  retrieval_metrics: ParseRetrievalMetrics;
+  retrieval_scoring: ParseRetrievalScoring;
+  performance: ParsePerformance;
 }
 
 export interface AnalysisReport {
@@ -144,6 +210,7 @@ export interface TaskListItem extends TaskContext {}
 
 export interface TaskDetailPayload {
   task_context: TaskContext;
+  parse_metadata?: ParseMetadata;
   parsed_requirement?: ParsedRequirement;
   retrieved_context?: RetrievedChunk[];
   scenarios?: ScenarioModel[];
@@ -152,4 +219,85 @@ export interface TaskDetailPayload {
   validation_report?: ValidationReport;
   analysis_report?: AnalysisReport;
   feature_text?: string;
+}
+
+export interface HistoryTaskItem extends TaskContext {
+  finished_at?: string;
+}
+
+export interface ExecutionHistoryItem {
+  task_id: string;
+  task_name: string;
+  environment: string;
+  execution_mode: string;
+  status: string;
+  executor: string;
+  executed_at: string;
+  metrics?: Record<string, unknown>;
+  analysis_summary?: {
+    success_rate?: number;
+    failed_steps?: number;
+    avg_elapsed_ms?: number;
+    [key: string]: unknown;
+  };
+}
+
+export interface TaskDashboardPayload {
+  task: TaskContext;
+  analysis_report?: AnalysisReport;
+  dashboard?: Record<string, unknown>;
+  dashboard_summary?: Record<string, unknown>;
+  summary?: Record<string, unknown>;
+  task_summary?: Record<string, unknown>;
+  execution_overview?: Record<string, unknown>;
+  performance_stats?: Record<string, unknown>;
+  assertion_stats?: Record<string, unknown>;
+  context_stats?: Record<string, unknown>;
+  task_summary_text?: string;
+  findings?: string[];
+  chart_data?: Record<string, unknown>;
+  report_sections?: unknown[];
+  failed_steps?: unknown[];
+  failure_reasons?: string[];
+  validation_report?: ValidationReport;
+  execution?: ExecutionResult;
+  dsl?: TestCaseDSL;
+}
+
+export interface PreflightCheckItem {
+  name: string;
+  status: "passed" | "warning" | "failed" | string;
+  elapsed_ms?: number;
+  message?: string;
+}
+
+export interface PreflightCheckPayload {
+  task_id: string;
+  overall_status: "passed" | "warning" | "failed" | string;
+  blocking: boolean;
+  checks: PreflightCheckItem[];
+  blocking_issues?: string[];
+  suggestions?: string[];
+}
+
+export interface ExecutionExplanationPayload {
+  task_id: string;
+  execution_id?: string;
+  summary?: Record<string, unknown>;
+  failure_groups?: Array<{
+    category: string;
+    count: number;
+    examples?: string[];
+    recommended_actions?: string[];
+  }>;
+  top_reasons?: string[];
+}
+
+export interface RegressionDiffPayload {
+  task_id: string;
+  base_execution_id?: string;
+  target_execution_id?: string;
+  metrics_diff?: Record<string, unknown>;
+  failure_type_diff?: Array<Record<string, unknown>>;
+  verdict?: "improved" | "regressed" | "unchanged" | string;
 }

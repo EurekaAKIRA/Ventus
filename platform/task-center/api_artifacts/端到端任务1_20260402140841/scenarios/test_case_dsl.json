@@ -1,0 +1,610 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "端到端任务1_20260402140804",
+  "task_name": "端到端任务1",
+  "feature_name": "端到端任务1",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`en",
+      "goal": "Platform 端到端任务流需求文档",
+      "priority": "P0",
+      "preconditions": [
+        "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+        "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+        "调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型",
+        "任务删除后再次查询任务应返回不存在",
+        "执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断"
+      ],
+      "source_chunks": [
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_001",
+        "chunk_005"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`environment`、`target_system` 字段，其中 `target_system` 固定为 `http://127.0.0.1:8001`",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks",
+            "json": {
+              "task_name": "demo_task_name",
+              "source_type": "text",
+              "requirement_text": "demo requirement text",
+              "environment": "test",
+              "target_system": "demo_target_system"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 201
+            },
+            {
+              "source": "json.data.task_id",
+              "op": "exists"
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [
+            "resource_id",
+            "task_id"
+          ],
+          "save_context": {
+            "task_id": "json.data.task_id",
+            "resource_id": "json.data.task_id"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retriev",
+      "goal": "Platform 端到端任务流需求文档",
+      "priority": "P2",
+      "preconditions": [
+        "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+        "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+        "调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型",
+        "任务删除后再次查询任务应返回不存在",
+        "执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断"
+      ],
+      "source_chunks": [
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_001",
+        "chunk_005"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retrieval_top_k`、`rerank_enabled` 字段",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks/{{task_id}}/parse",
+            "json": {
+              "use_llm": false,
+              "rag_enabled": false,
+              "retrieval_top_k": 5,
+              "rerank_enabled": false
+            },
+            "timeout": 180
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+            "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_002_step_04",
+          "step_type": "and",
+          "text": "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks/{{task_id}}/parse",
+            "json": {
+              "input": "解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `k"
+            },
+            "timeout": 180
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+      "goal": "Platform 端到端任务流需求文档",
+      "priority": "P2",
+      "preconditions": [
+        "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+        "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+        "调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型",
+        "任务删除后再次查询任务应返回不存在",
+        "执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断"
+      ],
+      "source_chunks": [
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_001",
+        "chunk_005"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actio",
+      "goal": "Platform 端到端任务流需求文档",
+      "priority": "P2",
+      "preconditions": [
+        "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+        "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+        "调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型",
+        "任务删除后再次查询任务应返回不存在",
+        "执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断"
+      ],
+      "source_chunks": [
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_001",
+        "chunk_005"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actions`、`expected_results`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/parsed-requirement"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+      "goal": "Platform 端到端任务流需求文档",
+      "priority": "P2",
+      "preconditions": [
+        "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+        "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+        "调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型",
+        "任务删除后再次查询任务应返回不存在",
+        "执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断"
+      ],
+      "source_chunks": [
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_001",
+        "chunk_005"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/scenarios"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`",
+      "goal": "Platform 端到端任务流需求文档",
+      "priority": "P2",
+      "preconditions": [
+        "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+        "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+        "调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型",
+        "任务删除后再次查询任务应返回不存在",
+        "执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断"
+      ],
+      "source_chunks": [
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_001",
+        "chunk_005"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_006_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_006_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/dsl"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_006_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:",
+      "goal": "Platform 端到端任务流需求文档",
+      "priority": "P2",
+      "preconditions": [
+        "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+        "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+        "调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型",
+        "任务删除后再次查询任务应返回不存在",
+        "执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断"
+      ],
+      "source_chunks": [
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_001",
+        "chunk_005"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_007_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_007_step_02",
+          "step_type": "when",
+          "text": "调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/feature"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_007_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment`",
+      "goal": "Platform 端到端任务流需求文档",
+      "priority": "P2",
+      "preconditions": [
+        "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+        "调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整",
+        "调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型",
+        "任务删除后再次查询任务应返回不存在",
+        "执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断"
+      ],
+      "source_chunks": [
+        "chunk_002",
+        "chunk_003",
+        "chunk_004",
+        "chunk_001",
+        "chunk_005"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_008_step_01",
+          "step_type": "given",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_008_step_02",
+          "step_type": "when",
+          "text": "调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` 字段",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks/{{task_id}}/execute",
+            "json": {
+              "execution_mode": "api",
+              "environment": "test"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_008_step_03",
+          "step_type": "then",
+          "text": "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 8,
+      "scenario_count": 8,
+      "parsed_entities": [
+        "platform",
+        "端到端任务流需求文档",
+        "目标",
+        "验证平台后端从任务创建到报告查询的主链路可用性",
+        "确保任务状态可追踪",
+        "产物可读取",
+        "解析元数据完整",
+        "本用例固定测试基地址为",
+        "http",
+        "并要求在任务创建时显式传入"
+      ]
+    }
+  }
+}

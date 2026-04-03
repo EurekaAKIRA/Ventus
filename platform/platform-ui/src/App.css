@@ -71,6 +71,69 @@ body {
   white-space: pre-wrap;
 }
 
+.feature-text-preview {
+  overflow: hidden;
+}
+
+.feature-line-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.feature-line-item.ant-list-item {
+  justify-content: flex-start !important;
+}
+
+.feature-pretty-item.ant-list-item {
+  justify-content: flex-start !important;
+  align-items: flex-start;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.feature-pretty-badge {
+  min-width: 52px;
+  text-align: center;
+  margin-top: 1px;
+}
+
+.feature-pretty-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #d9d9d9;
+  margin-top: 8px;
+  margin-left: 10px;
+}
+
+.feature-line-no {
+  min-width: 28px;
+  text-align: left;
+  font-family: "Fira Code", "Consolas", monospace;
+  font-size: 12px;
+}
+
+.feature-line-text {
+  flex: 1;
+  text-align: left;
+  font-family: "Fira Code", "Consolas", monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+}
+
+.feature-priority-tag {
+  margin-inline-start: 8px;
+  flex-shrink: 0;
+}
+
+.raw-text-viewer {
+  max-height: 72vh;
+  overflow-y: auto;
+}
+
 .log-panel {
   background: #1e1e1e;
   border-radius: 8px;
@@ -145,4 +208,88 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 200px;
+}
+
+.dashboard-progress-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.dashboard-kpi-card {
+  height: 100%;
+}
+
+.dashboard-kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dashboard-kpi-value.success {
+  color: #52c41a;
+}
+
+.dashboard-kpi-value.danger {
+  color: #ff4d4f;
+}
+
+.dashboard-status-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #f0f0f0;
+  display: flex;
+}
+
+.dashboard-status-segment {
+  height: 12px;
+}
+
+.dashboard-trend-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 56px;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-trend-date {
+  font-family: "Fira Code", "Consolas", monospace;
+}
+
+.dashboard-trend-track {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #f0f0f0;
+  display: flex;
+}
+
+.dashboard-trend-pass {
+  height: 8px;
+  background: #52c41a;
+}
+
+.dashboard-trend-fail {
+  height: 8px;
+  background: #ff4d4f;
+}
+
+.dashboard-trend-meta {
+  text-align: right;
+  font-family: "Fira Code", "Consolas", monospace;
+}
+
+.dashboard-trend-meta-btn {
+  justify-self: end;
+  padding-inline: 0;
+  font-family: "Fira Code", "Consolas", monospace;
+}
+
+.dashboard-env-row {
+  padding: 8px 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fafafa;
 }

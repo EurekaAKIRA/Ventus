@@ -39,6 +39,8 @@ def execute_test_case_dsl(test_case_dsl: dict) -> dict:
     elapsed_samples: list[float] = []
     context = ContextBus()
     runtime_state = _build_runtime_state(test_case_dsl)
+    for key, value in (runtime_state.get("context_seed") or {}).items():
+        context.set(str(key), value)
 
     for scenario in test_case_dsl.get("scenarios", []):
         step_results: list[dict] = []
@@ -147,6 +149,10 @@ def _execute_request_step(
         }
     request_spec = _render_templates(step.get("request", {}), context)
     request_spec = _normalize_request_spec(request_spec, runtime_state, context)
+    if "timeout" not in request_spec:
+        request_spec["timeout"] = float(runtime_state.get("default_step_timeout", 30))
+    if "retries" not in request_spec:
+        request_spec["retries"] = int(runtime_state.get("default_step_retries", 2))
     logs.append(_build_request_log(step, request_spec))
     response_payload = _perform_http_request(request_spec, runtime_state["opener"])
     logs.append(_build_response_log(step, response_payload))
@@ -159,6 +165,10 @@ def _execute_request_step(
     if isinstance(save_context, dict):
         for key, source in save_context.items():
             value = _read_source(source, response_payload, context)
+            if value is None and isinstance(source, str) and source.startswith("json."):
+                value = _read_json_path_with_envelope(
+                    response_payload.get("json"), source[5:], None
+                )
             context.set(key, value)
             saved_context[key] = value
     if saved_context:
@@ -217,7 +227,7 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector) -> dict:
     params = request_spec.get("params") or {}
     body = request_spec.get("json")
     data = request_spec.get("data")
-    timeout = float(request_spec.get("timeout", 15))
+    timeout = float(request_spec.get("timeout", 30))
     retries = int(request_spec.get("retries", 0))
 
     if params:
@@ -265,7 +275,7 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector) -> dict:
             error_category = _classify_url_error(exc)
             if attempt >= retries:
                 break
-            time.sleep(0.1)
+            time.sleep(0.15 * (attempt + 1))
     elapsed_ms = round((time.time() - started) * 1000, 2)
 
     body_text = raw.decode("utf-8", errors="replace")
@@ -308,8 +318,17 @@ def _evaluate_assertions(assertions: list[Any], response_payload: dict, context:
     for assertion in assertions:
         if isinstance(assertion, str):
             continue
-        actual = _read_source(assertion.get("source", ""), response_payload, context)
+        source = assertion.get("source", "")
         op = assertion.get("op", "eq")
+        actual = _read_source(source, response_payload, context)
+        if (
+            isinstance(source, str)
+            and source.startswith("json.")
+            and op == "exists"
+            and actual is None
+        ):
+            inner = source[5:]
+            actual = _read_json_path_with_envelope(response_payload.get("json"), inner, None)
         expected = _render_templates(assertion.get("expected"), context)
         if not _compare(actual, op, expected):
             errors.append(
@@ -386,6 +405,20 @@ def _read_json_path(payload: Any, path: str, default: Any = None) -> Any:
     if not tokens:
         return payload if path.strip(".") == "" else default
     return _read_token_path(payload, tokens, default)
+
+
+def _read_json_path_with_envelope(payload: Any, path: str, default: Any = None) -> Any:
+    """Resolve json path; if missing, retry under `data` for `{success, data:{...}}` API envelopes."""
+    if payload is None:
+        return default
+    direct = _read_json_path(payload, path, None)
+    if direct is not None:
+        return direct
+    if isinstance(payload, dict) and isinstance(payload.get("data"), dict):
+        nested = _read_json_path(payload["data"], path, None)
+        if nested is not None:
+            return nested
+    return default
 
 
 def _read_header(headers: dict[str, Any], name: str, default: Any = None) -> Any:
@@ -483,8 +516,11 @@ def _build_runtime_state(test_case_dsl: dict) -> dict[str, Any]:
         "default_headers": execution.get("default_headers") or {},
         "default_auth": execution.get("auth") or {},
         "default_cookies": execution.get("cookies") or {},
+        "context_seed": execution.get("context") or {},
         "cookie_jar": cookie_jar,
         "opener": opener,
+        "default_step_timeout": float(execution.get("step_timeout_seconds", 30)),
+        "default_step_retries": int(execution.get("step_retries", 2)),
     }
 
 
@@ -496,8 +532,11 @@ def _normalize_request_spec(
     spec = dict(request_spec)
     url = spec.get("url", "")
     base_url = runtime_state.get("base_url", "")
-    if url.startswith("/") and base_url:
-        spec["url"] = base_url.rstrip("/") + url
+    if base_url and url:
+        if url.startswith("/"):
+            spec["url"] = base_url.rstrip("/") + url
+        elif not _is_absolute_http_url(url):
+            spec["url"] = base_url.rstrip("/") + "/" + str(url).lstrip("/")
 
     merged_headers = dict(runtime_state.get("default_headers") or {})
     merged_headers.update(spec.get("headers") or {})
@@ -514,6 +553,11 @@ def _normalize_request_spec(
         spec["headers"]["Cookie"] = "; ".join(f"{key}={value}" for key, value in cookies.items())
     spec["method"] = str(spec.get("method", "GET")).upper()
     return spec
+
+
+def _is_absolute_http_url(url: str) -> bool:
+    lowered = str(url).lower()
+    return lowered.startswith("http://") or lowered.startswith("https://")
 
 
 def _apply_auth(spec: dict[str, Any], auth: dict[str, Any], context: ContextBus) -> None:

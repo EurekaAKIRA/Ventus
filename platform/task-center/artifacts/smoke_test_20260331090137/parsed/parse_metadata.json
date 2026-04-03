@@ -1,0 +1,23 @@
+{
+  "parse_mode": "rules",
+  "llm_used": false,
+  "rag_used": true,
+  "fallback_reason": "",
+  "llm_error_type": "",
+  "retrieval_mode": "keyword",
+  "retrieval_top_k": 5,
+  "rerank_enabled": false,
+  "retrieval_metrics": {
+    "returned_count": 1,
+    "requested_top_k": 5,
+    "coverage_ratio": 0.2,
+    "duplicate_ratio": 0.0,
+    "score_avg": 3.5
+  },
+  "performance": {
+    "elapsed_ms": 42433.23,
+    "target_ms": 8000.0,
+    "within_target": false,
+    "slow_reason": "large_input_or_retrieval_cost"
+  }
+}

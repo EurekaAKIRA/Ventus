@@ -4,6 +4,7 @@ import Dashboard from "../pages/Dashboard";
 import TaskList from "../pages/TaskList";
 import TaskCreate from "../pages/TaskCreate";
 import TaskDetail from "../pages/TaskDetail";
+import TaskHistory from "../pages/TaskHistory";
 
 const router = createBrowserRouter([
   {
@@ -13,6 +14,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <Dashboard /> },
       { path: "tasks", element: <TaskList /> },
+      { path: "tasks/history", element: <TaskHistory /> },
       { path: "tasks/create", element: <TaskCreate /> },
       { path: "tasks/:taskId", element: <TaskDetail /> },
     ],

@@ -1,0 +1,60 @@
+{
+  "objective": "用户登录与个人中心功能需求",
+  "actors": [
+    "user",
+    "用户"
+  ],
+  "entities": [
+    "用户登录与个人中心功能需求",
+    "功能目标",
+    "用户通过用户名和密码登录平台",
+    "登录成功后进入个人中心页面",
+    "查看并修改个人信息",
+    "接口清单",
+    "接口",
+    "方法",
+    "路径",
+    "用户登录"
+  ],
+  "preconditions": [
+    "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息"
+  ],
+  "actions": [
+    "用户在登录页输入用户名和密码，点击\"登录\"按钮",
+    "用户点击\"编辑\"，修改昵称后调用 `PUT /api/user/profile`，系统返回 200 并刷新页面"
+  ],
+  "expected_results": [
+    "系统校验凭据，返回 200 及 `token` 字段",
+    "密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403",
+    "登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"",
+    "所有接口必须在 500ms 内响应"
+  ],
+  "constraints": [
+    "所有接口必须在 500ms 内响应"
+  ],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_003",
+    "chunk_002",
+    "chunk_004",
+    "chunk_005",
+    "chunk_001"
+  ],
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/profile",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "description": ""
+    }
+  ]
+}

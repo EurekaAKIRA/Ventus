@@ -1,0 +1,19 @@
+{
+  "feature_name": "5",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 8,
+    "average_step_count": 3.25,
+    "step_count": 26,
+    "parse_metrics": {
+      "actor_count": 1,
+      "entity_count": 10,
+      "action_count": 29,
+      "expected_count": 12,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "rules"
+  }
+}

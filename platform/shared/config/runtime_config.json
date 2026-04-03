@@ -1,0 +1,54 @@
+{
+  "requirement_analysis": {
+    "defaults": {
+      "use_llm": true,
+      "rag_enabled": true,
+      "retrieval_top_k": 5,
+      "rerank_enabled": false
+    },
+    "retrieval_scoring": {
+      "lexical_weight": 4.0,
+      "vector_weight": 6.0,
+      "rerank_vector_weight": 7.0,
+      "rerank_lexical_weight": 2.0,
+      "rerank_title_boost": 0.2,
+      "rerank_content_boost": 0.2
+    },
+    "contract_knowledge": {
+      "enabled": true,
+      "official_score_boost": 2.0,
+      "min_retrieval_score": 0.0,
+      "openapi_spec_url": "",
+      "openapi_fetch_timeout_seconds": 8.0,
+      "openapi_max_operations": 80
+    },
+    "embedding_batch_size": 32,
+    "default_model_profile": "default",
+    "model_profiles": {
+      "default": {
+        "base_url": "https://api.hunyuan.cloud.tencent.com/v1",
+        "llm_model": "hunyuan-turbos-latest",
+        "embedding_model": "hunyuan-embedding",
+        "vision_model": "hunyuan-vision",
+        "timeout_seconds": 20.0,
+        "retries": 1
+      },
+      "high_quality": {
+        "base_url": "https://api.hunyuan.cloud.tencent.com/v1",
+        "llm_model": "hunyuan-turbos-latest",
+        "embedding_model": "hunyuan-embedding",
+        "vision_model": "hunyuan-vision",
+        "timeout_seconds": 30.0,
+        "retries": 1
+      },
+      "low_cost": {
+        "base_url": "https://api.hunyuan.cloud.tencent.com/v1",
+        "llm_model": "hunyuan-lite",
+        "embedding_model": "hunyuan-embedding",
+        "vision_model": "hunyuan-vision",
+        "timeout_seconds": 15.0,
+        "retries": 0
+      }
+    }
+  }
+}

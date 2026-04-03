@@ -1,0 +1,41 @@
+{
+  "query": "# Platform 端到端任务流需求文档\n\n## 1. 目标\n\n验证平台后端从任务创建到报告查询的主链路可用性，确保任务状态可追踪、产物可读取、解析元数据完整。\n本用例固定测试基地址为 `http://127.0.0.1:8001`，并要求在任务创建时显式传入，避免执行阶段出现隐式 URL 推断。\n\n## 2. 接口清单\n\n| 接口 | 方法 | 路径 |\n|------|------|------|\n| 创建任务 | POST | /api/tasks |\n| 解析任务 | POST | /api/tasks/{task_id}/parse |\n| 获取任务详情 | GET | /api/tasks/{task_id} |\n| 获取结构化需求 | GET | /api/tasks/{task_id}/parsed-requirement |\n| 获取场景列表 | GET | /api/tasks/{task_id}/scenarios |\n| 获取 DSL | GET | /api/tasks/{task_id}/dsl |\n| 获取 Feature | GET | /api/tasks/{task_id}/feature |\n| 启动执行 | POST | /api/tasks/{task_id}/execute |\n| 获取执行结果 | GET | /api/tasks/{task_id}/execution |\n| 获取校验报告 | GET | /api/tasks/{task_id}/validation-report |\n| 获取分析报告 | GET | /api/tasks/{task_id}/analysis-report |\n| 获取产物列表 | GET | /api/tasks/{task_id}/artifacts |\n| 删除任务 | DELETE | /api/tasks/{task_id} |\n\n## 3. 主流程\n\n1. 调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`environment`、`target_system` 字段，其中 `target_system` 固定为 `http://127.0.0.1:8001`。\n2. 创建成功后，系统返回 `task_id`，任务状态为 `received`。\n3. 调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retrieval_top_k`、`rerank_enabled` 字段。\n4. 解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在。\n5. 调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actions`、`expected_results`。\n6. 调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整。\n7. 调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`。\n8. 调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:`。\n9. 调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` 字段。\n10. 调用 `GET /api/tasks/{task_id}/execution` 查询执行状态。\n11. 调用 `GET /api/tasks/{task_id}/validation-report` 与 `GET /api/tasks/{task_id}/analysis-report` 查询报告。\n12. 调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型。\n13. 调用 `DELETE /api/tasks/{task_id}` 清理任务。\n\n## 4. 断言\n\n- 创建任务后必须返回可用 `task_id`。\n- 解析后 `parse_metadata.retrieval_mode` 应为 `vector+keyword` 或 `keyword`。\n- 结构化需求必须包含动作与预期结果。\n- 场景与 DSL 必须可查询且不为空。\n- 报告接口必须可查询并返回标准响应包。\n- 任务删除后再次查询任务应返回不存在。\n\n## 5. 约束\n\n- 所有接口应返回统一响应结构：`success`、`code`、`message`、`data`、`timestamp`。\n- 任务解析过程应记录性能与检索相关元数据。\n- 当向量检索不可用时，应回退关键词检索且保留回退原因。\n- 执行模式为 API 时，必须存在显式 `base_url`（来源于 `target_system` 或环境配置 `base_url`），不可依赖请求地址推断。",
+  "hits": [
+    {
+      "chunk_id": "chunk_002",
+      "content": "| 接口 | 方法 | 路径 |\n|------|------|------|\n| 创建任务 | POST | /api/tasks |\n| 解析任务 | POST | /api/tasks/{task_id}/parse |\n| 获取任务详情 | GET | /api/tasks/{task_id} |\n| 获取结构化需求 | GET | /api/tasks/{task_id}/parsed-requirement |\n| 获取场景列表 | GET | /api/tasks/{task_id}/scenarios |\n| 获取 DSL | GET | /api/tasks/{task_id}/dsl |\n| 获取 Feature | GET | /api/tasks/{task_id}/feature |\n| 启动执行 | POST | /api/tasks/{task_id}/execute |\n| 获取执行结果 | GET | /api/tasks/{task_id}/execution |\n| 获取校验报告 | GET | /api/tasks/{task_id}/validation-report |\n| 获取分析报告 | GET | /api/tasks/{task_id}/analysis-report |\n| 获取产物列表 | GET | /api/tasks/{task_id}/artifacts |\n| 删除任务 | DELETE | /api/tasks/{task_id} |",
+      "score": 9.238,
+      "section_title": "2. 接口清单",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_003",
+      "content": "1. 调用 `POST /api/tasks` 创建任务，请求体包含 `task_name`、`source_type`、`requirement_text`、`environment`、`target_system` 字段，其中 `target_system` 固定为 `http://127.0.0.1:8001`。 2. 创建成功后，系统返回 `task_id`，任务状态为 `received`。 3. 调用 `POST /api/tasks/{task_id}/parse` 执行解析，请求体包含 `use_llm`、`rag_enabled`、`retrieval_top_k`、`rerank_enabled` 字段。 4. 解析成功后，调用 `GET /api/tasks/{task_id}` 获取任务详情，并确认 `parse_metadata` 存在。",
+      "score": 8.926,
+      "section_title": "3. 主流程",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_004",
+      "content": "5. 调用 `GET /api/tasks/{task_id}/parsed-requirement` 获取结构化需求，确认包含 `objective`、`actions`、`expected_results`。 6. 调用 `GET /api/tasks/{task_id}/scenarios` 获取场景，确认至少存在 1 个场景且步骤完整。 7. 调用 `GET /api/tasks/{task_id}/dsl` 获取 DSL，确认包含 `scenarios` 和 `steps`。 8. 调用 `GET /api/tasks/{task_id}/feature` 获取 feature 文本，确认包含 `Feature:` 和 `Scenario:`。 9. 调用 `POST /api/tasks/{task_id}/execute` 启动执行，请求体包含 `execution_mode`、`environment` 字段。",
+      "score": 8.445,
+      "section_title": "3. 主流程",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_001",
+      "content": "验证平台后端从任务创建到报告查询的主链路可用性，确保任务状态可追踪、产物可读取、解析元数据完整。\n本用例固定测试基地址为 `http://127.0.0.1:8001`，并要求在任务创建时显式传入，避免执行阶段出现隐式 URL 推断。",
+      "score": 7.368,
+      "section_title": "1. 目标",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_005",
+      "content": "10. 调用 `GET /api/tasks/{task_id}/execution` 查询执行状态。 11. 调用 `GET /api/tasks/{task_id}/validation-report` 与 `GET /api/tasks/{task_id}/analysis-report` 查询报告。 12. 调用 `GET /api/tasks/{task_id}/artifacts` 查询产物列表，确认存在 `parsed-requirement`、`scenarios`、`dsl` 类型。 13. 调用 `DELETE /api/tasks/{task_id}` 清理任务。",
+      "score": 7.29,
+      "section_title": "3. 主流程",
+      "source_file": ""
+    }
+  ],
+  "retrieval_notes": []
+}

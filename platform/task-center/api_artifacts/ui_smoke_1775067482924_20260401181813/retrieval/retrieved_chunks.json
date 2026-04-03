@@ -1,0 +1,13 @@
+{
+  "query": "用户登录后进入个人中心并看到昵称",
+  "hits": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户登录后进入个人中心并看到昵称",
+      "score": 4.0,
+      "section_title": "未命名章节",
+      "source_file": ""
+    }
+  ],
+  "retrieval_notes": []
+}

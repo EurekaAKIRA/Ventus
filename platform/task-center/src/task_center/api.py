@@ -2,23 +2,33 @@
 
 from __future__ import annotations
 
+import concurrent.futures
+import asyncio
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError
 
 from execution_engine_core import run_dsl
 from platform_shared.models import EnvironmentConfig, TaskContext, ValidationReport
 
 from .api_models import (
+    AnalysisParseRequest,
     ApiResponse,
     CreateTaskRequest,
     ErrorResponse,
     ExecuteTaskRequest,
     HealthInfo,
+    ParseMetadata,
+    PreflightCheckRequest,
+    TaskParseRequest,
     StopExecutionResponse,
     TaskListResponse,
     TaskStatus,
@@ -26,17 +36,31 @@ from .api_models import (
     VersionInfo,
 )
 from .artifact_manager import ensure_task_subdirs, write_json_artifact
+from .execution_explanations import build_execution_explanations
 from .input_handler import normalize_input
+from .preflight import run_preflight_check
 from .pipeline import run_analysis_pipeline
 from .registry import DEFAULT_ARTIFACT_TYPES, TaskRegistry
+from requirement_analysis import AnalysisParseOptions, parse_requirement_bundle
 from result_analysis import build_analysis_report
 
 
 APP_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS_ROOT = str(APP_ROOT / "api_artifacts")
 APP_VERSION = "0.2.0"
+EXECUTION_TIMEOUT_SECONDS = 300  # 5 分钟执行上限，防止慢接口挂起
 registry = TaskRegistry(ARTIFACTS_ROOT)
 app = FastAPI(title="Platform Task Center API", version=APP_VERSION)
+
+# Frontend (Vite) runs on a different origin (port), so browser requests may trigger
+# CORS preflight (`OPTIONS`). Without this middleware, preflight can fail with 405.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # dev/MVP: allow all origins
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _utc_now_iso() -> str:
@@ -95,6 +119,18 @@ async def _http_exception_handler(_: Request, exc: HTTPException) -> JSONRespons
         message=str(exc.detail),
         detail=exc.detail,
         status_code=exc.status_code,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def _request_validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+    errors = exc.errors()
+    message = errors[0].get("msg", "request validation failed") if errors else "request validation failed"
+    return _error_response(
+        code="VALIDATION_ERROR",
+        message=message,
+        detail=errors,
+        status_code=422,
     )
 
 
@@ -202,6 +238,7 @@ def _inject_environment_into_dsl(
     dsl: dict[str, Any],
     environment_name: str | None,
     environment_config: EnvironmentConfig | None,
+    fallback_base_url: str = "",
 ) -> dict[str, Any]:
     payload = dict(dsl)
     metadata = dict(payload.get("metadata") or {})
@@ -217,9 +254,19 @@ def _inject_environment_into_dsl(
             execution["cookies"] = environment_config.cookies
     if environment_name:
         execution["environment"] = environment_name
+    if not execution.get("base_url") and fallback_base_url:
+        execution["base_url"] = fallback_base_url
     metadata["execution"] = execution
     payload["metadata"] = metadata
     return payload
+
+
+def _derive_fallback_base_url(task) -> str:
+    if task.target_system:
+        parsed = urlparse(task.target_system)
+        if parsed.scheme and parsed.netloc:
+            return task.target_system.rstrip("/")
+    return ""
 
 
 def _record_execution_history(task, execution_result: dict[str, Any]) -> None:
@@ -246,17 +293,75 @@ def _record_execution_history(task, execution_result: dict[str, Any]) -> None:
     )
 
 
-def _ensure_pipeline(task) -> dict[str, Any]:
+def _resolve_parse_options(payload: Any = None) -> AnalysisParseOptions:
+    if payload is None:
+        return AnalysisParseOptions.resolve()
+    data = _model_to_dict(payload)
+    return AnalysisParseOptions.resolve(
+        {
+            "use_llm": data.get("use_llm"),
+            "rag_enabled": data.get("rag_enabled"),
+            "retrieval_top_k": data.get("retrieval_top_k"),
+            "rerank_enabled": data.get("rerank_enabled"),
+            "model_profile": data.get("model_profile"),
+        }
+    )
+
+
+def _parse_metadata_payload(raw: Any) -> dict[str, Any]:
+    if isinstance(raw, ParseMetadata):
+        return _model_to_dict(raw)
+    if not isinstance(raw, dict):
+        return _model_to_dict(ParseMetadata())
+
+
+def _encode_sse(data: Any, event: str | None = None) -> str:
+    if isinstance(data, str):
+        payload = data
+    else:
+        payload = json.dumps(data, ensure_ascii=False)
+    lines = []
+    if event:
+        lines.append(f"event: {event}")
+    for line in payload.splitlines() or [""]:
+        lines.append(f"data: {line}")
+    return "\n".join(lines) + "\n\n"
+    try:
+        return _model_to_dict(ParseMetadata(**raw))
+    except Exception:
+        return _model_to_dict(ParseMetadata())
+
+
+def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) -> dict[str, Any]:
     if task.pipeline_result is not None:
-        return task.pipeline_result
+        parse_metadata = _parse_metadata_payload(task.pipeline_result.get("parse_metadata", {}))
+        if parse_options is None:
+            task.pipeline_result["parse_metadata"] = parse_metadata
+            return task.pipeline_result
+        same_config = (
+            parse_metadata.get("llm_attempted", False) == parse_options.use_llm
+            and parse_metadata.get("rag_used", True) == parse_options.rag_enabled
+            and int(parse_metadata.get("retrieval_top_k", 5)) == parse_options.retrieval_top_k
+            and parse_metadata.get("rerank_enabled", False) == parse_options.rerank_enabled
+            and str(parse_metadata.get("model_profile", "default")) == parse_options.model_profile
+        )
+        if same_config:
+            task.pipeline_result["parse_metadata"] = parse_metadata
+            return task.pipeline_result
     result = run_analysis_pipeline(
         task_name=task.task_name,
         requirement_text=task.requirement_text,
         source_type=task.source_type,
         source_path=task.source_path,
         artifacts_base_dir=registry.artifacts_root,
+        use_llm=parse_options.use_llm if parse_options else None,
+        rag_enabled=parse_options.rag_enabled if parse_options else None,
+        retrieval_top_k=parse_options.retrieval_top_k if parse_options else None,
+        rerank_enabled=parse_options.rerank_enabled if parse_options else None,
+        model_profile=parse_options.model_profile if parse_options else None,
     )
     task.pipeline_result = result
+    task.pipeline_result["parse_metadata"] = _parse_metadata_payload(result.get("parse_metadata", {}))
     task.status = "parsed"
     task.task_context = result.get("task_context", task.task_context)
     task.artifact_dir = _find_latest_artifact_dir(task.task_name)
@@ -365,10 +470,20 @@ def list_tasks(
 @app.get("/api/tasks/{task_id}", response_model=ApiResponse)
 def get_task(task_id: str):
     task = _must_get_task(task_id)
+    pipeline = task.pipeline_result or {}
     return _success_response({
         **task.to_summary(),
         "task_context": task.task_context,
         "artifact_dir": task.artifact_dir,
+        "parse_metadata": _parse_metadata_payload(pipeline.get("parse_metadata", {})),
+        "parsed_requirement": pipeline.get("parsed_requirement"),
+        "retrieved_context": pipeline.get("retrieved_context"),
+        "scenarios": pipeline.get("scenarios"),
+        "test_case_dsl": pipeline.get("test_case_dsl"),
+        "validation_report": pipeline.get("validation_report"),
+        "analysis_report": pipeline.get("analysis_report"),
+        "feature_text": pipeline.get("feature_text"),
+        "execution_result": task.execution_result,
     }, code="TASK_DETAIL_OK", message="task detail")
 
 
@@ -380,14 +495,40 @@ def delete_task(task_id: str):
 
 
 @app.post("/api/tasks/{task_id}/parse", response_model=ApiResponse)
-def parse_task(task_id: str):
+def parse_task(task_id: str, payload: TaskParseRequest | None = None):
     task = _must_get_task(task_id)
-    result = _ensure_pipeline(task)
+    parse_options = _resolve_parse_options(payload)
+    result = _ensure_pipeline(task, parse_options=parse_options)
     return _success_response({
         "task_id": task_id,
         "status": task.status,
         "parsed_requirement": result.get("parsed_requirement"),
+        "parse_metadata": _parse_metadata_payload(result.get("parse_metadata", {})),
     }, code="TASK_PARSED", message="task parsed")
+
+
+@app.post("/api/analysis/parse", response_model=ApiResponse)
+def parse_analysis(payload: AnalysisParseRequest):
+    if not (payload.requirement_text or "").strip() and not (payload.source_path or "").strip():
+        raise HTTPException(status_code=400, detail="requirement_text or source_path is required")
+    parse_options = _resolve_parse_options(payload)
+    result = parse_requirement_bundle(
+        requirement_text=payload.requirement_text,
+        source_path=payload.source_path,
+        options=parse_options,
+    )
+    return _success_response(
+        {
+            "task_name": payload.task_name,
+            "source_type": payload.source_type,
+            "parsed_requirement": result.get("parsed_requirement", {}),
+            "retrieved_context": result.get("retrieved_context", []),
+            "validation_report": result.get("validation_report", {}),
+            "parse_metadata": _parse_metadata_payload(result.get("parse_metadata", {})),
+        },
+        code="ANALYSIS_PARSED",
+        message="analysis parsed",
+    )
 
 
 @app.get("/api/tasks/{task_id}/parsed-requirement", response_model=ApiResponse)
@@ -438,6 +579,28 @@ def get_feature(task_id: str):
     return _success_response({"feature_text": result.get("feature_text", "")}, code="FEATURE_OK", message="feature fetched")
 
 
+@app.post("/api/tasks/{task_id}/preflight-check", response_model=ApiResponse)
+def preflight_check(task_id: str, payload: PreflightCheckRequest | None = None):
+    task = _must_get_task(task_id)
+    body = payload or PreflightCheckRequest()
+    selected_environment = body.environment or task.environment or "test"
+    environment_config = _resolve_environment_config(task, selected_environment)
+    base = ""
+    if environment_config and environment_config.base_url:
+        base = str(environment_config.base_url).strip()
+    if not base:
+        base = _derive_fallback_base_url(task)
+    data = run_preflight_check(
+        task_id=task_id,
+        base_url=base,
+        default_headers=(environment_config.default_headers if environment_config else {}) or {},
+        auth=(environment_config.auth if environment_config else {}) or {},
+        latency_threshold_ms=body.latency_threshold_ms,
+        checks=body.checks,
+    )
+    return _success_response(data, code="PREFLIGHT_OK", message="preflight complete")
+
+
 @app.post("/api/tasks/{task_id}/execute", response_model=ApiResponse)
 def execute_task(task_id: str, payload: ExecuteTaskRequest):
     task = _must_get_task(task_id)
@@ -448,17 +611,39 @@ def execute_task(task_id: str, payload: ExecuteTaskRequest):
         dict(result.get("test_case_dsl", {})),
         selected_environment,
         environment_config,
+        fallback_base_url=_derive_fallback_base_url(task),
     )
+    resolved_base_url = str((dsl.get("metadata") or {}).get("execution", {}).get("base_url", "")).strip()
+    if payload.execution_mode == "api" and not resolved_base_url:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Missing execution base_url. Configure environment.base_url or task.target_system; "
+                "request-based fallback is not supported."
+            ),
+        )
     dsl["execution_mode"] = payload.execution_mode
-    execution_result = run_dsl(dsl, execution_mode=payload.execution_mode)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _executor:
+        _future = _executor.submit(run_dsl, dsl, execution_mode=payload.execution_mode)
+        try:
+            execution_result = _future.result(timeout=EXECUTION_TIMEOUT_SECONDS)
+        except concurrent.futures.TimeoutError:
+            raise HTTPException(
+                status_code=408,
+                detail=f"execution timed out after {EXECUTION_TIMEOUT_SECONDS}s",
+            )
     execution_metadata = dict(execution_result.get("metadata") or {})
     execution_metadata["execution"] = {
         "environment": selected_environment,
         "execution_mode": payload.execution_mode,
-        "base_url": (environment_config.base_url if environment_config else ""),
+        "base_url": (
+            (environment_config.base_url if environment_config and environment_config.base_url else "")
+            or str((dsl.get("metadata") or {}).get("execution", {}).get("base_url", ""))
+        ),
         "default_headers": (environment_config.default_headers if environment_config else {}),
         "auth": (environment_config.auth if environment_config else {}),
         "cookies": (environment_config.cookies if environment_config else {}),
+        "context": {"task_id": task.task_id},
     }
     execution_metadata["executed_at"] = _utc_now_iso()
     execution_result["metadata"] = execution_metadata
@@ -478,6 +663,77 @@ def get_execution(task_id: str):
         payload = {"task_id": task_id, "executor": None, "status": "not_started", "scenario_results": [], "metrics": {}, "logs": []}
         return _success_response(payload, code="EXECUTION_OK", message="execution fetched")
     return _success_response(task.execution_result, code="EXECUTION_OK", message="execution fetched")
+
+
+@app.get("/api/tasks/{task_id}/execution/stream")
+async def stream_execution(
+    task_id: str,
+    interval_ms: int = Query(800, ge=200, le=5000),
+    timeout_s: int = Query(60, ge=5, le=600),
+):
+    _must_get_task(task_id)
+
+    async def _event_generator():
+        started_at = datetime.now(timezone.utc)
+        last_status: str | None = None
+        last_log_index = 0
+
+        yield _encode_sse({"task_id": task_id, "connected_at": _utc_now_iso()}, event="connected")
+
+        while True:
+            task = _must_get_task(task_id)
+            execution = task.execution_result or {}
+            status = str(execution.get("status") or "")
+
+            if status != last_status:
+                yield _encode_sse({"task_id": task_id, "status": status or "waiting"}, event="status")
+                last_status = status
+
+            logs = execution.get("logs")
+            log_entries = logs if isinstance(logs, list) else []
+            if last_log_index < len(log_entries):
+                for entry in log_entries[last_log_index:]:
+                    yield _encode_sse(entry, event="message")
+                last_log_index = len(log_entries)
+
+            if status in {"passed", "failed", "stopped"}:
+                yield _encode_sse(
+                    {"task_id": task_id, "status": status, "finished_at": _utc_now_iso()},
+                    event="execution_done",
+                )
+                break
+
+            elapsed_s = (datetime.now(timezone.utc) - started_at).total_seconds()
+            if elapsed_s >= timeout_s:
+                yield _encode_sse(
+                    {"task_id": task_id, "status": status or "waiting", "reason": "stream_timeout"},
+                    event="execution_done",
+                )
+                break
+
+            yield _encode_sse({"task_id": task_id, "at": _utc_now_iso()}, event="heartbeat")
+            await asyncio.sleep(interval_ms / 1000)
+
+    return StreamingResponse(
+        _event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.get("/api/tasks/{task_id}/execution/explanations", response_model=ApiResponse)
+def get_execution_explanations(task_id: str, top_n: int = Query(5, ge=1, le=20)):
+    task = _must_get_task(task_id)
+    if task.execution_result is None:
+        raise HTTPException(status_code=404, detail="No execution result; run execute first")
+    er = dict(task.execution_result)
+    er.setdefault("task_id", task_id)
+    data = build_execution_explanations(er, top_n=top_n)
+    return _success_response(data, code="EXECUTION_EXPLANATIONS_OK", message="execution explanations")
 
 
 @app.get("/api/tasks/{task_id}/execution/logs", response_model=ApiResponse)

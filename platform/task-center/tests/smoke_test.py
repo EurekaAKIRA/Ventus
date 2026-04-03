@@ -36,7 +36,7 @@ def main() -> int:
     assert result["task_context"]["task_name"] == "smoke_test"
     assert result["scenarios"], "未生成任何场景"
     assert result["validation_report"]["passed"] is True, "最小 feature 校验未通过"
-    assert result["feature_text"].startswith("Feature: smoke_test")
+    assert result["feature_text"].startswith("功能: smoke_test")
 
     print("smoke test passed")
     print("scenario_count =", len(result["scenarios"]))

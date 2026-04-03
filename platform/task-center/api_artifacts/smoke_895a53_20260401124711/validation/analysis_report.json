@@ -1,0 +1,372 @@
+{
+  "task_id": "smoke_895a53_20260401124701",
+  "task_name": "smoke_895a53",
+  "quality_status": "passed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-01T12:47:11.855501+00:00",
+  "summary": {
+    "scenario_count": 1,
+    "executed_scenarios": 0,
+    "passed_scenarios": 0,
+    "failed_scenarios": 0,
+    "total_steps": 6,
+    "executed_steps": 0,
+    "passed_steps": 0,
+    "failed_steps": 0,
+    "success_rate": 0.0,
+    "failure_rate": 0.0,
+    "avg_elapsed_ms": 0.0,
+    "max_elapsed_ms": 0.0,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "not_started",
+    "assertion_total": 10,
+    "assertion_passed": 10,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 2,
+    "context_used_keys": 1,
+    "context_extracted_keys": 0,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "enhancement": {
+      "parse_mode": "rules",
+      "llm_attempted": false,
+      "llm_used": false,
+      "rag_used": true,
+      "rag_fallback_reason": "embedding_ModelGatewayError",
+      "fallback_reason": "",
+      "llm_error_type": "",
+      "llm_provider_profile": "tencent_hunyuan_openai_compat",
+      "model_profile": "default",
+      "retrieval_mode": "keyword",
+      "retrieval_top_k": 5,
+      "rerank_enabled": false,
+      "retrieval_metrics": {
+        "returned_count": 5,
+        "requested_top_k": 5,
+        "coverage_ratio": 1.0,
+        "duplicate_ratio": 0.0,
+        "score_avg": 1.964,
+        "rerank_applied": false,
+        "embedded_chunk_count": 0,
+        "embedding_coverage": 0.0,
+        "embedding_error": "ModelGatewayError"
+      },
+      "retrieval_scoring": {
+        "lexical_weight": 4.0,
+        "vector_weight": 6.0,
+        "rerank_vector_weight": 7.0,
+        "rerank_lexical_weight": 2.0,
+        "rerank_title_boost": 0.2,
+        "rerank_content_boost": 0.2
+      },
+      "performance": {
+        "elapsed_ms": 10174.19,
+        "target_ms": 8000.0,
+        "within_target": false,
+        "slow_reason": "large_input_or_retrieval_cost"
+      }
+    }
+  },
+  "dashboard": {
+    "task_id": "smoke_895a53_20260401124701",
+    "task_name": "smoke_895a53",
+    "quality_status": "passed",
+    "execution_status": "not_started",
+    "summary": {
+      "scenario_count": 1,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "assertion_total": 10,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 1,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 1
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 6
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 0
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 0
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 0.0
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 0.0
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 0.0
+      }
+    ],
+    "totals": {
+      "scenarios": 1,
+      "steps": 6,
+      "assertions": 10,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "passed_steps": 0,
+      "failed_steps": 0
+    },
+    "assertion_summary": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 2,
+      "defined_key_names": [
+        "session_id",
+        "token"
+      ],
+      "used_keys": 1,
+      "used_key_names": [
+        "token"
+      ],
+      "extracted_keys": 0,
+      "extracted_key_names": [],
+      "unused_defined_keys": [
+        "session_id"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": null,
+    "failure_reason_breakdown": [],
+    "headline": "0/6 steps passed",
+    "summary_text": "任务 smoke_895a53 当前状态为 passed，已生成 1 个场景、6 个步骤，尚未开始执行。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 1,
+    "executed_scenarios": 0,
+    "passed_scenarios": 0,
+    "failed_scenarios": 0,
+    "execution_status": "not_started",
+    "total_steps": 6,
+    "executed_steps": 0,
+    "passed_steps": 0,
+    "failed_steps": 0,
+    "success_rate": 0.0,
+    "failure_rate": 0.0,
+    "avg_elapsed_ms": 0.0,
+    "max_elapsed_ms": 0.0,
+    "assertion_total": 10,
+    "assertion_passed": 10,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 2,
+    "context_used_keys": 1,
+    "context_extracted_keys": 0,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "smoke_895a53",
+    "quality_status": "passed",
+    "execution_status": "not_started",
+    "headline": "任务 smoke_895a53 当前状态为 passed，已生成 1 个场景、6 个步骤，尚未开始执行。",
+    "success_rate": 0.0,
+    "failed_steps": 0,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": null,
+    "next_action": "执行任务以生成运行报告"
+  },
+  "execution_overview": {
+    "executor": null,
+    "status": "not_started",
+    "scenario_count": 0,
+    "passed_scenarios": 0,
+    "failed_scenarios": 0,
+    "log_count": 0,
+    "has_failures": false,
+    "top_failure_category": null
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [],
+  "failure_reasons": [],
+  "assertion_stats": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "pass_rate": 100.0,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "context_stats": {
+    "defined_keys": [
+      "session_id",
+      "token"
+    ],
+    "defined_key_count": 2,
+    "used_keys": [
+      "token"
+    ],
+    "used_key_count": 1,
+    "extracted_keys": [],
+    "extracted_key_count": 0,
+    "unused_defined_keys": [
+      "session_id"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "token": "json.token",
+      "session_id": "json.session_id"
+    }
+  },
+  "task_summary_text": "任务 smoke_895a53 当前状态为 passed，已生成 1 个场景、6 个步骤，尚未开始执行。",
+  "findings": [],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0
+    },
+    "assertions": {
+      "passed": 10,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "context": {
+      "defined": 2,
+      "used": 1,
+      "extracted": 0
+    },
+    "failure_reasons": {}
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 1,
+        "total_steps": 6,
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "success_rate": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 0,
+        "failure_reasons": []
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "pass_rate": 100.0,
+        "validation_errors": 0,
+        "validation_warnings": 0
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "session_id",
+          "token"
+        ],
+        "defined_key_count": 2,
+        "used_keys": [
+          "token"
+        ],
+        "used_key_count": 1,
+        "extracted_keys": [],
+        "extracted_key_count": 0,
+        "unused_defined_keys": [
+          "session_id"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "token": "json.token",
+          "session_id": "json.session_id"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      }
+    }
+  ]
+}

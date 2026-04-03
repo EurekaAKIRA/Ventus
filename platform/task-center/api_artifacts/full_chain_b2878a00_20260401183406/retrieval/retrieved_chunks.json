@@ -1,0 +1,41 @@
+{
+  "query": "# 用户登录与个人中心功能需求\n\n## 1. 功能目标\n\n用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息。\n\n## 2. 接口清单\n\n| 接口 | 方法 | 路径 |\n|------|------|------|\n| 用户登录 | POST | /api/auth/login |\n| 获取个人中心 | GET | /api/user/profile |\n| 修改昵称 | PUT | /api/user/profile |\n\n## 3. 主流程\n\n1. 用户在登录页输入用户名和密码，点击\"登录\"按钮。\n2. 调用 `POST /api/auth/login`，请求体包含 `username` 和 `password` 字段。\n3. 系统校验凭据，返回 200 及 `token` 字段。\n4. 用户跳转至个人中心，调用 `GET /api/user/profile`，携带 Authorization header。\n5. 页面展示 `nickname`、`avatar` 和 `email` 字段。\n6. 用户点击\"编辑\"，修改昵称后调用 `PUT /api/user/profile`，系统返回 200 并刷新页面。\n\n## 4. 异常流程\n\n- 密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403。\n- 登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"。\n\n## 5. 约束\n\n- 所有接口必须在 500ms 内响应。\n- 用户名长度为 4–20 字符，密码须包含数字和字母。\n- 所有需鉴权接口需携带 `Authorization: Bearer <token>` header。",
+  "hits": [
+    {
+      "chunk_id": "chunk_003",
+      "content": "1. 用户在登录页输入用户名和密码，点击\"登录\"按钮。\n2. 调用 `POST /api/auth/login`，请求体包含 `username` 和 `password` 字段。\n3. 系统校验凭据，返回 200 及 `token` 字段。\n4. 用户跳转至个人中心，调用 `GET /api/user/profile`，携带 Authorization header。\n5. 页面展示 `nickname`、`avatar` 和 `email` 字段。\n6. 用户点击\"编辑\"，修改昵称后调用 `PUT /api/user/profile`，系统返回 200 并刷新页面。",
+      "score": 9.389,
+      "section_title": "3. 主流程",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_002",
+      "content": "| 接口 | 方法 | 路径 |\n|------|------|------|\n| 用户登录 | POST | /api/auth/login |\n| 获取个人中心 | GET | /api/user/profile |\n| 修改昵称 | PUT | /api/user/profile |",
+      "score": 7.163,
+      "section_title": "2. 接口清单",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_004",
+      "content": "- 密码错误三次，账号锁定 10 分钟，`POST /api/auth/login` 返回 403。\n- 登录态过期，`GET /api/user/profile` 返回 401，前端自动跳转登录页，提示\"会话已过期\"。",
+      "score": 6.718,
+      "section_title": "4. 异常流程",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_005",
+      "content": "- 所有接口必须在 500ms 内响应。\n- 用户名长度为 4–20 字符，密码须包含数字和字母。\n- 所有需鉴权接口需携带 `Authorization: Bearer <token>` header。",
+      "score": 6.46,
+      "section_title": "5. 约束",
+      "source_file": ""
+    },
+    {
+      "chunk_id": "chunk_001",
+      "content": "用户通过用户名和密码登录平台，登录成功后进入个人中心页面，查看并修改个人信息。",
+      "score": 5.247,
+      "section_title": "1. 功能目标",
+      "source_file": ""
+    }
+  ],
+  "retrieval_notes": []
+}

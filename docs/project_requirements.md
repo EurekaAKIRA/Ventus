@@ -8,6 +8,8 @@
 
 如需查看模块分层、目录重组和 `LaVague` 新定位，请结合 `docs/architecture_replan.md` 一并阅读。
 
+如需查看“截至当前代码实现的完成度与下一步建议”，请结合 `docs/platform_requirements_status.md` 一并阅读。
+
 ## 2. 项目定位
 
 本项目拟实现一套基于 Agent 架构的通用自动化测试平台原型，核心目标是打通以下闭环：
