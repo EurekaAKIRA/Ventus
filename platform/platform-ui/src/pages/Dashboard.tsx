@@ -400,30 +400,59 @@ export default function Dashboard() {
 
   const taskFunnel = useMemo(() => {
     const counts = {
-      received: 0,
+      received: taskDataset.length,
       parsed: 0,
       generated: 0,
       running: 0,
       reported: 0,
     };
-    tasks.forEach((item) => {
+    taskDataset.forEach((item) => {
       const s = normalizeStatus(item.status);
-      if (s === "received") counts.received += 1;
-      if (s === "parsed") counts.parsed += 1;
-      if (s === "generated") counts.generated += 1;
-      if (s === "running") counts.running += 1;
-      if (s === "passed" || s === "failed" || s === "stopped") counts.reported += 1;
+      if (["parsed", "generated", "running", "passed", "failed", "stopped"].includes(s)) {
+        counts.parsed += 1;
+      }
+      if (["generated", "running", "passed", "failed", "stopped"].includes(s)) {
+        counts.generated += 1;
+      }
+      if (["running", "passed", "failed", "stopped"].includes(s)) {
+        counts.running += 1;
+      }
+      if (s === "passed" || s === "failed" || s === "stopped") {
+        counts.reported += 1;
+      }
     });
     const rows = [
-      { key: "received", label: "接收", value: counts.received },
-      { key: "parsed", label: "解析", value: counts.parsed },
-      { key: "generated", label: "生成", value: counts.generated },
-      { key: "running", label: "执行", value: counts.running },
-      { key: "reported", label: "报告", value: counts.reported },
+      { key: "received", label: "接收", value: counts.received, color: "#8c8c8c" },
+      { key: "parsed", label: "解析", value: counts.parsed, color: "#722ed1" },
+      { key: "generated", label: "生成", value: counts.generated, color: "#13c2c2" },
+      { key: "running", label: "执行", value: counts.running, color: "#2f54eb" },
+      { key: "reported", label: "报告", value: counts.reported, color: "#52c41a" },
     ];
-    const max = Math.max(1, ...rows.map((r) => r.value));
-    return rows.map((r) => ({ ...r, pct: Math.max(8, Math.round((r.value / max) * 100)) }));
-  }, [tasks]);
+    const total = rows.reduce((sum, row) => sum + row.value, 0);
+    return rows.map((row) => ({
+      ...row,
+      percent: total ? Math.round((row.value / total) * 100) : 0,
+    }));
+  }, [taskDataset]);
+
+  const taskFunnelPieStyle = useMemo(() => {
+    const total = taskFunnel.reduce((sum, row) => sum + row.value, 0);
+    if (!total) {
+      return { background: "#f0f0f0", total };
+    }
+    let offset = 0;
+    const segments = taskFunnel.map((row) => {
+      const span = (row.value / total) * 100;
+      const start = offset;
+      const end = offset + span;
+      offset = end;
+      return `${row.color} ${start.toFixed(2)}% ${end.toFixed(2)}%`;
+    });
+    return {
+      background: `conic-gradient(${segments.join(", ")})`,
+      total,
+    };
+  }, [taskFunnel]);
 
   const todoColumns = [
     {
@@ -608,19 +637,30 @@ export default function Dashboard() {
         </Col>
         <Col xs={24} xl={8}>
           <Card title="任务漏斗" bordered={false} className="dashboard-panel-card">
-            <Space direction="vertical" size={10} style={{ width: "100%" }}>
-              {taskFunnel.map((row) => (
-                <div key={row.key}>
-                  <div className="dashboard-volume-head">
-                    <Text>{row.label}</Text>
-                    <Text strong>{row.value}</Text>
-                  </div>
-                  <div className="dashboard-funnel-track">
-                    <div className="dashboard-funnel-bar" style={{ width: `${row.pct}%` }} />
+            <div className="dashboard-funnel-pie-layout">
+              <div className="dashboard-funnel-pie-wrap">
+                <div className="dashboard-funnel-pie" style={{ background: taskFunnelPieStyle.background }}>
+                  <div className="dashboard-funnel-pie-center">
+                    <Text type="secondary">总计</Text>
+                    <Text strong>{taskFunnelPieStyle.total}</Text>
                   </div>
                 </div>
-              ))}
-            </Space>
+              </div>
+              <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                {taskFunnel.map((row) => (
+                  <div key={row.key} className="dashboard-funnel-legend-row">
+                    <Space size={8}>
+                      <span className="dashboard-funnel-legend-dot" style={{ backgroundColor: row.color }} />
+                      <Text>{row.label}</Text>
+                    </Space>
+                    <Space size={10}>
+                      <Text type="secondary">{row.percent}%</Text>
+                      <Text strong>{row.value}</Text>
+                    </Space>
+                  </div>
+                ))}
+              </Space>
+            </div>
           </Card>
         </Col>
       </Row>
