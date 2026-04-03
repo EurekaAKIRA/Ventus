@@ -239,6 +239,64 @@ body {
   gap: 8px;
 }
 
+@keyframes dashboard-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashboard-pie-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dashboard-sector-expand {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dashboard-enter .dashboard-kpi-card,
+.dashboard-enter .dashboard-panel-card {
+  animation: dashboard-fade-up 360ms ease both;
+}
+
+.dashboard-enter .dashboard-kpi-card:nth-child(1),
+.dashboard-enter .dashboard-panel-card:nth-child(1) {
+  animation-delay: 20ms;
+}
+
+.dashboard-enter .dashboard-kpi-card:nth-child(2),
+.dashboard-enter .dashboard-panel-card:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.dashboard-enter .dashboard-kpi-card:nth-child(3),
+.dashboard-enter .dashboard-panel-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.dashboard-enter .dashboard-kpi-card:nth-child(4),
+.dashboard-enter .dashboard-panel-card:nth-child(4) {
+  animation-delay: 170ms;
+}
+
 .dashboard-scroll-list {
   max-height: 320px;
   overflow-y: auto;
@@ -440,10 +498,43 @@ body {
 .dashboard-funnel-pie {
   width: 148px;
   height: 148px;
-  border-radius: 999px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.dashboard-funnel-pie-svg {
+  width: 148px;
+  height: 148px;
+  animation: dashboard-pie-pop 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  animation-delay: 120ms;
+}
+
+.dashboard-funnel-pie-empty {
+  width: 148px;
+  height: 148px;
+  border-radius: 999px;
+  background: #f0f0f0;
+  animation: dashboard-pie-pop 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  animation-delay: 120ms;
+}
+
+.dashboard-funnel-pie-segment {
+  cursor: pointer;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+  opacity: 0.95;
+}
+
+.dashboard-funnel-pie-segment-wrap {
+  transform-origin: 110px 110px;
+  transform-box: fill-box;
+  animation: dashboard-sector-expand 380ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.dashboard-funnel-pie-segment-wrap.is-active .dashboard-funnel-pie-segment {
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.22));
+  opacity: 1;
 }
 
 .dashboard-funnel-pie-center {
@@ -451,6 +542,7 @@ body {
   height: 84px;
   border-radius: 999px;
   background: #fff;
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -462,6 +554,14 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.dashboard-funnel-legend-row.active {
+  background: var(--theme-primary-bg);
 }
 
 .dashboard-funnel-legend-dot {

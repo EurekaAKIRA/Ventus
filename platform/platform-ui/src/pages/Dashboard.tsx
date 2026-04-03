@@ -93,6 +93,37 @@ function inferFailureReason(item: ExecutionHistoryItem): string {
   return "执行失败（无细分原因）";
 }
 
+function polarToCartesian(cx: number, cy: number, radius: number, angleInDegrees: number) {
+  const radians = (Math.PI / 180) * angleInDegrees;
+  return {
+    x: cx + radius * Math.cos(radians),
+    y: cy + radius * Math.sin(radians),
+  };
+}
+
+function describeDonutArc(
+  cx: number,
+  cy: number,
+  outerRadius: number,
+  innerRadius: number,
+  startAngle: number,
+  endAngle: number,
+) {
+  const safeEnd = endAngle - startAngle >= 359.999 ? endAngle - 0.001 : endAngle;
+  const outerStart = polarToCartesian(cx, cy, outerRadius, startAngle);
+  const outerEnd = polarToCartesian(cx, cy, outerRadius, safeEnd);
+  const innerEnd = polarToCartesian(cx, cy, innerRadius, safeEnd);
+  const innerStart = polarToCartesian(cx, cy, innerRadius, startAngle);
+  const largeArcFlag = safeEnd - startAngle > 180 ? 1 : 0;
+  return [
+    `M ${outerStart.x} ${outerStart.y}`,
+    `A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${outerEnd.x} ${outerEnd.y}`,
+    `L ${innerEnd.x} ${innerEnd.y}`,
+    `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerStart.x} ${innerStart.y}`,
+    "Z",
+  ].join(" ");
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -104,6 +135,7 @@ export default function Dashboard() {
   const [customRange, setCustomRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [todoViewMode, setTodoViewMode] = useState<TodoViewMode>("all");
   const [dashboardView, setDashboardView] = useState<DashboardView>("overview");
+  const [hoveredFunnelKey, setHoveredFunnelKey] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshCountdown, setRefreshCountdown] = useState(10);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string>("");
@@ -486,24 +518,53 @@ export default function Dashboard() {
     };
   }, [taskFunnelCumulative]);
 
-  const taskFunnelPieStyle = useMemo(() => {
+  const taskFunnelPieSegments = useMemo(() => {
     const total = taskFunnelPieRows.total;
     if (!total) {
-      return { background: "#f0f0f0", total };
+      return [] as Array<{
+        key: string;
+        label: string;
+        color: string;
+        value: number;
+        startAngle: number;
+        endAngle: number;
+        dx: number;
+        dy: number;
+      }>;
     }
-    let offset = 0;
-    const segments = taskFunnelPieRows.rows.map((row) => {
-      const span = (row.value / total) * 100;
-      const start = offset;
-      const end = offset + span;
-      offset = end;
-      return `${row.color} ${start.toFixed(2)}% ${end.toFixed(2)}%`;
-    });
-    return {
-      background: `conic-gradient(${segments.join(", ")})`,
-      total,
-    };
-  }, [taskFunnelPieRows]);
+    let offset = -90;
+    return taskFunnelPieRows.rows
+      .filter((row) => row.value > 0)
+      .map((row) => {
+        const angle = (row.value / total) * 360;
+        const startAngle = offset;
+        const endAngle = offset + angle;
+        const middleAngle = (startAngle + endAngle) / 2;
+        const active = hoveredFunnelKey === row.key;
+        const distance = active ? 7 : 0;
+        offset = endAngle;
+        return {
+          key: row.key,
+          label: row.label,
+          color: row.color,
+          value: row.value,
+          startAngle,
+          endAngle,
+          dx: Number((Math.cos((Math.PI / 180) * middleAngle) * distance).toFixed(3)),
+          dy: Number((Math.sin((Math.PI / 180) * middleAngle) * distance).toFixed(3)),
+        };
+      });
+  }, [taskFunnelPieRows, hoveredFunnelKey]);
+
+  const taskFunnelPieCenterLabel = useMemo(() => {
+    if (!hoveredFunnelKey) {
+      return { label: "总计", value: taskFunnelPieRows.received };
+    }
+    const hit = taskFunnelPieRows.rows.find((item) => item.key === hoveredFunnelKey);
+    return hit ? { label: hit.label, value: hit.value } : { label: "总计", value: taskFunnelPieRows.received };
+  }, [hoveredFunnelKey, taskFunnelPieRows]);
+
+  const taskFunnelPieEmpty = taskFunnelPieRows.total === 0;
 
   const todoColumns = [
     {
@@ -555,7 +616,7 @@ export default function Dashboard() {
   }
 
   return (
-    <Space direction="vertical" size={20} style={{ width: "100%" }}>
+    <Space direction="vertical" size={20} style={{ width: "100%" }} className="dashboard-enter">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Space direction="vertical" size={2}>
           <Title level={4} style={{ margin: 0 }}>测试运营仪表盘</Title>
@@ -690,16 +751,48 @@ export default function Dashboard() {
           <Card title="任务漏斗" bordered={false} className="dashboard-panel-card">
             <div className="dashboard-funnel-pie-layout">
               <div className="dashboard-funnel-pie-wrap">
-                <div className="dashboard-funnel-pie" style={{ background: taskFunnelPieStyle.background }}>
+                <div className="dashboard-funnel-pie">
+                  {taskFunnelPieEmpty ? (
+                    <div className="dashboard-funnel-pie-empty" />
+                  ) : (
+                    <svg viewBox="0 0 220 220" className="dashboard-funnel-pie-svg">
+                      {taskFunnelPieSegments.map((segment, index) => (
+                        <g
+                          key={segment.key}
+                          transform={`translate(${segment.dx} ${segment.dy})`}
+                          onMouseEnter={() => setHoveredFunnelKey(segment.key)}
+                          onMouseLeave={() => setHoveredFunnelKey((prev) => (prev === segment.key ? null : prev))}
+                        >
+                          <g
+                            className={`dashboard-funnel-pie-segment-wrap${hoveredFunnelKey === segment.key ? " is-active" : ""}`}
+                            style={{ animationDelay: `${60 + index * 80}ms` }}
+                          >
+                            <path
+                              d={describeDonutArc(110, 110, 84, 44, segment.startAngle, segment.endAngle)}
+                              fill={segment.color}
+                              className="dashboard-funnel-pie-segment"
+                            >
+                              <title>{`${segment.label}: ${segment.value}`}</title>
+                            </path>
+                          </g>
+                        </g>
+                      ))}
+                    </svg>
+                  )}
                   <div className="dashboard-funnel-pie-center">
-                    <Text type="secondary">总计</Text>
-                    <Text strong>{taskFunnelPieRows.received}</Text>
+                    <Text type="secondary">{taskFunnelPieCenterLabel.label}</Text>
+                    <Text strong>{taskFunnelPieCenterLabel.value}</Text>
                   </div>
                 </div>
               </div>
               <Space direction="vertical" size={8} style={{ width: "100%" }}>
                 {taskFunnelPieRows.rows.map((row) => (
-                  <div key={row.key} className="dashboard-funnel-legend-row">
+                  <div
+                    key={row.key}
+                    className={`dashboard-funnel-legend-row${hoveredFunnelKey === row.key ? " active" : ""}`}
+                    onMouseEnter={() => setHoveredFunnelKey(row.key)}
+                    onMouseLeave={() => setHoveredFunnelKey((prev) => (prev === row.key ? null : prev))}
+                  >
                     <Space size={8}>
                       <span className="dashboard-funnel-legend-dot" style={{ backgroundColor: row.color }} />
                       <Text>{row.label}</Text>
