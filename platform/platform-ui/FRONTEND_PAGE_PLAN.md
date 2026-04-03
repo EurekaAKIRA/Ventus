@@ -1,121 +1,129 @@
-# 前端页面规划（最新）
+# 前端页面规划（platform-ui）
 
-## 0. 参考文档
-- 前端总入口：`docs/frontend_api_list.md` 的 **§1.1 前端参考文档索引**。
-- 体验增强契约：`docs/ux_service_api_contract_draft.md`。
-- 工程约束：`platform/platform-ui/FRONTEND_DEVELOPMENT_GUIDE.md`。
+## 1. 背景问题
 
-## 0.1 体验增强接口落点
-- `/tasks/:taskId` -> `执行` Tab：
-  - 执行前检查（`preflight-check`）
-  - 实时流（`execution/stream`，不可用时轮询降级）
-- `/tasks/:taskId` -> `报告` Tab：
-  - 失败解释（`execution/explanations`）
-  - 回归对比（`regression-diff`）
-- `/tasks/history`：
-  - 列表操作新增“回归对比”，直达详情页报告并自动触发最近一次对比。
+本文件用于定义 `platform-ui` 页面级职责边界，避免将接口细节、状态机逻辑和渲染细节混写在同一层。
 
----
-# 鍓嶇椤甸潰瑙勫垝锛堟渶鏂帮級
+目标：
 
-> 鏂囦欢鏇村悕璇存槑锛氭湰鏂囦欢鍘熷悕 `page_plan.md`锛岀幇缁熶竴涓?`FRONTEND_PAGE_PLAN.md`銆?
-## 0. 鍙傝€冩枃妗ｏ紙鑱旇皟 / 楠屾敹 / 浣撻獙澧炲己锛?
-- **鍓嶇鏂囨。鎬昏〃锛堝惈蹇呯湅鍒嗙骇锛?*锛歚docs/frontend_api_list.md` 鈫?**搂1.1**銆? 
-- **鎺ュ彛娓呭崟涓庢暟鎹祦**锛歚docs/frontend_api_list.md` 鍏ㄦ枃銆? 
-- **浣撻獙澧炲己 API 鑽夋**锛堥妫€銆佸け璐ヨВ閲娿€佸洖褰掑姣斻€丼SE锛夛細`docs/ux_service_api_contract_draft.md`銆? 
-- **宸ョ▼涓庝氦浜掕鑼?*锛氬悓鐩綍 `FRONTEND_DEVELOPMENT_GUIDE.md`銆? 
-- **绾︽潫涓庨獙鏀?*锛歚docs/platform_requirements_status.md`銆乣docs/platform_e2e_requirement.md`銆?
-## 1. 浠诲姟鍒楄〃椤?`/tasks`
-瀹氫綅锛氭墽琛屽眰锛堝鐞嗕腑浠诲姟锛夈€?
-灞曠ず瀛楁锛?- `task_name`
-- `task_id`
-- `source_type`
-- `status`
-- `created_at`
+- 让页面职责与 `TaskDetail` 拆分蓝图一一对应。
+- 让跨 Tab 的共享状态可控，避免副作用互相污染。
+- 让后续重构 PR 按固定顺序落地，不与视觉改动混改。
 
-浜や簰锛?- 鍏抽敭璇嶆悳绱?- 鐘舵€佺瓫閫?- 璺宠浆浠诲姟璇︽儏
-- 浠呭睍绀鸿繘琛屼腑浠诲姟锛堥粯璁や笉鍚?`passed` / `archived`锛?
----
-
-## 2. 鍒涘缓浠诲姟椤?`/tasks/create`
-琛ㄥ崟瀛楁锛?- `task_name`
-- `requirement_text`锛堟枃鏈緭鍏ワ級
-- 鏂囦欢瀵煎叆锛堝～鍏?`requirement_text`锛?- `target_system`
-- `environment`
-
-浜や簰锛?- 鎻愪氦鍓?URL 鏍￠獙锛坄target_system`锛?- 鎻愪氦鎴愬姛鍚庤烦杞换鍔¤鎯?
----
-
-## 3. 浠诲姟璇︽儏椤?`/tasks/:taskId`
-
-### 3.1 椤堕儴娴佺▼鍖?- 姝ラ鏉★細`宸叉帴鏀?-> 宸茶В鏋?-> 宸茬敓鎴愬満鏅?-> 鎵ц -> 鎶ュ憡`
-- 鎵ц鍙楅樆鎻愮ず锛氬綋 `target_system` 鏃犳晥鏃舵樉绀哄憡璀?- 鎿嶄綔鎸夐挳锛氬埛鏂般€佸惎鍔ㄦ墽琛屻€佸仠姝㈡墽琛?
-### 3.2 鎽樿鎸囨爣鍖?- 浠诲姟鐘舵€?- 鏄惁宸茶В鏋?- 鍦烘櫙鏁伴噺
-- 鎵ц鐘舵€?
-### 3.3 鍩烘湰淇℃伅鍖?- 浠诲姟鍚嶇О銆佷换鍔?ID銆佺姸鎬?- 鏉ユ簮绫诲瀷銆佸垱寤烘椂闂淬€佽瑷€
-- `target_system`銆乣environment`
-
-### 3.4 Tab 璁捐
-1. 瑙ｆ瀽锛?- 灞曠ず `objective/actions/expected_results/ambiguities` 鎽樿
-- 灞曠ず瑙ｆ瀽鍏冩暟鎹叧閿寚鏍?- 灞曠ず妫€绱笂涓嬫枃鍓?N 鏉?- 鎸夐挳锛氭煡鐪嬪師濮?JSON
-
-2. 鍦烘櫙锛?- 鍦烘櫙鍒楄〃鎽樿锛堢洰鏍囥€佸墠缃潯浠躲€佹楠ゃ€佹柇瑷€锛?- 姝ラ榛樿闄愰暱灞曠ず
-- 鎸夐挳锛氭煡鐪嬪師濮?JSON
-
-3. DSL / Feature锛?- DSL 鎽樿锛堢増鏈€佹墽琛屾ā寮忋€佸満鏅暟锛?- Feature 鏂囨湰棰勮锛堥檺闀匡級
-- 鎸夐挳锛氭煡鐪嬪畬鏁?鍘熷鏁版嵁
-
-4. 鎵ц锛?- 鎵ц鎽樿鎸囨爣锛堟€绘暟/閫氳繃/澶辫触/鐘舵€侊級
-- 鎵ц鏃ュ織闈㈡澘
-- 鎸夐挳锛氭煡鐪嬪師濮嬫墽琛岀粨鏋?
-5. 鎶ュ憡锛?- 璐ㄩ噺鐘舵€?- 鏍￠獙鎶ュ憡鎽樿
-- findings 鍒楄〃
-- 鎸夐挳锛氭煡鐪嬪師濮嬫姤鍛?JSON
-
-6. 浜х墿锛?- 浜х墿鍗＄墖鍒楄〃
-- 鐐瑰嚮鎵撳紑浜х墿棰勮鎶藉眽
+统一文档入口：`docs/frontend_api_list.md` 的 **§1.1 前端参考文档索引**。
 
 ---
 
-## 3.5 鍒嗗伐瑙勫垯锛堥〉闈㈢骇锛?1. 浠〃鐩橈細鍐崇瓥灞傦紝鎵胯浇姹囨€?瓒嬪娍/棰勮涓庡鑸紝涓嶆壙杞介噸鎿嶄綔銆?2. 浠诲姟鍒楄〃锛氭墽琛屽眰锛屾壙杞藉鐞嗕腑浠诲姟涓庢墽琛屽姩浣溿€?3. 鍘嗗彶浠诲姟锛氬璁″眰锛屾壙杞藉巻鍙插洖婧笌鎶ュ憡鏌ョ湅锛屼笉鎵胯浇鎵ц鎺у埗銆?
+## 2. 架构分层
+
+### 2.1 页面层职责总览
+
+- `/dashboard`
+  - 负责：趋势与风险总览、任务入口导航
+  - 不负责：执行控制、复杂编辑
+- `/tasks`
+  - 负责：当前任务筛选、排序、快速跳转
+  - 不负责：执行状态机管理、报告深度分析
+- `/tasks/create`
+  - 负责：创建参数输入与基础校验
+  - 不负责：创建后执行链路控制
+- `/tasks/:taskId`
+  - 负责：多 Tab 联动、执行入口、报告与产物查看
+  - 不负责：在单组件中混合全部副作用实现
+- `/tasks/history`
+  - 负责：历史检索与复盘跳转（如 `tab=report&compare=latest`）
+  - 不负责：实时执行控制
+
+### 2.2 TaskDetail 页内模块分层
+
+- Data Layer：`useTaskData`
+- Execution Layer：`useTaskExecution`
+- View Layer：`TaskDetailView` + Tab 子面板
+
+### 2.3 Tab 与模块映射
+
+- `parsed` -> `ParsedRequirementPanel`（`TaskDataState.parsedRequirement`）
+- `scenario` -> `ScenarioPanel`（`TaskDataState.scenarios`）
+- `dsl` -> `DslPanel`（`TaskDataState.dsl`）
+- `execution` -> `ExecutionPanel`（`ExecutionRuntimeState` + `TaskDataState.detail`）
+- `report` -> `ReportPanel`（`analysisReport` + `explanations` + `regressionDiff`）
+- `artifacts` -> `ArtifactsPanel`（任务产物数据）
+
 ---
 
-## 4. 璁捐鍘熷垯
-1. 鎽樿浼樺厛锛氶粯璁ゅ睍绀哄彲璇绘憳瑕併€?2. 鍘熷鏁版嵁娆＄骇锛欽SON 浠呭湪鈥滄煡鐪嬪師濮嬫暟鎹€濇椂鎵撳紑銆?3. 鍏ㄤ腑鏂囨枃妗堬細鎸夐挳銆佹彁绀恒€佺┖鎬佺粺涓€涓枃銆?4. 鍙仮澶嶉敊璇細澶辫触鎻愮ず瑕佺粰鍑轰笅涓€姝ユ搷浣滄柟鍚戙€?
+## 3. 状态流
+
+### 3.1 页内状态流（文本图）
+
+```text
+TaskDetailPage
+  ├─ useTaskData(taskId, urlParams) -> TaskDataState
+  ├─ useTaskExecution(taskId, activeTabKey, minimalContext) -> ExecutionRuntimeState + actions
+  └─ TaskDetailView(viewModel, actions)
+       ├─ TaskTabs
+       ├─ ParsedRequirementPanel
+       ├─ ScenarioPanel
+       ├─ DslPanel
+       ├─ ExecutionPanel
+       ├─ ReportPanel
+       └─ ArtifactsPanel
+```
+
+### 3.2 跨 Tab 共享状态约束
+
+可共享只读状态：
+
+- `taskId`
+- `activeTabKey`
+- `TaskDetailViewModel`
+
+禁止共享可变状态：
+
+- SSE 事件缓存对象被多个 Tab 直接写入
+- 轮询计时器句柄在多个组件间传递并修改
+- 执行按钮临时态与报告卡片临时态复用同一可变引用
+
+### 3.3 触发规则与禁止项
+
+- `execution` Tab 外不得触发执行链路副作用。
+- `report` Tab 外不得触发回归对比自动拉取。
+- 禁止页面组件直接发起多源副作用（轮询 + SSE + 多 API）。
+- 禁止文案硬编码混入状态机逻辑。
+
 ---
 
-## 5. 鎵ц鐩稿叧浜や簰锛堝叧閿級
-1. 鐐瑰嚮鈥滃惎鍔ㄦ墽琛屸€濆墠妫€鏌?`target_system` 鏄惁涓哄悎娉?`http(s)` URL銆?2. 鍚姩鍚庤皟鐢?`POST /api/tasks/{task_id}/execute`銆?3. 骞惰鎷夊彇 `execution`銆乣validation-report`銆乣analysis-report`銆?4. 鎵ц涓寜 `2.5s` 杞 `execution`锛屽畬鎴愬悗鑷姩鍥炴媺鎶ュ憡銆?5. 鏀寔鈥滃仠姝㈡墽琛屸€濆苟鏇存柊 UI 鐘舵€佸拰鏃ュ織銆?
+## 4. 迁移步骤
+
+1. 按层先拆 `useTaskData`，保持 UI 行为不变。
+2. 再拆 `useTaskExecution`，收拢执行链路副作用。
+3. 最后拆 `TaskDetailView` 与 Tab 子组件。
+4. 视觉与交互优化放在拆分完成后单独提交。
+
 ---
 
-## 6. 涓庢墽琛屼慨鏀硅鍒掑榻愮姸鎬?宸插榻愶細
-1. 璇︽儏椤垫墽琛屽叆鍙ｆ牎楠屼笌绂佺敤鎬併€?2. 鎵ц鍚姩鍚庡苟琛屾媺鍙栫瓥鐣ャ€?3. 鎵ц涓疆璇笌缁撴潫鍚庢姤鍛婂洖鎷夈€?4. 鍋滄鎵ц鍔ㄤ綔涓庢湰鍦扮姸鎬佸洖鍐欍€?
-寰呰ˉ榻愶細
-1. 浠诲姟鍒楄〃澶辫触鍘熷洜绛涢€変笌缁熻銆?2. 鎶ュ憡鍥捐〃鍖栧睍绀猴紙`chart_data`锛夈€?3. 浜х墿鍒嗙粍妫€绱笌蹇€熷畾浣嶃€?
+## 5. 验收清单
+
+### 5.1 文档质量验收
+
+- 全文 UTF-8 可读。
+- 无乱码旧稿残留。
+- 无重复历史段落。
+- 章节顺序固定：背景问题 -> 架构分层 -> 状态流 -> 迁移步骤 -> 验收清单。
+
+### 5.2 可实施性验收
+
+- 仅依据本文可拆出首个页面重构 PR（`useTaskData` 先行）。
+- 模块边界清晰，页面职责不再混叠。
+
+### 5.3 迭代安全验收
+
+- `npm run typecheck` 可通过。
+- 关键手测路径稳定：启动执行、SSE失败回退、Tab切换、停止执行。
+
 ---
 
-## 7. 寤舵湡浼樺寲锛堣鎯呴〉鍐呭娓叉煋锛?1. 鏂板缁熶竴鍒囨崲锛歚闃呰瑙嗗浘` / `婧愮爜瑙嗗浘`銆?2. 婧愮爜瑙嗗浘缁熶竴浠ｇ爜鍧楅鏍硷紙閫傞厤 `***`銆丮arkdown銆丏SL銆丗eature銆丣SON锛夈€?3. 璇︽儏椤靛悇鍐呭鍧楃粺涓€鍚屼竴娓叉煋缁勪欢锛屽噺灏戝睍绀洪鏍间笉涓€鑷撮棶棰樸€?4. 鏈」宸茶褰曪紝鍚庣画鐙珛鎺掓湡锛屼笉闃诲褰撳墠鍔熻兘杩唬銆?
----
+## 6. 附录
 
-## 8. 浠〃鐩樻帴鍙ｈ惤鍦伴樁娈碉紙2026-04-02锛?缁撹锛氱幇鏈夊悗绔帴鍙ｈ冻澶熸敮鎾戜华琛ㄧ洏鎸佺画婕旇繘锛屽彲鎸夐樁娈垫帴鍏ワ紝鏃犻渶鍏堟柊澧炲悗绔帴鍙ｃ€?
-Phase 1锛堢珛鍗冲彲钀藉湴锛夛細
-1. 鎺ュ彛锛歚GET /api/tasks`
-2. 椤甸潰鑳藉姏锛?- KPI锛堟€讳换鍔℃暟銆侀€氳繃鐜囥€佸け璐ョ巼銆佽川閲忓垎锛?- 鐘舵€佸垎甯?- 寰呭鐞嗕换鍔℃竻鍗?- 鏈€杩戜换鍔″姩鎬?
-Phase 2锛堝寮鸿秼鍔匡級锛?1. 鎺ュ彛锛歚GET /api/history/executions`
-2. 椤甸潰鑳藉姏锛?- 杩?7/30 澶╂墽琛岃秼鍔?- 澶辫触鍘熷洜 Top
-- 鐜缁村害绋冲畾鎬ц瀵?3. 褰撳墠鐘舵€侊細宸叉帴鍏ヨ惤鍦帮紙Dashboard锛夈€?
-Phase 3锛堝崟浠诲姟閽诲彇鑱斿姩锛夛細
-1. 鎺ュ彛锛歚GET /api/tasks/{task_id}/analysis-report`銆乣GET /api/tasks/{task_id}/dashboard`
-2. 椤甸潰鑳藉姏锛?- 浠庝华琛ㄧ洏鍗＄墖璺宠浆浠诲姟璇︽儏骞舵樉绀哄崟浠诲姟鍥捐〃
-- 灞曠ず鍗曚换鍔″け璐ュ垎绫讳笌璐ㄩ噺鎽樿
-3. 褰撳墠鐘舵€侊細宸叉帴鍏ヨ惤鍦帮紙Dashboard -> TaskDetail 鎶ュ憡椤佃仈鍔級銆?
-瀹炴柦娉ㄦ剰锛?1. `POST /api/tasks/{task_id}/execute` 鐩墠涓哄悓姝ラ樆濉炶涔夛紝浠〃鐩樹笉閫傚悎楂橀瀹炴椂鎺ㄩ€侊紝寤鸿浣跨敤瀹氭椂鍒锋柊銆?2. 鍘嗗彶鎺ュ彛褰撳墠渚濊禆鏈湴 JSON 鎸佷箙鍖栵紝鏁版嵁閲忎笂鍗囨椂闇€璇勪及鏌ヨ鎬ц兘涓庡垎椤电瓥鐣ャ€?
----
-
-## 9. 浠〃鐩樹笅涓€鎵瑰姛鑳借鍒掞紙浠呯敤鐜版湁鎺ュ彛锛?### 9.1 鎴戠殑寰呭姙锛圥1锛?- 妯″潡浣嶇疆锛氫华琛ㄧ洏绗竴灞忓乏涓娿€?- 灞曠ず鍐呭锛氬け璐ヤ紭鍏堛€佹墽琛屼腑銆佸緟鎺ㄨ繘涓夌被鍒楄〃銆?- 璺宠浆锛氫换鍔¤鎯呮姤鍛婇〉锛坄/tasks/:taskId?tab=report&source=dashboard`锛夈€?- 鎺ュ彛锛歚GET /api/tasks`銆?- 褰撳墠鐘舵€侊細宸叉帴鍏ヨ惤鍦帮紙寰呭姙鍒嗙粍鍒囨崲锛夈€?
-### 9.2 缁熶竴鏃堕棿绛涢€夛紙P1锛?- 妯″潡浣嶇疆锛氫华琛ㄧ洏椤堕儴绛涢€夋爮銆?- 灞曠ず鍐呭锛氳繎 7 澶┿€佽繎 30 澶┿€佽嚜瀹氫箟鏃堕棿鑼冨洿銆?- 褰卞搷鑼冨洿锛欿PI銆佽秼鍔裤€侀闄┿€佺幆澧冪ǔ瀹氭€у叏閮ㄦ寜鍚屼竴鏃堕棿鍙ｅ緞鍒锋柊銆?- 鎺ュ彛锛歚GET /api/history/tasks`銆乣GET /api/history/executions`銆?- 褰撳墠鐘舵€侊細宸叉帴鍏ヨ惤鍦帮紙缁熶竴鏃堕棿鍙ｅ緞锛夈€?
-### 9.3 澶辫触鎺掓煡鑱斿姩澧炲己锛圥1锛?- 妯″潡浣嶇疆锛氬け璐ュ師鍥?Top銆佺幆澧冪ǔ瀹氭€с€佽秼鍔挎潯鐩彸渚у姩浣滃尯銆?- 灞曠ず鍐呭锛氭煡鐪嬩换鍔°€佸洖鍒版潵婧愩€佹渶杩戝け璐ユ牱鏈€?- 鎺ュ彛锛歚GET /api/history/executions` + `GET /api/tasks/{task_id}/dashboard`銆?
-### 9.4 鎴戝垱寤虹殑浠诲姟锛堣繎浼肩増锛孭2锛?- 妯″潡浣嶇疆锛氫华琛ㄧ洏娆＄骇鍏ュ彛锛堜笌鈥滃巻鍙蹭换鍔♀€濆悓绾э級銆?- 灞曠ず鍐呭锛氭寜鍏抽敭瀛楄鍒欑瓫閫夆€滄垜鍒涘缓鐨勨€濆€欓€変换鍔°€?- 鎺ュ彛锛歚GET /api/tasks`銆乣GET /api/history/tasks`銆?- 闄愬埗锛氬悗绔殏鏃?`owner` 瀛楁锛屽綋鍓嶄粎涓鸿繎浼煎疄鐜般€?
-### 9.5 鍗曚换鍔℃姤鍛婃憳瑕佸寮猴紙P2锛?- 妯″潡浣嶇疆锛氫换鍔¤鎯呴〉 `鎶ュ憡` Tab 椤堕儴銆?- 灞曠ず鍐呭锛歚task_summary_text`銆乣failure_reasons`銆乣findings` 鑱氬悎鍗＄墖銆?- 鎺ュ彛锛歚GET /api/tasks/{task_id}/dashboard`銆?
-### 9.6 缂洪櫡闂幆鍗犱綅锛圥3锛?- 妯″潡浣嶇疆锛氬け璐ヤ换鍔″崱鐗囥€佹姤鍛婇〉澶辫触鍘熷洜鍖恒€?- 灞曠ず鍐呭锛歚鎻愪氦缂洪櫡`銆乣鏌ョ湅缂洪櫡` 鍗犱綅鎸夐挳涓庣姸鎬佹爣绛俱€?- 鎺ュ彛锛氱幇闃舵澶嶇敤浠诲姟/鎵ц鎺ュ彛鍋氬崰浣嶇粺璁°€?- 闄愬埗锛氱湡瀹炵己闄锋祦杞渶鍚庣鏂板缂洪櫡鍩熸帴鍙ｃ€?
-
+- `docs/frontend_api_list.md`：前端文档总入口与接口总表。
+- `FRONTEND_DEVELOPMENT_GUIDE.md`：架构约束、内部契约、门禁与迁移细则。
+- 本文件：页面职责与模块落位，不重复维护接口长表。
