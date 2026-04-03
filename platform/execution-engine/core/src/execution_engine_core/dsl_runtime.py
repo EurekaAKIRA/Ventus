@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
 
-def run_dsl(test_case_dsl: dict, execution_mode: str | None = None) -> dict:
+def run_dsl(
+    test_case_dsl: dict,
+    execution_mode: str | None = None,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+) -> dict:
     """Dispatch DSL payloads to the appropriate executor."""
     mode = execution_mode or test_case_dsl.get("execution_mode", "api")
 
     if mode == "api":
         from api_runner import execute_test_case_dsl
 
-        return execute_test_case_dsl(test_case_dsl)
+        return execute_test_case_dsl(test_case_dsl, progress_callback=progress_callback)
 
     if mode == "web-ui":
         return {

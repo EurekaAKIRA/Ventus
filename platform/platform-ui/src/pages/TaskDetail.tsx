@@ -366,7 +366,8 @@ export default function TaskDetail() {
     };
 
     if (mode === "initial") {
-      setBootLoading(true);
+      setBootLoading(fromCreateFlow);
+      setRefreshing(!fromCreateFlow);
       setStageState({ basic: "process", artifacts: "wait", dashboard: "wait" });
       setStageError(null);
     } else if (mode === "manual") {
@@ -459,7 +460,7 @@ export default function TaskDetail() {
       if (mode === "initial") {
         setBootLoading(false);
       }
-      if (mode === "manual") {
+      if (mode === "manual" || mode === "initial") {
         setRefreshing(false);
         setRefreshStageText("");
       }
@@ -482,10 +483,11 @@ export default function TaskDetail() {
     setShowTopOverview(false);
     setStageState(DEFAULT_STAGE_STATE);
     setStageError(null);
+    setBootLoading(fromCreateFlow);
     setRefreshing(false);
     setRefreshStageText("");
     void load({ mode: "initial" });
-  }, [taskId]);
+  }, [taskId, fromCreateFlow]);
 
   const refreshParsedSection = async () => {
     try {
@@ -894,9 +896,6 @@ export default function TaskDetail() {
   }, [detail, searchParams, setSearchParams]);
 
   if (bootLoading) {
-    if (!fromCreateFlow) {
-      return <Spin size="large" style={{ display: "block", marginTop: 120 }} />;
-    }
     const stageItems = [
       {
         title: STAGE_LABELS.basic,
@@ -931,6 +930,23 @@ export default function TaskDetail() {
           <Spin size="small" />
         </Space>
       </Card>
+    );
+  }
+
+  if (!detail && refreshing) {
+    return (
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Card bordered={false}>
+          <Space direction="vertical" size={8} style={{ width: "100%" }}>
+            <Text strong>{refreshStageText || "Refreshing task detail"}</Text>
+            <Progress percent={30} showInfo={false} size="small" status={stageError ? "exception" : "active"} strokeColor="#722ed1" />
+            {stageError ? <Text type="danger">{stageError}</Text> : null}
+          </Space>
+        </Card>
+        <Card bordered={false}>
+          <Spin size="large" style={{ display: "block", marginTop: 80, marginBottom: 80 }} />
+        </Card>
+      </Space>
     );
   }
 

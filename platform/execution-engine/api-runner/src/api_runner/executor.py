@@ -7,6 +7,7 @@ import json
 import re
 import socket
 import time
+from collections.abc import Callable
 from http.cookiejar import CookieJar
 from json import JSONDecodeError
 from typing import Any
@@ -30,7 +31,10 @@ TOKEN_PATH_PATTERN = re.compile(
 )
 
 
-def execute_test_case_dsl(test_case_dsl: dict) -> dict:
+def execute_test_case_dsl(
+    test_case_dsl: dict,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+) -> dict:
     """Execute TestCaseDSL in real HTTP mode when request specs are present."""
     scenario_results: list[dict] = []
     logs: list[dict] = []
@@ -43,12 +47,16 @@ def execute_test_case_dsl(test_case_dsl: dict) -> dict:
         context.set(str(key), value)
 
     for scenario in test_case_dsl.get("scenarios", []):
+        scenario_id = scenario.get("scenario_id")
+        scenario_name = scenario.get("name")
         step_results: list[dict] = []
         scenario_failed = False
 
         for step in scenario.get("steps", []):
             total_steps += 1
-            logs.append(_build_step_event_log(step, "step_start"))
+            start_log = _build_step_event_log(step, "step_start", scenario_id=scenario_id, scenario_name=scenario_name)
+            logs.append(start_log)
+            _emit_progress(progress_callback, start_log)
             try:
                 if step.get("request"):
                     step_result = _execute_request_step(step, context, runtime_state, logs)
@@ -73,15 +81,29 @@ def execute_test_case_dsl(test_case_dsl: dict) -> dict:
                 elapsed_samples.append(float(response["elapsed_ms"]))
 
             step_results.append(step_result)
-            logs.append(_build_step_log(step_result))
+            step_log = _build_step_log(step_result, scenario_id=scenario_id, scenario_name=scenario_name)
+            logs.append(step_log)
+            _emit_progress(progress_callback, step_log)
 
-        scenario_results.append(
+        scenario_item = {
+            "scenario_id": scenario_id,
+            "name": scenario_name,
+            "status": "failed" if scenario_failed else "passed",
+            "steps": step_results,
+            "failed_steps": len([step for step in step_results if step.get("status") != "passed"]),
+        }
+        scenario_results.append(scenario_item)
+        _emit_progress(
+            progress_callback,
             {
-                "scenario_id": scenario.get("scenario_id"),
-                "name": scenario.get("name"),
-                "status": "failed" if scenario_failed else "passed",
-                "steps": step_results,
-            }
+                "level": "error" if scenario_item["status"] == "failed" else "info",
+                "event": "scenario_result",
+                "scenario_id": scenario_id,
+                "scenario_name": scenario_name,
+                "status": scenario_item["status"],
+                "failed_steps": scenario_item["failed_steps"],
+                "message": f"{scenario_name or scenario_id or 'scenario'} {scenario_item['status']}",
+            },
         )
 
     overall_status = "passed" if passed_steps == total_steps else "failed"
@@ -103,6 +125,19 @@ def execute_test_case_dsl(test_case_dsl: dict) -> dict:
         logs=logs,
     )
     return result.to_dict()
+
+
+def _emit_progress(
+    callback: Callable[[dict[str, Any]], None] | None,
+    payload: dict[str, Any],
+) -> None:
+    if callback is None:
+        return
+    try:
+        callback(dict(payload))
+    except Exception:
+        # Progress callback must not interrupt core execution.
+        return
 
 
 def _execute_non_request_step(step: dict, context: ContextBus) -> dict:
@@ -621,13 +656,20 @@ def _sanitize_headers(headers: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_step_log(step_result: dict[str, Any]) -> dict[str, Any]:
+def _build_step_log(
+    step_result: dict[str, Any],
+    *,
+    scenario_id: str | None = None,
+    scenario_name: str | None = None,
+) -> dict[str, Any]:
     payload = {
         "level": "info" if step_result["status"] == "passed" else "error",
         "event": "step_result",
         "step_id": step_result.get("step_id"),
         "message": step_result.get("message", ""),
         "status": step_result.get("status", ""),
+        "scenario_id": scenario_id,
+        "scenario_name": scenario_name,
     }
     if step_result.get("error_category"):
         payload["error_category"] = step_result["error_category"]
@@ -640,13 +682,21 @@ def _build_step_log(step_result: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
-def _build_step_event_log(step: dict[str, Any], event: str) -> dict[str, Any]:
+def _build_step_event_log(
+    step: dict[str, Any],
+    event: str,
+    *,
+    scenario_id: str | None = None,
+    scenario_name: str | None = None,
+) -> dict[str, Any]:
     return {
         "level": "info",
         "event": event,
         "step_id": step.get("step_id"),
         "step_type": step.get("step_type"),
         "message": step.get("text", ""),
+        "scenario_id": scenario_id,
+        "scenario_name": scenario_name,
     }
 
 

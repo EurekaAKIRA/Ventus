@@ -1,0 +1,379 @@
+{
+  "task_id": "demo_task_name_20260403120135",
+  "executor": "api-runner",
+  "status": "passed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "调用 POST /api/tasks",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "调用 POST /api/tasks",
+          "status": "passed",
+          "message": "POST http://127.0.0.1:8001/api/tasks -> 201",
+          "error_category": "",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "requirement_text",
+              "source_type",
+              "target_system",
+              "task_name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 201,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 12:02:59 GMT",
+              "server": "uvicorn",
+              "content-length": "387",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_CREATED",
+              "message": "task created",
+              "data": {
+                "task_id": "demo_task_name_20260403120300",
+                "task_context": {
+                  "task_id": "demo_task_name_20260403120300",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "source_path": null,
+                  "created_at": "2026-04-03T12:03:00.065231+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                }
+              },
+              "timestamp": "2026-04-03T12:03:02.253138+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403120300\",\"task_context\":{\"task_id\":\"demo_task_name_20260403120300\",\"task_name\":\"demo_task_name\",",
+            "elapsed_ms": 2405.73,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 201,
+            "elapsed_ms": 2405.73,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403120300\",\"task_c",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 387
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 201,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 12:02:59 GMT",
+                "server": "uvicorn",
+                "content-length": "387",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403120300\",\"task_context\":{\"task_id\":\"demo_task_name_20260403120300\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-03T12:03:00.065231+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]}},\"timestamp\":\"2026-04-03T12:03:02.253138+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_CREATED",
+                "message": "task created",
+                "data": {
+                  "task_id": "demo_task_name_20260403120300",
+                  "task_context": {
+                    "task_id": "demo_task_name_20260403120300",
+                    "task_name": "demo_task_name",
+                    "source_type": "text",
+                    "source_path": null,
+                    "created_at": "2026-04-03T12:03:00.065231+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  }
+                },
+                "timestamp": "2026-04-03T12:03:02.253138+00:00"
+              },
+              "elapsed_ms": 2405.73,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 201,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "requirement_text",
+                "source_type",
+                "target_system",
+                "task_name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403120300",
+            "resource_id": "demo_task_name_20260403120300"
+          },
+          "saved_context": {
+            "task_id": "demo_task_name_20260403120300",
+            "resource_id": "demo_task_name_20260403120300"
+          },
+          "assertion_summary": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "scenario_count": 1,
+    "step_count": 3,
+    "passed_step_count": 3,
+    "failed_step_count": 0,
+    "context_key_count": 5,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 2405.73,
+    "max_elapsed_ms": 2405.73
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "从有效的 API 入口开始执行"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "调用 POST /api/tasks"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 201",
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 2405.73,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403120300\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 387
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: resource_id, task_id",
+      "saved_context": {
+        "task_id": "demo_task_name_20260403120300",
+        "resource_id": "demo_task_name_20260403120300"
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=2 failed=0",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "POST http://127.0.0.1:8001/api/tasks -> 201",
+      "status": "passed",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 2405.73,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403120300\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 387
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "成功时响应 data 中含 task_id，用于后续查询与执行"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "demo_task_name_20260403120135"
+      }
+    },
+    "executed_at": "2026-04-03T12:03:02.493440+00:00"
+  }
+}

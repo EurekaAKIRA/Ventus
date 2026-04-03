@@ -37,6 +37,7 @@ import {
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 const API_BASE_URL = (import.meta.env.VITE_PLATFORM_API_BASE as string | undefined)?.trim() || "http://127.0.0.1:8001";
 const USE_MOCK_API = String(import.meta.env.VITE_USE_MOCK_API ?? "").toLowerCase() === "true";
+const HISTORY_PAGE_SIZE_MAX = 200;
 let regressionDiffApiAvailable: boolean | null = null;
 
 type ApiEnvelope<T> = {
@@ -318,7 +319,7 @@ export async function fetchFeatureText(taskId: string): Promise<string> {
 
 export async function startExecution(
   taskId: string,
-  payload?: { execution_mode?: string; environment?: string },
+  payload?: { execution_mode?: string; environment?: string; async_mode?: boolean },
 ): Promise<void> {
   if (USE_MOCK_API) {
     await delay(500);
@@ -327,7 +328,7 @@ export async function startExecution(
   try {
     await requestApi(`/api/tasks/${taskId}/execute`, {
       method: "POST",
-      body: JSON.stringify(payload ?? { execution_mode: "api" }),
+      body: JSON.stringify(payload ?? { execution_mode: "api", async_mode: true }),
     });
   } catch (error) {
     throw new Error(`启动执行失败: ${(error as Error).message}`);
@@ -482,7 +483,7 @@ export async function fetchHistoryTasks(_params?: {
     const startTime = _params?.start_time?.trim();
     const endTime = _params?.end_time?.trim();
     const page = _params?.page ?? 1;
-    const pageSize = _params?.page_size ?? 100;
+    const pageSize = Math.min(_params?.page_size ?? 100, HISTORY_PAGE_SIZE_MAX);
     if (status) qp.set("status", status);
     if (keyword) qp.set("keyword", keyword);
     if (environment) qp.set("environment", environment);
@@ -546,7 +547,7 @@ export async function fetchExecutionHistory(_params?: {
     const startTime = _params?.start_time?.trim();
     const endTime = _params?.end_time?.trim();
     const page = _params?.page ?? 1;
-    const pageSize = _params?.page_size ?? 100;
+    const pageSize = Math.min(_params?.page_size ?? 100, HISTORY_PAGE_SIZE_MAX);
     if (taskId) qp.set("task_id", taskId);
     if (status) qp.set("status", status);
     if (keyword) qp.set("keyword", keyword);
@@ -676,7 +677,7 @@ export async function fetchRegressionDiff(
     const payload = await fetchExecutionHistory({
       task_id: taskId,
       page: 1,
-      page_size: 200,
+      page_size: HISTORY_PAGE_SIZE_MAX,
     });
     const items = [...payload.items]
       .filter((item) => item.task_id === taskId)
@@ -747,6 +748,15 @@ export async function fetchRegressionDiff(
     return payload;
   } catch (error) {
     const message = (error as Error).message || "";
+    if (message.includes("HTTP 409")) {
+      regressionDiffApiAvailable = true;
+      return {
+        task_id: taskId,
+        verdict: "unchanged",
+        metrics_diff: { note: "not_ready" },
+        failure_type_diff: [],
+      };
+    }
     if (message.includes("HTTP 404")) {
       regressionDiffApiAvailable = false;
       return await buildFallbackDiff();

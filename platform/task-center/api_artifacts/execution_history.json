@@ -1,6 +1,942 @@
 {
   "history": [
     {
+      "task_id": "端到端测试9_20260403133017",
+      "task_name": "端到端测试9",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T14:09:57.372012+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 732.04,
+        "max_elapsed_ms": 1448.93
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 732.04
+      }
+    },
+    {
+      "task_id": "端到端测试9_20260403133017",
+      "task_name": "端到端测试9",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T14:08:50.118822+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 739.53,
+        "max_elapsed_ms": 1479.06
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 739.53
+      }
+    },
+    {
+      "task_id": "demo_task_name_20260403131611",
+      "task_name": "demo_task_name",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T13:29:55.017381+00:00",
+      "metrics": {
+        "scenario_count": 1,
+        "step_count": 3,
+        "passed_step_count": 3,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1959.24,
+        "max_elapsed_ms": 1959.24
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1959.24
+      }
+    },
+    {
+      "task_id": "demo_task_name_20260403125410",
+      "task_name": "demo_task_name",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T13:16:14.857773+00:00",
+      "metrics": {
+        "scenario_count": 1,
+        "step_count": 3,
+        "passed_step_count": 3,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 3278.01,
+        "max_elapsed_ms": 3278.01
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 3278.01
+      }
+    },
+    {
+      "task_id": "端到端测试8_20260403122426",
+      "task_name": "端到端测试8",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:54:12.156736+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 827.31,
+        "max_elapsed_ms": 1649.01
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 827.31
+      }
+    },
+    {
+      "task_id": "端到端测试8_20260403122426",
+      "task_name": "端到端测试8",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:54:05.253904+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1172.0,
+        "max_elapsed_ms": 2137.31
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1172.0
+      }
+    },
+    {
+      "task_id": "端到端测试8_20260403122426",
+      "task_name": "端到端测试8",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:45:38.312026+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 844.82,
+        "max_elapsed_ms": 1689.64
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 844.82
+      }
+    },
+    {
+      "task_id": "端到端测试8_20260403122426",
+      "task_name": "端到端测试8",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:45:29.942431+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1236.3,
+        "max_elapsed_ms": 2472.59
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1236.3
+      }
+    },
+    {
+      "task_id": "端到端测试8_20260403122426",
+      "task_name": "端到端测试8",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:45:21.524414+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1260.2,
+        "max_elapsed_ms": 2471.98
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1260.2
+      }
+    },
+    {
+      "task_id": "端到端测试8_20260403122426",
+      "task_name": "端到端测试8",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "failed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:29:38.815714+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 4,
+        "failed_step_count": 2,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1579.22,
+        "max_elapsed_ms": 3152.48
+      },
+      "analysis_summary": {
+        "success_rate": 66.67,
+        "failed_steps": 2,
+        "avg_elapsed_ms": 1579.22
+      }
+    },
+    {
+      "task_id": "端到端测试8_20260403122426",
+      "task_name": "端到端测试8",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:26:00.566479+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1537.12,
+        "max_elapsed_ms": 2872.73
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1537.12
+      }
+    },
+    {
+      "task_id": "端到端测试8_20260403122426",
+      "task_name": "端到端测试8",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:25:49.594766+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1639.14,
+        "max_elapsed_ms": 3098.03
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1639.14
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:24:03.918862+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1486.68,
+        "max_elapsed_ms": 2769.01
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1486.68
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "failed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:23:52.398080+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 4,
+        "failed_step_count": 2,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1548.56,
+        "max_elapsed_ms": 3016.72
+      },
+      "analysis_summary": {
+        "success_rate": 66.67,
+        "failed_steps": 2,
+        "avg_elapsed_ms": 1548.56
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:21:08.110199+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 864.98,
+        "max_elapsed_ms": 1646.45
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 864.98
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:21:00.691538+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 883.31,
+        "max_elapsed_ms": 1589.52
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 883.31
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:20:38.205210+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 808.68,
+        "max_elapsed_ms": 1360.81
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 808.68
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:15:05.141462+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 950.74,
+        "max_elapsed_ms": 1890.83
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 950.74
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:14:55.887988+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1213.66,
+        "max_elapsed_ms": 2074.19
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1213.66
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:12:27.219597+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1812.04,
+        "max_elapsed_ms": 3621.29
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1812.04
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:12:18.599251+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1226.26,
+        "max_elapsed_ms": 2452.52
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1226.26
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:12:06.585848+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1017.69,
+        "max_elapsed_ms": 2002.66
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1017.69
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:10:32.687258+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 994.66,
+        "max_elapsed_ms": 1964.58
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 994.66
+      }
+    },
+    {
+      "task_id": "端到端测试7_20260403120856",
+      "task_name": "端到端测试7",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:10:19.129646+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 955.12,
+        "max_elapsed_ms": 1907.64
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 955.12
+      }
+    },
+    {
+      "task_id": "端到端测试6_20260403115037",
+      "task_name": "端到端测试6",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:03:33.492187+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1807.43,
+        "max_elapsed_ms": 3614.87
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1807.43
+      }
+    },
+    {
+      "task_id": "端到端测试6_20260403115037",
+      "task_name": "端到端测试6",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:03:25.464052+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1427.27,
+        "max_elapsed_ms": 2854.54
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1427.27
+      }
+    },
+    {
+      "task_id": "demo_task_name_20260403115446",
+      "task_name": "demo_task_name",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T12:03:02.493440+00:00",
+      "metrics": {
+        "scenario_count": 1,
+        "step_count": 3,
+        "passed_step_count": 3,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 2405.73,
+        "max_elapsed_ms": 2405.73
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 2405.73
+      }
+    },
+    {
+      "task_id": "端到端测试6_20260403115037",
+      "task_name": "端到端测试6",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T11:54:47.560501+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 576.97,
+        "max_elapsed_ms": 1151.55
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 576.97
+      }
+    },
+    {
+      "task_id": "端到端测试6_20260403115037",
+      "task_name": "端到端测试6",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T11:52:00.885036+00:00",
+      "metrics": {
+        "scenario_count": 2,
+        "step_count": 6,
+        "passed_step_count": 6,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 599.17,
+        "max_elapsed_ms": 1194.49
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 599.17
+      }
+    },
+    {
+      "task_id": "端到端测试3_20260403105332",
+      "task_name": "端到端测试3",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T11:10:07.272760+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1795.04,
+        "max_elapsed_ms": 12206.27
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1795.04
+      }
+    },
+    {
+      "task_id": "端到端测试3_20260403105332",
+      "task_name": "端到端测试3",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T11:06:56.835988+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1801.36,
+        "max_elapsed_ms": 12083.56
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1801.36
+      }
+    },
+    {
+      "task_id": "端到端测试3_20260403105332",
+      "task_name": "端到端测试3",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T11:01:00.960738+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1738.08,
+        "max_elapsed_ms": 11689.59
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1738.08
+      }
+    },
+    {
+      "task_id": "端到端测试3_20260403105332",
+      "task_name": "端到端测试3",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T10:59:40.949657+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1848.5,
+        "max_elapsed_ms": 11922.23
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1848.5
+      }
+    },
+    {
+      "task_id": "端到端测试3_20260403105332",
+      "task_name": "端到端测试3",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T10:58:25.832594+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1985.13,
+        "max_elapsed_ms": 12876.99
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1985.13
+      }
+    },
+    {
+      "task_id": "端到端测试3_20260403105332",
+      "task_name": "端到端测试3",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T10:55:13.017542+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1879.9,
+        "max_elapsed_ms": 11910.4
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1879.9
+      }
+    },
+    {
+      "task_id": "端到端测试_20260403104131",
+      "task_name": "端到端测试",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T10:51:06.227597+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1962.98,
+        "max_elapsed_ms": 12169.52
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1962.98
+      }
+    },
+    {
+      "task_id": "端到端测试_20260403104131",
+      "task_name": "端到端测试",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T10:50:44.845448+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1841.23,
+        "max_elapsed_ms": 12132.98
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1841.23
+      }
+    },
+    {
+      "task_id": "端到端测试_20260403104131",
+      "task_name": "端到端测试",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T10:50:08.822142+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1742.48,
+        "max_elapsed_ms": 12165.81
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1742.48
+      }
+    },
+    {
+      "task_id": "端到端测试_20260403104131",
+      "task_name": "端到端测试",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T10:43:07.970983+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 2153.88,
+        "max_elapsed_ms": 13927.52
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 2153.88
+      }
+    },
+    {
       "task_id": "俄2_20260403083825",
       "task_name": "俄2",
       "environment": "test",

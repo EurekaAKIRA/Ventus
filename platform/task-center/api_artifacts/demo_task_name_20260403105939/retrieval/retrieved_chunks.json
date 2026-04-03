@@ -1,0 +1,46 @@
+{
+  "query": "demo requirement text",
+  "hits": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "demo requirement text",
+      "score": 10.0,
+      "section_title": "未命名章节",
+      "source_file": "",
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "contract_post_tasks",
+      "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+      "score": 6.932,
+      "section_title": "创建任务 POST /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_parse_requirement",
+      "content": "需求分析模块将自然语言或文档解析为结构化字段：objective、actors、actions、expected_results、ambiguities 等；可结合 RAG 检索上下文提升准确度。",
+      "score": 6.894,
+      "section_title": "需求解析（分析服务）",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execute",
+      "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+      "score": 6.605,
+      "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_task_list",
+      "content": "GET /api/tasks 支持分页与筛选，用于控制台列表页展示历史任务。",
+      "score": 6.512,
+      "section_title": "任务列表 GET /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    }
+  ],
+  "retrieval_notes": []
+}

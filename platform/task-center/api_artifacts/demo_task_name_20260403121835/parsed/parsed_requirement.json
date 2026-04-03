@@ -1,0 +1,38 @@
+{
+  "objective": "demo requirement text",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "demo",
+    "requirement",
+    "text",
+    "post",
+    "api"
+  ],
+  "preconditions": [],
+  "actions": [
+    "demo requirement text"
+  ],
+  "expected_results": [
+    "成功时响应 data 中含 task_id，用于后续查询与执行"
+  ],
+  "constraints": [
+    "请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment"
+  ],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_001",
+    "contract_post_tasks",
+    "contract_parse_requirement",
+    "contract_execute",
+    "contract_task_list"
+  ],
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/tasks",
+      "description": "创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行"
+    }
+  ]
+}

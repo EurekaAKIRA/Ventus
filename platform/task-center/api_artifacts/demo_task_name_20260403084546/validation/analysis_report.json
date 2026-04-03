@@ -3,7 +3,7 @@
   "task_name": "demo_task_name",
   "quality_status": "passed",
   "report_version": "1.1.0",
-  "generated_at": "2026-04-03T09:06:48.573321+00:00",
+  "generated_at": "2026-04-03T10:40:06.215070+00:00",
   "summary": {
     "scenario_count": 1,
     "executed_scenarios": 0,

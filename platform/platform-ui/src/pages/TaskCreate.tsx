@@ -51,7 +51,12 @@ export default function TaskCreate() {
         environment: values.environment || undefined,
       });
       message.success("任务创建成功");
-      navigate(`/tasks/${result.task_id}`);
+      navigate(`/tasks/${result.task_id}?from=create`, {
+        state: {
+          fromCreate: true,
+          taskName: values.task_name,
+        },
+      });
     } catch {
       message.error("创建失败，请重试");
     } finally {

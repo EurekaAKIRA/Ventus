@@ -30,6 +30,7 @@ class CreateTaskRequest(BaseModel):
 class ExecuteTaskRequest(BaseModel):
     execution_mode: str = "api"
     environment: str | None = None
+    async_mode: bool = False
 
 
 class PreflightCheckRequest(BaseModel):

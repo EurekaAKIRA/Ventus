@@ -5,6 +5,8 @@ from __future__ import annotations
 import concurrent.futures
 import asyncio
 import json
+import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -51,6 +53,9 @@ APP_VERSION = "0.2.0"
 EXECUTION_TIMEOUT_SECONDS = 300  # 5 分钟执行上限，防止慢接口挂起
 registry = TaskRegistry(ARTIFACTS_ROOT)
 app = FastAPI(title="Platform Task Center API", version=APP_VERSION)
+_ASYNC_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+_RUNNING_EXECUTION_FUTURES: dict[str, concurrent.futures.Future] = {}
+_RUNNING_EXECUTION_LOCK = threading.Lock()
 
 # Frontend (Vite) runs on a different origin (port), so browser requests may trigger
 # CORS preflight (`OPTIONS`). Without this middleware, preflight can fail with 405.
@@ -291,6 +296,245 @@ def _record_execution_history(task, execution_result: dict[str, Any]) -> None:
             },
         }
     )
+
+
+def _run_dsl_with_timeout(dsl: dict[str, Any], execution_mode: str) -> dict[str, Any]:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _executor:
+        _future = _executor.submit(run_dsl, dsl, execution_mode=execution_mode)
+        try:
+            return _future.result(timeout=EXECUTION_TIMEOUT_SECONDS)
+        except concurrent.futures.TimeoutError as exc:
+            raise HTTPException(
+                status_code=408,
+                detail=f"execution timed out after {EXECUTION_TIMEOUT_SECONDS}s",
+            ) from exc
+
+
+def _apply_execution_metadata(
+    execution_result: dict[str, Any],
+    *,
+    selected_environment: str,
+    execution_mode: str,
+    environment_config: EnvironmentConfig | None,
+    dsl: dict[str, Any],
+) -> dict[str, Any]:
+    execution_metadata = dict(execution_result.get("metadata") or {})
+    execution_metadata["execution"] = {
+        "environment": selected_environment,
+        "execution_mode": execution_mode,
+        "base_url": (
+            (environment_config.base_url if environment_config and environment_config.base_url else "")
+            or str((dsl.get("metadata") or {}).get("execution", {}).get("base_url", ""))
+        ),
+        "default_headers": (environment_config.default_headers if environment_config else {}),
+        "auth": (environment_config.auth if environment_config else {}),
+        "cookies": (environment_config.cookies if environment_config else {}),
+        "context": {"task_id": str(dsl.get("task_id") or "")},
+    }
+    execution_metadata["executed_at"] = _utc_now_iso()
+    execution_result["metadata"] = execution_metadata
+    return execution_result
+
+
+def _build_running_execution_result(task_id: str, execution_mode: str, selected_environment: str) -> dict[str, Any]:
+    return {
+        "task_id": task_id,
+        "executor": "api-runner",
+        "status": "running",
+        "scenario_results": [],
+        "metrics": {},
+        "logs": [
+            {
+                "time": _utc_now_iso(),
+                "level": "INFO",
+                "message": "Execution started in async mode",
+            }
+        ],
+        "metadata": {
+            "execution": {
+                "execution_mode": execution_mode,
+                "environment": selected_environment,
+            },
+            "executed_at": _utc_now_iso(),
+        },
+    }
+
+
+def _run_async_execution_job(
+    task_id: str,
+    dsl: dict[str, Any],
+    execution_mode: str,
+    selected_environment: str,
+    environment_config: EnvironmentConfig | None,
+) -> None:
+    try:
+        progress_lock = threading.Lock()
+        last_progress_persist_at = 0.0
+
+        def _normalize_level(raw: Any) -> str:
+            level = str(raw or "INFO").upper()
+            if level not in {"INFO", "WARN", "ERROR"}:
+                return "INFO"
+            return level
+
+        def _merge_scenario_snapshot(existing: list[dict[str, Any]], event: dict[str, Any]) -> list[dict[str, Any]]:
+            scenario_id = str(event.get("scenario_id") or "")
+            scenario_name = str(event.get("scenario_name") or "")
+            status = str(event.get("status") or "").lower() or "running"
+
+            copied = [dict(item) for item in existing]
+            hit_index = -1
+            for index, item in enumerate(copied):
+                if scenario_id and str(item.get("scenario_id") or "") == scenario_id:
+                    hit_index = index
+                    break
+                if scenario_name and str(item.get("name") or "") == scenario_name:
+                    hit_index = index
+                    break
+
+            merged_item: dict[str, Any] = {
+                "scenario_id": scenario_id or None,
+                "name": scenario_name or (scenario_id or "未命名场景"),
+                "status": status,
+            }
+            failed_steps = event.get("failed_steps")
+            if isinstance(failed_steps, int):
+                merged_item["failed_steps"] = failed_steps
+
+            if hit_index >= 0:
+                copied[hit_index] = {**copied[hit_index], **merged_item}
+            else:
+                copied.append(merged_item)
+            return copied
+
+        def _on_progress(event: dict[str, Any]) -> None:
+            nonlocal last_progress_persist_at
+            with progress_lock:
+                task = registry.get(task_id)
+                if task is None:
+                    return
+                if str((task.execution_result or {}).get("status") or "") == "stopped":
+                    return
+
+                base = task.execution_result or _build_running_execution_result(task_id, execution_mode, selected_environment)
+                logs = list(base.get("logs") or [])
+                scenarios = list(base.get("scenario_results") or [])
+
+                normalized_event = dict(event)
+                normalized_event["time"] = _utc_now_iso()
+                normalized_event["level"] = _normalize_level(normalized_event.get("level"))
+                logs.append(normalized_event)
+
+                event_name = str(normalized_event.get("event") or "")
+                if event_name in {"step_start", "step_result", "scenario_result"}:
+                    scenarios = _merge_scenario_snapshot(scenarios, normalized_event)
+
+                task.execution_result = {
+                    **base,
+                    "status": "running",
+                    "scenario_results": scenarios,
+                    "logs": logs[-400:],
+                }
+
+                now = time.time()
+                should_persist = event_name in {"scenario_result", "step_result"}
+                if should_persist or (now - last_progress_persist_at) >= 1.0:
+                    _persist_task_runtime(task)
+                    last_progress_persist_at = now
+
+        started_at = time.time()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _executor:
+            worker_future = _executor.submit(
+                run_dsl,
+                dsl,
+                execution_mode=execution_mode,
+                progress_callback=_on_progress,
+            )
+            last_tick_second = -1
+            while not worker_future.done():
+                elapsed = int(time.time() - started_at)
+                if elapsed >= EXECUTION_TIMEOUT_SECONDS:
+                    worker_future.cancel()
+                    raise HTTPException(
+                        status_code=408,
+                        detail=f"execution timed out after {EXECUTION_TIMEOUT_SECONDS}s",
+                    )
+                task = registry.get(task_id)
+                if task is None:
+                    return
+                current_status = str((task.execution_result or {}).get("status") or "")
+                if current_status == "stopped":
+                    worker_future.cancel()
+                    return
+                if elapsed != last_tick_second:
+                    last_tick_second = elapsed
+                    base = task.execution_result or _build_running_execution_result(task_id, execution_mode, selected_environment)
+                    logs = list(base.get("logs") or [])
+                    logs.append(
+                        {
+                            "time": _utc_now_iso(),
+                            "level": "INFO",
+                            "event": "heartbeat",
+                            "message": f"Execution running... {elapsed}s",
+                        }
+                    )
+                    task.execution_result = {
+                        **base,
+                        "status": "running",
+                        "logs": logs[-200:],
+                    }
+                    _persist_task_runtime(task)
+                time.sleep(1)
+            execution_result = worker_future.result()
+        execution_result = _apply_execution_metadata(
+            execution_result,
+            selected_environment=selected_environment,
+            execution_mode=execution_mode,
+            environment_config=environment_config,
+            dsl=dsl,
+        )
+        task = registry.get(task_id)
+        if task is None:
+            return
+        current_status = str((task.execution_result or {}).get("status") or "")
+        if current_status == "stopped":
+            logs = list((task.execution_result or {}).get("logs") or [])
+            logs.append(
+                {
+                    "time": _utc_now_iso(),
+                    "level": "WARN",
+                    "message": "Execution finished after stop request; keeping stopped status",
+                }
+            )
+            task.execution_result = {
+                **(task.execution_result or {}),
+                "logs": logs,
+            }
+            _persist_task_runtime(task)
+            return
+        task.execution_result = execution_result
+        task.environment = selected_environment
+        task.status = execution_result.get("status", "executed")
+        _build_task_analysis_report(task)
+        _persist_task_runtime(task)
+        _record_execution_history(task, execution_result)
+    except Exception as exc:
+        task = registry.get(task_id)
+        if task is None:
+            return
+        base = task.execution_result or _build_running_execution_result(task_id, execution_mode, selected_environment)
+        logs = list(base.get("logs") or [])
+        logs.append({"time": _utc_now_iso(), "level": "ERROR", "message": f"Execution failed: {exc}"})
+        task.execution_result = {
+            **base,
+            "status": "failed",
+            "logs": logs,
+        }
+        task.status = "failed"
+        _persist_task_runtime(task)
+    finally:
+        with _RUNNING_EXECUTION_LOCK:
+            _RUNNING_EXECUTION_FUTURES.pop(task_id, None)
 
 
 def _numeric(value: Any, default: float = 0.0) -> float:
@@ -692,30 +936,45 @@ def execute_task(task_id: str, payload: ExecuteTaskRequest):
             ),
         )
     dsl["execution_mode"] = payload.execution_mode
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _executor:
-        _future = _executor.submit(run_dsl, dsl, execution_mode=payload.execution_mode)
-        try:
-            execution_result = _future.result(timeout=EXECUTION_TIMEOUT_SECONDS)
-        except concurrent.futures.TimeoutError:
-            raise HTTPException(
-                status_code=408,
-                detail=f"execution timed out after {EXECUTION_TIMEOUT_SECONDS}s",
-            )
-    execution_metadata = dict(execution_result.get("metadata") or {})
-    execution_metadata["execution"] = {
-        "environment": selected_environment,
-        "execution_mode": payload.execution_mode,
-        "base_url": (
-            (environment_config.base_url if environment_config and environment_config.base_url else "")
-            or str((dsl.get("metadata") or {}).get("execution", {}).get("base_url", ""))
-        ),
-        "default_headers": (environment_config.default_headers if environment_config else {}),
-        "auth": (environment_config.auth if environment_config else {}),
-        "cookies": (environment_config.cookies if environment_config else {}),
-        "context": {"task_id": task.task_id},
-    }
-    execution_metadata["executed_at"] = _utc_now_iso()
-    execution_result["metadata"] = execution_metadata
+    if payload.async_mode:
+        with _RUNNING_EXECUTION_LOCK:
+            running_future = _RUNNING_EXECUTION_FUTURES.get(task_id)
+            if running_future and not running_future.done():
+                running_payload = task.execution_result or _build_running_execution_result(
+                    task_id,
+                    payload.execution_mode,
+                    selected_environment,
+                )
+                return _success_response(
+                    running_payload,
+                    code="TASK_EXECUTION_ALREADY_RUNNING",
+                    message="task execution already running",
+                )
+        running_payload = _build_running_execution_result(task_id, payload.execution_mode, selected_environment)
+        task.execution_result = running_payload
+        task.environment = selected_environment
+        task.status = "running"
+        _persist_task_runtime(task)
+        future = _ASYNC_EXECUTOR.submit(
+            _run_async_execution_job,
+            task_id,
+            dsl,
+            payload.execution_mode,
+            selected_environment,
+            environment_config,
+        )
+        with _RUNNING_EXECUTION_LOCK:
+            _RUNNING_EXECUTION_FUTURES[task_id] = future
+        return _success_response(running_payload, code="TASK_EXECUTION_STARTED", message="task execution started")
+
+    execution_result = _run_dsl_with_timeout(dsl, payload.execution_mode)
+    execution_result = _apply_execution_metadata(
+        execution_result,
+        selected_environment=selected_environment,
+        execution_mode=payload.execution_mode,
+        environment_config=environment_config,
+        dsl=dsl,
+    )
     task.execution_result = execution_result
     task.environment = selected_environment
     task.status = execution_result.get("status", "executed")
@@ -762,7 +1021,12 @@ async def stream_execution(
             log_entries = logs if isinstance(logs, list) else []
             if last_log_index < len(log_entries):
                 for entry in log_entries[last_log_index:]:
-                    yield _encode_sse(entry, event="message")
+                    event_name = "message"
+                    if isinstance(entry, dict):
+                        raw_event = str(entry.get("event") or "").strip()
+                        if raw_event:
+                            event_name = raw_event
+                    yield _encode_sse(entry, event=event_name)
                 last_log_index = len(log_entries)
 
             if status in {"passed", "failed", "stopped"}:
@@ -856,7 +1120,21 @@ def stop_execution(task_id: str):
     if task.execution_result is None or task.execution_result.get("status") != "running":
         payload = _model_to_dict(StopExecutionResponse(task_id=task_id, stopped=False, message="No running execution to stop"))
         return _success_response(payload, code="EXECUTION_STOP_SKIPPED", message="no running execution")
+    cancel_requested = False
+    with _RUNNING_EXECUTION_LOCK:
+        future = _RUNNING_EXECUTION_FUTURES.get(task_id)
+    if future is not None:
+        cancel_requested = future.cancel()
     task.execution_result["status"] = "stopped"
+    logs = list(task.execution_result.get("logs") or [])
+    logs.append(
+        {
+            "time": _utc_now_iso(),
+            "level": "WARN",
+            "message": "Stop requested by user" + (" (worker cancelled)" if cancel_requested else ""),
+        }
+    )
+    task.execution_result["logs"] = logs
     task.status = TaskStatus.STOPPED.value
     _persist_task_runtime(task)
     payload = _model_to_dict(StopExecutionResponse(task_id=task_id, stopped=True, message="Execution stopped"))

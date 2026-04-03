@@ -1,0 +1,21 @@
+{
+  "feature_name": "端到端测试7",
+  "passed": true,
+  "errors": [],
+  "warnings": [
+    "步骤过长，建议拆分：假如 当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台..."
+  ],
+  "metrics": {
+    "scenario_count": 2,
+    "average_step_count": 3.5,
+    "step_count": 7,
+    "parse_metrics": {
+      "actor_count": 6,
+      "entity_count": 14,
+      "action_count": 8,
+      "expected_count": 5,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "llm"
+  }
+}
