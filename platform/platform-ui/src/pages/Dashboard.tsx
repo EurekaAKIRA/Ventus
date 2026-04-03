@@ -359,6 +359,72 @@ export default function Dashboard() {
     [taskDataset],
   );
 
+  const trendChart = useMemo(() => {
+    const data = executionTrend.slice(-Math.min(executionTrend.length, 14));
+    if (!data.length) {
+      return { points: "", labels: [] as string[] };
+    }
+    const maxRate = Math.max(100, ...data.map((d) => d.passRate));
+    const w = 100;
+    const h = 28;
+    const step = data.length > 1 ? w / (data.length - 1) : w;
+    const points = data
+      .map((d, i) => {
+        const x = i * step;
+        const y = h - (d.passRate / maxRate) * h;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(" ");
+    return {
+      points,
+      labels: [data[0]?.date?.slice(5) ?? "", data[data.length - 1]?.date?.slice(5) ?? ""],
+    };
+  }, [executionTrend]);
+
+  const stackedVolume = useMemo(
+    () =>
+      executionTrend
+        .slice(-Math.min(executionTrend.length, 10))
+        .map((item) => {
+          const total = Math.max(1, item.total);
+          return {
+            date: item.date.slice(5),
+            passedPct: Math.round((item.passed / total) * 100),
+            failedPct: Math.round((item.failed / total) * 100),
+            runningPct: Math.round((item.running / total) * 100),
+            total: item.total,
+          };
+        }),
+    [executionTrend],
+  );
+
+  const taskFunnel = useMemo(() => {
+    const counts = {
+      received: 0,
+      parsed: 0,
+      generated: 0,
+      running: 0,
+      reported: 0,
+    };
+    tasks.forEach((item) => {
+      const s = normalizeStatus(item.status);
+      if (s === "received") counts.received += 1;
+      if (s === "parsed") counts.parsed += 1;
+      if (s === "generated") counts.generated += 1;
+      if (s === "running") counts.running += 1;
+      if (s === "passed" || s === "failed" || s === "stopped") counts.reported += 1;
+    });
+    const rows = [
+      { key: "received", label: "接收", value: counts.received },
+      { key: "parsed", label: "解析", value: counts.parsed },
+      { key: "generated", label: "生成", value: counts.generated },
+      { key: "running", label: "执行", value: counts.running },
+      { key: "reported", label: "报告", value: counts.reported },
+    ];
+    const max = Math.max(1, ...rows.map((r) => r.value));
+    return rows.map((r) => ({ ...r, pct: Math.max(8, Math.round((r.value / max) * 100)) }));
+  }, [tasks]);
+
   const todoColumns = [
     {
       title: "任务",
@@ -491,6 +557,69 @@ export default function Dashboard() {
               <Tag icon={<ThunderboltOutlined />} color={stats.qualityScore >= 70 ? "success" : "warning"}>
                 {stats.qualityScore >= 70 ? "整体稳定" : "需重点关注"}
               </Tag>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
+      ) : null}
+
+      {dashboardView === "overview" ? (
+      <Row gutter={16}>
+        <Col xs={24} xl={8}>
+          <Card title={`质量趋势（近${trendWindow}天）`} bordered={false} className="dashboard-panel-card">
+            {trendChart.points ? (
+              <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                <svg viewBox="0 0 100 30" className="dashboard-line-svg" preserveAspectRatio="none">
+                  <polyline fill="none" stroke="#1677ff" strokeWidth="2" points={trendChart.points} />
+                </svg>
+                <div className="dashboard-line-labels">
+                  <Text type="secondary">{trendChart.labels[0]}</Text>
+                  <Text strong>{stats.passRate}%</Text>
+                  <Text type="secondary">{trendChart.labels[1]}</Text>
+                </div>
+              </Space>
+            ) : (
+              <Empty description="暂无趋势数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+        </Col>
+        <Col xs={24} xl={8}>
+          <Card title="每日执行量（通过/失败/执行中）" bordered={false} className="dashboard-panel-card">
+            {stackedVolume.length ? (
+              <Space direction="vertical" size={8} className="dashboard-scroll-list" style={{ width: "100%" }}>
+                {stackedVolume.map((row) => (
+                  <div key={row.date}>
+                    <div className="dashboard-volume-head">
+                      <Text type="secondary">{row.date}</Text>
+                      <Text type="secondary">总量 {row.total}</Text>
+                    </div>
+                    <div className="dashboard-volume-track">
+                      <div className="dashboard-volume-pass" style={{ width: `${row.passedPct}%` }} />
+                      <div className="dashboard-volume-fail" style={{ width: `${row.failedPct}%` }} />
+                      <div className="dashboard-volume-running" style={{ width: `${row.runningPct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </Space>
+            ) : (
+              <Empty description="暂无执行量数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+        </Col>
+        <Col xs={24} xl={8}>
+          <Card title="任务漏斗" bordered={false} className="dashboard-panel-card">
+            <Space direction="vertical" size={10} style={{ width: "100%" }}>
+              {taskFunnel.map((row) => (
+                <div key={row.key}>
+                  <div className="dashboard-volume-head">
+                    <Text>{row.label}</Text>
+                    <Text strong>{row.value}</Text>
+                  </div>
+                  <div className="dashboard-funnel-track">
+                    <div className="dashboard-funnel-bar" style={{ width: `${row.pct}%` }} />
+                  </div>
+                </div>
+              ))}
             </Space>
           </Card>
         </Col>
