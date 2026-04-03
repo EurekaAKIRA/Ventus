@@ -3,7 +3,7 @@
   "task_name": "端到端测试9",
   "quality_status": "warning",
   "report_version": "1.1.0",
-  "generated_at": "2026-04-03T14:17:38.641921+00:00",
+  "generated_at": "2026-04-03T14:18:22.035831+00:00",
   "summary": {
     "scenario_count": 2,
     "executed_scenarios": 2,
