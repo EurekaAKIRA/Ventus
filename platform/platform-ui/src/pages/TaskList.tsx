@@ -330,7 +330,7 @@ export default function TaskList() {
 
       <div className="metric-row">
         <MetricCard title="当前待处理任务" value={summary.total} />
-        <MetricCard title="执行中" value={summary.running} color="#1677ff" />
+          <MetricCard title="执行中" value={summary.running} color="#722ed1" />
         <MetricCard title="失败" value={summary.failed} color="#ff4d4f" />
         <MetricCard title="待推进" value={summary.pending} color="#d48806" />
       </div>

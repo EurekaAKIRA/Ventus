@@ -59,7 +59,7 @@ function actionByStatus(status: string): string {
 const statusOrder = ["received", "parsed", "generated", "running", "passed", "failed", "stopped"] as const;
 const statusMeta: Record<string, { label: string; color: string }> = {
   received: { label: "已接收", color: "#8c8c8c" },
-  parsed: { label: "已解析", color: "#1677ff" },
+  parsed: { label: "已解析", color: "#722ed1" },
   generated: { label: "已生成", color: "#13c2c2" },
   running: { label: "执行中", color: "#2f54eb" },
   passed: { label: "通过", color: "#52c41a" },
@@ -570,7 +570,7 @@ export default function Dashboard() {
             {trendChart.points ? (
               <Space direction="vertical" size={8} style={{ width: "100%" }}>
                 <svg viewBox="0 0 100 30" className="dashboard-line-svg" preserveAspectRatio="none">
-                  <polyline fill="none" stroke="#1677ff" strokeWidth="2" points={trendChart.points} />
+                      <polyline fill="none" stroke="#722ed1" strokeWidth="2" points={trendChart.points} />
                 </svg>
                 <div className="dashboard-line-labels">
                   <Text type="secondary">{trendChart.labels[0]}</Text>

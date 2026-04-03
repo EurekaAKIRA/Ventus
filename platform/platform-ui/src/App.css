@@ -4,6 +4,14 @@
   box-sizing: border-box;
 }
 
+:root {
+  --theme-primary: #722ed1;
+  --theme-primary-hover: #9254de;
+  --theme-primary-active: #531dab;
+  --theme-primary-soft: #b37feb;
+  --theme-primary-bg: rgba(114, 46, 209, 0.08);
+}
+
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
@@ -190,7 +198,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   min-width: 60px;
-  color: #4f46e5;
+  color: var(--theme-primary);
   font-size: 12px;
 }
 
@@ -313,7 +321,7 @@ body {
 .dashboard-line-svg {
   width: 100%;
   height: 120px;
-  background: linear-gradient(180deg, rgba(22, 119, 255, 0.06), rgba(22, 119, 255, 0));
+  background: linear-gradient(180deg, var(--theme-primary-bg), rgba(114, 46, 209, 0));
   border: 1px solid #f0f0f0;
   border-radius: 10px;
 }
@@ -351,7 +359,7 @@ body {
 
 .dashboard-volume-running {
   height: 8px;
-  background: #1677ff;
+  background: var(--theme-primary);
 }
 
 .dashboard-funnel-track {
@@ -365,5 +373,5 @@ body {
 .dashboard-funnel-bar {
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #1677ff, #36cfc9);
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-primary-soft));
 }

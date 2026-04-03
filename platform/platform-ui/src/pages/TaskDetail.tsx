@@ -828,10 +828,10 @@ export default function TaskDetail() {
       </Card>
 
       <div className="metric-row">
-        <MetricCard title="任务状态" value={uiExecutionStatus === "running" ? "running" : displayTaskStatus} color="#4f46e5" />
+            <MetricCard title="任务状态" value={uiExecutionStatus === "running" ? "running" : displayTaskStatus} color="#722ed1" />
         <MetricCard title="已解析" value={hasParsedResult ? "是" : "否"} color={hasParsedResult ? "#52c41a" : "#d48806"} />
         <MetricCard title="场景数量" value={detail.scenarios?.length ?? 0} color={hasScenarios ? "#52c41a" : "#d48806"} />
-        <MetricCard title="执行状态" value={uiExecutionStatus} color={uiExecutionStatus === "failed" ? "#ff4d4f" : "#1677ff"} />
+            <MetricCard title="执行状态" value={uiExecutionStatus} color={uiExecutionStatus === "failed" ? "#ff4d4f" : "#722ed1"} />
       </div>
 
       <Card bordered={false}>
@@ -1149,7 +1149,7 @@ export default function TaskDetail() {
                   <MetricCard title="场景总数" value={scenarioTotal} />
                   <MetricCard title="通过场景" value={scenarioPass} color="#52c41a" />
                   <MetricCard title="失败场景" value={scenarioFail} color="#ff4d4f" />
-                  <MetricCard title="执行状态" value={uiExecutionStatus} color="#4f46e5" />
+                      <MetricCard title="执行状态" value={uiExecutionStatus} color="#722ed1" />
                 </div>
                 <Card bordered={false} title="实时执行事件流（SSE）">
                   {streamStatus === "connected" ? <Alert type="success" showIcon message="已连接实时流" /> : null}
@@ -1324,7 +1324,7 @@ export default function TaskDetail() {
                             <Text>{item.label}</Text>
                             <Text strong>{item.value}</Text>
                           </div>
-                          <Progress percent={Math.round((item.value / chartMax) * 100)} strokeColor="#1677ff" showInfo={false} />
+                        <Progress percent={Math.round((item.value / chartMax) * 100)} strokeColor="#722ed1" showInfo={false} />
                         </div>
                       ))}
                       <Button size="small" onClick={() => openRawData("chart_data（原始 JSON）", analysisChartData)}>查看原始数据</Button>
