@@ -288,6 +288,25 @@ function parseStreamPayload(data: string): Record<string, unknown> | null {
   }
 }
 
+function toReadableText(input: unknown): string {
+  if (typeof input === "string") {
+    return input;
+  }
+  if (input && typeof input === "object") {
+    const value = input as Record<string, unknown>;
+    const preferred = value.label ?? value.category ?? value.reason ?? value.message;
+    if (typeof preferred === "string" && preferred.trim()) {
+      return preferred;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[object]";
+    }
+  }
+  return String(input ?? "-");
+}
+
 export default function TaskDetail() {
   const { taskId = "" } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -327,6 +346,7 @@ export default function TaskDetail() {
   const [streamStatus, setStreamStatus] = useState<"idle" | "connected" | "fallback">("idle");
   const [caseKeyword, setCaseKeyword] = useState("");
   const [selectedTestPoint, setSelectedTestPoint] = useState("all");
+  const [showTopOverview, setShowTopOverview] = useState(false);
   const fromCreateFlow =
     searchParams.get("from") === "create" ||
     Boolean((location.state as { fromCreate?: boolean } | null)?.fromCreate);
@@ -459,6 +479,7 @@ export default function TaskDetail() {
     setStreamStatus("idle");
     setCaseKeyword("");
     setSelectedTestPoint("all");
+    setShowTopOverview(false);
     setStageState(DEFAULT_STAGE_STATE);
     setStageError(null);
     setRefreshing(false);
@@ -1144,6 +1165,9 @@ export default function TaskDetail() {
           任务详情
         </Title>
         <Space>
+          <Button onClick={() => setShowTopOverview((prev) => !prev)}>
+            {showTopOverview ? "收起概览" : "查看概览"}
+          </Button>
           <Button loading={refreshing} disabled={refreshing} onClick={() => void load({ mode: "manual" })}>刷新</Button>
           <Button type="primary" loading={executing} onClick={runExecution} disabled={!canExecute || preflightLoading}>
             启动执行
@@ -1159,6 +1183,19 @@ export default function TaskDetail() {
         </Space>
       </div>
 
+      <Card bordered={false} bodyStyle={{ paddingTop: 12, paddingBottom: 12 }}>
+        <Space wrap size={[12, 8]}>
+          <Text type="secondary">当前状态</Text>
+          <StatusTag status={uiExecutionStatus === "running" ? "running" : displayTaskStatus} />
+          <Text type="secondary">场景数</Text>
+          <Tag color="processing">{detail.scenarios?.length ?? 0}</Tag>
+          {!isValidHttpUrl(detail.target_system) ? <Tag color="warning">target_system 待配置</Tag> : null}
+          {preflightBlocking ? <Tag color="error">执行前检查阻断</Tag> : null}
+        </Space>
+      </Card>
+
+      {showTopOverview ? (
+      <>
       <Card bordered={false}>
         <Space direction="vertical" size={16} style={{ width: "100%" }}>
           <Steps items={steps as unknown as Parameters<typeof Steps>[0]["items"]} size="small" />
@@ -1202,6 +1239,8 @@ export default function TaskDetail() {
           <Descriptions.Item label="environment">{detail.environment || "-"}</Descriptions.Item>
         </Descriptions>
       </Card>
+      </>
+      ) : null}
 
       <Tabs
         activeKey={activeTabKey}
@@ -1499,12 +1538,6 @@ export default function TaskDetail() {
                     <Text type="secondary">尚未执行检查；若检查接口暂未上线，仍可按当前逻辑执行。</Text>
                   )}
                 </Card>
-                <div className="metric-row">
-                  <MetricCard title="场景总数" value={scenarioTotal} />
-                  <MetricCard title="通过场景" value={scenarioPass} color="#52c41a" />
-                  <MetricCard title="失败场景" value={scenarioFail} color="#ff4d4f" />
-                      <MetricCard title="执行状态" value={uiExecutionStatus} color="#722ed1" />
-                </div>
                 <Card bordered={false} title="用例执行视图（Meter 风格）">
                   <Space direction="vertical" size={12} style={{ width: "100%" }}>
                     <Input
@@ -1620,7 +1653,7 @@ export default function TaskDetail() {
                       {taskDashboard.failure_reasons?.length ? (
                         <Space wrap>
                           {taskDashboard.failure_reasons.slice(0, 6).map((reason, idx) => (
-                            <Tag color="volcano" key={`${reason}_${idx}`}>{reason}</Tag>
+                            <Tag color="volcano" key={`${toReadableText(reason)}_${idx}`}>{toReadableText(reason)}</Tag>
                           ))}
                         </Space>
                       ) : null}
