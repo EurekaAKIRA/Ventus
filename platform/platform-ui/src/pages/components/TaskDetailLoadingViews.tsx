@@ -54,20 +54,16 @@ export function TaskDetailInitialRefreshingView(props: {
   refreshStageText: string;
   stageError: string | null;
 }) {
-  const { refreshStageText, stageError } = props;
+  const { stageError } = props;
 
   return (
-    <Space direction="vertical" size={16} style={{ width: "100%" }}>
-      <Card bordered={false}>
-        <Space direction="vertical" size={8} style={{ width: "100%" }}>
-          <Text strong>{refreshStageText || "Refreshing task detail"}</Text>
-          <Progress percent={30} showInfo={false} size="small" status={stageError ? "exception" : "active"} strokeColor="#722ed1" />
-          {stageError ? <Text type="danger">{stageError}</Text> : null}
-        </Space>
-      </Card>
-      <Card bordered={false}>
-        <Spin size="large" style={{ display: "block", marginTop: 80, marginBottom: 80 }} />
-      </Card>
+    <Space
+      direction="vertical"
+      size={12}
+      style={{ width: "100%", minHeight: "45vh", alignItems: "center", justifyContent: "center" }}
+    >
+      <Spin size="large" />
+      {stageError ? <Text type="danger">{stageError}</Text> : null}
     </Space>
   );
 }

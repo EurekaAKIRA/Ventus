@@ -259,6 +259,7 @@ export default function TaskDetail() {
   const dslScenarios = detail.test_case_dsl?.scenarios ?? [];
   const hasDslOverflow = dslScenarios.length > DSL_PREVIEW_SCENARIOS;
   const dslDisplayScenarios = dslExpanded ? dslScenarios : dslScenarios.slice(0, DSL_PREVIEW_SCENARIOS);
+  const showTopRefreshBanner = refreshing && Boolean(refreshStageText);
   const finishedStageCount = (Object.values(stageState) as StageStatus[]).filter((item) => item === "finish").length;
   const processingStage = (Object.entries(stageState).find(([, value]) => value === "process")?.[0] as StageKey | undefined) ?? null;
   const hasStageError = (Object.values(stageState) as StageStatus[]).some((item) => item === "error");
@@ -313,7 +314,7 @@ export default function TaskDetail() {
 
   return (
     <Space direction="vertical" size={20} style={{ width: "100%" }}>
-      {refreshing ? (
+      {showTopRefreshBanner ? (
         <TaskDetailRefreshingBanner
           refreshStatusText={refreshStatusText}
           refreshProgressPercent={refreshProgressPercent}
