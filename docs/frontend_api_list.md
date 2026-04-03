@@ -524,3 +524,12 @@
 - 鐢ㄩ€旓細瀹炴椂鎺ㄩ€佹楠ょ姸鎬佸彉鍖栵紝鍑忓皯杞鍘嬪姏
 - 浜嬩欢寤鸿锛歚step_start`銆乣step_end`銆乣assertion_failed`銆乣execution_done`
 
+
+## 8. 下一步迭代入口（2026-04-03）
+
+- 状态基线：`docs/platform_requirements_status.md` 见 **§M 下一步迭代更新**。
+- 规则落地：`platform/platform-ui/FRONTEND_DEVELOPMENT_GUIDE.md` 见 **§13 迭代规则对齐**。
+- 本轮优先级（前端）：
+  - P0：历史分页边界收敛（`page_size<=200`）、执行态统一、未上线接口降级。
+  - P1：SSE + 轮询双通道稳定性、联调回归自动化。
+- 开发时先看本文件 §1.1，再看上述两节执行。

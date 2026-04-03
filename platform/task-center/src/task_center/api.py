@@ -293,6 +293,75 @@ def _record_execution_history(task, execution_result: dict[str, Any]) -> None:
     )
 
 
+def _numeric(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except Exception:
+        return default
+
+
+def _compute_regression_verdict(
+    *,
+    failed_steps_delta: int,
+    success_rate_delta: float,
+) -> str:
+    if failed_steps_delta > 0 or success_rate_delta < 0:
+        return "regressed"
+    if failed_steps_delta < 0 or success_rate_delta > 0:
+        return "improved"
+    return "unchanged"
+
+
+def _build_regression_diff(
+    task_id: str,
+    base_item: dict[str, Any],
+    target_item: dict[str, Any],
+) -> dict[str, Any]:
+    base_summary = base_item.get("analysis_summary") or {}
+    target_summary = target_item.get("analysis_summary") or {}
+    base_metrics = base_item.get("metrics") or {}
+    target_metrics = target_item.get("metrics") or {}
+
+    base_failed_steps = int(_numeric(base_summary.get("failed_steps", base_metrics.get("failed_step_count", 0)), 0))
+    target_failed_steps = int(_numeric(target_summary.get("failed_steps", target_metrics.get("failed_step_count", 0)), 0))
+    base_success_rate = _numeric(base_summary.get("success_rate", 0.0), 0.0)
+    target_success_rate = _numeric(target_summary.get("success_rate", 0.0), 0.0)
+    base_avg_elapsed = _numeric(base_summary.get("avg_elapsed_ms", base_metrics.get("avg_elapsed_ms", 0.0)), 0.0)
+    target_avg_elapsed = _numeric(target_summary.get("avg_elapsed_ms", target_metrics.get("avg_elapsed_ms", 0.0)), 0.0)
+
+    failed_steps_delta = target_failed_steps - base_failed_steps
+    success_rate_delta = round(target_success_rate - base_success_rate, 2)
+    avg_elapsed_delta = round(target_avg_elapsed - base_avg_elapsed, 2)
+
+    return {
+        "task_id": task_id,
+        "base_execution_id": str(base_item.get("executed_at") or ""),
+        "target_execution_id": str(target_item.get("executed_at") or ""),
+        "metrics_diff": {
+            "base_executed_at": base_item.get("executed_at"),
+            "target_executed_at": target_item.get("executed_at"),
+            "failed_steps_delta": failed_steps_delta,
+            "success_rate_delta": success_rate_delta,
+            "avg_elapsed_ms_delta": avg_elapsed_delta,
+            "failed_steps": {"base": base_failed_steps, "target": target_failed_steps, "delta": failed_steps_delta},
+            "success_rate": {"base": base_success_rate, "target": target_success_rate, "delta": success_rate_delta},
+            "avg_elapsed_ms": {"base": base_avg_elapsed, "target": target_avg_elapsed, "delta": avg_elapsed_delta},
+        },
+        "failure_type_diff": [
+            {
+                "category": "failed_steps",
+                "base": base_failed_steps,
+                "target": target_failed_steps,
+                "delta": failed_steps_delta,
+            }
+        ],
+        "verdict": _compute_regression_verdict(
+            failed_steps_delta=failed_steps_delta,
+            success_rate_delta=success_rate_delta,
+        ),
+    }
+
+
 def _resolve_parse_options(payload: Any = None) -> AnalysisParseOptions:
     if payload is None:
         return AnalysisParseOptions.resolve()
@@ -734,6 +803,44 @@ def get_execution_explanations(task_id: str, top_n: int = Query(5, ge=1, le=20))
     er.setdefault("task_id", task_id)
     data = build_execution_explanations(er, top_n=top_n)
     return _success_response(data, code="EXECUTION_EXPLANATIONS_OK", message="execution explanations")
+
+
+@app.get("/api/tasks/{task_id}/regression-diff", response_model=ApiResponse)
+def get_regression_diff(
+    task_id: str,
+    base_execution_id: str | None = None,
+    target_execution_id: str | None = None,
+):
+    _must_get_task(task_id)
+    items = registry.list_execution_history(task_id=task_id)
+    items = [item for item in items if item.get("task_id") == task_id]
+    items.sort(key=lambda item: str(item.get("executed_at") or ""))
+
+    if len(items) < 2:
+        return _error_response(
+            code="REGRESSION_DIFF_NOT_READY",
+            message="insufficient execution history for regression diff",
+            detail={"task_id": task_id, "compared_runs": len(items)},
+            status_code=409,
+        )
+
+    indexed = {str(item.get("executed_at") or ""): item for item in items}
+    if base_execution_id and target_execution_id:
+        base_item = indexed.get(base_execution_id)
+        target_item = indexed.get(target_execution_id)
+        if base_item is None or target_item is None:
+            return _error_response(
+                code="BAD_REQUEST",
+                message="base_execution_id or target_execution_id not found",
+                detail={"task_id": task_id, "base_execution_id": base_execution_id, "target_execution_id": target_execution_id},
+                status_code=400,
+            )
+    else:
+        target_item = items[-1]
+        base_item = items[-2]
+
+    payload = _build_regression_diff(task_id, base_item, target_item)
+    return _success_response(payload, code="REGRESSION_DIFF_OK", message="regression diff")
 
 
 @app.get("/api/tasks/{task_id}/execution/logs", response_model=ApiResponse)

@@ -129,8 +129,8 @@ P3锛堝悗缁級
 - 历史接口分页上限：`/api/history/tasks` 与 `/api/history/executions` 的 `page_size` 最大为 `200`。
   - 建议统一常量：`HISTORY_PAGE_SIZE_MAX = 200`。
   - 默认建议：任务历史 `100`，执行历史 `100~200`，避免 422。
-- 回归对比接口：`/api/tasks/{task_id}/regression-diff` 当前后端未上线。
-  - 前端策略：保留入口但默认显示“暂不可用（接口未上线）”，避免连续重试刷日志。
+- 回归对比接口：`/api/tasks/{task_id}/regression-diff` 已上线（基础版）。
+  - 前端策略：当后端返回 `409 REGRESSION_DIFF_NOT_READY` 时显示“历史不足，暂无法对比”空态，不连续重试。
 - 实时执行流：`/api/tasks/{task_id}/execution/stream` 可用，但应保留轮询降级。
   - SSE 失败时回退至 `execution` 轮询（2~3s）。
 
@@ -162,3 +162,24 @@ P3锛堝悗缁級
   - 强化 Dashboard 到详情页的钻取与回跳。
 - P2：等待后端补齐后再接入
   - 回归对比详情、执行队列视图、任务级实时进度分段。
+
+## 13. 迭代规则对齐（基于 platform_requirements_status.md）
+
+### 13.1 本轮必遵守规则
+- API 契约冻结：不改既有接口路径与核心字段，只允许新增可选字段。
+- 响应结构统一：前端仅按 `success/code/message/data/timestamp` 解析。
+- 历史分页边界：`page_size` 最大 200，前端常量强制约束。
+- 回归对比降级：`regression-diff` 返回 409 时使用空态，不做重试风暴。
+- 实时链路兜底：SSE 优先，失败回退轮询，保证执行态可见。
+
+### 13.2 本轮工程实现清单（建议）
+- 在 `api-contract.ts` 与 `src/api/tasks.ts` 固化 `HISTORY_PAGE_SIZE_MAX = 200`。
+- 对 `regression-diff` 增加统一 `409 -> not_ready` 适配层（兼容保留 `404 -> not_available`）。
+- 任务详情页执行态改为单一状态源（卡片/按钮/日志/步骤联动）。
+- Dashboard、TaskList、TaskHistory 统一时间口径与筛选 URL 同步。
+
+### 13.3 联调回归最小用例
+- 历史接口边界：`page_size=200` 成功，`page_size=201` 触发 422 且文案可读。
+- 执行流：SSE 正常与 SSE 失败降级两条路径均可刷新状态。
+- 回归对比：接口未上线时页面稳定可用，不影响其他功能。
+- 停止执行：仅 `running` 可点击，停止后状态即时回写。
