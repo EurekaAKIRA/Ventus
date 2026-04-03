@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Table,
   Input,
@@ -12,6 +12,7 @@ import {
   Popconfirm,
   message,
   Progress,
+  Segmented,
   Switch,
 } from "antd";
 import {
@@ -27,6 +28,14 @@ import type { TaskListItem } from "../types";
 import { fetchTaskList, deleteTask } from "../api/tasks";
 import StatusTag from "../components/StatusTag";
 import MetricCard from "../components/MetricCard";
+import {
+  isFailedStatus,
+  isPendingStatus,
+  isRunningStatus,
+  nextActionByTaskStatus,
+  normalizeTaskStatus,
+  progressByTaskStatus,
+} from "../utils/taskFlow";
 
 const { Title, Text } = Typography;
 
@@ -40,41 +49,17 @@ const statusOptions = [
   { value: "stopped", label: "已停止" },
 ];
 
-function normalizeStatus(status: string): string {
-  return status === "scenario_generated" ? "generated" : status;
-}
-
-function nextActionByStatus(status: string): string {
-  const normalized = normalizeStatus(status);
-  if (normalized === "received") return "建议优先执行解析";
-  if (normalized === "parsed") return "建议生成场景并检查 DSL";
-  if (normalized === "generated") return "建议启动执行";
-  if (normalized === "running") return "建议查看执行日志";
-  if (normalized === "failed") return "建议进入详情定位失败原因";
-  if (normalized === "stopped") return "确认停止原因后决定是否重跑";
-  if (normalized === "passed") return "可转入历史任务查看报告";
-  return "可查看详情";
-}
-
-function progressByStatus(status: string): number {
-  const normalized = normalizeStatus(status);
-  if (normalized === "received") return 10;
-  if (normalized === "parsed") return 35;
-  if (normalized === "generated") return 60;
-  if (normalized === "running") return 80;
-  if (normalized === "passed") return 100;
-  if (normalized === "failed") return 100;
-  if (normalized === "stopped") return 75;
-  return 0;
-}
+type FocusMode = "all" | "focus" | "failed" | "running";
 
 export default function TaskList() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [serverTasks, setServerTasks] = useState<TaskListItem[]>([]);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState("");
-  const [failedReason, setFailedReason] = useState("");
+  const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
+  const [status, setStatus] = useState(searchParams.get("status") ?? "");
+  const [failedReason, setFailedReason] = useState(searchParams.get("failed_reason") ?? "");
+  const [focusMode, setFocusMode] = useState<FocusMode>((searchParams.get("focus") as FocusMode) || "focus");
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshSeconds, setRefreshSeconds] = useState(3);
   const [refreshCountdown, setRefreshCountdown] = useState(3);
@@ -113,6 +98,21 @@ export default function TaskList() {
   }, [keyword, status]);
 
   useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (keyword.trim()) next.set("keyword", keyword.trim());
+    else next.delete("keyword");
+    if (status) next.set("status", status);
+    else next.delete("status");
+    if (failedReason.trim()) next.set("failed_reason", failedReason.trim());
+    else next.delete("failed_reason");
+    if (focusMode !== "focus") next.set("focus", focusMode);
+    else next.delete("focus");
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [keyword, status, failedReason, focusMode, searchParams, setSearchParams]);
+
+  useEffect(() => {
     if (!autoRefresh) {
       return;
     }
@@ -132,7 +132,7 @@ export default function TaskList() {
   const activeTasks = useMemo(
     () =>
       serverTasks.filter((item) => {
-        const s = normalizeStatus(item.status);
+        const s = normalizeTaskStatus(item.status);
         return s !== "passed" && s !== "archived";
       }),
     [serverTasks],
@@ -141,7 +141,7 @@ export default function TaskList() {
   const failureReasonOptions = useMemo(() => {
     const unique = new Set<string>();
     activeTasks
-      .filter((item) => normalizeStatus(item.status) === "failed")
+      .filter((item) => isFailedStatus(item.status))
       .forEach((item) => {
         item.notes.forEach((note) => {
           const value = note.trim();
@@ -152,14 +152,22 @@ export default function TaskList() {
   }, [activeTasks]);
 
   const tasks = useMemo(() => {
-    if (!failedReason.trim()) return activeTasks;
+    let dataset = activeTasks;
+    if (focusMode === "failed") {
+      dataset = dataset.filter((item) => isFailedStatus(item.status));
+    } else if (focusMode === "running") {
+      dataset = dataset.filter((item) => isRunningStatus(item.status));
+    } else if (focusMode === "focus") {
+      dataset = dataset.filter((item) => isFailedStatus(item.status) || isRunningStatus(item.status) || isPendingStatus(item.status));
+    }
+    if (!failedReason.trim()) return dataset;
     const kw = failedReason.trim().toLowerCase();
-    return activeTasks.filter(
+    return dataset.filter(
       (item) =>
-        normalizeStatus(item.status) === "failed" &&
+        isFailedStatus(item.status) &&
         item.notes.some((note) => note.toLowerCase().includes(kw)),
     );
-  }, [activeTasks, failedReason]);
+  }, [activeTasks, failedReason, focusMode]);
 
   const handleDelete = async (taskId: string) => {
     try {
@@ -173,16 +181,16 @@ export default function TaskList() {
 
   const summary = useMemo(() => {
     const total = tasks.length;
-    const running = tasks.filter((t) => normalizeStatus(t.status) === "running").length;
-    const failed = tasks.filter((t) => normalizeStatus(t.status) === "failed").length;
-    const pending = tasks.filter((t) => ["received", "parsed", "generated", "stopped"].includes(normalizeStatus(t.status))).length;
+    const running = tasks.filter((t) => isRunningStatus(t.status)).length;
+    const failed = tasks.filter((t) => isFailedStatus(t.status)).length;
+    const pending = tasks.filter((t) => isPendingStatus(t.status)).length;
     return { total, running, failed, pending };
   }, [tasks]);
 
   const statusStats = useMemo(() => {
     const statMap = new Map<string, number>();
     tasks.forEach((item) => {
-      const normalized = normalizeStatus(item.status);
+      const normalized = normalizeTaskStatus(item.status);
       statMap.set(normalized, (statMap.get(normalized) ?? 0) + 1);
     });
     const labels: Record<string, string> = {
@@ -230,10 +238,10 @@ export default function TaskList() {
       key: "progress",
       width: 170,
       render: (_: unknown, record: TaskListItem) => {
-        const normalized = normalizeStatus(record.status);
+        const normalized = normalizeTaskStatus(record.status);
         return (
           <Progress
-            percent={progressByStatus(record.status)}
+            percent={progressByTaskStatus(record.status)}
             size="small"
             showInfo={false}
             status={normalized === "failed" ? "exception" : normalized === "passed" ? "success" : "active"}
@@ -245,7 +253,7 @@ export default function TaskList() {
       title: "下一步建议",
       key: "next_action",
       width: 260,
-      render: (_: unknown, record: TaskListItem) => <Text type="secondary">{nextActionByStatus(record.status)}</Text>,
+      render: (_: unknown, record: TaskListItem) => <Text type="secondary">{nextActionByTaskStatus(record.status)}</Text>,
     },
     {
       title: "创建时间",
@@ -281,6 +289,16 @@ export default function TaskList() {
           <Text type="secondary">执行层：用于处理当前进行中的任务（不含已通过与已归档）。</Text>
         </Space>
         <Space>
+          <Segmented<FocusMode>
+            value={focusMode}
+            onChange={(value) => setFocusMode(value as FocusMode)}
+            options={[
+              { label: "工作台", value: "focus" },
+              { label: "全部", value: "all" },
+              { label: "失败", value: "failed" },
+              { label: "执行中", value: "running" },
+            ]}
+          />
           <Space size={4}>
             <Text type="secondary">{autoRefresh ? `${refreshCountdown}s 后自动刷新` : "自动刷新已暂停"}</Text>
             {lastUpdatedAt ? <Text type="secondary">最近更新：{new Date(lastUpdatedAt).toLocaleTimeString()}</Text> : null}
@@ -342,6 +360,7 @@ export default function TaskList() {
                 setKeyword("");
                 setStatus("");
                 setFailedReason("");
+                setFocusMode("focus");
               }}
             >
               重置

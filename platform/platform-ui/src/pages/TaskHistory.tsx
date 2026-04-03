@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+﻿import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
+  Button,
   Card,
   DatePicker,
   Input,
+  Segmented,
   Select,
   Space,
   Table,
   Typography,
 } from "antd";
-import type { Dayjs } from "dayjs";
-import { SearchOutlined } from "@ant-design/icons";
+import dayjs, { type Dayjs } from "dayjs";
+import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import type { HistoryTaskItem } from "../types";
 import { fetchHistoryTasks } from "../api/tasks";
 import StatusTag from "../components/StatusTag";
@@ -25,14 +27,35 @@ const statusOptions = [
   { value: "stopped", label: "已停止" },
   { value: "archived", label: "已归档" },
 ];
+const environmentOptions = [
+  { value: "", label: "全部环境" },
+  { value: "test", label: "test" },
+  { value: "staging", label: "staging" },
+  { value: "production", label: "production" },
+  { value: "default", label: "default" },
+];
+
+type WindowMode = "7d" | "30d" | "custom";
+
+function resolvePresetRange(mode: WindowMode): [Dayjs, Dayjs] {
+  const end = dayjs();
+  if (mode === "30d") return [end.subtract(29, "day").startOf("day"), end.endOf("day")];
+  return [end.subtract(6, "day").startOf("day"), end.endOf("day")];
+}
 
 export default function TaskHistory() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<HistoryTaskItem[]>([]);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState("");
-  const [range, setRange] = useState<[Dayjs, Dayjs] | null>(null);
+  const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
+  const [status, setStatus] = useState(searchParams.get("status") ?? "");
+  const [environment, setEnvironment] = useState(searchParams.get("environment") ?? "");
+  const [windowMode, setWindowMode] = useState<WindowMode>((searchParams.get("window") as WindowMode) || "7d");
+  const [range, setRange] = useState<[Dayjs, Dayjs] | null>(
+    (searchParams.get("window") as WindowMode) === "custom" ? null : resolvePresetRange((searchParams.get("window") as WindowMode) || "7d"),
+  );
 
   const load = async () => {
     setLoading(true);
@@ -40,6 +63,7 @@ export default function TaskHistory() {
       const payload = await fetchHistoryTasks({
         keyword: keyword.trim() || undefined,
         status: status || undefined,
+        environment: environment || undefined,
         start_time: range ? range[0].startOf("day").toISOString() : undefined,
         end_time: range ? range[1].endOf("day").toISOString() : undefined,
         page: 1,
@@ -52,11 +76,31 @@ export default function TaskHistory() {
   };
 
   useEffect(() => {
+    if (windowMode === "custom") return;
+    setRange(resolvePresetRange(windowMode));
+  }, [windowMode]);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => {
       void load();
-    }, 250);
+    }, 220);
     return () => window.clearTimeout(timer);
-  }, [keyword, status, range]);
+  }, [keyword, status, environment, range]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (keyword.trim()) next.set("keyword", keyword.trim());
+    else next.delete("keyword");
+    if (status) next.set("status", status);
+    else next.delete("status");
+    if (environment) next.set("environment", environment);
+    else next.delete("environment");
+    if (windowMode !== "7d") next.set("window", windowMode);
+    else next.delete("window");
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [keyword, status, environment, windowMode, searchParams, setSearchParams]);
 
   const columns = [
     {
@@ -110,19 +154,29 @@ export default function TaskHistory() {
     const total = tasks.length;
     const passed = tasks.filter((t) => t.status === "passed").length;
     const failed = tasks.filter((t) => t.status === "failed").length;
-    return { total, passed, failed };
+    const stopped = tasks.filter((t) => t.status === "stopped").length;
+    return { total, passed, failed, stopped };
   }, [tasks]);
 
   return (
     <Space direction="vertical" size={24} style={{ width: "100%" }}>
       <Space direction="vertical" size={2}>
         <Title level={4} style={{ margin: 0 }}>历史任务</Title>
-        <Text type="secondary">审计层：用于按时间回溯已完成/归档任务，不承载执行控制。</Text>
+        <Text type="secondary">审计层：用于回溯已完成任务与报告，不承担执行控制。</Text>
       </Space>
 
       <Card bordered={false}>
         <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }} wrap>
-          <Space>
+          <Space wrap>
+            <Segmented<WindowMode>
+              value={windowMode}
+              onChange={(value) => setWindowMode(value as WindowMode)}
+              options={[
+                { label: "近7天", value: "7d" },
+                { label: "近30天", value: "30d" },
+                { label: "自定义", value: "custom" },
+              ]}
+            />
             <Input
               placeholder="搜索任务名称或 ID"
               prefix={<SearchOutlined />}
@@ -132,9 +186,18 @@ export default function TaskHistory() {
               allowClear
             />
             <Select value={status} options={statusOptions} onChange={setStatus} style={{ width: 140 }} />
-            <RangePicker value={range} onChange={(value) => setRange(value as [Dayjs, Dayjs] | null)} allowClear />
+            <Select value={environment} options={environmentOptions} onChange={setEnvironment} style={{ width: 140 }} />
+            <RangePicker
+              value={range}
+              onChange={(value) => {
+                setWindowMode("custom");
+                setRange(value as [Dayjs, Dayjs] | null);
+              }}
+              allowClear
+            />
+            <Button icon={<ReloadOutlined />} onClick={() => void load()}>刷新</Button>
           </Space>
-          <Text type="secondary">共 {summary.total} 条，失败 {summary.failed}，通过 {summary.passed}</Text>
+          <Text type="secondary">共 {summary.total} 条，失败 {summary.failed}，停止 {summary.stopped}，通过 {summary.passed}</Text>
         </Space>
 
         <Table

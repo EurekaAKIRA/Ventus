@@ -12,6 +12,7 @@ import {
   Segmented,
   Space,
   Spin,
+  Switch,
   Table,
   Tag,
   Typography,
@@ -36,6 +37,7 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 type TimeFilterMode = "7d" | "30d" | "custom";
 type TodoViewMode = "all" | "failed" | "running" | "pending";
+type DashboardView = "overview" | "quality" | "risk" | "ops";
 type TaskLike = TaskListItem & { finished_at?: string };
 
 function normalizeStatus(status: string): string {
@@ -101,6 +103,26 @@ export default function Dashboard() {
   const [timeFilterMode, setTimeFilterMode] = useState<TimeFilterMode>("7d");
   const [customRange, setCustomRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [todoViewMode, setTodoViewMode] = useState<TodoViewMode>("all");
+  const [dashboardView, setDashboardView] = useState<DashboardView>("overview");
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshCountdown, setRefreshCountdown] = useState(10);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string>("");
+
+  const openTaskList = (params?: Record<string, string>) => {
+    const qp = new URLSearchParams();
+    Object.entries(params ?? {}).forEach(([key, value]) => {
+      if (value.trim()) qp.set(key, value);
+    });
+    navigate(`/tasks${qp.toString() ? `?${qp.toString()}` : ""}`);
+  };
+
+  const openTaskHistory = (params?: Record<string, string>) => {
+    const qp = new URLSearchParams();
+    Object.entries(params ?? {}).forEach(([key, value]) => {
+      if (value.trim()) qp.set(key, value);
+    });
+    navigate(`/tasks/history${qp.toString() ? `?${qp.toString()}` : ""}`);
+  };
 
   const openDetailReport = (taskId?: string) => {
     if (!taskId) return;
@@ -121,8 +143,10 @@ export default function Dashboard() {
     };
   };
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     const { start, end } = resolveTimeRange();
     try {
       const [taskResult, historyTasksResult, historyResult] = await Promise.allSettled([
@@ -153,14 +177,32 @@ export default function Dashboard() {
         message.warning("执行历史暂不可用，趋势分析已降级显示");
         setExecutionHistory([]);
       }
+      setLastUpdatedAt(new Date().toISOString());
+      setRefreshCountdown(10);
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     void load();
   }, [timeFilterMode, customRange]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const timer = window.setInterval(() => {
+      setRefreshCountdown((prev) => {
+        if (prev <= 1) {
+          void load({ silent: true });
+          return 10;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [autoRefresh, timeFilterMode, customRange]);
 
   const taskDataset = useMemo<TaskLike[]>(
     () => (historyTasks.length ? (historyTasks as TaskLike[]) : (tasks as TaskLike[])),
@@ -374,6 +416,8 @@ export default function Dashboard() {
           <Text type="secondary">用于快速判断健康度、风险优先级和待办处理顺序</Text>
         </Space>
         <Space wrap>
+          <Text type="secondary">{autoRefresh ? `${refreshCountdown}s 后自动刷新` : "自动刷新已暂停"}</Text>
+          {lastUpdatedAt ? <Text type="secondary">最近更新：{new Date(lastUpdatedAt).toLocaleTimeString()}</Text> : null}
           <Segmented
             size="small"
             value={timeFilterMode}
@@ -392,13 +436,28 @@ export default function Dashboard() {
               allowClear
             />
           ) : null}
+          <Switch checked={autoRefresh} onChange={setAutoRefresh} checkedChildren="自动" unCheckedChildren="手动" />
           <Button icon={<ReloadOutlined />} onClick={() => void load()}>刷新数据</Button>
+          <Button onClick={() => navigate("/tasks?focus=focus")}>进入任务列表</Button>
+          <Button onClick={() => navigate("/tasks/history")}>进入历史任务</Button>
         </Space>
       </div>
 
+      <Segmented<DashboardView>
+        value={dashboardView}
+        onChange={(value) => setDashboardView(value as DashboardView)}
+        options={[
+          { label: "总览", value: "overview" },
+          { label: "质量", value: "quality" },
+          { label: "风险", value: "risk" },
+          { label: "运营", value: "ops" },
+        ]}
+      />
+
+      {(dashboardView === "overview" || dashboardView === "quality") ? (
       <Row gutter={16}>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="dashboard-kpi-card" bordered={false}>
+          <Card className="dashboard-kpi-card" bordered={false} hoverable onClick={() => openTaskList({ focus: "all" })}>
             <Space direction="vertical" size={4}>
               <Text type="secondary">任务总数</Text>
               <Text className="dashboard-kpi-value">{stats.total}</Text>
@@ -407,7 +466,7 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="dashboard-kpi-card" bordered={false}>
+          <Card className="dashboard-kpi-card" bordered={false} hoverable onClick={() => openTaskHistory({ status: "passed" })}>
             <Space direction="vertical" size={4}>
               <Text type="secondary">通过率</Text>
               <Text className="dashboard-kpi-value success">{stats.passRate}%</Text>
@@ -416,7 +475,7 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="dashboard-kpi-card" bordered={false}>
+          <Card className="dashboard-kpi-card" bordered={false} hoverable onClick={() => openTaskList({ focus: "failed" })}>
             <Space direction="vertical" size={4}>
               <Text type="secondary">失败率</Text>
               <Text className="dashboard-kpi-value danger">{stats.failRate}%</Text>
@@ -425,7 +484,7 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="dashboard-kpi-card" bordered={false}>
+          <Card className="dashboard-kpi-card" bordered={false} hoverable onClick={() => openTaskList({ focus: "focus" })}>
             <Space direction="vertical" size={4}>
               <Text type="secondary">健康评分</Text>
               <Text className="dashboard-kpi-value">{stats.qualityScore}</Text>
@@ -436,10 +495,12 @@ export default function Dashboard() {
           </Card>
         </Col>
       </Row>
+      ) : null}
 
+      {(dashboardView === "overview" || dashboardView === "quality") ? (
       <Row gutter={16}>
         <Col xs={24} lg={16}>
-          <Card title="任务状态分布" bordered={false}>
+          <Card title="任务状态分布" bordered={false} className="dashboard-panel-card">
             <Space direction="vertical" size={12} style={{ width: "100%" }}>
               <div className="dashboard-status-track">
                 {statusDistribution.map((item) => (
@@ -453,7 +514,17 @@ export default function Dashboard() {
               </div>
               <Space wrap>
                 {statusDistribution.map((item) => (
-                  <Tag key={item.status} color={item.status === "failed" ? "error" : item.status === "passed" ? "success" : "default"}>
+                  <Tag
+                    key={item.status}
+                    color={item.status === "failed" ? "error" : item.status === "passed" ? "success" : "default"}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      if (item.status === "passed") openTaskHistory({ status: "passed" });
+                      else if (item.status === "failed") openTaskList({ focus: "failed", status: "failed" });
+                      else if (item.status === "running") openTaskList({ focus: "running", status: "running" });
+                      else openTaskList({ focus: "all", status: item.status });
+                    }}
+                  >
                     {item.label} {item.count}
                   </Tag>
                 ))}
@@ -462,13 +533,29 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} lg={8}>
-          <Card title="风险告警" bordered={false} extra={<FireOutlined style={{ color: "#ff4d4f" }} />}>
+          <Card title="快速诊断入口" bordered={false} className="dashboard-panel-card">
+            <Space direction="vertical" size={10} style={{ width: "100%" }}>
+              <Button block danger icon={<ExclamationCircleOutlined />} onClick={() => setDashboardView("risk")}>
+                查看风险诊断
+              </Button>
+              <Button block onClick={() => setDashboardView("ops")}>查看运营工作台</Button>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
+      ) : null}
+
+      {(dashboardView === "risk") ? (
+      <Row gutter={16}>
+        <Col xs={24} lg={8}>
+          <Card title="风险告警" bordered={false} className="dashboard-panel-card" extra={<FireOutlined style={{ color: "#ff4d4f" }} />}>
             {riskReasons.length ? (
               <List
                 size="small"
+                className="dashboard-scroll-list"
                 dataSource={riskReasons}
                 renderItem={(item) => (
-                  <List.Item>
+                  <List.Item style={{ cursor: "pointer" }} onClick={() => openTaskList({ focus: "failed", failed_reason: item.reason })}>
                     <Space style={{ width: "100%", justifyContent: "space-between" }}>
                       <Text ellipsis={{ tooltip: item.reason }} style={{ maxWidth: 220 }}>{item.reason}</Text>
                       <Tag color="error">{item.count}</Tag>
@@ -481,13 +568,74 @@ export default function Dashboard() {
             )}
           </Card>
         </Col>
+        <Col xs={24} lg={8}>
+          <Card title="失败原因 Top" bordered={false} className="dashboard-panel-card">
+            {failureTop.length ? (
+              <List
+                size="small"
+                className="dashboard-scroll-list"
+                dataSource={failureTop}
+                renderItem={(item, index) => (
+                  <List.Item>
+                    <Space style={{ width: "100%", justifyContent: "space-between" }}>
+                      <Text>{index + 1}. {item.reason}</Text>
+                      <Space>
+                        <Tag color="volcano">{item.count}</Tag>
+                        <Button type="link" size="small" disabled={!item.sampleTaskId} onClick={() => openDetailReport(item.sampleTaskId)}>
+                          查看任务
+                        </Button>
+                        <Button type="link" size="small" onClick={() => openTaskList({ focus: "failed" })}>
+                          定位列表
+                        </Button>
+                      </Space>
+                    </Space>
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Empty description="暂无失败样本" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="环境稳定性" bordered={false} className="dashboard-panel-card">
+            {environmentHealth.length ? (
+              <Space direction="vertical" size={10} style={{ width: "100%" }} className="dashboard-scroll-list">
+                {environmentHealth.map((item) => (
+                  <div key={item.environment} className="dashboard-env-row">
+                    <Space style={{ width: "100%", justifyContent: "space-between" }}>
+                      <Text strong>{item.environment}</Text>
+                      <Space>
+                        <Tag color={item.failRate >= 30 ? "error" : item.failRate > 0 ? "warning" : "success"}>
+                          失败率 {item.failRate}%
+                        </Tag>
+                        <Button type="link" size="small" disabled={!item.sampleTaskId} onClick={() => openDetailReport(item.sampleTaskId)}>
+                          查看任务
+                        </Button>
+                        <Button type="link" size="small" onClick={() => openTaskHistory({ status: "failed", environment: item.environment })}>
+                          环境失败
+                        </Button>
+                      </Space>
+                    </Space>
+                    <Text type="secondary">执行 {item.total} 次，成功 {item.passRate}%</Text>
+                  </div>
+                ))}
+              </Space>
+            ) : (
+              <Empty description="暂无环境数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+        </Col>
       </Row>
+      ) : null}
 
+      {(dashboardView === "quality") ? (
       <Row gutter={16}>
-        <Col xs={24} xl={10}>
+        <Col xs={24} xl={12}>
           <Card
             title="执行趋势"
             bordered={false}
+            className="dashboard-panel-card"
             extra={
               <Segmented
                 size="small"
@@ -520,6 +668,13 @@ export default function Dashboard() {
                       >
                         {item.passed}/{item.total}
                       </Button>
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={() => openTaskHistory({ window: trendWindow === 30 ? "30d" : "7d" })}
+                      >
+                        进入历史
+                      </Button>
                     </div>
                   );
                 })}
@@ -529,64 +684,26 @@ export default function Dashboard() {
             )}
           </Card>
         </Col>
-        <Col xs={24} xl={7}>
-          <Card title="失败原因 Top" bordered={false}>
-            {failureTop.length ? (
-              <List
-                size="small"
-                dataSource={failureTop}
-                renderItem={(item, index) => (
-                  <List.Item>
-                    <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                      <Text>{index + 1}. {item.reason}</Text>
-                      <Space>
-                        <Tag color="volcano">{item.count}</Tag>
-                        <Button type="link" size="small" disabled={!item.sampleTaskId} onClick={() => openDetailReport(item.sampleTaskId)}>
-                          查看任务
-                        </Button>
-                      </Space>
-                    </Space>
-                  </List.Item>
-                )}
-              />
-            ) : (
-              <Empty description="暂无失败样本" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            )}
-          </Card>
-        </Col>
-        <Col xs={24} xl={7}>
-          <Card title="环境稳定性" bordered={false}>
-            {environmentHealth.length ? (
-              <Space direction="vertical" size={10} style={{ width: "100%" }}>
-                {environmentHealth.map((item) => (
-                  <div key={item.environment} className="dashboard-env-row">
-                    <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                      <Text strong>{item.environment}</Text>
-                      <Space>
-                        <Tag color={item.failRate >= 30 ? "error" : item.failRate > 0 ? "warning" : "success"}>
-                          失败率 {item.failRate}%
-                        </Tag>
-                        <Button type="link" size="small" disabled={!item.sampleTaskId} onClick={() => openDetailReport(item.sampleTaskId)}>
-                          查看任务
-                        </Button>
-                      </Space>
-                    </Space>
-                    <Text type="secondary">执行 {item.total} 次，成功 {item.passRate}%</Text>
-                  </div>
-                ))}
-              </Space>
-            ) : (
-              <Empty description="暂无环境数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            )}
+        <Col xs={24} xl={12}>
+          <Card title="质量解读" bordered={false} className="dashboard-panel-card">
+            <Space direction="vertical" size={12} style={{ width: "100%" }}>
+              <Text>近窗口通过率：<Text strong>{stats.passRate}%</Text></Text>
+              <Text>近窗口失败率：<Text strong>{stats.failRate}%</Text></Text>
+              <Text>执行中任务：<Text strong>{stats.running}</Text></Text>
+              <Button onClick={() => setDashboardView("risk")}>切换到风险诊断</Button>
+            </Space>
           </Card>
         </Col>
       </Row>
+      ) : null}
 
+      {(dashboardView === "ops" || dashboardView === "overview") ? (
       <Row gutter={16}>
         <Col xs={24} xl={16}>
           <Card
             title="待处理任务"
             bordered={false}
+            className="dashboard-panel-card"
             extra={
               <Space>
                 <Segmented
@@ -600,7 +717,7 @@ export default function Dashboard() {
                     { label: "待推进", value: "pending" },
                   ]}
                 />
-                <Button type="link" onClick={() => navigate("/tasks")}>查看全部<RightOutlined /></Button>
+                <Button type="link" onClick={() => navigate("/tasks?focus=focus")}>查看全部<RightOutlined /></Button>
               </Space>
             }
           >
@@ -612,24 +729,28 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} xl={8}>
-          <Card title="快捷入口" bordered={false}>
+          <Card title="快捷入口" bordered={false} className="dashboard-panel-card">
             <Space direction="vertical" size={10} style={{ width: "100%" }}>
               <Button block onClick={() => navigate("/tasks/create")}>创建任务</Button>
-              <Button block onClick={() => navigate("/tasks")}>任务列表</Button>
-              <Button block danger icon={<ExclamationCircleOutlined />} onClick={() => navigate("/tasks")}>排查失败任务</Button>
+              <Button block onClick={() => openTaskList({ focus: "focus" })}>任务列表</Button>
+              <Button block danger icon={<ExclamationCircleOutlined />} onClick={() => openTaskList({ focus: "failed", status: "failed" })}>排查失败任务</Button>
               <Button block type="dashed" onClick={() => navigate("/tasks/history")}>历史任务</Button>
             </Space>
           </Card>
         </Col>
       </Row>
+      ) : null}
 
+      {(dashboardView === "ops" || dashboardView === "overview") ? (
       <Card
         title="最近任务动态"
         bordered={false}
+        className="dashboard-panel-card"
         extra={<Button type="link" onClick={() => navigate("/tasks")}>查看任务中心<RightOutlined /></Button>}
       >
         <Table dataSource={latestTasks} columns={latestColumns} rowKey="task_id" pagination={false} size="middle" />
       </Card>
+      ) : null}
     </Space>
   );
 }
