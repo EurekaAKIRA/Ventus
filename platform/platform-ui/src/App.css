@@ -318,6 +318,55 @@ body {
   background: #fafafa;
 }
 
+.execution-split-view {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.execution-point-sidebar {
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  background: #fafafa;
+  padding: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.execution-point-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.execution-point-item:hover {
+  background: var(--theme-primary-bg);
+}
+
+.execution-point-item.active {
+  background: var(--theme-primary-bg);
+  color: var(--theme-primary-active);
+  font-weight: 600;
+}
+
+.execution-case-table-wrap {
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+@media (max-width: 1024px) {
+  .execution-split-view {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dashboard-line-svg {
   width: 100%;
   height: 120px;
@@ -374,4 +423,63 @@ body {
   height: 10px;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--theme-primary), var(--theme-primary-soft));
+}
+
+.plan-case-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.plan-case-item {
+  padding: 10px 6px !important;
+}
+
+.execution-plan-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.execution-plan-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
+}
+
+.execution-plan-side {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fafafa;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.execution-plan-side-item {
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+
+.execution-plan-side-item:last-child {
+  border-bottom: none;
+}
+
+.execution-plan-side-item.active {
+  background: rgba(114, 46, 209, 0.12);
+}
+
+.execution-plan-main .ant-table-wrapper {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+@media (max-width: 960px) {
+  .execution-plan-layout {
+    grid-template-columns: 1fr;
+  }
 }

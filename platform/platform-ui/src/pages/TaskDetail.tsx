@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -8,12 +8,14 @@ import {
   Descriptions,
   Drawer,
   Empty,
+  Input,
   List,
   Progress,
   Row,
   Space,
   Spin,
   Steps,
+  Table,
   Tabs,
   Tag,
   Typography,
@@ -78,6 +80,33 @@ type ParsedFeatureLine = {
   strong?: boolean;
   priority?: string;
   hideMarker?: boolean;
+};
+
+type ExecutionCaseRow = {
+  key: string;
+  id: string;
+  name: string;
+  testPoint: string;
+  priority: string;
+  status: string;
+  durationMs: number;
+  failedSteps: number;
+};
+
+type LoadMode = "initial" | "manual" | "silent";
+type StageKey = "basic" | "artifacts" | "dashboard";
+type StageStatus = "wait" | "process" | "finish" | "error";
+
+const STAGE_LABELS: Record<StageKey, string> = {
+  basic: "任务基础信息",
+  artifacts: "任务产物索引",
+  dashboard: "单任务看板数据",
+};
+
+const DEFAULT_STAGE_STATE: Record<StageKey, StageStatus> = {
+  basic: "wait",
+  artifacts: "wait",
+  dashboard: "wait",
 };
 
 function isValidHttpUrl(value: string | undefined | null): boolean {
@@ -238,7 +267,14 @@ function deriveExecutionStatus(detail?: ExtendedTaskDetail | null): string {
 export default function TaskDetail() {
   const { taskId = "" } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const requestSeqRef = useRef(0);
+  const activeRequestRef = useRef(0);
+  const [bootLoading, setBootLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [stageState, setStageState] = useState<Record<StageKey, StageStatus>>(DEFAULT_STAGE_STATE);
+  const [stageError, setStageError] = useState<string | null>(null);
+  const [refreshStageText, setRefreshStageText] = useState("");
   const [detail, setDetail] = useState<ExtendedTaskDetail | null>(null);
   const [taskDashboard, setTaskDashboard] = useState<TaskDashboardPayload | null>(null);
   const [dashboardLoadError, setDashboardLoadError] = useState<string | null>(null);
@@ -265,18 +301,90 @@ export default function TaskDetail() {
   const [regressionError, setRegressionError] = useState<string | null>(null);
   const [streamEvents, setStreamEvents] = useState<Array<{ event: string; data: string; at: string }>>([]);
   const [streamStatus, setStreamStatus] = useState<"idle" | "connected" | "fallback">("idle");
+  const [caseKeyword, setCaseKeyword] = useState("");
+  const [selectedTestPoint, setSelectedTestPoint] = useState("all");
+  const fromCreateFlow =
+    searchParams.get("from") === "create" ||
+    Boolean((location.state as { fromCreate?: boolean } | null)?.fromCreate);
   const executionStatus = deriveExecutionStatus(detail);
 
-  const load = async (options?: { silent?: boolean }) => {
-    if (!options?.silent) {
-      setLoading(true);
+  const load = async (options?: { mode?: LoadMode }) => {
+    const mode = options?.mode ?? "initial";
+    const requestId = ++requestSeqRef.current;
+    activeRequestRef.current = requestId;
+    const isLatest = () => activeRequestRef.current === requestId;
+    const updateStage = (key: StageKey, status: StageStatus) => {
+      if (!isLatest()) return;
+      setStageState((prev) => ({ ...prev, [key]: status }));
+      if (mode === "manual" && status === "process") {
+        setRefreshStageText(`正在刷新：${STAGE_LABELS[key]}`);
+      }
+    };
+
+    if (mode === "initial") {
+      setBootLoading(true);
+      setStageState({ basic: "process", artifacts: "wait", dashboard: "wait" });
+      setStageError(null);
+    } else if (mode === "manual") {
+      setRefreshing(true);
+      setRefreshStageText(`正在刷新：${STAGE_LABELS.basic}`);
+      setStageState({ basic: "process", artifacts: "wait", dashboard: "wait" });
+      setStageError(null);
     }
+
     try {
+      const detailPromise = fetchTaskDetail(taskId)
+        .then((value) => {
+          if (mode !== "silent") {
+            updateStage("basic", "finish");
+            updateStage("artifacts", "process");
+          }
+          return value;
+        })
+        .catch((error) => {
+          if (mode !== "silent" && isLatest()) {
+            updateStage("basic", "error");
+            setStageError((error as Error).message || "加载任务基础信息失败");
+          }
+          throw error;
+        });
+      const artifactPromise = fetchTaskArtifacts(taskId)
+        .then((value) => {
+          if (mode !== "silent") {
+            updateStage("artifacts", "finish");
+            updateStage("dashboard", "process");
+          }
+          return value;
+        })
+        .catch((error) => {
+          if (mode !== "silent" && isLatest()) {
+            updateStage("artifacts", "error");
+          }
+          throw error;
+        });
+      const dashboardPromise = fetchTaskDashboard(taskId)
+        .then((value) => {
+          if (mode !== "silent") {
+            updateStage("dashboard", "finish");
+          }
+          return value;
+        })
+        .catch((error) => {
+          if (mode !== "silent" && isLatest()) {
+            updateStage("dashboard", "error");
+          }
+          throw error;
+        });
+
       const [detailResult, artifactResult, dashboardResult] = await Promise.allSettled([
-        fetchTaskDetail(taskId),
-        fetchTaskArtifacts(taskId),
-        fetchTaskDashboard(taskId),
+        detailPromise,
+        artifactPromise,
+        dashboardPromise,
       ]);
+
+      if (!isLatest()) {
+        return;
+      }
 
       if (detailResult.status === "fulfilled") {
         setDetail(detailResult.value as ExtendedTaskDetail);
@@ -294,14 +402,22 @@ export default function TaskDetail() {
         setTaskDashboard(dashboardResult.value);
         setDashboardLoadError(null);
       } else {
-        setTaskDashboard(null);
         setDashboardLoadError("单任务看板暂不可用，已回退为基础报告视图。");
       }
     } catch (error) {
-      message.error((error as Error).message || "加载任务详情失败");
+      if (isLatest()) {
+        message.error((error as Error).message || "加载任务详情失败");
+      }
     } finally {
-      if (!options?.silent) {
-        setLoading(false);
+      if (!isLatest()) {
+        return;
+      }
+      if (mode === "initial") {
+        setBootLoading(false);
+      }
+      if (mode === "manual") {
+        setRefreshing(false);
+        setRefreshStageText("");
       }
     }
   };
@@ -317,7 +433,13 @@ export default function TaskDetail() {
     setRegressionError(null);
     setStreamEvents([]);
     setStreamStatus("idle");
-    void load();
+    setCaseKeyword("");
+    setSelectedTestPoint("all");
+    setStageState(DEFAULT_STAGE_STATE);
+    setStageError(null);
+    setRefreshing(false);
+    setRefreshStageText("");
+    void load({ mode: "initial" });
   }, [taskId]);
 
   const refreshParsedSection = async () => {
@@ -682,10 +804,13 @@ export default function TaskDetail() {
       return;
     }
     const timer = window.setInterval(() => {
-      void load({ silent: true });
+      if (refreshing) {
+        return;
+      }
+      void load({ mode: "silent" });
     }, 2500);
     return () => window.clearInterval(timer);
-  }, [detail, shouldAutoRefreshCards, taskId]);
+  }, [detail, shouldAutoRefreshCards, taskId, refreshing]);
 
   const primaryAnalysisReport = taskDashboard?.analysis_report ?? detail?.analysis_report;
 
@@ -708,8 +833,42 @@ export default function TaskDetail() {
     }
   }, [activeTabKey, detail?.target_system, preflightResult, preflightLoading, taskId]);
 
-  if (loading) {
-    return <Spin size="large" style={{ display: "block", marginTop: 120 }} />;
+  if (bootLoading) {
+    const stageItems = [
+      {
+        title: STAGE_LABELS.basic,
+        description: "任务元信息、状态、解析摘要",
+        status: stageState.basic,
+      },
+      {
+        title: STAGE_LABELS.artifacts,
+        description: "DSL / Feature / 报告等产物入口",
+        status: stageState.artifacts,
+      },
+      {
+        title: STAGE_LABELS.dashboard,
+        description: "执行摘要、分析图表、质量指标",
+        status: stageState.dashboard,
+      },
+    ];
+
+    return (
+      <Card bordered={false}>
+        <Space direction="vertical" size={16} style={{ width: "100%" }}>
+          <Space direction="vertical" size={4}>
+            <Title level={4} style={{ margin: 0 }}>
+              任务详情加载中
+            </Title>
+            <Text type="secondary">
+              {fromCreateFlow ? "任务已创建，正在准备详情数据。" : "正在加载任务详情，请稍候。"}
+            </Text>
+          </Space>
+          <Steps direction="vertical" size="small" items={stageItems as unknown as Parameters<typeof Steps>[0]["items"]} />
+          {stageError ? <Alert type="warning" showIcon message={stageError} /> : null}
+          <Spin size="small" />
+        </Space>
+      </Card>
+    );
   }
 
   if (!detail) {
@@ -760,6 +919,37 @@ export default function TaskDetail() {
   const scenarioPass = detail.execution_result?.scenario_results.filter((s) => s.status === "passed").length ?? 0;
   const scenarioFail = detail.execution_result?.scenario_results.filter((s) => s.status === "failed").length ?? 0;
   const scenarioTotal = detail.execution_result?.scenario_results.length ?? 0;
+  const dslCases = detail.test_case_dsl?.scenarios ?? [];
+  const scenarioResultMap = new Map(
+    (detail.execution_result?.scenario_results ?? []).map((item) => [item.scenario_id, item]),
+  );
+  const scenarioMetaMap = new Map((detail.scenarios ?? []).map((item) => [item.scenario_id, item]));
+  const executionCaseRows: ExecutionCaseRow[] = dslCases.map((item) => {
+    const result = scenarioResultMap.get(item.scenario_id);
+    const meta = scenarioMetaMap.get(item.scenario_id);
+    const testPoint = (meta?.goal || item.goal || "默认测试点").trim() || "默认测试点";
+    return {
+      key: item.scenario_id,
+      id: item.scenario_id,
+      name: item.name || item.scenario_id,
+      testPoint,
+      priority: (item.priority || meta?.priority || "-").toUpperCase(),
+      status: result?.status || (uiExecutionStatus === "running" ? "queued" : "pending"),
+      durationMs: result?.duration_ms ?? 0,
+      failedSteps: result?.failed_steps ?? 0,
+    };
+  });
+  const testPointGroups = Array.from(new Set(executionCaseRows.map((item) => item.testPoint)));
+  const filteredExecutionCaseRows = executionCaseRows.filter((item) => {
+    if (selectedTestPoint !== "all" && item.testPoint !== selectedTestPoint) {
+      return false;
+    }
+    if (!caseKeyword.trim()) {
+      return true;
+    }
+    const keyword = caseKeyword.trim().toLowerCase();
+    return item.id.toLowerCase().includes(keyword) || item.name.toLowerCase().includes(keyword);
+  });
 
   const analysisChartData = taskDashboard?.chart_data ?? primaryAnalysisReport?.chart_data;
   const chartItems = flattenNumericEntries(analysisChartData)
@@ -782,15 +972,68 @@ export default function TaskDetail() {
   const dslScenarios = detail.test_case_dsl?.scenarios ?? [];
   const hasDslOverflow = dslScenarios.length > DSL_PREVIEW_SCENARIOS;
   const dslDisplayScenarios = dslExpanded ? dslScenarios : dslScenarios.slice(0, DSL_PREVIEW_SCENARIOS);
+  const finishedStageCount = (Object.values(stageState) as StageStatus[]).filter((item) => item === "finish").length;
+  const processingStage = (Object.entries(stageState).find(([, value]) => value === "process")?.[0] as StageKey | undefined) ?? null;
+  const hasStageError = (Object.values(stageState) as StageStatus[]).some((item) => item === "error");
+  const refreshProgressPercent = Math.min(95, Math.round(((finishedStageCount + (processingStage ? 0.5 : 0)) / 3) * 100));
+  const refreshStatusText =
+    refreshStageText ||
+    (processingStage ? `正在刷新：${STAGE_LABELS[processingStage]}` : hasStageError ? "刷新过程出现异常" : "正在刷新");
+  const executionCaseColumns = [
+    { title: "ID", dataIndex: "id", key: "id", width: 180 },
+    { title: "用例名称", dataIndex: "name", key: "name", ellipsis: true },
+    { title: "测试点", dataIndex: "testPoint", key: "testPoint", ellipsis: true, width: 220 },
+    {
+      title: "优先级",
+      dataIndex: "priority",
+      key: "priority",
+      width: 100,
+      render: (value: string) => <Tag color={value === "P0" ? "red" : value === "P1" ? "gold" : "default"}>{value}</Tag>,
+    },
+    {
+      title: "状态",
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: (value: string) => (
+        <Tag color={value === "passed" ? "success" : value === "failed" ? "error" : value === "running" ? "processing" : "default"}>
+          {value}
+        </Tag>
+      ),
+    },
+    {
+      title: "耗时",
+      dataIndex: "durationMs",
+      key: "durationMs",
+      width: 110,
+      render: (value: number) => `${value} ms`,
+    },
+    { title: "失败步骤", dataIndex: "failedSteps", key: "failedSteps", width: 110 },
+  ];
 
   return (
     <Space direction="vertical" size={20} style={{ width: "100%" }}>
+      {refreshing ? (
+        <Card bordered={false}>
+          <Space direction="vertical" size={8} style={{ width: "100%" }}>
+            <Text strong>{refreshStatusText}</Text>
+            <Progress
+              percent={refreshProgressPercent}
+              showInfo={false}
+              size="small"
+              status={hasStageError ? "exception" : "active"}
+              strokeColor="#722ed1"
+            />
+            {stageError ? <Text type="danger">{stageError}</Text> : null}
+          </Space>
+        </Card>
+      ) : null}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Title level={4} style={{ margin: 0 }}>
           任务详情
         </Title>
         <Space>
-          <Button onClick={() => void load()}>刷新</Button>
+          <Button loading={refreshing} disabled={refreshing} onClick={() => void load({ mode: "manual" })}>刷新</Button>
           <Button type="primary" loading={executing} onClick={runExecution} disabled={!canExecute || preflightLoading}>
             启动执行
           </Button>
@@ -1151,30 +1394,56 @@ export default function TaskDetail() {
                   <MetricCard title="失败场景" value={scenarioFail} color="#ff4d4f" />
                       <MetricCard title="执行状态" value={uiExecutionStatus} color="#722ed1" />
                 </div>
-                <Card bordered={false} title="实时执行事件流（SSE）">
-                  {streamStatus === "connected" ? <Alert type="success" showIcon message="已连接实时流" /> : null}
-                  {streamStatus === "fallback" ? <Alert type="info" showIcon message="实时流不可用，已回退轮询模式" /> : null}
-                  {streamEvents.length ? (
-                    <List
-                      size="small"
-                      dataSource={[...streamEvents].reverse().slice(0, 8)}
-                      renderItem={(item) => (
-                        <List.Item>
-                          <Space direction="vertical" size={2} style={{ width: "100%" }}>
-                            <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                              <Tag>{item.event}</Tag>
-                              <Text type="secondary">{new Date(item.at).toLocaleTimeString()}</Text>
-                            </Space>
-                            <Text code>{item.data}</Text>
-                          </Space>
-                        </List.Item>
-                      )}
+                <Card bordered={false} title="用例执行视图（Meter 风格）">
+                  <Space direction="vertical" size={12} style={{ width: "100%" }}>
+                    <Input
+                      allowClear
+                      placeholder="按 ID / 用例名称搜索"
+                      value={caseKeyword}
+                      onChange={(event) => setCaseKeyword(event.target.value)}
                     />
-                  ) : (
-                    <Text type="secondary">暂无实时事件。</Text>
-                  )}
+                    <div className="execution-split-view">
+                      <div className="execution-point-sidebar">
+                        <div
+                          className={`execution-point-item ${selectedTestPoint === "all" ? "active" : ""}`}
+                          onClick={() => setSelectedTestPoint("all")}
+                        >
+                          <span>全部测试点</span>
+                          <Tag>{executionCaseRows.length}</Tag>
+                        </div>
+                        {testPointGroups.map((point) => (
+                          <div
+                            key={point}
+                            className={`execution-point-item ${selectedTestPoint === point ? "active" : ""}`}
+                            onClick={() => setSelectedTestPoint(point)}
+                          >
+                            <span>{point}</span>
+                            <Tag>{executionCaseRows.filter((item) => item.testPoint === point).length}</Tag>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="execution-case-table-wrap">
+                        <Table<ExecutionCaseRow>
+                          rowKey="key"
+                          size="small"
+                          columns={executionCaseColumns}
+                          dataSource={filteredExecutionCaseRows}
+                          pagination={{ pageSize: 8, showSizeChanger: false }}
+                          locale={{ emptyText: "暂无可展示用例" }}
+                        />
+                      </div>
+                    </div>
+                  </Space>
                 </Card>
-                <Card bordered={false} title="执行结果" extra={<Button size="small" onClick={() => void load()}>刷新</Button>}>
+                <Card
+                  bordered={false}
+                  title="执行结果"
+                  extra={
+                    <Button size="small" loading={refreshing} disabled={refreshing} onClick={() => void load({ mode: "manual" })}>
+                      刷新
+                    </Button>
+                  }
+                >
                   {detail.execution_result ? (
                     <Space direction="vertical" size={8} style={{ width: "100%" }}>
                       <Text>执行器：{detail.execution_result.executor || "-"}</Text>
