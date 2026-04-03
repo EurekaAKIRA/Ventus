@@ -1,6 +1,150 @@
 {
   "history": [
     {
+      "task_id": "俄2_20260403083825",
+      "task_name": "俄2",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T08:45:48.325284+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1803.32,
+        "max_elapsed_ms": 12028.1
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1803.32
+      }
+    },
+    {
+      "task_id": "俄2_20260403083825",
+      "task_name": "俄2",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T08:43:26.970106+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1862.88,
+        "max_elapsed_ms": 12453.57
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1862.88
+      }
+    },
+    {
+      "task_id": "俄2_20260403083825",
+      "task_name": "俄2",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T08:43:23.385783+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1889.14,
+        "max_elapsed_ms": 12283.33
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1889.14
+      }
+    },
+    {
+      "task_id": "俄2_20260403083825",
+      "task_name": "俄2",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T08:41:35.358014+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1794.89,
+        "max_elapsed_ms": 11902.44
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1794.89
+      }
+    },
+    {
+      "task_id": "俄2_20260403083825",
+      "task_name": "俄2",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T08:40:58.600500+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1835.37,
+        "max_elapsed_ms": 12220.23
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1835.37
+      }
+    },
+    {
+      "task_id": "俄2_20260403083825",
+      "task_name": "俄2",
+      "environment": "test",
+      "execution_mode": "api",
+      "status": "passed",
+      "executor": "api-runner",
+      "executed_at": "2026-04-03T08:40:21.337759+00:00",
+      "metrics": {
+        "scenario_count": 8,
+        "step_count": 24,
+        "passed_step_count": 24,
+        "failed_step_count": 0,
+        "context_key_count": 5,
+        "cookie_count": 0,
+        "avg_elapsed_ms": 1806.37,
+        "max_elapsed_ms": 12102.61
+      },
+      "analysis_summary": {
+        "success_rate": 100.0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 1806.37
+      }
+    },
+    {
       "task_id": "demo_task_name_20260403081324",
       "task_name": "demo_task_name",
       "environment": "test",

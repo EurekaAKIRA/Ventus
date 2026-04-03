@@ -222,6 +222,19 @@ function resolveTabKey(value: string | null): TaskDetailTabKey {
   return "parsed";
 }
 
+function deriveExecutionStatus(detail?: ExtendedTaskDetail | null): string {
+  if (!detail) return "not_started";
+  const executionStatus = normalizeStatus(detail.execution_result?.status);
+  if (executionStatus && executionStatus !== "received") {
+    return executionStatus;
+  }
+  const taskStatus = normalizeStatus(detail.task_context?.status);
+  if (["running", "passed", "failed", "stopped"].includes(taskStatus)) {
+    return taskStatus;
+  }
+  return "not_started";
+}
+
 export default function TaskDetail() {
   const { taskId = "" } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -252,9 +265,12 @@ export default function TaskDetail() {
   const [regressionError, setRegressionError] = useState<string | null>(null);
   const [streamEvents, setStreamEvents] = useState<Array<{ event: string; data: string; at: string }>>([]);
   const [streamStatus, setStreamStatus] = useState<"idle" | "connected" | "fallback">("idle");
+  const executionStatus = deriveExecutionStatus(detail);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     try {
       const [detailResult, artifactResult, dashboardResult] = await Promise.allSettled([
         fetchTaskDetail(taskId),
@@ -284,7 +300,9 @@ export default function TaskDetail() {
     } catch (error) {
       message.error((error as Error).message || "加载任务详情失败");
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -450,22 +468,28 @@ export default function TaskDetail() {
     setExecuting(true);
     try {
       await startExecution(taskId, { execution_mode: "api", environment: "test" });
-      const [executionResult, validationReport, analysisReport] = await Promise.all([
-        fetchExecution(taskId),
-        fetchValidationReport(taskId),
-        fetchAnalysisReport(taskId),
-      ]);
       setDetail((prev) =>
         prev
           ? {
               ...prev,
-              execution_result: executionResult,
-              validation_report: validationReport,
-              analysis_report: analysisReport,
-              task_context: { ...prev.task_context, status: executionResult.status },
+              execution_result: prev.execution_result
+                ? {
+                    ...prev.execution_result,
+                    status: "running",
+                  }
+                : {
+                    task_id: prev.task_context.task_id,
+                    executor: "api-runner",
+                    status: "running",
+                    scenario_results: [],
+                    metrics: {},
+                    logs: [],
+                  },
+              task_context: { ...prev.task_context, status: "running" },
             }
           : prev,
       );
+      setPollingError(null);
       message.success("执行已启动");
     } catch (error) {
       message.error((error as Error).message || "启动执行失败");
@@ -538,7 +562,7 @@ export default function TaskDetail() {
   };
 
   useEffect(() => {
-    if (detail?.execution_result?.status !== "running") {
+    if (executionStatus !== "running") {
       return;
     }
 
@@ -579,10 +603,10 @@ export default function TaskDetail() {
     }, 2500);
 
     return () => window.clearInterval(timer);
-  }, [detail?.execution_result?.status, pollingError, taskId]);
+  }, [executionStatus, pollingError, taskId]);
 
   useEffect(() => {
-    const hasFailedExecution = detail?.execution_result?.status === "failed";
+    const hasFailedExecution = executionStatus === "failed";
     const hasPartialFailures = (detail?.execution_result?.scenario_results ?? []).some(
       (item) => item.status === "failed",
     );
@@ -590,10 +614,10 @@ export default function TaskDetail() {
       void loadExecutionExplanations();
       void loadRegressionDiff();
     }
-  }, [detail?.execution_result?.status, detail?.execution_result?.scenario_results, taskId]);
+  }, [executionStatus, detail?.execution_result?.scenario_results, taskId]);
 
   useEffect(() => {
-    if (detail?.execution_result?.status !== "running") {
+    if (executionStatus !== "running") {
       return;
     }
     const source = new EventSource(`${API_BASE_URL}/api/tasks/${taskId}/execution/stream`);
@@ -634,7 +658,7 @@ export default function TaskDetail() {
       source.close();
     });
     return () => source.close();
-  }, [detail?.execution_result?.status, taskId]);
+  }, [executionStatus, taskId]);
 
   const activeTabKey = resolveTabKey(searchParams.get("tab"));
   const shouldCompareLatest = searchParams.get("compare") === "latest";
@@ -647,6 +671,21 @@ export default function TaskDetail() {
       void loadRegressionDiff();
     }
   }, [activeTabKey, shouldCompareLatest, regressionDiff, regressionLoading, taskId]);
+
+  const taskLifecycleStatus = normalizeStatus(detail?.task_context?.status);
+  const shouldAutoRefreshCards =
+    ["received", "parsed", "generated", "running"].includes(taskLifecycleStatus) ||
+    executionStatus === "running";
+
+  useEffect(() => {
+    if (!detail || !shouldAutoRefreshCards) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      void load({ silent: true });
+    }, 2500);
+    return () => window.clearInterval(timer);
+  }, [detail, shouldAutoRefreshCards, taskId]);
 
   const primaryAnalysisReport = taskDashboard?.analysis_report ?? detail?.analysis_report;
 
@@ -678,9 +717,10 @@ export default function TaskDetail() {
   }
 
   const taskStatus = normalizeStatus(detail.task_context.status);
+  const displayTaskStatus = executionStatus === "not_started" ? taskStatus : executionStatus;
+  const uiExecutionStatus = executing ? "running" : executionStatus;
   const hasParsedResult = Boolean(detail.parsed_requirement);
   const hasScenarios = Boolean(detail.scenarios?.length);
-  const executionStatus = detail.execution_result?.status ?? "not_started";
   const hasReport = Boolean(primaryAnalysisReport);
   const preflightBlocking = Boolean(preflightResult?.blocking);
   const canExecute = isValidHttpUrl(detail.target_system) && !preflightBlocking;
@@ -701,11 +741,11 @@ export default function TaskDetail() {
     {
       title: "执行",
       status:
-        executionStatus === "passed"
+        uiExecutionStatus === "passed"
           ? "finish"
-          : executionStatus === "failed"
+          : uiExecutionStatus === "failed" || uiExecutionStatus === "stopped"
             ? "error"
-            : executionStatus === "running"
+            : uiExecutionStatus === "running"
               ? "process"
               : hasScenarios
                 ? "process"
@@ -713,7 +753,7 @@ export default function TaskDetail() {
     },
     {
       title: "报告",
-      status: hasReport ? "finish" : executionStatus === "passed" || executionStatus === "failed" ? "process" : "wait",
+      status: hasReport ? "finish" : uiExecutionStatus === "passed" || uiExecutionStatus === "failed" ? "process" : "wait",
     },
   ] as const;
 
@@ -758,7 +798,7 @@ export default function TaskDetail() {
             danger
             loading={stopping}
             onClick={stopCurrentExecution}
-            disabled={executionStatus !== "running" || stopping || executing}
+            disabled={uiExecutionStatus !== "running" || stopping || executing}
           >
             停止执行
           </Button>
@@ -788,10 +828,10 @@ export default function TaskDetail() {
       </Card>
 
       <div className="metric-row">
-        <MetricCard title="任务状态" value={taskStatus} color="#4f46e5" />
+        <MetricCard title="任务状态" value={uiExecutionStatus === "running" ? "running" : displayTaskStatus} color="#4f46e5" />
         <MetricCard title="已解析" value={hasParsedResult ? "是" : "否"} color={hasParsedResult ? "#52c41a" : "#d48806"} />
         <MetricCard title="场景数量" value={detail.scenarios?.length ?? 0} color={hasScenarios ? "#52c41a" : "#d48806"} />
-        <MetricCard title="执行状态" value={executionStatus} color={executionStatus === "failed" ? "#ff4d4f" : "#1677ff"} />
+        <MetricCard title="执行状态" value={uiExecutionStatus} color={uiExecutionStatus === "failed" ? "#ff4d4f" : "#1677ff"} />
       </div>
 
       <Card bordered={false}>
@@ -799,7 +839,7 @@ export default function TaskDetail() {
           <Descriptions.Item label="任务名称">{detail.task_context.task_name}</Descriptions.Item>
           <Descriptions.Item label="任务 ID">{detail.task_context.task_id}</Descriptions.Item>
           <Descriptions.Item label="状态">
-            <StatusTag status={detail.task_context.status} />
+            <StatusTag status={uiExecutionStatus === "running" ? "running" : displayTaskStatus} />
           </Descriptions.Item>
           <Descriptions.Item label="来源类型">{detail.task_context.source_type}</Descriptions.Item>
           <Descriptions.Item label="创建时间">{new Date(detail.task_context.created_at).toLocaleString()}</Descriptions.Item>
@@ -1109,7 +1149,7 @@ export default function TaskDetail() {
                   <MetricCard title="场景总数" value={scenarioTotal} />
                   <MetricCard title="通过场景" value={scenarioPass} color="#52c41a" />
                   <MetricCard title="失败场景" value={scenarioFail} color="#ff4d4f" />
-                  <MetricCard title="执行状态" value={executionStatus} color="#4f46e5" />
+                  <MetricCard title="执行状态" value={uiExecutionStatus} color="#4f46e5" />
                 </div>
                 <Card bordered={false} title="实时执行事件流（SSE）">
                   {streamStatus === "connected" ? <Alert type="success" showIcon message="已连接实时流" /> : null}
