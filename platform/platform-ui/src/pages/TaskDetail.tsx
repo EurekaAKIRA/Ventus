@@ -91,6 +91,16 @@ type ExecutionCaseRow = {
   status: string;
   durationMs: number;
   failedSteps: number;
+  stepProgress: number;
+  stepProgressText: string;
+  currentStep: string;
+};
+
+type StreamStepTracker = {
+  completedStepIds: Set<string>;
+  currentStepId?: string;
+  currentStepMessage?: string;
+  scenarioStatus?: string;
 };
 
 type LoadMode = "initial" | "manual" | "silent";
@@ -262,6 +272,20 @@ function deriveExecutionStatus(detail?: ExtendedTaskDetail | null): string {
     return taskStatus;
   }
   return "not_started";
+}
+
+function isAnalyzingStatus(status: string | undefined): boolean {
+  const normalized = normalizeStatus(status);
+  return ["received", "parsed", "generated"].includes(normalized);
+}
+
+function parseStreamPayload(data: string): Record<string, unknown> | null {
+  try {
+    const payload = JSON.parse(data);
+    return payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
 }
 
 export default function TaskDetail() {
@@ -833,7 +857,25 @@ export default function TaskDetail() {
     }
   }, [activeTabKey, detail?.target_system, preflightResult, preflightLoading, taskId]);
 
+  useEffect(() => {
+    if (!detail) {
+      return;
+    }
+    if (searchParams.get("from") !== "create") {
+      return;
+    }
+    if (isAnalyzingStatus(detail.task_context?.status)) {
+      return;
+    }
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("from");
+    setSearchParams(nextParams, { replace: true });
+  }, [detail, searchParams, setSearchParams]);
+
   if (bootLoading) {
+    if (!fromCreateFlow) {
+      return <Spin size="large" style={{ display: "block", marginTop: 120 }} />;
+    }
     const stageItems = [
       {
         title: STAGE_LABELS.basic,
@@ -920,6 +962,42 @@ export default function TaskDetail() {
   const scenarioFail = detail.execution_result?.scenario_results.filter((s) => s.status === "failed").length ?? 0;
   const scenarioTotal = detail.execution_result?.scenario_results.length ?? 0;
   const dslCases = detail.test_case_dsl?.scenarios ?? [];
+  const streamStepTrackerMap = (() => {
+    const tracker = new Map<string, StreamStepTracker>();
+    streamEvents.forEach((evt) => {
+      const payload = parseStreamPayload(evt.data);
+      const scenarioId = typeof payload?.scenario_id === "string" ? payload.scenario_id : "";
+      if (!scenarioId) {
+        return;
+      }
+      const existing =
+        tracker.get(scenarioId) ??
+        ({
+          completedStepIds: new Set<string>(),
+        } as StreamStepTracker);
+      const stepId = typeof payload?.step_id === "string" ? payload.step_id : undefined;
+      const message = typeof payload?.message === "string" ? payload.message : undefined;
+      const status = typeof payload?.status === "string" ? payload.status : undefined;
+      if (evt.event === "step_start") {
+        existing.currentStepId = stepId;
+        existing.currentStepMessage = message;
+      }
+      if (evt.event === "step_result" || evt.event === "step_end") {
+        if (stepId) {
+          existing.completedStepIds.add(stepId);
+        }
+        if (status) {
+          existing.scenarioStatus = status;
+        }
+        existing.currentStepId = undefined;
+      }
+      if (evt.event === "scenario_result" && status) {
+        existing.scenarioStatus = status;
+      }
+      tracker.set(scenarioId, existing);
+    });
+    return tracker;
+  })();
   const scenarioResultMap = new Map(
     (detail.execution_result?.scenario_results ?? []).map((item) => [item.scenario_id, item]),
   );
@@ -927,16 +1005,36 @@ export default function TaskDetail() {
   const executionCaseRows: ExecutionCaseRow[] = dslCases.map((item) => {
     const result = scenarioResultMap.get(item.scenario_id);
     const meta = scenarioMetaMap.get(item.scenario_id);
+    const stepTracker = streamStepTrackerMap.get(item.scenario_id);
     const testPoint = (meta?.goal || item.goal || "默认测试点").trim() || "默认测试点";
+    const totalSteps = Array.isArray(item.steps) ? item.steps.length : 0;
+    const completedFromTracker = stepTracker?.completedStepIds.size ?? 0;
+    const completedFromResult =
+      typeof result?.passed_steps === "number" && typeof result?.failed_steps === "number"
+        ? result.passed_steps + result.failed_steps
+        : Array.isArray((result as { steps?: unknown[] } | undefined)?.steps)
+          ? ((result as { steps?: unknown[] }).steps?.length ?? 0)
+          : 0;
+    const completedSteps = Math.min(totalSteps || completedFromResult || completedFromTracker, Math.max(completedFromTracker, completedFromResult));
+    const currentStepId = stepTracker?.currentStepId;
+    const currentStep = currentStepId
+      ? item.steps.find((step) => step.step_id === currentStepId)?.text || stepTracker?.currentStepMessage || currentStepId
+      : stepTracker?.currentStepMessage || "-";
+    const status =
+      result?.status || stepTracker?.scenarioStatus || (uiExecutionStatus === "running" ? "queued" : "pending");
+    const progressPercent = totalSteps > 0 ? Math.min(100, Math.round((completedSteps / totalSteps) * 100)) : status === "passed" ? 100 : 0;
     return {
       key: item.scenario_id,
       id: item.scenario_id,
       name: item.name || item.scenario_id,
       testPoint,
       priority: (item.priority || meta?.priority || "-").toUpperCase(),
-      status: result?.status || (uiExecutionStatus === "running" ? "queued" : "pending"),
+      status,
       durationMs: result?.duration_ms ?? 0,
       failedSteps: result?.failed_steps ?? 0,
+      stepProgress: progressPercent,
+      stepProgressText: totalSteps > 0 ? `${completedSteps}/${totalSteps}` : "-",
+      currentStep,
     };
   });
   const testPointGroups = Array.from(new Set(executionCaseRows.map((item) => item.testPoint)));
@@ -1008,6 +1106,19 @@ export default function TaskDetail() {
       width: 110,
       render: (value: number) => `${value} ms`,
     },
+    {
+      title: "步骤进度",
+      dataIndex: "stepProgress",
+      key: "stepProgress",
+      width: 180,
+      render: (value: number, row: ExecutionCaseRow) => (
+        <Space direction="vertical" size={2} style={{ width: "100%" }}>
+          <Progress percent={value} size="small" showInfo={false} />
+          <Text type="secondary">{row.stepProgressText}</Text>
+        </Space>
+      ),
+    },
+    { title: "当前步骤", dataIndex: "currentStep", key: "currentStep", ellipsis: true, width: 260 },
     { title: "失败步骤", dataIndex: "failedSteps", key: "failedSteps", width: 110 },
   ];
 
@@ -1429,6 +1540,7 @@ export default function TaskDetail() {
                           columns={executionCaseColumns}
                           dataSource={filteredExecutionCaseRows}
                           pagination={{ pageSize: 8, showSizeChanger: false }}
+                          scroll={{ x: 1200 }}
                           locale={{ emptyText: "暂无可展示用例" }}
                         />
                       </div>
