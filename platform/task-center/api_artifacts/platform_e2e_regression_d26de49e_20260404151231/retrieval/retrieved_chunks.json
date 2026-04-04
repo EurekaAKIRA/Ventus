@@ -1,0 +1,46 @@
+{
+  "query": "# Platform Task-Center E2E Spec\n\nBase URL:\n\n- `http://127.0.0.1:8001`\n\nEnvironment:\n\n- `test`\n\nTarget system:\n\n- `http://127.0.0.1:8001`\n\nAll APIs use the same response envelope:\n\n```json\n{\n  \"success\": true,\n  \"code\": \"SOME_CODE\",\n  \"message\": \"some message\",\n  \"data\": {},\n  \"timestamp\": \"2026-04-04T15:00:00+00:00\"\n}\n```\n\n## Step 1\n\nRequest:\n\n- `POST /api/tasks`\n\nRequest body:\n\n```json\n{\n  \"task_name\": \"platform_e2e_regression_demo\",\n  \"source_type\": \"text\",\n  \"requirement_text\": \"Validate the current platform task-center main flow.\",\n  \"target_system\": \"http://127.0.0.1:8001\",\n  \"environment\": \"test\"\n}\n```\n\nExpected:\n\n- HTTP `201`\n- `code = TASK_CREATED`\n- `data.task_id` exists\n- `data.task_context` exists\n- `data.task_context.task_id` exists\n- `data.task_context.task_name` exists\n\nSave context:\n\n- `task_id <- data.task_id`\n- `resource_id <- data.task_id`\n\n## Step 2\n\nRequest:\n\n- `GET /api/tasks/{task_id}`\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_DETAIL_OK`\n- `data.task_id = {task_id}`\n- `data.task_name` exists\n- `data.task_context` exists\n- `data.status` exists\n\n## Step 3\n\nRequest:\n\n- `POST /api/tasks/{task_id}/parse`\n\nRequest body:\n\n```json\n{\n  \"use_llm\": false,\n  \"rag_enabled\": true,\n  \"retrieval_top_k\": 5,\n  \"rerank_enabled\": false\n}\n```\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_PARSED`\n- `data.task_id = {task_id}`\n- `data.parsed_requirement` exists\n- `data.parse_metadata` exists\n- `data.parse_metadata.parse_mode` exists\n- `data.parse_metadata.retrieval_mode` exists\n\n## Step 4\n\nRequest:\n\n- `GET /api/tasks/{task_id}/dsl`\n\nExpected:\n\n- HTTP `200`\n- `code = DSL_OK`\n- `data.scenarios` exists\n- `data.scenarios` is not empty\n\nRequired generated request steps:\n\n- `POST /api/tasks`\n- `POST /api/tasks/{task_id}/parse`\n- `POST /api/tasks/{task_id}/execute`\n\nRequired create-step save_context:\n\n- `task_id = json.data.task_id`\n- `resource_id = json.data.task_id`\n\n## Step 5\n\nRequest:\n\n- `POST /api/tasks/{task_id}/execute`\n\nRequest body:\n\n```json\n{\n  \"execution_mode\": \"api\",\n  \"environment\": \"test\"\n}\n```\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_EXECUTED`\n\n## Step 6\n\nPoll:\n\n- `GET /api/tasks/{task_id}/execution`\n\nExpected:\n\n- HTTP `200`\n- `code = EXECUTION_OK`\n- `data.status` reaches `passed` or `failed`\n- `data.scenario_results` exists\n\n## Step 7\n\nRequest:\n\n- `GET /api/tasks/{task_id}/analysis-report`\n\nExpected:\n\n- HTTP `200`\n- `code = ANALYSIS_REPORT_OK`\n- `data.task_id = {task_id}`\n- `data.summary` exists\n- `data.quality_status` exists\n\n## Step 8\n\nRequest:\n\n- `DELETE /api/tasks/{task_id}`\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`",
+  "hits": [
+    {
+      "chunk_id": "contract_post_tasks",
+      "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+      "score": 9.737,
+      "section_title": "创建任务 POST /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "chunk_012",
+      "content": "{\n\"task_name\": \"platform_e2e_regression_demo\",\n\"source_type\": \"text\",\n\"requirement_text\": \"Validate the current platform task-center main flow.\",\n\"target_system\": \"http://127.0.0.1:8001\",\n\"environment\": \"test\"\n}",
+      "score": 9.565,
+      "section_title": "Step 1",
+      "source_file": "",
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "contract_execute",
+      "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+      "score": 8.486,
+      "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execution_explanations",
+      "content": "GET /api/tasks/{task_id}/execution/explanations 返回步骤级说明与上下文，用于排错与审计。",
+      "score": 8.237,
+      "section_title": "执行说明 GET /api/tasks/{task_id}/execution/explanations",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_get_task",
+      "content": "GET /api/tasks/{task_id} 返回任务状态、流水线阶段、artifact 路径等。路径参数 task_id 为创建任务接口返回的标识。",
+      "score": 8.12,
+      "section_title": "任务详情 GET /api/tasks/{task_id}",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    }
+  ],
+  "retrieval_notes": []
+}

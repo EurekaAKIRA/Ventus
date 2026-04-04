@@ -1,0 +1,19 @@
+{
+  "feature_name": "manual_debug_e2e",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 8,
+    "average_step_count": 4.12,
+    "step_count": 33,
+    "parse_metrics": {
+      "actor_count": 1,
+      "entity_count": 10,
+      "action_count": 37,
+      "expected_count": 28,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "rules"
+  }
+}

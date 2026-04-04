@@ -1,0 +1,90 @@
+{
+  "objective": "Platform Task-Center E2E Spec",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "platform",
+    "task-center",
+    "e2e",
+    "spec",
+    "base",
+    "url",
+    "http",
+    "environment",
+    "test",
+    "target"
+  ],
+  "preconditions": [],
+  "actions": [
+    "HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`\nPOST /api/tasks 创建任务",
+    "`POST /api/tasks`",
+    "`GET /api/tasks/{task_id}`",
+    "`POST /api/tasks/{task_id}/parse`",
+    "`GET /api/tasks/{task_id}/dsl`",
+    "`POST /api/tasks/{task_id}/execute`",
+    "`GET /api/tasks/{task_id}/execution`",
+    "`GET /api/tasks/{task_id}/analysis-report`",
+    "`DELETE /api/tasks/{task_id}`"
+  ],
+  "expected_results": [
+    "成功时响应 data 中含 task_id，用于后续查询与执行"
+  ],
+  "constraints": [
+    "\"requirement_text\": \"Validate the current platform task-center main flow.\",",
+    "`data.parsed_requirement` exists",
+    "Required generated request steps:",
+    "Required create-step save_context:",
+    "请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment"
+  ],
+  "ambiguities": [],
+  "source_chunks": [
+    "contract_post_tasks",
+    "chunk_012",
+    "contract_execute",
+    "contract_execution_explanations",
+    "contract_get_task"
+  ],
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/tasks",
+      "description": "Request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}",
+      "description": "Request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks/{task_id}/parse",
+      "description": "Request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/dsl",
+      "description": "Request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks/{task_id}/execute",
+      "description": "/api/tasks/{task_id}/parse"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/execution",
+      "description": "Poll"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/analysis-report",
+      "description": "Request"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tasks/{task_id}",
+      "description": "Request"
+    }
+  ]
+}

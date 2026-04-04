@@ -1,0 +1,712 @@
+{
+  "task_id": "端到端测试9_20260404143336",
+  "task_name": "端到端测试9",
+  "quality_status": "passed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-04T14:34:50.295545+00:00",
+  "summary": {
+    "scenario_count": 2,
+    "executed_scenarios": 0,
+    "passed_scenarios": 0,
+    "failed_scenarios": 0,
+    "total_steps": 6,
+    "executed_steps": 0,
+    "passed_steps": 0,
+    "failed_steps": 0,
+    "success_rate": 0.0,
+    "failure_rate": 0.0,
+    "avg_elapsed_ms": 0.0,
+    "max_elapsed_ms": 0.0,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "not_started",
+    "assertion_total": 12,
+    "assertion_passed": 12,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 0,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "assertion_quality_summary": {
+      "rule_count": 5,
+      "llm_count": 5,
+      "llm_repair_count": 0,
+      "fallback_count": 0,
+      "high_confidence_count": 7,
+      "weak_assertion_step_count": 0,
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "assertion_count": 4,
+          "generated_by_counts": {
+            "rules": 2,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_presence": 2,
+            "field_value": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "assertion_count": 6,
+          "generated_by_counts": {
+            "rules": 3,
+            "llm": 3
+          },
+          "categories": {
+            "status": 1,
+            "schema": 2,
+            "field_presence": 3
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        }
+      ]
+    }
+  },
+  "dashboard": {
+    "task_id": "端到端测试9_20260404143336",
+    "task_name": "端到端测试9",
+    "quality_status": "passed",
+    "execution_status": "not_started",
+    "summary": {
+      "scenario_count": 2,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "assertion_total": 12,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 2
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 6
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 0
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 0
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 0.0
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 0.0
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 0.0
+      }
+    ],
+    "totals": {
+      "scenarios": 2,
+      "steps": 6,
+      "assertions": 12,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "passed_steps": 0,
+      "failed_steps": 0
+    },
+    "assertion_summary": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "assertion_quality_summary": {
+      "rule_count": 5,
+      "llm_count": 5,
+      "llm_repair_count": 0,
+      "fallback_count": 0,
+      "high_confidence_count": 7,
+      "weak_assertion_step_count": 0,
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "assertion_count": 4,
+          "generated_by_counts": {
+            "rules": 2,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_presence": 2,
+            "field_value": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "assertion_count": 6,
+          "generated_by_counts": {
+            "rules": 3,
+            "llm": 3
+          },
+          "categories": {
+            "status": 1,
+            "schema": 2,
+            "field_presence": 3
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        }
+      ]
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 2,
+      "defined_key_names": [
+        "resource_id",
+        "task_id"
+      ],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 0,
+      "extracted_key_names": [],
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": null,
+    "failure_reason_breakdown": [],
+    "headline": "0/6 steps passed",
+    "summary_text": "任务 端到端测试9 当前状态为 passed，已生成 2 个场景、6 个步骤，尚未开始执行。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 2,
+    "executed_scenarios": 0,
+    "passed_scenarios": 0,
+    "failed_scenarios": 0,
+    "execution_status": "not_started",
+    "total_steps": 6,
+    "executed_steps": 0,
+    "passed_steps": 0,
+    "failed_steps": 0,
+    "success_rate": 0.0,
+    "failure_rate": 0.0,
+    "avg_elapsed_ms": 0.0,
+    "max_elapsed_ms": 0.0,
+    "assertion_total": 12,
+    "assertion_passed": 12,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 0,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "端到端测试9",
+    "quality_status": "passed",
+    "execution_status": "not_started",
+    "headline": "任务 端到端测试9 当前状态为 passed，已生成 2 个场景、6 个步骤，尚未开始执行。",
+    "success_rate": 0.0,
+    "failed_steps": 0,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": null,
+    "next_action": "执行任务以生成运行报告"
+  },
+  "execution_overview": {
+    "executor": null,
+    "status": "not_started",
+    "scenario_count": 0,
+    "passed_scenarios": 0,
+    "failed_scenarios": 0,
+    "log_count": 0,
+    "has_failures": false,
+    "top_failure_category": null
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [],
+  "failure_reasons": [],
+  "assertion_stats": {
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "pass_rate": 100.0,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "step_assertion_quality": [
+    {
+      "step_id": "scenario_001_step_01",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_001_step_02",
+      "assertion_count": 4,
+      "generated_by_counts": {
+        "rules": 2,
+        "llm": 2
+      },
+      "categories": {
+        "status": 1,
+        "field_presence": 2,
+        "field_value": 1
+      },
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": ""
+    },
+    {
+      "step_id": "scenario_001_step_03",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_002_step_01",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_002_step_02",
+      "assertion_count": 6,
+      "generated_by_counts": {
+        "rules": 3,
+        "llm": 3
+      },
+      "categories": {
+        "status": 1,
+        "schema": 2,
+        "field_presence": 3
+      },
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": ""
+    },
+    {
+      "step_id": "scenario_002_step_03",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    }
+  ],
+  "context_stats": {
+    "defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "defined_key_count": 2,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [],
+    "extracted_key_count": 0,
+    "unused_defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "task_id": "json.data.task_id",
+      "resource_id": "json.data.task_id"
+    }
+  },
+  "task_summary_text": "任务 端到端测试9 当前状态为 passed，已生成 2 个场景、6 个步骤，尚未开始执行。",
+  "findings": [],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0
+    },
+    "assertions": {
+      "passed": 12,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "assertion_quality": {
+      "rule_count": 5,
+      "llm_count": 5,
+      "llm_repair_count": 0,
+      "fallback_count": 0,
+      "high_confidence_count": 7,
+      "weak_assertion_step_count": 0,
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "assertion_count": 4,
+          "generated_by_counts": {
+            "rules": 2,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_presence": 2,
+            "field_value": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "assertion_count": 6,
+          "generated_by_counts": {
+            "rules": 3,
+            "llm": 3
+          },
+          "categories": {
+            "status": 1,
+            "schema": 2,
+            "field_presence": 3
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        }
+      ]
+    },
+    "context": {
+      "defined": 2,
+      "used": 0,
+      "extracted": 0
+    },
+    "failure_reasons": {}
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 2,
+        "total_steps": 6,
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "success_rate": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 0,
+        "failure_reasons": []
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 12,
+        "passed": 12,
+        "failed": 0,
+        "pass_rate": 100.0,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "quality_summary": {
+          "rule_count": 5,
+          "llm_count": 5,
+          "llm_repair_count": 0,
+          "fallback_count": 0,
+          "high_confidence_count": 7,
+          "weak_assertion_step_count": 0,
+          "steps": [
+            {
+              "step_id": "scenario_001_step_01",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_001_step_02",
+              "assertion_count": 4,
+              "generated_by_counts": {
+                "rules": 2,
+                "llm": 2
+              },
+              "categories": {
+                "status": 1,
+                "field_presence": 2,
+                "field_value": 1
+              },
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": ""
+            },
+            {
+              "step_id": "scenario_001_step_03",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_002_step_01",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_002_step_02",
+              "assertion_count": 6,
+              "generated_by_counts": {
+                "rules": 3,
+                "llm": 3
+              },
+              "categories": {
+                "status": 1,
+                "schema": 2,
+                "field_presence": 3
+              },
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": ""
+            },
+            {
+              "step_id": "scenario_002_step_03",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "defined_key_count": 2,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [],
+        "extracted_key_count": 0,
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "task_id": "json.data.task_id",
+          "resource_id": "json.data.task_id"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      }
+    }
+  ]
+}

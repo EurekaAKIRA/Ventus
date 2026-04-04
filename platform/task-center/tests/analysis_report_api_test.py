@@ -122,6 +122,7 @@ def main() -> int:
     assert analysis_payload["failed_steps"][0]["request_summary"]["method"] == "POST"
     assert any(item["category"] == "validation_error" for item in analysis_payload["failure_reasons"])
     assert analysis_payload["dashboard"]["assertion_summary"]["failed"] >= 0
+    assert "assertion_quality_summary" in analysis_payload["summary"]
     assert analysis_payload["dashboard"]["context_summary"]["extracted_keys"] == 1
     assert analysis_payload["task_summary_text"].startswith("任务 analysis_api_demo")
 
@@ -144,6 +145,7 @@ def main() -> int:
     assert dashboard_payload["task_summary_text"].startswith("任务 analysis_api_demo")
     assert dashboard_payload["execution_overview"]["status"] == "failed"
     assert dashboard_payload["context_stats"]["extracted_key_count"] == 1
+    assert isinstance(dashboard_payload["step_assertion_quality"], list)
 
     temp_dir.cleanup()
     print("analysis report api test passed")

@@ -1,0 +1,1259 @@
+{
+  "task_id": "端到端测试9_20260404143356",
+  "executor": "api-runner",
+  "status": "failed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "`POST /api/tasks`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks`",
+          "status": "failed",
+          "message": "Assertion failed [assertion_01]: status_code eq 201, actual=500; Assertion failed [assertion_02]: json.data.task_id exists None, actual=None; Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None; Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None",
+          "error_category": "http_server_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "requirement_text",
+              "source_type",
+              "target_system",
+              "task_name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 500,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 14:35:04 GMT",
+              "server": "uvicorn",
+              "content-length": "426",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "INTERNAL_ERROR",
+              "message": "unexpected server error",
+              "data": {
+                "detail": "[WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'E:\\\\ending\\\\LaVague-main\\\\platform\\\\task-center\\\\api_artifacts\\\\tasks.json.19792.20260404143505.tmp' -> 'E:\\\\ending\\\\LaVague-main\\\\platform\\\\task-center\\\\api_artifacts\\\\tasks.json'"
+              },
+              "timestamp": "2026-04-04T14:35:07.422060+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"INTERNAL_ERROR\",\"message\":\"unexpected server error\",\"data\":{\"detail\":\"[WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'E:\\\\\\\\ending\\\\\\\\LaVague-main\\\\\\\\platform\\\\\\\\task-center\\\\\\\\api_artif",
+            "elapsed_ms": 2375.36,
+            "error": "HTTP Error 500: Internal Server Error",
+            "error_category": "http_server_error"
+          },
+          "response_summary": {
+            "status_code": 500,
+            "elapsed_ms": 2375.36,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"INTERNAL_ERROR\",\"message\":\"unexpected server error\",\"data\":{\"detail\":\"[WinError 32] 另一个程序正在使用此文",
+            "error_category": "http_server_error",
+            "parse_error": "",
+            "body_size": 386
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 500,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 14:35:04 GMT",
+                "server": "uvicorn",
+                "content-length": "426",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"INTERNAL_ERROR\",\"message\":\"unexpected server error\",\"data\":{\"detail\":\"[WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'E:\\\\\\\\ending\\\\\\\\LaVague-main\\\\\\\\platform\\\\\\\\task-center\\\\\\\\api_artifacts\\\\\\\\tasks.json.19792.20260404143505.tmp' -> 'E:\\\\\\\\ending\\\\\\\\LaVague-main\\\\\\\\platform\\\\\\\\task-center\\\\\\\\api_artifacts\\\\\\\\tasks.json'\"},\"timestamp\":\"2026-04-04T14:35:07.422060+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "INTERNAL_ERROR",
+                "message": "unexpected server error",
+                "data": {
+                  "detail": "[WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'E:\\\\ending\\\\LaVague-main\\\\platform\\\\task-center\\\\api_artifacts\\\\tasks.json.19792.20260404143505.tmp' -> 'E:\\\\ending\\\\LaVague-main\\\\platform\\\\task-center\\\\api_artifacts\\\\tasks.json'"
+                },
+                "timestamp": "2026-04-04T14:35:07.422060+00:00"
+              },
+              "elapsed_ms": 2375.36,
+              "error": "HTTP Error 500: Internal Server Error",
+              "error_category": "http_server_error",
+              "parse_error": ""
+            },
+            "last_status_code": 500,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "requirement_text",
+                "source_type",
+                "target_system",
+                "task_name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {
+            "task_id": null,
+            "resource_id": null
+          },
+          "assertion_summary": {
+            "total": 4,
+            "passed": 0,
+            "failed": 4,
+            "failures": [
+              "Assertion failed [assertion_01]: status_code eq 201, actual=500",
+              "Assertion failed [assertion_02]: json.data.task_id exists None, actual=None",
+              "Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None",
+              "Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "expected": 201,
+                "actual": 500,
+                "category": "status",
+                "severity": "critical",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_01]: status_code eq 201, actual=500"
+              },
+              {
+                "assertion_id": "assertion_02",
+                "source": "json.data.task_id",
+                "op": "exists",
+                "expected": null,
+                "actual": null,
+                "category": "field_presence",
+                "severity": "major",
+                "confidence": 0.93,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_02]: json.data.task_id exists None, actual=None"
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "json.data.task_id",
+                "op": "exists",
+                "expected": true,
+                "actual": null,
+                "category": "field_presence",
+                "severity": "major",
+                "confidence": 0.93,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None"
+              },
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "json.data.environment",
+                "op": "eq",
+                "expected": "test",
+                "actual": null,
+                "category": "field_value",
+                "severity": "minor",
+                "confidence": 0.9,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None"
+              }
+            ],
+            "category_counts": {
+              "status": 1,
+              "field_presence": 2,
+              "field_value": 1
+            },
+            "generated_by_counts": {
+              "rules": 2,
+              "llm": 2
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "expected": 201,
+              "actual": 500,
+              "category": "status",
+              "severity": "critical",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_01]: status_code eq 201, actual=500"
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "json.data.task_id",
+              "op": "exists",
+              "expected": null,
+              "actual": null,
+              "category": "field_presence",
+              "severity": "major",
+              "confidence": 0.93,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_02]: json.data.task_id exists None, actual=None"
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "json.data.task_id",
+              "op": "exists",
+              "expected": true,
+              "actual": null,
+              "category": "field_presence",
+              "severity": "major",
+              "confidence": 0.93,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None"
+            },
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "json.data.environment",
+              "op": "eq",
+              "expected": "test",
+              "actual": null,
+              "category": "field_value",
+              "severity": "minor",
+              "confidence": 0.9,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "平台主流程可在同一任务生命周期内闭环完成",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}`",
+          "status": "failed",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [assertion_03]: json.tasks exists None, actual=None; Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None; Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/None",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 14:35:06 GMT",
+              "server": "uvicorn",
+              "content-length": "162",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": false,
+              "code": "TASK_NOT_FOUND",
+              "message": "Task not found: None",
+              "data": {
+                "detail": "Task not found: None"
+              },
+              "timestamp": "2026-04-04T14:35:07.446488+00:00"
+            },
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-04T14:35:07.446488+00:00\"}",
+            "elapsed_ms": 6.06,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 6.06,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 162
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 14:35:06 GMT",
+                "server": "uvicorn",
+                "content-length": "162",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"timestamp\":\"2026-04-04T14:35:07.446488+00:00\"}",
+              "json": {
+                "success": false,
+                "code": "TASK_NOT_FOUND",
+                "message": "Task not found: None",
+                "data": {
+                  "detail": "Task not found: None"
+                },
+                "timestamp": "2026-04-04T14:35:07.446488+00:00"
+              },
+              "elapsed_ms": 6.06,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/None",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": null,
+            "resource_id": null
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 6,
+            "passed": 2,
+            "failed": 4,
+            "failures": [
+              "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+              "Assertion failed [assertion_03]: json.tasks exists None, actual=None",
+              "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None",
+              "Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200,
+                "actual": 404,
+                "category": "status",
+                "severity": "critical",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+              },
+              {
+                "assertion_id": "assertion_03",
+                "source": "json.tasks",
+                "op": "exists",
+                "expected": null,
+                "actual": null,
+                "category": "field_presence",
+                "severity": "major",
+                "confidence": 0.72,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None"
+              },
+              {
+                "assertion_id": "enhance_cand_03",
+                "source": "json.tasks",
+                "op": "exists",
+                "expected": true,
+                "actual": null,
+                "category": "field_presence",
+                "severity": "major",
+                "confidence": 0.72,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+              },
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "json.task_id",
+                "op": "exists",
+                "expected": true,
+                "actual": null,
+                "category": "field_presence",
+                "severity": "major",
+                "confidence": 0.7,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None"
+              }
+            ],
+            "category_counts": {
+              "status": 1,
+              "schema": 2,
+              "field_presence": 3
+            },
+            "generated_by_counts": {
+              "rules": 3,
+              "llm": 3
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200,
+              "actual": 404,
+              "category": "status",
+              "severity": "critical",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+            },
+            {
+              "assertion_id": "assertion_03",
+              "source": "json.tasks",
+              "op": "exists",
+              "expected": null,
+              "actual": null,
+              "category": "field_presence",
+              "severity": "major",
+              "confidence": 0.72,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None"
+            },
+            {
+              "assertion_id": "enhance_cand_03",
+              "source": "json.tasks",
+              "op": "exists",
+              "expected": true,
+              "actual": null,
+              "category": "field_presence",
+              "severity": "major",
+              "confidence": 0.72,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+            },
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "json.task_id",
+              "op": "exists",
+              "expected": true,
+              "actual": null,
+              "category": "field_presence",
+              "severity": "major",
+              "confidence": 0.7,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "关键中间产物可追踪、可复核、可回放",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    }
+  ],
+  "metrics": {
+    "scenario_count": 2,
+    "step_count": 6,
+    "passed_step_count": 4,
+    "failed_step_count": 2,
+    "context_key_count": 5,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 1190.71,
+    "max_elapsed_ms": 2375.36,
+    "assertion_category_counts": {
+      "status": 2,
+      "field_presence": 5,
+      "field_value": 1,
+      "schema": 2
+    },
+    "assertion_generated_by_counts": {
+      "rules": 5,
+      "llm": 5
+    },
+    "fallback_assertion_count": 0
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks`",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 500",
+      "response_summary": {
+        "status_code": 500,
+        "elapsed_ms": 2375.36,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"INTERNAL_ERROR\",\"message\":\"unexpected server error\",\"data\":{\"detail\":\"[WinError 32] 另一个程序正在使用此文",
+        "error_category": "http_server_error",
+        "parse_error": "",
+        "body_size": 386
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: resource_id, task_id",
+      "saved_context": {
+        "task_id": null,
+        "resource_id": null
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=0 failed=4",
+      "assertion_summary": {
+        "total": 4,
+        "passed": 0,
+        "failed": 4,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 201, actual=500",
+          "Assertion failed [assertion_02]: json.data.task_id exists None, actual=None",
+          "Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None",
+          "Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 201,
+            "actual": 500,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 201, actual=500"
+          },
+          {
+            "assertion_id": "assertion_02",
+            "source": "json.data.task_id",
+            "op": "exists",
+            "expected": null,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.93,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_02]: json.data.task_id exists None, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "json.data.task_id",
+            "op": "exists",
+            "expected": true,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.93,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "json.data.environment",
+            "op": "eq",
+            "expected": "test",
+            "actual": null,
+            "category": "field_value",
+            "severity": "minor",
+            "confidence": 0.9,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "field_presence": 2,
+          "field_value": 1
+        },
+        "generated_by_counts": {
+          "rules": 2,
+          "llm": 2
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertion failed [assertion_01]: status_code eq 201, actual=500; Assertion failed [assertion_02]: json.data.task_id exists None, actual=None; Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None; Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "error_category": "http_server_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 500,
+        "elapsed_ms": 2375.36,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"INTERNAL_ERROR\",\"message\":\"unexpected server error\",\"data\":{\"detail\":\"[WinError 32] 另一个程序正在使用此文",
+        "error_category": "http_server_error",
+        "parse_error": "",
+        "body_size": 386
+      },
+      "assertion_summary": {
+        "total": 4,
+        "passed": 0,
+        "failed": 4,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 201, actual=500",
+          "Assertion failed [assertion_02]: json.data.task_id exists None, actual=None",
+          "Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None",
+          "Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 201,
+            "actual": 500,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 201, actual=500"
+          },
+          {
+            "assertion_id": "assertion_02",
+            "source": "json.data.task_id",
+            "op": "exists",
+            "expected": null,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.93,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_02]: json.data.task_id exists None, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "json.data.task_id",
+            "op": "exists",
+            "expected": true,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.93,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: json.data.task_id exists True, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "json.data.environment",
+            "op": "eq",
+            "expected": "test",
+            "actual": null,
+            "category": "field_value",
+            "severity": "minor",
+            "confidence": 0.9,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: json.data.environment eq 'test', actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "field_presence": 2,
+          "field_value": 1
+        },
+        "generated_by_counts": {
+          "rules": 2,
+          "llm": 2
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "平台主流程可在同一任务生命周期内闭环完成",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}`",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/None",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_002_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 6.06,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertions passed=2 failed=4",
+      "assertion_summary": {
+        "total": 6,
+        "passed": 2,
+        "failed": 4,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [assertion_03]: json.tasks exists None, actual=None",
+          "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None",
+          "Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "assertion_03",
+            "source": "json.tasks",
+            "op": "exists",
+            "expected": null,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.72,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_03",
+            "source": "json.tasks",
+            "op": "exists",
+            "expected": true,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.72,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "json.task_id",
+            "op": "exists",
+            "expected": true,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.7,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "schema": 2,
+          "field_presence": 3
+        },
+        "generated_by_counts": {
+          "rules": 3,
+          "llm": 3
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [assertion_03]: json.tasks exists None, actual=None; Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None; Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/None",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 6.06,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":false,\"code\":\"TASK_NOT_FOUND\",\"message\":\"Task not found: None\",\"data\":{\"detail\":\"Task not found: None\"},\"time",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 162
+      },
+      "assertion_summary": {
+        "total": 6,
+        "passed": 2,
+        "failed": 4,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [assertion_03]: json.tasks exists None, actual=None",
+          "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None",
+          "Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "assertion_03",
+            "source": "json.tasks",
+            "op": "exists",
+            "expected": null,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.72,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_03",
+            "source": "json.tasks",
+            "op": "exists",
+            "expected": true,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.72,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "json.task_id",
+            "op": "exists",
+            "expected": true,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.7,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: json.task_id exists True, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "schema": 2,
+          "field_presence": 3
+        },
+        "generated_by_counts": {
+          "rules": 3,
+          "llm": 3
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_03",
+      "step_type": "then",
+      "message": "关键中间产物可追踪、可复核、可回放",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "端到端测试9_20260404143356"
+      }
+    },
+    "executed_at": "2026-04-04T14:35:07.549146+00:00"
+  }
+}

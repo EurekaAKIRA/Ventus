@@ -1,0 +1,1060 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "platform_e2e_regression_d26de49e_20260404151213",
+  "task_name": "platform_e2e_regression_d26de49e",
+  "feature_name": "platform_e2e_regression_d26de49e",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archive",
+      "goal": "Platform Task-Center E2E Spec",
+      "priority": "P0",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`\nPOST /api/tasks 创建任务",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks",
+            "json": {
+              "task_name": "demo_task_name",
+              "source_type": "text",
+              "requirement_text": "demo requirement text",
+              "target_system": "http://127.0.0.1:8001",
+              "environment": "test"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "json.data.task_id",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.93,
+              "generated_by": "rules",
+              "reasoning": "saved_context_exists",
+              "fallback_used": false
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [
+            "resource_id",
+            "task_id"
+          ],
+          "save_context": {
+            "task_id": "json.data.task_id",
+            "resource_id": "json.data.task_id"
+          },
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 2,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 2,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "goal": "Platform Task-Center E2E Spec",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "json",
+              "op": "exists",
+              "severity": "major",
+              "category": "schema",
+              "confidence": 0.82,
+              "generated_by": "rules",
+              "reasoning": "query_response_present",
+              "fallback_used": false
+            },
+            {
+              "assertion_id": "assertion_03",
+              "source": "json.task_name",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.72,
+              "generated_by": "rules",
+              "reasoning": "expected_field_present",
+              "fallback_used": false
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 3,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 2,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "`POST /api/tasks/{task_id}/parse`",
+      "goal": "Platform Task-Center E2E Spec",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/parse`",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks/{{task_id}}/parse",
+            "json": {
+              "use_llm": false,
+              "rag_enabled": true,
+              "retrieval_top_k": 5,
+              "rerank_enabled": false
+            },
+            "timeout": 180
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "in",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.96,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": [
+                200,
+                201
+              ]
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 1,
+            "weak_assertion": true,
+            "warning": "weak_assertion_set"
+          }
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "`GET /api/tasks/{task_id}/dsl`",
+      "goal": "Platform Task-Center E2E Spec",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/dsl`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/dsl"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "json",
+              "op": "exists",
+              "severity": "major",
+              "category": "schema",
+              "confidence": 0.82,
+              "generated_by": "rules",
+              "reasoning": "query_response_present",
+              "fallback_used": false
+            },
+            {
+              "assertion_id": "assertion_03",
+              "source": "json.task_name",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.72,
+              "generated_by": "rules",
+              "reasoning": "expected_field_present",
+              "fallback_used": false
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 3,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 2,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "`POST /api/tasks/{task_id}/execute`",
+      "goal": "Platform Task-Center E2E Spec",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/execute`",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks/{{task_id}}/execute",
+            "json": {
+              "execution_mode": "api",
+              "environment": "test"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "in",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.96,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": [
+                200,
+                201
+              ]
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 1,
+            "weak_assertion": true,
+            "warning": "weak_assertion_set"
+          }
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "`GET /api/tasks/{task_id}/execution`",
+      "goal": "Platform Task-Center E2E Spec",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_006_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_006_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/execution`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/execution"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "json",
+              "op": "exists",
+              "severity": "major",
+              "category": "schema",
+              "confidence": 0.82,
+              "generated_by": "rules",
+              "reasoning": "query_response_present",
+              "fallback_used": false
+            },
+            {
+              "assertion_id": "assertion_03",
+              "source": "json.task_name",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.72,
+              "generated_by": "rules",
+              "reasoning": "expected_field_present",
+              "fallback_used": false
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 3,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 2,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_006_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "`GET /api/tasks/{task_id}/analysis-report`",
+      "goal": "Platform Task-Center E2E Spec",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_007_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_007_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/analysis-report`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}/analysis-report"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "json",
+              "op": "exists",
+              "severity": "major",
+              "category": "schema",
+              "confidence": 0.82,
+              "generated_by": "rules",
+              "reasoning": "query_response_present",
+              "fallback_used": false
+            },
+            {
+              "assertion_id": "assertion_03",
+              "source": "json.task_name",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.72,
+              "generated_by": "rules",
+              "reasoning": "expected_field_present",
+              "fallback_used": false
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 3,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 2,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_007_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "`DELETE /api/tasks/{task_id}`",
+      "goal": "Platform Task-Center E2E Spec",
+      "priority": "P0",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_008_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_008_step_02",
+          "step_type": "when",
+          "text": "`DELETE /api/tasks/{task_id}`",
+          "request": {
+            "method": "DELETE",
+            "url": "/api/tasks/{{task_id}}"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "in",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.96,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": [
+                200,
+                204
+              ]
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "error",
+              "op": "not_exists",
+              "severity": "major",
+              "category": "business",
+              "confidence": 0.68,
+              "generated_by": "rules",
+              "reasoning": "delete_no_runtime_error",
+              "fallback_used": false
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 2,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 1,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_008_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 8,
+      "scenario_count": 8,
+      "parsed_entities": [
+        "platform",
+        "task-center",
+        "e2e",
+        "spec",
+        "base",
+        "url",
+        "http",
+        "environment",
+        "test",
+        "target"
+      ]
+    }
+  }
+}

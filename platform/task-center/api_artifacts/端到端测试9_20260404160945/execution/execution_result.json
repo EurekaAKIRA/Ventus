@@ -1,0 +1,2567 @@
+{
+  "task_id": "端到端测试9_20260404160833",
+  "executor": "api-runner",
+  "status": "failed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "确认验收范围、签收最终结论",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "确认验收范围、签收最终结论",
+          "status": "failed",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "input"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+              "server": "uvicorn",
+              "content-length": "22",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "detail": "Not Found"
+            },
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "elapsed_ms": 151.39,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 151.39,
+            "content_type": "application/json",
+            "json_keys": [
+              "detail"
+            ],
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 22
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+                "server": "uvicorn",
+                "content-length": "22",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"detail\":\"Not Found\"}",
+              "json": {
+                "detail": "Not Found"
+              },
+              "elapsed_ms": 151.39,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/users",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "input"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            }
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 3,
+            "passed": 0,
+            "failed": 3,
+            "failures": [
+              "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+              "Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None",
+              "Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200,
+                "actual": 404,
+                "category": "status",
+                "severity": "critical",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "response.json().get('success')",
+                "op": "eq",
+                "expected": true,
+                "actual": null,
+                "category": "field_value",
+                "severity": "major",
+                "confidence": 0.95,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None"
+              },
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "response_time",
+                "op": "lt",
+                "expected": 2000,
+                "actual": null,
+                "category": "performance",
+                "severity": "minor",
+                "confidence": 0.85,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+              }
+            ],
+            "category_counts": {
+              "status": 1,
+              "field_value": 1,
+              "performance": 1
+            },
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200,
+              "actual": 404,
+              "category": "status",
+              "severity": "critical",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "response.json().get('success')",
+              "op": "eq",
+              "expected": true,
+              "actual": null,
+              "category": "field_value",
+              "severity": "major",
+              "confidence": 0.95,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None"
+            },
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "response_time",
+              "op": "lt",
+              "expected": 2000,
+              "actual": null,
+              "category": "performance",
+              "severity": "minor",
+              "confidence": 0.85,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "平台主流程可在同一任务生命周期内闭环完成",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "保障主链路可运行，处理阻断性缺陷",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "保障主链路可运行，处理阻断性缺陷",
+          "status": "failed",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "input"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+              "server": "uvicorn",
+              "content-length": "22",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "detail": "Not Found"
+            },
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "elapsed_ms": 126.62,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 126.62,
+            "content_type": "application/json",
+            "json_keys": [
+              "detail"
+            ],
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 22
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+                "server": "uvicorn",
+                "content-length": "22",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"detail\":\"Not Found\"}",
+              "json": {
+                "detail": "Not Found"
+              },
+              "elapsed_ms": 126.62,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/users",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "input"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            }
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 2,
+            "passed": 0,
+            "failed": 2,
+            "failures": [
+              "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+              "Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200,
+                "actual": 404,
+                "category": "status",
+                "severity": "critical",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "response_time",
+                "op": "lt",
+                "expected": 1000,
+                "actual": null,
+                "category": "performance",
+                "severity": "major",
+                "confidence": 0.95,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+              }
+            ],
+            "category_counts": {
+              "status": 1,
+              "performance": 1
+            },
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200,
+              "actual": 404,
+              "category": "status",
+              "severity": "critical",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "response_time",
+              "op": "lt",
+              "expected": 1000,
+              "actual": null,
+              "category": "performance",
+              "severity": "major",
+              "confidence": 0.95,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "关键中间产物可追踪、可复核、可回放",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "验证页面主路径与真实接口数据一致性",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "验证页面主路径与真实接口数据一致性",
+          "status": "failed",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "input"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+              "server": "uvicorn",
+              "content-length": "22",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "detail": "Not Found"
+            },
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "elapsed_ms": 254.37,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 254.37,
+            "content_type": "application/json",
+            "json_keys": [
+              "detail"
+            ],
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 22
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+                "server": "uvicorn",
+                "content-length": "22",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"detail\":\"Not Found\"}",
+              "json": {
+                "detail": "Not Found"
+              },
+              "elapsed_ms": 254.37,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/users",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "input"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            }
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 3,
+            "passed": 0,
+            "failed": 3,
+            "failures": [
+              "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+              "Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None",
+              "Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200,
+                "actual": 404,
+                "category": "status",
+                "severity": "critical",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+              },
+              {
+                "assertion_id": "enhance_cand_03",
+                "source": "response.json().input",
+                "op": "eq",
+                "expected": "验证页面主路径与真实接口数据一致性",
+                "actual": null,
+                "category": "field_value",
+                "severity": "major",
+                "confidence": 0.9,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None"
+              },
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "response.elapsed.total_seconds()",
+                "op": "lt",
+                "expected": 2,
+                "actual": null,
+                "category": "performance",
+                "severity": "minor",
+                "confidence": 0.8,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+              }
+            ],
+            "category_counts": {
+              "status": 1,
+              "field_value": 1,
+              "performance": 1
+            },
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200,
+              "actual": 404,
+              "category": "status",
+              "severity": "critical",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+            },
+            {
+              "assertion_id": "enhance_cand_03",
+              "source": "response.json().input",
+              "op": "eq",
+              "expected": "验证页面主路径与真实接口数据一致性",
+              "actual": null,
+              "category": "field_value",
+              "severity": "major",
+              "confidence": 0.9,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None"
+            },
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "response.elapsed.total_seconds()",
+              "op": "lt",
+              "expected": 2,
+              "actual": null,
+              "category": "performance",
+              "severity": "minor",
+              "confidence": 0.8,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "执行与分析结果满足当前阶段演示与验收所需的最小可信度",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "执行回归流程并输出问题清单",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "执行回归流程并输出问题清单",
+          "status": "failed",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "input"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+              "server": "uvicorn",
+              "content-length": "22",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "detail": "Not Found"
+            },
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "elapsed_ms": 97.55,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 97.55,
+            "content_type": "application/json",
+            "json_keys": [
+              "detail"
+            ],
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 22
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+                "server": "uvicorn",
+                "content-length": "22",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"detail\":\"Not Found\"}",
+              "json": {
+                "detail": "Not Found"
+              },
+              "elapsed_ms": 97.55,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/users",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "input"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            }
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 2,
+            "passed": 0,
+            "failed": 2,
+            "failures": [
+              "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+              "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200,
+                "actual": 404,
+                "category": "status",
+                "severity": "critical",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "response_time",
+                "op": "lt",
+                "expected": 2000,
+                "actual": null,
+                "category": "performance",
+                "severity": "major",
+                "confidence": 0.95,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+              }
+            ],
+            "category_counts": {
+              "status": 1,
+              "performance": 1
+            },
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200,
+              "actual": 404,
+              "category": "status",
+              "severity": "critical",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "response_time",
+              "op": "lt",
+              "expected": 2000,
+              "actual": null,
+              "category": "performance",
+              "severity": "major",
+              "confidence": 0.95,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "任务归档后的可见性与一致性检查通过",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "保障测试环境地址、网络和依赖可达",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "保障测试环境地址、网络和依赖可达",
+          "status": "failed",
+          "message": "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None; Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+          "error_category": "http_client_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/users",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "input"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 404,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+              "server": "uvicorn",
+              "content-length": "22",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "detail": "Not Found"
+            },
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "elapsed_ms": 144.83,
+            "error": "HTTP Error 404: Not Found",
+            "error_category": "http_client_error"
+          },
+          "response_summary": {
+            "status_code": 404,
+            "elapsed_ms": 144.83,
+            "content_type": "application/json",
+            "json_keys": [
+              "detail"
+            ],
+            "body_preview": "{\"detail\":\"Not Found\"}",
+            "error_category": "http_client_error",
+            "parse_error": "",
+            "body_size": 22
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 404,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+                "server": "uvicorn",
+                "content-length": "22",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"detail\":\"Not Found\"}",
+              "json": {
+                "detail": "Not Found"
+              },
+              "elapsed_ms": 144.83,
+              "error": "HTTP Error 404: Not Found",
+              "error_category": "http_client_error",
+              "parse_error": ""
+            },
+            "last_status_code": 404,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/users",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "input"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            }
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 4,
+            "passed": 0,
+            "failed": 4,
+            "failures": [
+              "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None",
+              "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+              "Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None",
+              "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "network_reachable",
+                "op": "eq",
+                "expected": true,
+                "actual": null,
+                "category": "business",
+                "severity": "critical",
+                "confidence": 0.99,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None"
+              },
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "expected": 200,
+                "actual": 404,
+                "category": "status",
+                "severity": "critical",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+              },
+              {
+                "assertion_id": "enhance_cand_03",
+                "source": "content_type",
+                "op": "eq",
+                "expected": "application/json",
+                "actual": null,
+                "category": "schema",
+                "severity": "major",
+                "confidence": 0.95,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None"
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "response_time",
+                "op": "lt",
+                "expected": 2000,
+                "actual": null,
+                "category": "performance",
+                "severity": "major",
+                "confidence": 0.9,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+              }
+            ],
+            "category_counts": {
+              "business": 1,
+              "status": 1,
+              "schema": 1,
+              "performance": 1
+            },
+            "generated_by_counts": {
+              "llm": 3,
+              "rules": 1
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "network_reachable",
+              "op": "eq",
+              "expected": true,
+              "actual": null,
+              "category": "business",
+              "severity": "critical",
+              "confidence": 0.99,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None"
+            },
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "expected": 200,
+              "actual": 404,
+              "category": "status",
+              "severity": "critical",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+            },
+            {
+              "assertion_id": "enhance_cand_03",
+              "source": "content_type",
+              "op": "eq",
+              "expected": "application/json",
+              "actual": null,
+              "category": "schema",
+              "severity": "major",
+              "confidence": 0.95,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None"
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "response_time",
+              "op": "lt",
+              "expected": 2000,
+              "actual": null,
+              "category": "performance",
+              "severity": "major",
+              "confidence": 0.9,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    }
+  ],
+  "metrics": {
+    "scenario_count": 5,
+    "step_count": 15,
+    "passed_step_count": 10,
+    "failed_step_count": 5,
+    "context_key_count": 3,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 154.95,
+    "max_elapsed_ms": 254.37,
+    "assertion_category_counts": {
+      "status": 5,
+      "field_value": 2,
+      "performance": 5,
+      "business": 1,
+      "schema": 1
+    },
+    "assertion_generated_by_counts": {
+      "rules": 5,
+      "llm": 9
+    },
+    "fallback_assertion_count": 0
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "从有效的 API 入口开始执行",
+      "scenario_id": "scenario_001",
+      "scenario_name": "确认验收范围、签收最终结论"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "确认验收范围、签收最终结论",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "确认验收范围、签收最终结论",
+      "scenario_id": "scenario_001",
+      "scenario_name": "确认验收范围、签收最终结论"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/users",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 151.39,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=0 failed=3",
+      "assertion_summary": {
+        "total": 3,
+        "passed": 0,
+        "failed": 3,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None",
+          "Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "response.json().get('success')",
+            "op": "eq",
+            "expected": true,
+            "actual": null,
+            "category": "field_value",
+            "severity": "major",
+            "confidence": 0.95,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "response_time",
+            "op": "lt",
+            "expected": 2000,
+            "actual": null,
+            "category": "performance",
+            "severity": "minor",
+            "confidence": 0.85,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "field_value": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 2
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "确认验收范围、签收最终结论",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 151.39,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      },
+      "assertion_summary": {
+        "total": 3,
+        "passed": 0,
+        "failed": 3,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None",
+          "Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "response.json().get('success')",
+            "op": "eq",
+            "expected": true,
+            "actual": null,
+            "category": "field_value",
+            "severity": "major",
+            "confidence": 0.95,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "response_time",
+            "op": "lt",
+            "expected": 2000,
+            "actual": null,
+            "category": "performance",
+            "severity": "minor",
+            "confidence": 0.85,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "field_value": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 2
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "平台主流程可在同一任务生命周期内闭环完成",
+      "scenario_id": "scenario_001",
+      "scenario_name": "确认验收范围、签收最终结论"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "确认验收范围、签收最终结论",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_01",
+      "step_type": "given",
+      "message": "从有效的 API 入口开始执行",
+      "scenario_id": "scenario_002",
+      "scenario_name": "保障主链路可运行，处理阻断性缺陷"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_02",
+      "step_type": "when",
+      "message": "保障主链路可运行，处理阻断性缺陷",
+      "scenario_id": "scenario_002",
+      "scenario_name": "保障主链路可运行，处理阻断性缺陷"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/users",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_002_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 126.62,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertions passed=0 failed=2",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "response_time",
+            "op": "lt",
+            "expected": 1000,
+            "actual": null,
+            "category": "performance",
+            "severity": "major",
+            "confidence": 0.95,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 1
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 126.62,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "response_time",
+            "op": "lt",
+            "expected": 1000,
+            "actual": null,
+            "category": "performance",
+            "severity": "major",
+            "confidence": 0.95,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 1
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_03",
+      "step_type": "then",
+      "message": "关键中间产物可追踪、可复核、可回放",
+      "scenario_id": "scenario_002",
+      "scenario_name": "保障主链路可运行，处理阻断性缺陷"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_01",
+      "step_type": "given",
+      "message": "从有效的 API 入口开始执行",
+      "scenario_id": "scenario_003",
+      "scenario_name": "验证页面主路径与真实接口数据一致性"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_003",
+      "scenario_name": "验证页面主路径与真实接口数据一致性",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_02",
+      "step_type": "when",
+      "message": "验证页面主路径与真实接口数据一致性",
+      "scenario_id": "scenario_003",
+      "scenario_name": "验证页面主路径与真实接口数据一致性"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_003_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/users",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_003_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 254.37,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_003_step_02",
+      "message": "Assertions passed=0 failed=3",
+      "assertion_summary": {
+        "total": 3,
+        "passed": 0,
+        "failed": 3,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None",
+          "Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_03",
+            "source": "response.json().input",
+            "op": "eq",
+            "expected": "验证页面主路径与真实接口数据一致性",
+            "actual": null,
+            "category": "field_value",
+            "severity": "major",
+            "confidence": 0.9,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "response.elapsed.total_seconds()",
+            "op": "lt",
+            "expected": 2,
+            "actual": null,
+            "category": "performance",
+            "severity": "minor",
+            "confidence": 0.8,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "field_value": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 2
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_003_step_02",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_003",
+      "scenario_name": "验证页面主路径与真实接口数据一致性",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 254.37,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      },
+      "assertion_summary": {
+        "total": 3,
+        "passed": 0,
+        "failed": 3,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None",
+          "Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_03",
+            "source": "response.json().input",
+            "op": "eq",
+            "expected": "验证页面主路径与真实接口数据一致性",
+            "actual": null,
+            "category": "field_value",
+            "severity": "major",
+            "confidence": 0.9,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "response.elapsed.total_seconds()",
+            "op": "lt",
+            "expected": 2,
+            "actual": null,
+            "category": "performance",
+            "severity": "minor",
+            "confidence": 0.8,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "field_value": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 2
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_03",
+      "step_type": "then",
+      "message": "执行与分析结果满足当前阶段演示与验收所需的最小可信度",
+      "scenario_id": "scenario_003",
+      "scenario_name": "验证页面主路径与真实接口数据一致性"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_003",
+      "scenario_name": "验证页面主路径与真实接口数据一致性",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_01",
+      "step_type": "given",
+      "message": "从有效的 API 入口开始执行",
+      "scenario_id": "scenario_004",
+      "scenario_name": "执行回归流程并输出问题清单"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_004",
+      "scenario_name": "执行回归流程并输出问题清单",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_02",
+      "step_type": "when",
+      "message": "执行回归流程并输出问题清单",
+      "scenario_id": "scenario_004",
+      "scenario_name": "执行回归流程并输出问题清单"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_004_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/users",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_004_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 97.55,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_004_step_02",
+      "message": "Assertions passed=0 failed=2",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "response_time",
+            "op": "lt",
+            "expected": 2000,
+            "actual": null,
+            "category": "performance",
+            "severity": "major",
+            "confidence": 0.95,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 1
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_004_step_02",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_004",
+      "scenario_name": "执行回归流程并输出问题清单",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 97.55,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "failures": [
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "response_time",
+            "op": "lt",
+            "expected": 2000,
+            "actual": null,
+            "category": "performance",
+            "severity": "major",
+            "confidence": 0.95,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 1
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_03",
+      "step_type": "then",
+      "message": "任务归档后的可见性与一致性检查通过",
+      "scenario_id": "scenario_004",
+      "scenario_name": "执行回归流程并输出问题清单"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_004",
+      "scenario_name": "执行回归流程并输出问题清单",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_01",
+      "step_type": "given",
+      "message": "从有效的 API 入口开始执行",
+      "scenario_id": "scenario_005",
+      "scenario_name": "保障测试环境地址、网络和依赖可达"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_005",
+      "scenario_name": "保障测试环境地址、网络和依赖可达",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_02",
+      "step_type": "when",
+      "message": "保障测试环境地址、网络和依赖可达",
+      "scenario_id": "scenario_005",
+      "scenario_name": "保障测试环境地址、网络和依赖可达"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_005_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/users",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "response_received",
+      "step_id": "scenario_005_step_02",
+      "message": "Received 404",
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 144.83,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_005_step_02",
+      "message": "Assertions passed=0 failed=4",
+      "assertion_summary": {
+        "total": 4,
+        "passed": 0,
+        "failed": 4,
+        "failures": [
+          "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None",
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None",
+          "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "network_reachable",
+            "op": "eq",
+            "expected": true,
+            "actual": null,
+            "category": "business",
+            "severity": "critical",
+            "confidence": 0.99,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None"
+          },
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_03",
+            "source": "content_type",
+            "op": "eq",
+            "expected": "application/json",
+            "actual": null,
+            "category": "schema",
+            "severity": "major",
+            "confidence": 0.95,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "response_time",
+            "op": "lt",
+            "expected": 2000,
+            "actual": null,
+            "category": "performance",
+            "severity": "major",
+            "confidence": 0.9,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+          }
+        ],
+        "category_counts": {
+          "business": 1,
+          "status": 1,
+          "schema": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "llm": 3,
+          "rules": 1
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_005_step_02",
+      "message": "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None; Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_005",
+      "scenario_name": "保障测试环境地址、网络和依赖可达",
+      "error_category": "http_client_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "input"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 144.83,
+        "content_type": "application/json",
+        "json_keys": [
+          "detail"
+        ],
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "error_category": "http_client_error",
+        "parse_error": "",
+        "body_size": 22
+      },
+      "assertion_summary": {
+        "total": 4,
+        "passed": 0,
+        "failed": 4,
+        "failures": [
+          "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None",
+          "Assertion failed [assertion_01]: status_code eq 200, actual=404",
+          "Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None",
+          "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "network_reachable",
+            "op": "eq",
+            "expected": true,
+            "actual": null,
+            "category": "business",
+            "severity": "critical",
+            "confidence": 0.99,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None"
+          },
+          {
+            "assertion_id": "assertion_01",
+            "source": "status_code",
+            "op": "eq",
+            "expected": 200,
+            "actual": 404,
+            "category": "status",
+            "severity": "critical",
+            "confidence": 0.98,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404"
+          },
+          {
+            "assertion_id": "enhance_cand_03",
+            "source": "content_type",
+            "op": "eq",
+            "expected": "application/json",
+            "actual": null,
+            "category": "schema",
+            "severity": "major",
+            "confidence": 0.95,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_02",
+            "source": "response_time",
+            "op": "lt",
+            "expected": 2000,
+            "actual": null,
+            "category": "performance",
+            "severity": "major",
+            "confidence": 0.9,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None"
+          }
+        ],
+        "category_counts": {
+          "business": 1,
+          "status": 1,
+          "schema": 1,
+          "performance": 1
+        },
+        "generated_by_counts": {
+          "llm": 3,
+          "rules": 1
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_03",
+      "step_type": "then",
+      "message": "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程",
+      "scenario_id": "scenario_005",
+      "scenario_name": "保障测试环境地址、网络和依赖可达"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_005",
+      "scenario_name": "保障测试环境地址、网络和依赖可达",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "端到端测试9_20260404160833"
+      }
+    },
+    "executed_at": "2026-04-04T16:10:08.344841+00:00"
+  }
+}

@@ -19,6 +19,41 @@ _EXPLICIT_ENDPOINT_RE = re.compile(
 )
 _TABLE_ROW_RE = re.compile(r"^\s*\|.*\|")
 _INLINE_CODE_RE = re.compile(r"`([^`]+)`")
+_NON_EXECUTABLE_ACTION_PATTERNS = (
+    "签收最终结论",
+    "确认验收范围",
+    "保障主链路可运行",
+    "验证页面主路径",
+    "执行回归流程",
+    "输出问题清单",
+    "保障测试环境地址",
+    "网络和依赖可达",
+    "角色与职责",
+    "背景与目的",
+    "适用范围",
+    "验收关注点",
+    "非功能与治理要求",
+    "风险与已知限制",
+    "环境前置条件",
+    "输出物要求",
+    "文档维护原则",
+)
+_NON_EXECUTABLE_ACTION_HINTS = (
+    "负责人",
+    "研发",
+    "工程师",
+    "运维",
+    "环境负责人",
+    "验收",
+    "签收",
+    "职责",
+    "治理",
+    "风险",
+    "限制",
+    "输出物",
+    "回归记录",
+    "问题清单",
+)
 
 
 def _extract_api_endpoints(text: str) -> list[dict]:
@@ -122,6 +157,40 @@ def _extract_explicit_endpoint_actions(text: str) -> list[str]:
             if normalized:
                 action_sentences.append(normalized)
     return action_sentences
+
+
+def _is_non_executable_action(text: str) -> bool:
+    normalized = _normalize_statement(text)
+    lowered = normalized.lower()
+    if not normalized:
+        return True
+    if normalized.startswith("**") and "：" in normalized:
+        return True
+    if any(pattern in normalized for pattern in _NON_EXECUTABLE_ACTION_PATTERNS):
+        return True
+    if any(hint in normalized for hint in _NON_EXECUTABLE_ACTION_HINTS):
+        return True
+    if lowered.startswith(("说明", "note", "备注")):
+        return True
+    return False
+
+
+def _filter_actions(actions: list[str], *, explicit_endpoint_actions: list[str], api_endpoints: list[dict[str, str]]) -> list[str]:
+    explicit_set = {_normalize_statement(item) for item in explicit_endpoint_actions}
+    filtered: list[str] = []
+    for action in actions:
+        normalized = _normalize_statement(action)
+        if not normalized:
+            continue
+        if normalized in explicit_set:
+            filtered.append(normalized)
+            continue
+        if _is_non_executable_action(normalized):
+            continue
+        filtered.append(normalized)
+    if api_endpoints:
+        return explicit_endpoint_actions or filtered
+    return filtered
 
 
 ACTION_VERBS = (
@@ -233,14 +302,16 @@ def parse_requirement(
     base_text = requirement_text.strip()
     retrieved_context = retrieved_context or []
     merged_text = _merge_context(base_text, retrieved_context)
-    candidate_points = extract_candidate_test_points(merged_text)
+    candidate_points = extract_candidate_test_points(base_text or merged_text)
     objective = _derive_objective(base_text or merged_text, candidate_points)
+    rule_endpoints = _extract_api_endpoints(base_text)
+    explicit_endpoint_actions = _extract_explicit_endpoint_actions(base_text)
 
     actions = [item["text"] for item in candidate_points if item["type"] == "action" and not _TABLE_ROW_RE.match(item["text"])]
-    actions.extend(_extract_explicit_endpoint_actions(base_text or merged_text))
+    actions.extend(explicit_endpoint_actions)
     expectations = [item["text"] for item in candidate_points if item["type"] == "expectation"]
     preconditions = [item["text"] for item in candidate_points if item["type"] == "precondition"]
-    constraints = [sentence for sentence in re.split(r"[\n。；;]+", merged_text) if any(cue in sentence.lower() for cue in CONSTRAINT_CUES)]
+    constraints = [sentence for sentence in re.split(r"[\n。；;]+", base_text) if any(cue in sentence.lower() for cue in CONSTRAINT_CUES)]
 
     if not actions:
         for sentence in re.split(r"[\n。；;]+", base_text):
@@ -249,15 +320,16 @@ def parse_requirement(
                 continue
             if sentence and any(verb in sentence.lower() or verb in sentence for verb in ACTION_VERBS):
                 actions.append(sentence)
+    actions = _filter_actions(actions, explicit_endpoint_actions=explicit_endpoint_actions, api_endpoints=rule_endpoints)
 
     if not expectations:
-        for sentence in re.split(r"[\n。；;]+", merged_text):
+        for sentence in re.split(r"[\n。；;]+", base_text):
             sentence = sentence.strip()
             if sentence and any(cue in sentence.lower() or cue in sentence for cue in EXPECTATION_CUES):
                 expectations.append(sentence)
 
     if not preconditions:
-        for sentence in re.split(r"[\n。；;]+", merged_text):
+        for sentence in re.split(r"[\n。；;]+", base_text):
             sentence = sentence.strip()
             if sentence and any(cue in sentence.lower() or cue in sentence for cue in PRECONDITION_CUES):
                 preconditions.append(sentence)
@@ -312,7 +384,6 @@ def parse_requirement(
                 diagnostics["fallback_reason"] = "llm_runtime_error"
                 diagnostics["llm_error_type"] = "unexpected_exception"
 
-    rule_endpoints = _extract_api_endpoints(merged_text)
     parsed = ParsedRequirement(
         objective=str(llm_merged.get("objective") or objective),
         actors=list(llm_merged.get("actors") or _extract_actors(merged_text)),

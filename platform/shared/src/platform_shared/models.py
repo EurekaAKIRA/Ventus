@@ -105,7 +105,7 @@ class ScenarioModel:
 
     def to_dict(self) -> dict:
         payload = asdict(self)
-        payload["steps"] = [step.to_dict() for step in self.steps]
+        payload["steps"] = [step.to_dict() if hasattr(step, "to_dict") else dict(step) for step in self.steps]
         return payload
 
 
@@ -118,7 +118,7 @@ class TestCaseStep:
     text: str
     request: dict = field(default_factory=dict)
     load_profile: dict = field(default_factory=dict)
-    assertions: list[str] = field(default_factory=list)
+    assertions: list = field(default_factory=list)
     uses_context: list[str] = field(default_factory=list)
     saves_context: list[str] = field(default_factory=list)
     save_context: dict = field(default_factory=dict)
@@ -205,6 +205,7 @@ class AnalysisReport:
     failed_steps: list[dict] = field(default_factory=list)
     failure_reasons: list[dict] = field(default_factory=list)
     assertion_stats: dict = field(default_factory=dict)
+    step_assertion_quality: list[dict] = field(default_factory=list)
     context_stats: dict = field(default_factory=dict)
     task_summary_text: str = ""
     findings: list[str] = field(default_factory=list)

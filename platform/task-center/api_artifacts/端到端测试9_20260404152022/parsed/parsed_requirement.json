@@ -1,0 +1,37 @@
+{
+  "objective": "Platform 主链路联调需求说明（当前实现对齐版）",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "platform",
+    "主链路联调需求说明",
+    "当前实现对齐版",
+    "背景与目的",
+    "当前平台已经具备",
+    "task-center",
+    "主链路的联调能力",
+    "研发",
+    "测试与前端需要基于统一口径确认以下事项",
+    "平台主流程是否可在同一任务生命周期内闭环完成"
+  ],
+  "preconditions": [],
+  "actions": [
+    "文档描述是否与当前项目真实接口输入输出保持一致",
+    "用户提交待分析的需求内容并形成任务实体"
+  ],
+  "expected_results": [
+    "任务归档后的可见性与一致性检查",
+    "从业务视角看，一次标准任务应经历以下过程："
+  ],
+  "constraints": [],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_006",
+    "chunk_008",
+    "chunk_004",
+    "chunk_001",
+    "contract_preflight"
+  ],
+  "api_endpoints": []
+}

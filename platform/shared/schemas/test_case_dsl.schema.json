@@ -65,9 +65,16 @@
                         "type": "object",
                         "required": ["source", "op"],
                         "properties": {
+                          "assertion_id": { "type": "string" },
                           "source": { "type": "string" },
                           "op": { "type": "string" },
-                          "expected": {}
+                          "expected": {},
+                          "severity": { "type": "string" },
+                          "category": { "type": "string" },
+                          "confidence": { "type": "number" },
+                          "generated_by": { "type": "string" },
+                          "reasoning": { "type": "string" },
+                          "fallback_used": { "type": "boolean" }
                         }
                       }
                     ]
@@ -84,6 +91,9 @@
                 "save_context": {
                   "type": "object",
                   "additionalProperties": { "type": "string" }
+                },
+                "assertion_quality": {
+                  "type": "object"
                 }
               }
             }

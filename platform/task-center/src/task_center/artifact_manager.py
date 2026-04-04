@@ -28,10 +28,11 @@ def write_json_artifact(path: str, payload: dict | list) -> None:
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def build_task_artifact_dir(base_dir: str, task_name: str, timestamp: str) -> str:
+def build_task_artifact_dir(base_dir: str, task_name: str, timestamp: str | None = None) -> str:
     """Build a task-scoped artifact directory path."""
     safe_name = task_name.strip().replace(" ", "_") or "analysis_task"
-    target = Path(base_dir) / f"{safe_name}_{timestamp}"
+    dir_name = f"{safe_name}_{timestamp}" if timestamp else safe_name
+    target = Path(base_dir) / dir_name
     target.mkdir(parents=True, exist_ok=True)
     return str(target)
 

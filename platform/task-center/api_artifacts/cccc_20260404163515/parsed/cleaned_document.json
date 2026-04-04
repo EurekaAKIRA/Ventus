@@ -1,0 +1,1599 @@
+{
+  "cleaned_text": "# Platform 主链路联调需求说明（当前实现对齐版）\n\n## 1. 背景与目的\n\n当前平台已经具备 task-center 主链路的联调能力，研发、测试与前端需要基于统一口径确认以下事项：\n\n- 平台主流程是否可在同一任务生命周期内闭环完成；\n- 关键中间产物是否可追踪、可复核、可回放；\n- 执行与分析结果是否满足当前阶段演示与验收所需的最小可信度；\n- 文档描述是否与当前项目真实接口输入输出保持一致。\n\n本文档用于指导当前版本的平台端到端联调与验收。\n它是开发文档和验收口径说明，不是接口手册，也不是自动化脚本逐步说明书。\n\n## 2. 适用范围\n\n### 2.1 本次纳入\n\n- 任务接入与任务状态流转；\n- 需求解析与检索增强；\n- 场景、DSL、Feature 的产物生成；\n- API 执行、日志、报告与历史查询能力；\n- 任务归档后的可见性与一致性检查。\n\n### 2.2 本次不纳入\n\n- 压测云平台对接能力；\n- 多租户与权限边界；\n- 生产级高并发与容量基准；\n- 第三方系统稳定性背书；\n- `web-ui` 执行模式的正式验收。\n\n## 3. 角色与职责\n\n- **产品/项目负责人**：确认验收范围、签收最终结论。\n- **后端研发**：保障主链路可运行，处理阻断性缺陷。\n- **前端研发**：验证页面主路径与真实接口数据一致性。\n- **测试工程师**：执行回归流程并输出问题清单。\n- **运维或环境负责人**：保障测试环境地址、网络和依赖可达。\n\n## 4. 业务过程描述（非接口步骤版）\n\n从业务视角看，一次标准任务应经历以下过程：\n\n1. 用户提交待分析的需求内容并形成任务实体；\n2. 系统完成需求结构化，补充检索上下文，形成后续生成的语义基础；\n3. 系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅；\n4. 系统在指定环境中执行任务，输出过程日志与结果状态；\n5. 系统聚合校验与分析报告，支持从任务维度查看历史与产物；\n6. 任务结束后可归档，归档后不再作为活跃任务参与主流程。\n\n> 说明：上述过程强调业务闭环，不要求阅读者记忆具体路径与方法名。\n\n## 5. 接口基线（来源：`docs/frontend_api_list.md`）\n\n为避免联调过程出现“口径不一致”，本需求文档采用 `docs/frontend_api_list.md` 作为接口基线。\n本次端到端验收默认至少覆盖以下接口组。\n\n### 5.1 任务与解析（必测）\n\n- `POST /api/tasks`\n- `GET /api/tasks/{task_id}`\n- `POST /api/tasks/{task_id}/parse`\n- `GET /api/tasks/{task_id}/parsed-requirement`\n- `GET /api/tasks/{task_id}/retrieved-context`\n\n### 5.2 场景与 DSL（必测）\n\n- `POST /api/tasks/{task_id}/scenarios/generate`\n- `GET /api/tasks/{task_id}/scenarios`\n- `GET /api/tasks/{task_id}/dsl`\n- `GET /api/tasks/{task_id}/feature`\n\n### 5.3 执行与结果（必测）\n\n- `POST /api/tasks/{task_id}/execute`\n- `GET /api/tasks/{task_id}/execution`\n- `GET /api/tasks/{task_id}/execution/logs`\n- `GET /api/tasks/{task_id}/validation-report`\n- `GET /api/tasks/{task_id}/analysis-report`\n\n### 5.4 产物与历史（建议纳入）\n\n- `GET /api/tasks/{task_id}/artifacts`\n- `GET /api/tasks/{task_id}/artifacts/{type}`\n- `GET /api/history/tasks`\n- `GET /api/history/executions`\n- `DELETE /api/tasks/{task_id}`（归档）\n\n### 5.5 环境与扩展能力（按需）\n\n- `GET /api/environments`\n- `POST /api/environments`\n- `PUT /api/environments/{environment_name}`\n- `DELETE /api/environments/{environment_name}`\n- `POST /api/analysis/parse`（独立解析链路）\n- `GET /health`\n- `GET /version`\n\n### 5.6 执行模式说明（与当前项目现状一致）\n\n- `execution_mode=api`：当前主执行路径，联调与验收优先使用。\n- `execution_mode=cloud-load`：当前为本地并发压测模拟，不作为本轮主验收路径。\n- `execution_mode=web-ui`：适配中，默认不纳入本轮通过标准。\n\n## 6. 当前实现口径补充\n\n本节用于明确“当前项目真实输入输出”，避免开发文档与实际实现偏离。\n\n### 6.1 统一响应 envelope\n\n当前 task-center API 统一使用如下响应结构：\n\n{\n\"success\": true,\n\"code\": \"SOME_CODE\",\n\"message\": \"some message\",\n\"data\": {},\n\"timestamp\": \"2026-04-04T15:00:00+00:00\"\n}\n\n联调时应默认按统一 envelope 理解接口输出。\n涉及业务字段时，优先从 `data.*` 下查找，不应假设所有字段都平铺在顶层。\n\n### 6.2 关键 detail 接口的实际返回语义\n\n当前项目中，任务详情、分析报告详情和执行结果详情这几类“详情查询接口”返回的是“单对象详情”，不是列表；对应接口基线见第 5 节。\n\n其中任务详情响应当前真实返回位于 `data` 下，包含：\n\n- `data.task_id`\n- `data.task_name`\n- `data.status`\n- `data.task_context`\n- `data.parse_metadata`\n- `data.parsed_requirement`\n- `data.retrieved_context`\n- `data.scenarios`\n- `data.test_case_dsl`\n- `data.validation_report`\n- `data.analysis_report`\n- `data.feature_text`\n- `data.execution_result`\n\n因此，联调和断言设计中不应把任务详情查询接口当作列表接口，也不应假设存在 `data.tasks`。\n\n### 6.3 任务创建接口的实际返回语义\n\n当前任务创建接口的成功返回重点字段是：\n\n- `data.task_id`\n- `data.task_context`\n- `data.task_context.task_id`\n- `data.task_context.task_name`\n\n当前实现中，不应把任务创建接口的返回简单理解为 `data.task_name` 平铺存在。\n如果需要读取任务名称，应优先以 `data.task_context.task_name` 为准。\n\n### 6.4 解析接口的实际返回语义\n\n当前解析接口的成功返回重点字段是：\n\n- `data.task_id`\n- `data.status`\n- `data.parsed_requirement`\n- `data.parse_metadata`\n\n当前默认稳定联调路径推荐：\n\n- `use_llm=false`\n- `rag_enabled=true`\n- `retrieval_top_k=5`\n- `rerank_enabled=false`\n\n如果显式启用 `use_llm=true`，允许出现模型增强、fallback 和额外时延，不应把它作为默认稳定基线。\n\n### 6.5 执行接口的当前验收口径\n\n当前执行接口能触发真实执行链路并生成结构化执行结果。\n但在当前项目阶段，端到端验收更关注“是否走通并产出结构化结果”，而不是要求所有自动生成场景都必须通过。\n\n因此当前验收允许：\n\n- 执行完成且进入终态；\n- `GET /execution`、`GET /analysis-report` 可正常读取；\n- 少量场景失败但不阻断主链路闭环。\n\n## 7. 验收关注点\n\n### 7.1 必须满足\n\n- 单任务从“提交到报告”应可完整走通；\n- 关键中间产物（解析结果、场景、DSL、Feature）应可回读；\n- 报告数据与执行数据口径基本一致，不出现明显自相矛盾；\n- 归档动作生效后，任务应从活跃视图中消失；\n- 返回结构保持统一 envelope，便于前端统一处理；\n- 开发文档中描述的关键输入输出与当前实现一致。\n\n### 7.2 可接受但需记录\n\n- 少量场景执行失败但不阻断整体链路；\n- 检索策略在不同输入下出现回退；\n- 报告存在提示级告警（如步骤表达偏长）；\n- 启用 LLM 增强后耗时明显上升或结果出现回退。\n\n## 8. 非功能与治理要求\n\n- **可追踪性**：同一任务 ID 可串联输入、产物、执行、报告与历史。\n- **可解释性**：解析结果应能说明来自哪些上下文片段。\n- **一致性**：前后端对状态字段、错误消息、时间字段含义保持一致。\n- **可维护性**：配置项通过统一配置管理，不在流程中硬编码环境地址。\n\n## 9. 风险与已知限制\n\n- 同步执行模式下，长任务会占用请求时长；\n- 复杂断言与字段映射仍存在误判空间；\n- 当前自动场景/断言生成对“开发文档”类文本的理解仍可能比“精确可执行规格”更宽泛；\n- 当前持久化方案偏向 MVP，尚未达到生产级可靠性；\n- 在外部依赖波动情况下，检索与执行耗时可能明显抖动。\n\n## 10. 环境前置条件\n\n- 默认联调基地址使用 `http://127.0.0.1:8001`；\n- 执行时应提供明确目标系统来源（任务目标地址或环境配置）；\n- 测试数据需避免依赖不可控的外部实时状态；\n- 若启用模型增强能力，应提前完成密钥与模型配置核验；\n- 联调前应确认当前服务进程已重启，避免沿用旧版本逻辑。\n\n## 11. 输出物要求\n\n验收结束后需至少沉淀以下内容：\n\n- 一份执行结论（通过 / 有条件通过 / 不通过）；\n- 一份问题清单（按阻断、主要、次要分级）；\n- 一份回归记录（包含环境、版本、时间窗口、任务样本）；\n- 对未闭环项给出下一迭代处理建议与责任人。\n\n## 12. 文档维护原则\n\n后续更新本文件时，应遵循以下原则：\n\n- 保持“开发文档 / 验收口径说明”定位，不将其改写成纯自动化脚本；\n- 描述当前真实接口行为，而不是未来预期结构；\n- 当接口真实返回字段发生变化时，优先同步本文件的“当前实现口径补充”章节；\n- 如果需要机器可执行的严格版本，应单独维护独立 spec，而不是挤占本文件的开发文档定位。",
+  "outline": [
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Platform 主链路联调需求说明（当前实现对齐版）",
+      "line": 1
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "1. 背景与目的",
+      "line": 3
+    },
+    {
+      "type": "bullet",
+      "text": "平台主流程是否可在同一任务生命周期内闭环完成；",
+      "line": 7
+    },
+    {
+      "type": "bullet",
+      "text": "关键中间产物是否可追踪、可复核、可回放；",
+      "line": 8
+    },
+    {
+      "type": "bullet",
+      "text": "执行与分析结果是否满足当前阶段演示与验收所需的最小可信度；",
+      "line": 9
+    },
+    {
+      "type": "bullet",
+      "text": "文档描述是否与当前项目真实接口输入输出保持一致。",
+      "line": 10
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "2. 适用范围",
+      "line": 15
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "2.1 本次纳入",
+      "line": 17
+    },
+    {
+      "type": "bullet",
+      "text": "任务接入与任务状态流转；",
+      "line": 19
+    },
+    {
+      "type": "bullet",
+      "text": "需求解析与检索增强；",
+      "line": 20
+    },
+    {
+      "type": "bullet",
+      "text": "场景、DSL、Feature 的产物生成；",
+      "line": 21
+    },
+    {
+      "type": "bullet",
+      "text": "API 执行、日志、报告与历史查询能力；",
+      "line": 22
+    },
+    {
+      "type": "bullet",
+      "text": "任务归档后的可见性与一致性检查。",
+      "line": 23
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "2.2 本次不纳入",
+      "line": 25
+    },
+    {
+      "type": "bullet",
+      "text": "压测云平台对接能力；",
+      "line": 27
+    },
+    {
+      "type": "bullet",
+      "text": "多租户与权限边界；",
+      "line": 28
+    },
+    {
+      "type": "bullet",
+      "text": "生产级高并发与容量基准；",
+      "line": 29
+    },
+    {
+      "type": "bullet",
+      "text": "第三方系统稳定性背书；",
+      "line": 30
+    },
+    {
+      "type": "bullet",
+      "text": "`web-ui` 执行模式的正式验收。",
+      "line": 31
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "3. 角色与职责",
+      "line": 33
+    },
+    {
+      "type": "bullet",
+      "text": "**产品/项目负责人**：确认验收范围、签收最终结论。",
+      "line": 35
+    },
+    {
+      "type": "bullet",
+      "text": "**后端研发**：保障主链路可运行，处理阻断性缺陷。",
+      "line": 36
+    },
+    {
+      "type": "bullet",
+      "text": "**前端研发**：验证页面主路径与真实接口数据一致性。",
+      "line": 37
+    },
+    {
+      "type": "bullet",
+      "text": "**测试工程师**：执行回归流程并输出问题清单。",
+      "line": 38
+    },
+    {
+      "type": "bullet",
+      "text": "**运维或环境负责人**：保障测试环境地址、网络和依赖可达。",
+      "line": 39
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4. 业务过程描述（非接口步骤版）",
+      "line": 41
+    },
+    {
+      "type": "ordered_item",
+      "text": "用户提交待分析的需求内容并形成任务实体；",
+      "line": 45
+    },
+    {
+      "type": "ordered_item",
+      "text": "系统完成需求结构化，补充检索上下文，形成后续生成的语义基础；",
+      "line": 46
+    },
+    {
+      "type": "ordered_item",
+      "text": "系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅；",
+      "line": 47
+    },
+    {
+      "type": "ordered_item",
+      "text": "系统在指定环境中执行任务，输出过程日志与结果状态；",
+      "line": 48
+    },
+    {
+      "type": "ordered_item",
+      "text": "系统聚合校验与分析报告，支持从任务维度查看历史与产物；",
+      "line": 49
+    },
+    {
+      "type": "ordered_item",
+      "text": "任务结束后可归档，归档后不再作为活跃任务参与主流程。",
+      "line": 50
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "5. 接口基线（来源：`docs/frontend_api_list.md`）",
+      "line": 54
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "5.1 任务与解析（必测）",
+      "line": 59
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks`",
+      "line": 61
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}`",
+      "line": 62
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks/{task_id}/parse`",
+      "line": 63
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "line": 64
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "line": 65
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "5.2 场景与 DSL（必测）",
+      "line": 67
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "line": 69
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/scenarios`",
+      "line": 70
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/dsl`",
+      "line": 71
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/feature`",
+      "line": 72
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "5.3 执行与结果（必测）",
+      "line": 74
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks/{task_id}/execute`",
+      "line": 76
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/execution`",
+      "line": 77
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/execution/logs`",
+      "line": 78
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/validation-report`",
+      "line": 79
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/analysis-report`",
+      "line": 80
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "5.4 产物与历史（建议纳入）",
+      "line": 82
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/artifacts`",
+      "line": 84
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/artifacts/{type}`",
+      "line": 85
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/history/tasks`",
+      "line": 86
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/history/executions`",
+      "line": 87
+    },
+    {
+      "type": "bullet",
+      "text": "`DELETE /api/tasks/{task_id}`（归档）",
+      "line": 88
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "5.5 环境与扩展能力（按需）",
+      "line": 90
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/environments`",
+      "line": 92
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/environments`",
+      "line": 93
+    },
+    {
+      "type": "bullet",
+      "text": "`PUT /api/environments/{environment_name}`",
+      "line": 94
+    },
+    {
+      "type": "bullet",
+      "text": "`DELETE /api/environments/{environment_name}`",
+      "line": 95
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/analysis/parse`（独立解析链路）",
+      "line": 96
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /health`",
+      "line": 97
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /version`",
+      "line": 98
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "5.6 执行模式说明（与当前项目现状一致）",
+      "line": 100
+    },
+    {
+      "type": "bullet",
+      "text": "`execution_mode=api`：当前主执行路径，联调与验收优先使用。",
+      "line": 102
+    },
+    {
+      "type": "bullet",
+      "text": "`execution_mode=cloud-load`：当前为本地并发压测模拟，不作为本轮主验收路径。",
+      "line": 103
+    },
+    {
+      "type": "bullet",
+      "text": "`execution_mode=web-ui`：适配中，默认不纳入本轮通过标准。",
+      "line": 104
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "6. 当前实现口径补充",
+      "line": 106
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "6.1 统一响应 envelope",
+      "line": 110
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "6.2 关键 detail 接口的实际返回语义",
+      "line": 125
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_id`",
+      "line": 131
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_name`",
+      "line": 132
+    },
+    {
+      "type": "bullet",
+      "text": "`data.status`",
+      "line": 133
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_context`",
+      "line": 134
+    },
+    {
+      "type": "bullet",
+      "text": "`data.parse_metadata`",
+      "line": 135
+    },
+    {
+      "type": "bullet",
+      "text": "`data.parsed_requirement`",
+      "line": 136
+    },
+    {
+      "type": "bullet",
+      "text": "`data.retrieved_context`",
+      "line": 137
+    },
+    {
+      "type": "bullet",
+      "text": "`data.scenarios`",
+      "line": 138
+    },
+    {
+      "type": "bullet",
+      "text": "`data.test_case_dsl`",
+      "line": 139
+    },
+    {
+      "type": "bullet",
+      "text": "`data.validation_report`",
+      "line": 140
+    },
+    {
+      "type": "bullet",
+      "text": "`data.analysis_report`",
+      "line": 141
+    },
+    {
+      "type": "bullet",
+      "text": "`data.feature_text`",
+      "line": 142
+    },
+    {
+      "type": "bullet",
+      "text": "`data.execution_result`",
+      "line": 143
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "6.3 任务创建接口的实际返回语义",
+      "line": 147
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_id`",
+      "line": 151
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_context`",
+      "line": 152
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_context.task_id`",
+      "line": 153
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_context.task_name`",
+      "line": 154
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "6.4 解析接口的实际返回语义",
+      "line": 159
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_id`",
+      "line": 163
+    },
+    {
+      "type": "bullet",
+      "text": "`data.status`",
+      "line": 164
+    },
+    {
+      "type": "bullet",
+      "text": "`data.parsed_requirement`",
+      "line": 165
+    },
+    {
+      "type": "bullet",
+      "text": "`data.parse_metadata`",
+      "line": 166
+    },
+    {
+      "type": "bullet",
+      "text": "`use_llm=false`",
+      "line": 170
+    },
+    {
+      "type": "bullet",
+      "text": "`rag_enabled=true`",
+      "line": 171
+    },
+    {
+      "type": "bullet",
+      "text": "`retrieval_top_k=5`",
+      "line": 172
+    },
+    {
+      "type": "bullet",
+      "text": "`rerank_enabled=false`",
+      "line": 173
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "6.5 执行接口的当前验收口径",
+      "line": 177
+    },
+    {
+      "type": "bullet",
+      "text": "执行完成且进入终态；",
+      "line": 184
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /execution`、`GET /analysis-report` 可正常读取；",
+      "line": 185
+    },
+    {
+      "type": "bullet",
+      "text": "少量场景失败但不阻断主链路闭环。",
+      "line": 186
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "7. 验收关注点",
+      "line": 188
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "7.1 必须满足",
+      "line": 190
+    },
+    {
+      "type": "bullet",
+      "text": "单任务从“提交到报告”应可完整走通；",
+      "line": 192
+    },
+    {
+      "type": "bullet",
+      "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读；",
+      "line": 193
+    },
+    {
+      "type": "bullet",
+      "text": "报告数据与执行数据口径基本一致，不出现明显自相矛盾；",
+      "line": 194
+    },
+    {
+      "type": "bullet",
+      "text": "归档动作生效后，任务应从活跃视图中消失；",
+      "line": 195
+    },
+    {
+      "type": "bullet",
+      "text": "返回结构保持统一 envelope，便于前端统一处理；",
+      "line": 196
+    },
+    {
+      "type": "bullet",
+      "text": "开发文档中描述的关键输入输出与当前实现一致。",
+      "line": 197
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "text": "7.2 可接受但需记录",
+      "line": 199
+    },
+    {
+      "type": "bullet",
+      "text": "少量场景执行失败但不阻断整体链路；",
+      "line": 201
+    },
+    {
+      "type": "bullet",
+      "text": "检索策略在不同输入下出现回退；",
+      "line": 202
+    },
+    {
+      "type": "bullet",
+      "text": "报告存在提示级告警（如步骤表达偏长）；",
+      "line": 203
+    },
+    {
+      "type": "bullet",
+      "text": "启用 LLM 增强后耗时明显上升或结果出现回退。",
+      "line": 204
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "8. 非功能与治理要求",
+      "line": 206
+    },
+    {
+      "type": "bullet",
+      "text": "**可追踪性**：同一任务 ID 可串联输入、产物、执行、报告与历史。",
+      "line": 208
+    },
+    {
+      "type": "bullet",
+      "text": "**可解释性**：解析结果应能说明来自哪些上下文片段。",
+      "line": 209
+    },
+    {
+      "type": "bullet",
+      "text": "**一致性**：前后端对状态字段、错误消息、时间字段含义保持一致。",
+      "line": 210
+    },
+    {
+      "type": "bullet",
+      "text": "**可维护性**：配置项通过统一配置管理，不在流程中硬编码环境地址。",
+      "line": 211
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "9. 风险与已知限制",
+      "line": 213
+    },
+    {
+      "type": "bullet",
+      "text": "同步执行模式下，长任务会占用请求时长；",
+      "line": 215
+    },
+    {
+      "type": "bullet",
+      "text": "复杂断言与字段映射仍存在误判空间；",
+      "line": 216
+    },
+    {
+      "type": "bullet",
+      "text": "当前自动场景/断言生成对“开发文档”类文本的理解仍可能比“精确可执行规格”更宽泛；",
+      "line": 217
+    },
+    {
+      "type": "bullet",
+      "text": "当前持久化方案偏向 MVP，尚未达到生产级可靠性；",
+      "line": 218
+    },
+    {
+      "type": "bullet",
+      "text": "在外部依赖波动情况下，检索与执行耗时可能明显抖动。",
+      "line": 219
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "10. 环境前置条件",
+      "line": 221
+    },
+    {
+      "type": "bullet",
+      "text": "默认联调基地址使用 `http://127.0.0.1:8001`；",
+      "line": 223
+    },
+    {
+      "type": "bullet",
+      "text": "执行时应提供明确目标系统来源（任务目标地址或环境配置）；",
+      "line": 224
+    },
+    {
+      "type": "bullet",
+      "text": "测试数据需避免依赖不可控的外部实时状态；",
+      "line": 225
+    },
+    {
+      "type": "bullet",
+      "text": "若启用模型增强能力，应提前完成密钥与模型配置核验；",
+      "line": 226
+    },
+    {
+      "type": "bullet",
+      "text": "联调前应确认当前服务进程已重启，避免沿用旧版本逻辑。",
+      "line": 227
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "11. 输出物要求",
+      "line": 229
+    },
+    {
+      "type": "bullet",
+      "text": "一份执行结论（通过 / 有条件通过 / 不通过）；",
+      "line": 233
+    },
+    {
+      "type": "bullet",
+      "text": "一份问题清单（按阻断、主要、次要分级）；",
+      "line": 234
+    },
+    {
+      "type": "bullet",
+      "text": "一份回归记录（包含环境、版本、时间窗口、任务样本）；",
+      "line": 235
+    },
+    {
+      "type": "bullet",
+      "text": "对未闭环项给出下一迭代处理建议与责任人。",
+      "line": 236
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "12. 文档维护原则",
+      "line": 238
+    },
+    {
+      "type": "bullet",
+      "text": "保持“开发文档 / 验收口径说明”定位，不将其改写成纯自动化脚本；",
+      "line": 242
+    },
+    {
+      "type": "bullet",
+      "text": "描述当前真实接口行为，而不是未来预期结构；",
+      "line": 243
+    },
+    {
+      "type": "bullet",
+      "text": "当接口真实返回字段发生变化时，优先同步本文件的“当前实现口径补充”章节；",
+      "line": 244
+    },
+    {
+      "type": "bullet",
+      "text": "如果需要机器可执行的严格版本，应单独维护独立 spec，而不是挤占本文件的开发文档定位。",
+      "line": 245
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "当前平台已经具备 task-center 主链路的联调能力，研发、测试与前端需要基于统一口径确认以下事项：",
+      "section_title": "1. 背景与目的",
+      "source_file": "",
+      "source_block": "section_1_paragraph_1_part_1",
+      "tokens_estimate": 26,
+      "keywords": [
+        "当前平台已经具备",
+        "task-center",
+        "主链路的联调能力",
+        "研发",
+        "测试与前端需要基于统一口径确认以下事项"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_002",
+      "content": "- 平台主流程是否可在同一任务生命周期内闭环完成；\n- 关键中间产物是否可追踪、可复核、可回放；\n- 执行与分析结果是否满足当前阶段演示与验收所需的最小可信度；\n- 文档描述是否与当前项目真实接口输入输出保持一致。",
+      "section_title": "1. 背景与目的",
+      "source_file": "",
+      "source_block": "section_1_paragraph_2_part_1",
+      "tokens_estimate": 53,
+      "keywords": [
+        "平台主流程是否可在同一任务生命周期内闭环完成",
+        "关键中间产物是否可追踪",
+        "可复核",
+        "可回放",
+        "执行与分析结果是否满足当前阶段演示与验收所需的最小可信度",
+        "文档描述是否与当前项目真实接口输入输出保持一致"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_003",
+      "content": "本文档用于指导当前版本的平台端到端联调与验收。\n它是开发文档和验收口径说明，不是接口手册，也不是自动化脚本逐步说明书。",
+      "section_title": "1. 背景与目的",
+      "source_file": "",
+      "source_block": "section_1_paragraph_3_part_1",
+      "tokens_estimate": 29,
+      "keywords": [
+        "本文档用于指导当前版本的平台端到端联调与验收",
+        "它是开发文档和验收口径说明",
+        "不是接口手册",
+        "也不是自动化脚本逐步说明书"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_004",
+      "content": "- 任务接入与任务状态流转；\n- 需求解析与检索增强；\n- 场景、DSL、Feature 的产物生成；\n- API 执行、日志、报告与历史查询能力；\n- 任务归档后的可见性与一致性检查。",
+      "section_title": "2.1 本次纳入",
+      "source_file": "",
+      "source_block": "section_2_paragraph_1_part_1",
+      "tokens_estimate": 46,
+      "keywords": [
+        "任务接入与任务状态流转",
+        "需求解析与检索增强",
+        "场景",
+        "dsl",
+        "feature",
+        "的产物生成",
+        "api",
+        "执行"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_005",
+      "content": "- 压测云平台对接能力；\n- 多租户与权限边界；\n- 生产级高并发与容量基准；\n- 第三方系统稳定性背书；\n- `web-ui` 执行模式的正式验收。",
+      "section_title": "2.2 本次不纳入",
+      "source_file": "",
+      "source_block": "section_3_paragraph_1_part_1",
+      "tokens_estimate": 37,
+      "keywords": [
+        "压测云平台对接能力",
+        "多租户与权限边界",
+        "生产级高并发与容量基准",
+        "第三方系统稳定性背书",
+        "web-ui",
+        "执行模式的正式验收"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_006",
+      "content": "- **产品/项目负责人**：确认验收范围、签收最终结论。\n- **后端研发**：保障主链路可运行，处理阻断性缺陷。\n- **前端研发**：验证页面主路径与真实接口数据一致性。\n- **测试工程师**：执行回归流程并输出问题清单。\n- **运维或环境负责人**：保障测试环境地址、网络和依赖可达。",
+      "section_title": "3. 角色与职责",
+      "source_file": "",
+      "source_block": "section_4_paragraph_1_part_1",
+      "tokens_estimate": 74,
+      "keywords": [
+        "**产品",
+        "项目负责人**",
+        "确认验收范围",
+        "签收最终结论",
+        "**后端研发**",
+        "保障主链路可运行",
+        "处理阻断性缺陷",
+        "**前端研发**"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_007",
+      "content": "从业务视角看，一次标准任务应经历以下过程：",
+      "section_title": "4. 业务过程描述（非接口步骤版）",
+      "source_file": "",
+      "source_block": "section_5_paragraph_1_part_1",
+      "tokens_estimate": 10,
+      "keywords": [
+        "从业务视角看",
+        "一次标准任务应经历以下过程"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_008",
+      "content": "1. 用户提交待分析的需求内容并形成任务实体；\n2. 系统完成需求结构化，补充检索上下文，形成后续生成的语义基础；\n3. 系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅；\n4. 系统在指定环境中执行任务，输出过程日志与结果状态；\n5. 系统聚合校验与分析报告，支持从任务维度查看历史与产物；\n6. 任务结束后可归档，归档后不再作为活跃任务参与主流程。",
+      "section_title": "4. 业务过程描述（非接口步骤版）",
+      "source_file": "",
+      "source_block": "section_5_paragraph_2_part_1",
+      "tokens_estimate": 94,
+      "keywords": [
+        "用户提交待分析的需求内容并形成任务实体",
+        "系统完成需求结构化",
+        "补充检索上下文",
+        "形成后续生成的语义基础",
+        "系统输出可执行场景及",
+        "dsl",
+        "并生成可阅读的",
+        "feature"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_009",
+      "content": "> 说明：上述过程强调业务闭环，不要求阅读者记忆具体路径与方法名。",
+      "section_title": "4. 业务过程描述（非接口步骤版）",
+      "source_file": "",
+      "source_block": "section_5_paragraph_3_part_1",
+      "tokens_estimate": 16,
+      "keywords": [
+        "说明",
+        "上述过程强调业务闭环",
+        "不要求阅读者记忆具体路径与方法名"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_010",
+      "content": "为避免联调过程出现“口径不一致”，本需求文档采用 `docs/frontend_api_list.md` 作为接口基线。\n本次端到端验收默认至少覆盖以下接口组。",
+      "section_title": "5. 接口基线（来源：`docs/frontend_api_list.md`）",
+      "source_file": "",
+      "source_block": "section_6_paragraph_1_part_1",
+      "tokens_estimate": 40,
+      "keywords": [
+        "为避免联调过程出现“口径不一致”",
+        "本需求文档采用",
+        "docs",
+        "frontend_api_list.md",
+        "作为接口基线",
+        "本次端到端验收默认至少覆盖以下接口组"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_011",
+      "content": "- `POST /api/tasks`\n- `GET /api/tasks/{task_id}`\n- `POST /api/tasks/{task_id}/parse`\n- `GET /api/tasks/{task_id}/parsed-requirement`\n- `GET /api/tasks/{task_id}/retrieved-context`",
+      "section_title": "5.1 任务与解析（必测）",
+      "source_file": "",
+      "source_block": "section_7_paragraph_1_part_1",
+      "tokens_estimate": 89,
+      "keywords": [
+        "post",
+        "api",
+        "tasks",
+        "get",
+        "task_id",
+        "parse",
+        "parsed-requirement",
+        "retrieved-context"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_012",
+      "content": "- `POST /api/tasks/{task_id}/scenarios/generate`\n- `GET /api/tasks/{task_id}/scenarios`\n- `GET /api/tasks/{task_id}/dsl`\n- `GET /api/tasks/{task_id}/feature`",
+      "section_title": "5.2 场景与 DSL（必测）",
+      "source_file": "",
+      "source_block": "section_8_paragraph_1_part_1",
+      "tokens_estimate": 78,
+      "keywords": [
+        "post",
+        "api",
+        "tasks",
+        "task_id",
+        "scenarios",
+        "generate",
+        "get",
+        "dsl"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_013",
+      "content": "- `POST /api/tasks/{task_id}/execute`\n- `GET /api/tasks/{task_id}/execution`\n- `GET /api/tasks/{task_id}/execution/logs`\n- `GET /api/tasks/{task_id}/validation-report`\n- `GET /api/tasks/{task_id}/analysis-report`",
+      "section_title": "5.3 执行与结果（必测）",
+      "source_file": "",
+      "source_block": "section_9_paragraph_1_part_1",
+      "tokens_estimate": 106,
+      "keywords": [
+        "post",
+        "api",
+        "tasks",
+        "task_id",
+        "execute",
+        "get",
+        "execution",
+        "logs"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_014",
+      "content": "- `GET /api/tasks/{task_id}/artifacts`\n- `GET /api/tasks/{task_id}/artifacts/{type}`\n- `GET /api/history/tasks`\n- `GET /api/history/executions`\n- `DELETE /api/tasks/{task_id}`（归档）",
+      "section_title": "5.4 产物与历史（建议纳入）",
+      "source_file": "",
+      "source_block": "section_10_paragraph_1_part_1",
+      "tokens_estimate": 89,
+      "keywords": [
+        "get",
+        "api",
+        "tasks",
+        "task_id",
+        "artifacts",
+        "type",
+        "history",
+        "executions"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_015",
+      "content": "- `GET /api/environments`\n- `POST /api/environments`\n- `PUT /api/environments/{environment_name}`\n- `DELETE /api/environments/{environment_name}`\n- `POST /api/analysis/parse`（独立解析链路）\n- `GET /health`\n- `GET /version`",
+      "section_title": "5.5 环境与扩展能力（按需）",
+      "source_file": "",
+      "source_block": "section_11_paragraph_1_part_1",
+      "tokens_estimate": 107,
+      "keywords": [
+        "get",
+        "api",
+        "environments",
+        "post",
+        "put",
+        "environment_name",
+        "delete",
+        "analysis"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_016",
+      "content": "- `execution_mode=api`：当前主执行路径，联调与验收优先使用。\n- `execution_mode=cloud-load`：当前为本地并发压测模拟，不作为本轮主验收路径。\n- `execution_mode=web-ui`：适配中，默认不纳入本轮通过标准。",
+      "section_title": "5.6 执行模式说明（与当前项目现状一致）",
+      "source_file": "",
+      "source_block": "section_12_paragraph_1_part_1",
+      "tokens_estimate": 69,
+      "keywords": [
+        "execution_mode=api",
+        "当前主执行路径",
+        "联调与验收优先使用",
+        "execution_mode=cloud-load",
+        "当前为本地并发压测模拟",
+        "不作为本轮主验收路径",
+        "execution_mode=web-ui",
+        "适配中"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_017",
+      "content": "本节用于明确“当前项目真实输入输出”，避免开发文档与实际实现偏离。",
+      "section_title": "6. 当前实现口径补充",
+      "source_file": "",
+      "source_block": "section_13_paragraph_1_part_1",
+      "tokens_estimate": 16,
+      "keywords": [
+        "本节用于明确“当前项目真实输入输出”",
+        "避免开发文档与实际实现偏离"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_018",
+      "content": "当前 task-center API 统一使用如下响应结构：",
+      "section_title": "6.1 统一响应 envelope",
+      "source_file": "",
+      "source_block": "section_14_paragraph_1_part_1",
+      "tokens_estimate": 15,
+      "keywords": [
+        "当前",
+        "task-center",
+        "api",
+        "统一使用如下响应结构"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_019",
+      "content": "{\n\"success\": true,\n\"code\": \"SOME_CODE\",\n\"message\": \"some message\",\n\"data\": {},\n\"timestamp\": \"2026-04-04T15:00:00+00:00\"\n}",
+      "section_title": "6.1 统一响应 envelope",
+      "source_file": "",
+      "source_block": "section_14_paragraph_2_part_1",
+      "tokens_estimate": 60,
+      "keywords": [
+        "success",
+        "true",
+        "code",
+        "some_code",
+        "message",
+        "some",
+        "data",
+        "timestamp"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_020",
+      "content": "联调时应默认按统一 envelope 理解接口输出。\n涉及业务字段时，优先从 `data.*` 下查找，不应假设所有字段都平铺在顶层。",
+      "section_title": "6.1 统一响应 envelope",
+      "source_file": "",
+      "source_block": "section_14_paragraph_3_part_1",
+      "tokens_estimate": 33,
+      "keywords": [
+        "联调时应默认按统一",
+        "envelope",
+        "理解接口输出",
+        "涉及业务字段时",
+        "优先从",
+        "data.*",
+        "下查找",
+        "不应假设所有字段都平铺在顶层"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_021",
+      "content": "当前项目中，任务详情、分析报告详情和执行结果详情这几类“详情查询接口”返回的是“单对象详情”，不是列表；对应接口基线见第 5 节。",
+      "section_title": "6.2 关键 detail 接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_15_paragraph_1_part_1",
+      "tokens_estimate": 32,
+      "keywords": [
+        "当前项目中",
+        "任务详情",
+        "分析报告详情和执行结果详情这几类“详情查询接口”返回的是“单对象详情”",
+        "不是列表",
+        "对应接口基线见第"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_022",
+      "content": "其中任务详情响应当前真实返回位于 `data` 下，包含：",
+      "section_title": "6.2 关键 detail 接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_15_paragraph_2_part_1",
+      "tokens_estimate": 14,
+      "keywords": [
+        "其中任务详情响应当前真实返回位于",
+        "data",
+        "包含"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_023",
+      "content": "- `data.task_id`\n- `data.task_name`\n- `data.status`\n- `data.task_context`\n- `data.parse_metadata`\n- `data.parsed_requirement`\n- `data.retrieved_context`\n- `data.scenarios`\n- `data.test_case_dsl`\n- `data.validation_report`\n- `data.analysis_report`\n- `data.feature_text`\n- `data.execution_result`",
+      "section_title": "6.2 关键 detail 接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_15_paragraph_3_part_1",
+      "tokens_estimate": 147,
+      "keywords": [
+        "data.task_id",
+        "data.task_name",
+        "data.status",
+        "data.task_context",
+        "data.parse_metadata",
+        "data.parsed_requirement",
+        "data.retrieved_context",
+        "data.scenarios"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_024",
+      "content": "因此，联调和断言设计中不应把任务详情查询接口当作列表接口，也不应假设存在 `data.tasks`。",
+      "section_title": "6.2 关键 detail 接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_15_paragraph_4_part_1",
+      "tokens_estimate": 25,
+      "keywords": [
+        "因此",
+        "联调和断言设计中不应把任务详情查询接口当作列表接口",
+        "也不应假设存在",
+        "data.tasks"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_025",
+      "content": "当前任务创建接口的成功返回重点字段是：",
+      "section_title": "6.3 任务创建接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_16_paragraph_1_part_1",
+      "tokens_estimate": 9,
+      "keywords": [
+        "当前任务创建接口的成功返回重点字段是"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_026",
+      "content": "- `data.task_id`\n- `data.task_context`\n- `data.task_context.task_id`\n- `data.task_context.task_name`",
+      "section_title": "6.3 任务创建接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_16_paragraph_2_part_1",
+      "tokens_estimate": 50,
+      "keywords": [
+        "data.task_id",
+        "data.task_context",
+        "data.task_context.task_id",
+        "data.task_context.task_name"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_027",
+      "content": "当前实现中，不应把任务创建接口的返回简单理解为 `data.task_name` 平铺存在。\n如果需要读取任务名称，应优先以 `data.task_context.task_name` 为准。",
+      "section_title": "6.3 任务创建接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_16_paragraph_3_part_1",
+      "tokens_estimate": 48,
+      "keywords": [
+        "当前实现中",
+        "不应把任务创建接口的返回简单理解为",
+        "data.task_name",
+        "平铺存在",
+        "如果需要读取任务名称",
+        "应优先以",
+        "data.task_context.task_name",
+        "为准"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_028",
+      "content": "当前解析接口的成功返回重点字段是：",
+      "section_title": "6.4 解析接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_17_paragraph_1_part_1",
+      "tokens_estimate": 8,
+      "keywords": [
+        "当前解析接口的成功返回重点字段是"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_029",
+      "content": "- `data.task_id`\n- `data.status`\n- `data.parsed_requirement`\n- `data.parse_metadata`",
+      "section_title": "6.4 解析接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_17_paragraph_2_part_1",
+      "tokens_estimate": 42,
+      "keywords": [
+        "data.task_id",
+        "data.status",
+        "data.parsed_requirement",
+        "data.parse_metadata"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_030",
+      "content": "当前默认稳定联调路径推荐：",
+      "section_title": "6.4 解析接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_17_paragraph_3_part_1",
+      "tokens_estimate": 6,
+      "keywords": [
+        "当前默认稳定联调路径推荐"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_031",
+      "content": "- `use_llm=false`\n- `rag_enabled=true`\n- `retrieval_top_k=5`\n- `rerank_enabled=false`",
+      "section_title": "6.4 解析接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_17_paragraph_4_part_1",
+      "tokens_estimate": 42,
+      "keywords": [
+        "use_llm=false",
+        "rag_enabled=true",
+        "retrieval_top_k=5",
+        "rerank_enabled=false"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_032",
+      "content": "如果显式启用 `use_llm=true`，允许出现模型增强、fallback 和额外时延，不应把它作为默认稳定基线。",
+      "section_title": "6.4 解析接口的实际返回语义",
+      "source_file": "",
+      "source_block": "section_17_paragraph_5_part_1",
+      "tokens_estimate": 29,
+      "keywords": [
+        "如果显式启用",
+        "use_llm=true",
+        "允许出现模型增强",
+        "fallback",
+        "和额外时延",
+        "不应把它作为默认稳定基线"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_033",
+      "content": "当前执行接口能触发真实执行链路并生成结构化执行结果。\n但在当前项目阶段，端到端验收更关注“是否走通并产出结构化结果”，而不是要求所有自动生成场景都必须通过。",
+      "section_title": "6.5 执行接口的当前验收口径",
+      "source_file": "",
+      "source_block": "section_18_paragraph_1_part_1",
+      "tokens_estimate": 39,
+      "keywords": [
+        "当前执行接口能触发真实执行链路并生成结构化执行结果",
+        "但在当前项目阶段",
+        "端到端验收更关注“是否走通并产出结构化结果”",
+        "而不是要求所有自动生成场景都必须通过"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_034",
+      "content": "因此当前验收允许：",
+      "section_title": "6.5 执行接口的当前验收口径",
+      "source_file": "",
+      "source_block": "section_18_paragraph_2_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "因此当前验收允许"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_035",
+      "content": "- 执行完成且进入终态；\n- `GET /execution`、`GET /analysis-report` 可正常读取；\n- 少量场景失败但不阻断主链路闭环。",
+      "section_title": "6.5 执行接口的当前验收口径",
+      "source_file": "",
+      "source_block": "section_18_paragraph_3_part_1",
+      "tokens_estimate": 40,
+      "keywords": [
+        "执行完成且进入终态",
+        "get",
+        "execution",
+        "analysis-report",
+        "可正常读取",
+        "少量场景失败但不阻断主链路闭环"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_036",
+      "content": "- 单任务从“提交到报告”应可完整走通；\n- 关键中间产物（解析结果、场景、DSL、Feature）应可回读；\n- 报告数据与执行数据口径基本一致，不出现明显自相矛盾；\n- 归档动作生效后，任务应从活跃视图中消失；\n- 返回结构保持统一 envelope，便于前端统一处理；\n- 开发文档中描述的关键输入输出与当前实现一致。",
+      "section_title": "7.1 必须满足",
+      "source_file": "",
+      "source_block": "section_19_paragraph_1_part_1",
+      "tokens_estimate": 81,
+      "keywords": [
+        "单任务从“提交到报告”应可完整走通",
+        "关键中间产物",
+        "解析结果",
+        "场景",
+        "dsl",
+        "feature",
+        "应可回读",
+        "报告数据与执行数据口径基本一致"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_037",
+      "content": "- 少量场景执行失败但不阻断整体链路；\n- 检索策略在不同输入下出现回退；\n- 报告存在提示级告警（如步骤表达偏长）；\n- 启用 LLM 增强后耗时明显上升或结果出现回退。",
+      "section_title": "7.2 可接受但需记录",
+      "source_file": "",
+      "source_block": "section_20_paragraph_1_part_1",
+      "tokens_estimate": 43,
+      "keywords": [
+        "少量场景执行失败但不阻断整体链路",
+        "检索策略在不同输入下出现回退",
+        "报告存在提示级告警",
+        "如步骤表达偏长",
+        "启用",
+        "llm",
+        "增强后耗时明显上升或结果出现回退"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_038",
+      "content": "- **可追踪性**：同一任务 ID 可串联输入、产物、执行、报告与历史。\n- **可解释性**：解析结果应能说明来自哪些上下文片段。\n- **一致性**：前后端对状态字段、错误消息、时间字段含义保持一致。\n- **可维护性**：配置项通过统一配置管理，不在流程中硬编码环境地址。",
+      "section_title": "8. 非功能与治理要求",
+      "source_file": "",
+      "source_block": "section_21_paragraph_1_part_1",
+      "tokens_estimate": 70,
+      "keywords": [
+        "**可追踪性**",
+        "同一任务",
+        "id",
+        "可串联输入",
+        "产物",
+        "执行",
+        "报告与历史",
+        "**可解释性**"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_039",
+      "content": "- 同步执行模式下，长任务会占用请求时长；\n- 复杂断言与字段映射仍存在误判空间；\n- 当前自动场景/断言生成对“开发文档”类文本的理解仍可能比“精确可执行规格”更宽泛；\n- 当前持久化方案偏向 MVP，尚未达到生产级可靠性；\n- 在外部依赖波动情况下，检索与执行耗时可能明显抖动。",
+      "section_title": "9. 风险与已知限制",
+      "source_file": "",
+      "source_block": "section_22_paragraph_1_part_1",
+      "tokens_estimate": 70,
+      "keywords": [
+        "同步执行模式下",
+        "长任务会占用请求时长",
+        "复杂断言与字段映射仍存在误判空间",
+        "当前自动场景",
+        "断言生成对“开发文档”类文本的理解仍可能比“精确可执行规格”更宽泛",
+        "当前持久化方案偏向",
+        "mvp",
+        "尚未达到生产级可靠性"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_040",
+      "content": "- 默认联调基地址使用 `http://127.0.0.1:8001`；\n- 执行时应提供明确目标系统来源（任务目标地址或环境配置）；\n- 测试数据需避免依赖不可控的外部实时状态；\n- 若启用模型增强能力，应提前完成密钥与模型配置核验；\n- 联调前应确认当前服务进程已重启，避免沿用旧版本逻辑。",
+      "section_title": "10. 环境前置条件",
+      "source_file": "",
+      "source_block": "section_23_paragraph_1_part_1",
+      "tokens_estimate": 73,
+      "keywords": [
+        "默认联调基地址使用",
+        "http",
+        "执行时应提供明确目标系统来源",
+        "任务目标地址或环境配置",
+        "测试数据需避免依赖不可控的外部实时状态",
+        "若启用模型增强能力",
+        "应提前完成密钥与模型配置核验",
+        "联调前应确认当前服务进程已重启"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_041",
+      "content": "验收结束后需至少沉淀以下内容：",
+      "section_title": "11. 输出物要求",
+      "source_file": "",
+      "source_block": "section_24_paragraph_1_part_1",
+      "tokens_estimate": 7,
+      "keywords": [
+        "验收结束后需至少沉淀以下内容"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_042",
+      "content": "- 一份执行结论（通过 / 有条件通过 / 不通过）；\n- 一份问题清单（按阻断、主要、次要分级）；\n- 一份回归记录（包含环境、版本、时间窗口、任务样本）；\n- 对未闭环项给出下一迭代处理建议与责任人。",
+      "section_title": "11. 输出物要求",
+      "source_file": "",
+      "source_block": "section_24_paragraph_2_part_1",
+      "tokens_estimate": 51,
+      "keywords": [
+        "一份执行结论",
+        "通过",
+        "有条件通过",
+        "不通过",
+        "一份问题清单",
+        "按阻断",
+        "主要",
+        "次要分级"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_043",
+      "content": "后续更新本文件时，应遵循以下原则：",
+      "section_title": "12. 文档维护原则",
+      "source_file": "",
+      "source_block": "section_25_paragraph_1_part_1",
+      "tokens_estimate": 8,
+      "keywords": [
+        "后续更新本文件时",
+        "应遵循以下原则"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_044",
+      "content": "- 保持“开发文档 / 验收口径说明”定位，不将其改写成纯自动化脚本；\n- 描述当前真实接口行为，而不是未来预期结构；\n- 当接口真实返回字段发生变化时，优先同步本文件的“当前实现口径补充”章节；\n- 如果需要机器可执行的严格版本，应单独维护独立 spec，而不是挤占本文件的开发文档定位。",
+      "section_title": "12. 文档维护原则",
+      "source_file": "",
+      "source_block": "section_25_paragraph_2_part_1",
+      "tokens_estimate": 72,
+      "keywords": [
+        "保持“开发文档",
+        "验收口径说明”定位",
+        "不将其改写成纯自动化脚本",
+        "描述当前真实接口行为",
+        "而不是未来预期结构",
+        "当接口真实返回字段发生变化时",
+        "优先同步本文件的“当前实现口径补充”章节",
+        "如果需要机器可执行的严格版本"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "contract_post_tasks",
+      "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+      "section_title": "创建任务 POST /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 65,
+      "keywords": [
+        "POST",
+        "/api/tasks",
+        "task_name",
+        "创建任务",
+        "task_id",
+        "requirement"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_get_task",
+      "content": "GET /api/tasks/{task_id} 返回任务状态、流水线阶段、artifact 路径等。路径参数 task_id 为创建任务接口返回的标识。",
+      "section_title": "任务详情 GET /api/tasks/{task_id}",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 38,
+      "keywords": [
+        "GET",
+        "/api/tasks",
+        "task_id",
+        "详情",
+        "状态"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_task_list",
+      "content": "GET /api/tasks 支持分页与筛选，用于控制台列表页展示历史任务。",
+      "section_title": "任务列表 GET /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 19,
+      "keywords": [
+        "GET",
+        "/api/tasks",
+        "列表",
+        "分页"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execute",
+      "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+      "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 43,
+      "keywords": [
+        "POST",
+        "execute",
+        "执行",
+        "task_id",
+        "dry_run"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_preflight",
+      "content": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行。",
+      "section_title": "预检 POST /api/tasks/{task_id}/preflight-check",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 35,
+      "keywords": [
+        "preflight",
+        "预检",
+        "task_id",
+        "校验"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execution_explanations",
+      "content": "GET /api/tasks/{task_id}/execution/explanations 返回步骤级说明与上下文，用于排错与审计。",
+      "section_title": "执行说明 GET /api/tasks/{task_id}/execution/explanations",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 34,
+      "keywords": [
+        "explanations",
+        "执行说明",
+        "task_id",
+        "步骤"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_parse_requirement",
+      "content": "需求分析模块将自然语言或文档解析为结构化字段：objective、actors、actions、expected_results、ambiguities 等；可结合 RAG 检索上下文提升准确度。",
+      "section_title": "需求解析（分析服务）",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 49,
+      "keywords": [
+        "解析",
+        "requirement",
+        "RAG",
+        "objective",
+        "actions"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_envelope_errors",
+      "content": "平台 HTTP API 错误宜使用统一 envelope（如 code、message、details），前端与自动化应优先解析该结构而非裸文本。",
+      "section_title": "统一错误响应",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 36,
+      "keywords": [
+        "错误",
+        "envelope",
+        "422",
+        "message",
+        "code"
+      ],
+      "doc_type": "platform_contract"
+    }
+  ]
+}

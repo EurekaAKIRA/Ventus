@@ -103,6 +103,8 @@ def main() -> int:
     assert passed_report["dashboard"]["context_summary"]["extracted_keys"] == 1
     assert passed_report["dashboard"]["context_summary"]["defined_key_names"] == ["token"]
     assert passed_report["dashboard"]["context_summary"]["extracted_key_names"] == ["token"]
+    assert "assertion_quality_summary" in passed_report["summary"]
+    assert isinstance(passed_report["step_assertion_quality"], list)
     assert "平均耗时" in passed_report["task_summary_text"]
 
     failed_report = build_analysis_report(
@@ -157,6 +159,7 @@ def main() -> int:
     assert any(item["category"] == "validation_warning" for item in failed_report["failure_reasons"])
     assert failed_report["dashboard"]["top_failure_reason"]["category"] == "assertion_failed"
     assert failed_report["dashboard"]["context_summary"]["undefined_used_keys"] == []
+    assert failed_report["findings"]
 
     pending_report = build_analysis_report(
         task_context=task_context,
@@ -169,6 +172,7 @@ def main() -> int:
     assert pending_report["summary"]["failed_steps"] == 0
     assert pending_report["summary"]["success_rate"] == 0.0
     assert pending_report["report_sections"][2]["key"] == "assertions"
+    assert "quality_summary" in pending_report["report_sections"][2]["items"]
     assert "尚未开始执行" in pending_report["task_summary_text"]
 
     load_report = build_analysis_report(

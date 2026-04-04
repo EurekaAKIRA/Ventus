@@ -1,0 +1,19 @@
+{
+  "feature_name": "端到端测试9",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 5,
+    "average_step_count": 3.2,
+    "step_count": 16,
+    "parse_metrics": {
+      "actor_count": 6,
+      "entity_count": 15,
+      "action_count": 12,
+      "expected_count": 6,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "llm"
+  }
+}

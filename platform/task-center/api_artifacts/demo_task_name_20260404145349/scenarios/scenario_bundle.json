@@ -1,0 +1,961 @@
+{
+  "task_context": {
+    "task_id": "demo_task_name_20260404145338",
+    "task_name": "demo_task_name",
+    "source_type": "text",
+    "source_path": null,
+    "created_at": "2026-04-04T14:53:38.003032+00:00",
+    "language": "zh-CN",
+    "status": "received",
+    "notes": []
+  },
+  "raw_requirement": "demo requirement text",
+  "parsed_requirement": {
+    "objective": "demo requirement text\nPOST /api/tasks 创建任务",
+    "actors": [
+      "用户"
+    ],
+    "entities": [
+      "demo",
+      "requirement",
+      "text",
+      "post",
+      "api",
+      "tasks",
+      "创建任务",
+      "请求体常用字段",
+      "task_name",
+      "必填"
+    ],
+    "preconditions": [],
+    "actions": [
+      "demo requirement text\nPOST /api/tasks 创建任务"
+    ],
+    "expected_results": [
+      "成功时响应 data 中含 task_id，用于后续查询与执行"
+    ],
+    "constraints": [
+      "demo requirement text",
+      "请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment"
+    ],
+    "ambiguities": [],
+    "source_chunks": [
+      "chunk_001",
+      "contract_post_tasks",
+      "contract_parse_requirement",
+      "contract_execute",
+      "contract_task_list"
+    ],
+    "api_endpoints": [
+      {
+        "method": "POST",
+        "path": "/api/tasks",
+        "description": "创建任务。请求体常用字段：task_name（必填）、source_type、r"
+      }
+    ]
+  },
+  "retrieved_context": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "demo requirement text",
+      "score": 10.0,
+      "section_title": "未命名章节",
+      "source_file": "",
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "contract_post_tasks",
+      "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+      "score": 6.934,
+      "section_title": "创建任务 POST /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_parse_requirement",
+      "content": "需求分析模块将自然语言或文档解析为结构化字段：objective、actors、actions、expected_results、ambiguities 等；可结合 RAG 检索上下文提升准确度。",
+      "score": 6.894,
+      "section_title": "需求解析（分析服务）",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execute",
+      "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+      "score": 6.605,
+      "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_task_list",
+      "content": "GET /api/tasks 支持分页与筛选，用于控制台列表页展示历史任务。",
+      "score": 6.512,
+      "section_title": "任务列表 GET /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "demo requirement text\nPOST /api/tasks 创建任务",
+      "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "demo requirement text\nPOST /api/tasks 创建任务"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "chunk_001",
+        "contract_post_tasks",
+        "contract_parse_requirement",
+        "contract_execute",
+        "contract_task_list"
+      ],
+      "priority": "P0",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    }
+  ],
+  "test_case_dsl": {
+    "dsl_version": "0.2.0",
+    "task_id": "demo_task_name_20260404145338",
+    "task_name": "demo_task_name",
+    "feature_name": "demo_task_name",
+    "execution_mode": "api",
+    "scenarios": [
+      {
+        "scenario_id": "scenario_001",
+        "name": "demo requirement text\nPOST /api/tasks 创建任务",
+        "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+        "priority": "P0",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "chunk_001",
+          "contract_post_tasks",
+          "contract_parse_requirement",
+          "contract_execute",
+          "contract_task_list"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "step_type": "when",
+            "text": "demo requirement text\nPOST /api/tasks 创建任务",
+            "request": {
+              "method": "POST",
+              "url": "/api/tasks",
+              "json": {
+                "task_name": "demo_task_name",
+                "source_type": "text",
+                "requirement_text": "demo requirement text",
+                "target_system": "http://127.0.0.1:8001",
+                "environment": "test"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 201
+              },
+              {
+                "assertion_id": "assertion_02",
+                "source": "json.data.task_id",
+                "op": "exists",
+                "severity": "major",
+                "category": "field_presence",
+                "confidence": 0.93,
+                "generated_by": "rules",
+                "reasoning": "saved_context_exists",
+                "fallback_used": false
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [
+              "resource_id",
+              "task_id"
+            ],
+            "save_context": {
+              "task_id": "json.data.task_id",
+              "resource_id": "json.data.task_id"
+            },
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 1,
+              "generated_by_counts": {
+                "rules": 2,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 2,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "source_type": "text",
+      "language": "zh-CN",
+      "case_generation": {
+        "api_scenario_count": 1,
+        "scenario_count": 1,
+        "parsed_entities": [
+          "demo",
+          "requirement",
+          "text",
+          "post",
+          "api",
+          "tasks",
+          "创建任务",
+          "请求体常用字段",
+          "task_name",
+          "必填"
+        ]
+      }
+    }
+  },
+  "validation_report": {
+    "feature_name": "demo_task_name",
+    "passed": true,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "scenario_count": 1,
+      "average_step_count": 4.0,
+      "step_count": 4,
+      "parse_metrics": {
+        "actor_count": 1,
+        "entity_count": 10,
+        "action_count": 1,
+        "expected_count": 1,
+        "ambiguity_count": 0
+      },
+      "parse_mode": "rules"
+    }
+  },
+  "analysis_report": {
+    "task_id": "demo_task_name_20260404145338",
+    "task_name": "demo_task_name",
+    "quality_status": "passed",
+    "report_version": "1.1.0",
+    "generated_at": "2026-04-04T14:53:49.285967+00:00",
+    "summary": {
+      "scenario_count": 1,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "total_steps": 3,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "validation_passed": true,
+      "warning_count": 0,
+      "error_count": 0,
+      "execution_status": "not_started",
+      "assertion_total": 3,
+      "assertion_passed": 3,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "assertion_quality_summary": {
+        "rule_count": 2,
+        "llm_count": 0,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 2,
+        "weak_assertion_step_count": 0,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "enhancement": {
+        "parse_mode": "rules",
+        "llm_attempted": false,
+        "llm_used": false,
+        "rag_used": true,
+        "rag_fallback_reason": "",
+        "fallback_reason": "",
+        "llm_error_type": "",
+        "llm_provider_profile": "tencent_hunyuan_openai_compat",
+        "model_profile": "default",
+        "retrieval_mode": "vector+keyword",
+        "retrieval_top_k": 5,
+        "rerank_enabled": false,
+        "retrieval_metrics": {
+          "returned_count": 5,
+          "requested_top_k": 5,
+          "coverage_ratio": 1.0,
+          "duplicate_ratio": 0.0,
+          "score_avg": 7.389,
+          "rerank_applied": false,
+          "embedded_chunk_count": 9,
+          "embedding_coverage": 1.0,
+          "embedding_error": "",
+          "embedding_error_detail": "",
+          "retrieval_min_final_score": 0.0,
+          "retrieval_candidates_before_threshold": 5,
+          "retrieval_low_score_rejection": false
+        },
+        "contract_knowledge": {
+          "enabled": true,
+          "merged_snippet_count": 8,
+          "official_score_boost": 2.0,
+          "min_retrieval_score": 0.0
+        },
+        "retrieval_scoring": {
+          "lexical_weight": 4.0,
+          "vector_weight": 6.0,
+          "rerank_vector_weight": 7.0,
+          "rerank_lexical_weight": 2.0,
+          "rerank_title_boost": 0.2,
+          "rerank_content_boost": 0.2
+        },
+        "performance": {
+          "elapsed_ms": 11281.27,
+          "target_ms": 8000.0,
+          "within_target": false,
+          "slow_reason": "large_input_or_retrieval_cost"
+        },
+        "document_char_count": 21,
+        "cleaned_char_count": 21,
+        "chunk_count": 9,
+        "embedding_batch_size": 32,
+        "estimated_embedding_calls": 1,
+        "processing_tier": "realtime",
+        "large_document_warning": ""
+      }
+    },
+    "dashboard": {
+      "task_id": "demo_task_name_20260404145338",
+      "task_name": "demo_task_name",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "summary": {
+        "scenario_count": 1,
+        "executed_scenarios": 0,
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0,
+        "assertion_total": 3,
+        "assertion_pass_rate": 100.0,
+        "context_defined_keys": 2,
+        "context_used_keys": 0,
+        "context_extracted_keys": 0,
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0
+      },
+      "cards": [
+        {
+          "key": "scenarios",
+          "label": "Scenarios",
+          "value": 1
+        },
+        {
+          "key": "steps",
+          "label": "Total Steps",
+          "value": 3
+        },
+        {
+          "key": "passed_steps",
+          "label": "Passed",
+          "value": 0
+        },
+        {
+          "key": "failed_steps",
+          "label": "Failed",
+          "value": 0
+        },
+        {
+          "key": "success_rate",
+          "label": "Success Rate",
+          "value": 0.0
+        },
+        {
+          "key": "avg_elapsed_ms",
+          "label": "Avg Elapsed(ms)",
+          "value": 0.0
+        },
+        {
+          "key": "max_elapsed_ms",
+          "label": "Max Elapsed(ms)",
+          "value": 0.0
+        }
+      ],
+      "totals": {
+        "scenarios": 1,
+        "steps": 3,
+        "assertions": 3,
+        "requests": 0
+      },
+      "status_breakdown": {
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "passed_steps": 0,
+        "failed_steps": 0
+      },
+      "assertion_summary": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "assertion_quality_summary": {
+        "rule_count": 2,
+        "llm_count": 0,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 2,
+        "weak_assertion_step_count": 0,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "performance_summary": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "is_load_test": false
+      },
+      "context_summary": {
+        "defined_keys": 2,
+        "defined_key_names": [
+          "resource_id",
+          "task_id"
+        ],
+        "used_keys": 0,
+        "used_key_names": [],
+        "extracted_keys": 0,
+        "extracted_key_names": [],
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": []
+      },
+      "top_failure_reason": null,
+      "failure_reason_breakdown": [],
+      "headline": "0/3 steps passed",
+      "summary_text": "任务 demo_task_name 当前状态为 passed，已生成 1 个场景、3 个步骤，尚未开始执行。"
+    },
+    "dashboard_summary": {
+      "scenario_count": 1,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "execution_status": "not_started",
+      "total_steps": 3,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "assertion_total": 3,
+      "assertion_passed": 3,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "task_summary": {
+      "task_name": "demo_task_name",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "headline": "任务 demo_task_name 当前状态为 passed，已生成 1 个场景、3 个步骤，尚未开始执行。",
+      "success_rate": 0.0,
+      "failed_steps": 0,
+      "total_requests": 0,
+      "throughput": 0.0,
+      "top_failure_reason": null,
+      "next_action": "执行任务以生成运行报告"
+    },
+    "execution_overview": {
+      "executor": null,
+      "status": "not_started",
+      "scenario_count": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "log_count": 0,
+      "has_failures": false,
+      "top_failure_category": null
+    },
+    "performance_stats": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "failed_steps": [],
+    "failure_reasons": [],
+    "assertion_stats": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "validation_errors": 0,
+      "validation_warnings": 0
+    },
+    "step_assertion_quality": [
+      {
+        "step_id": "scenario_001_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_001_step_02",
+        "assertion_count": 2,
+        "generated_by_counts": {
+          "rules": 2
+        },
+        "categories": {
+          "status": 1,
+          "field_presence": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_001_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      }
+    ],
+    "context_stats": {
+      "defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "defined_key_count": 2,
+      "used_keys": [],
+      "used_key_count": 0,
+      "extracted_keys": [],
+      "extracted_key_count": 0,
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": [],
+      "save_rules": {
+        "task_id": "json.data.task_id",
+        "resource_id": "json.data.task_id"
+      }
+    },
+    "task_summary_text": "任务 demo_task_name 当前状态为 passed，已生成 1 个场景、3 个步骤，尚未开始执行。",
+    "findings": [],
+    "chart_data": {
+      "validation": {
+        "passed": 1,
+        "failed": 0,
+        "warnings": 0,
+        "errors": 0
+      },
+      "execution": {
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      },
+      "assertions": {
+        "passed": 3,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "assertion_quality": {
+        "rule_count": 2,
+        "llm_count": 0,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 2,
+        "weak_assertion_step_count": 0,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "context": {
+        "defined": 2,
+        "used": 0,
+        "extracted": 0
+      },
+      "failure_reasons": {}
+    },
+    "report_sections": [
+      {
+        "key": "overview",
+        "title": "执行概览",
+        "items": {
+          "scenario_count": 1,
+          "total_steps": 3,
+          "passed_steps": 0,
+          "failed_steps": 0,
+          "success_rate": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      },
+      {
+        "key": "failures",
+        "title": "失败分析",
+        "items": {
+          "failure_reason_count": 0,
+          "failure_reasons": []
+        }
+      },
+      {
+        "key": "assertions",
+        "title": "断言统计",
+        "items": {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "pass_rate": 100.0,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "quality_summary": {
+            "rule_count": 2,
+            "llm_count": 0,
+            "llm_repair_count": 0,
+            "fallback_count": 0,
+            "high_confidence_count": 2,
+            "weak_assertion_step_count": 0,
+            "steps": [
+              {
+                "step_id": "scenario_001_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_001_step_02",
+                "assertion_count": 2,
+                "generated_by_counts": {
+                  "rules": 2
+                },
+                "categories": {
+                  "status": 1,
+                  "field_presence": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_001_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "key": "context",
+        "title": "上下文提取",
+        "items": {
+          "defined_keys": [
+            "resource_id",
+            "task_id"
+          ],
+          "defined_key_count": 2,
+          "used_keys": [],
+          "used_key_count": 0,
+          "extracted_keys": [],
+          "extracted_key_count": 0,
+          "unused_defined_keys": [
+            "resource_id",
+            "task_id"
+          ],
+          "undefined_used_keys": [],
+          "save_rules": {
+            "task_id": "json.data.task_id",
+            "resource_id": "json.data.task_id"
+          }
+        }
+      },
+      {
+        "key": "performance",
+        "title": "性能摘要",
+        "items": {
+          "total_requests": 0,
+          "success_count": 0,
+          "failure_count": 0,
+          "throughput": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      }
+    ]
+  },
+  "parse_metadata": {
+    "parse_mode": "rules",
+    "llm_attempted": false,
+    "llm_used": false,
+    "rag_used": true,
+    "rag_fallback_reason": "",
+    "fallback_reason": "",
+    "llm_error_type": "",
+    "llm_provider_profile": "tencent_hunyuan_openai_compat",
+    "model_profile": "default",
+    "retrieval_mode": "vector+keyword",
+    "retrieval_top_k": 5,
+    "rerank_enabled": false,
+    "retrieval_metrics": {
+      "returned_count": 5,
+      "requested_top_k": 5,
+      "coverage_ratio": 1.0,
+      "duplicate_ratio": 0.0,
+      "score_avg": 7.389,
+      "rerank_applied": false,
+      "embedded_chunk_count": 9,
+      "embedding_coverage": 1.0,
+      "embedding_error": "",
+      "embedding_error_detail": "",
+      "retrieval_min_final_score": 0.0,
+      "retrieval_candidates_before_threshold": 5,
+      "retrieval_low_score_rejection": false
+    },
+    "contract_knowledge": {
+      "enabled": true,
+      "merged_snippet_count": 8,
+      "official_score_boost": 2.0,
+      "min_retrieval_score": 0.0
+    },
+    "retrieval_scoring": {
+      "lexical_weight": 4.0,
+      "vector_weight": 6.0,
+      "rerank_vector_weight": 7.0,
+      "rerank_lexical_weight": 2.0,
+      "rerank_title_boost": 0.2,
+      "rerank_content_boost": 0.2
+    },
+    "performance": {
+      "elapsed_ms": 11281.27,
+      "target_ms": 8000.0,
+      "within_target": false,
+      "slow_reason": "large_input_or_retrieval_cost"
+    },
+    "document_char_count": 21,
+    "cleaned_char_count": 21,
+    "chunk_count": 9,
+    "embedding_batch_size": 32,
+    "estimated_embedding_calls": 1,
+    "processing_tier": "realtime",
+    "large_document_warning": ""
+  }
+}

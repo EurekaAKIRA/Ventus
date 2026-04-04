@@ -56,6 +56,7 @@ export interface ScenarioModel {
 }
 
 export interface TestCaseStep {
+  assertion_quality?: Record<string, unknown>;
   step_id: string;
   step_type: string;
   text: string;
@@ -71,9 +72,16 @@ export interface TestCaseStep {
   assertions?: Array<
     | string
     | {
+        assertion_id?: string;
         source: string;
         op: string;
         expected?: unknown;
+        severity?: string;
+        category?: string;
+        confidence?: number;
+        generated_by?: string;
+        reasoning?: string;
+        fallback_used?: boolean;
       }
   >;
   uses_context?: string[];
@@ -202,6 +210,7 @@ export interface AnalysisReport {
   task_name: string;
   quality_status: string;
   summary: Record<string, unknown>;
+  step_assertion_quality?: Array<Record<string, unknown>>;
   findings: string[];
   chart_data: Record<string, unknown>;
 }

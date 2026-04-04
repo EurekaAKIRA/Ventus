@@ -49,10 +49,21 @@ class RequirementAnalysisModelProfile:
 
 
 @dataclass(frozen=True, slots=True)
+class AssertionEnhancementConfig:
+    enabled: bool = True
+    repair_enabled: bool = True
+    quality_gate_enabled: bool = True
+    min_confidence: float = 0.55
+    max_assertions_per_step: int = 6
+    provider_profile: str = "default"
+
+
+@dataclass(frozen=True, slots=True)
 class RequirementAnalysisRuntimeConfig:
     defaults: RequirementAnalysisDefaults = RequirementAnalysisDefaults()
     retrieval_scoring: RequirementAnalysisRetrievalScoring = RequirementAnalysisRetrievalScoring()
     contract_knowledge: ContractKnowledgeConfig = ContractKnowledgeConfig()
+    assertion_enhancement: AssertionEnhancementConfig = AssertionEnhancementConfig()
     embedding_batch_size: int = 32
     default_model_profile: str = "default"
     model_profiles: dict[str, RequirementAnalysisModelProfile] = field(
@@ -96,6 +107,7 @@ def _load_platform_runtime_config() -> PlatformRuntimeConfig:
     defaults = section.get("defaults", {})
     scoring = section.get("retrieval_scoring", {})
     contract = section.get("contract_knowledge", {}) if isinstance(section.get("contract_knowledge"), dict) else {}
+    assertion = section.get("assertion_enhancement", {}) if isinstance(section.get("assertion_enhancement"), dict) else {}
     raw_profiles = section.get("model_profiles", {})
     parsed_profiles: dict[str, RequirementAnalysisModelProfile] = {}
     if isinstance(raw_profiles, dict):
@@ -162,6 +174,24 @@ def _load_platform_runtime_config() -> PlatformRuntimeConfig:
                     min_value=1,
                     max_value=500,
                 ),
+            ),
+            assertion_enhancement=AssertionEnhancementConfig(
+                enabled=_as_bool(assertion.get("enabled"), default=True),
+                repair_enabled=_as_bool(assertion.get("repair_enabled"), default=True),
+                quality_gate_enabled=_as_bool(assertion.get("quality_gate_enabled"), default=True),
+                min_confidence=_as_float(
+                    assertion.get("min_confidence"),
+                    default=0.55,
+                    min_value=0.0,
+                    max_value=1.0,
+                ),
+                max_assertions_per_step=_as_int(
+                    assertion.get("max_assertions_per_step"),
+                    default=6,
+                    min_value=1,
+                    max_value=20,
+                ),
+                provider_profile=str(assertion.get("provider_profile", default_profile)).strip() or default_profile,
             ),
             embedding_batch_size=_as_int(
                 section.get("embedding_batch_size"),

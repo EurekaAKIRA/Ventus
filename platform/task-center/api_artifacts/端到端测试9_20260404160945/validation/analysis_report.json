@@ -1,0 +1,1580 @@
+{
+  "task_id": "端到端测试9_20260404160833",
+  "task_name": "端到端测试9",
+  "quality_status": "failed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-04T16:21:45.058348+00:00",
+  "summary": {
+    "scenario_count": 5,
+    "executed_scenarios": 5,
+    "passed_scenarios": 0,
+    "failed_scenarios": 5,
+    "total_steps": 15,
+    "executed_steps": 15,
+    "passed_steps": 10,
+    "failed_steps": 5,
+    "success_rate": 66.67,
+    "failure_rate": 33.33,
+    "avg_elapsed_ms": 154.95,
+    "max_elapsed_ms": 254.37,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "failed",
+    "assertion_total": 19,
+    "assertion_passed": 14,
+    "assertion_failed": 5,
+    "assertion_pass_rate": 73.68,
+    "context_defined_keys": 0,
+    "context_used_keys": 0,
+    "context_extracted_keys": 1,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "assertion_quality_summary": {
+      "rule_count": 5,
+      "llm_count": 9,
+      "llm_repair_count": 0,
+      "fallback_count": 0,
+      "high_confidence_count": 14,
+      "weak_assertion_step_count": 0,
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "assertion_count": 3,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_value": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "assertion_count": 2,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 1
+          },
+          "categories": {
+            "status": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_003_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "assertion_count": 3,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_value": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_004_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "assertion_count": 2,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 1
+          },
+          "categories": {
+            "status": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_005_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "assertion_count": 4,
+          "generated_by_counts": {
+            "llm": 3,
+            "rules": 1
+          },
+          "categories": {
+            "business": 1,
+            "status": 1,
+            "schema": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        }
+      ]
+    }
+  },
+  "dashboard": {
+    "task_id": "端到端测试9_20260404160833",
+    "task_name": "端到端测试9",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "summary": {
+      "scenario_count": 5,
+      "executed_scenarios": 5,
+      "passed_scenarios": 0,
+      "failed_scenarios": 5,
+      "success_rate": 66.67,
+      "failure_rate": 33.33,
+      "passed_steps": 10,
+      "failed_steps": 5,
+      "avg_elapsed_ms": 154.95,
+      "max_elapsed_ms": 254.37,
+      "assertion_total": 19,
+      "assertion_pass_rate": 73.68,
+      "context_defined_keys": 0,
+      "context_used_keys": 0,
+      "context_extracted_keys": 1,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 5
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 15
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 10
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 5
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 66.67
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 154.95
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 254.37
+      }
+    ],
+    "totals": {
+      "scenarios": 5,
+      "steps": 15,
+      "assertions": 19,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 0,
+      "failed_scenarios": 5,
+      "passed_steps": 10,
+      "failed_steps": 5
+    },
+    "assertion_summary": {
+      "total": 19,
+      "passed": 14,
+      "failed": 5,
+      "pass_rate": 73.68
+    },
+    "assertion_quality_summary": {
+      "rule_count": 5,
+      "llm_count": 9,
+      "llm_repair_count": 0,
+      "fallback_count": 0,
+      "high_confidence_count": 14,
+      "weak_assertion_step_count": 0,
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "assertion_count": 3,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_value": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "assertion_count": 2,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 1
+          },
+          "categories": {
+            "status": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_003_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "assertion_count": 3,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_value": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_004_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "assertion_count": 2,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 1
+          },
+          "categories": {
+            "status": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_005_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "assertion_count": 4,
+          "generated_by_counts": {
+            "llm": 3,
+            "rules": 1
+          },
+          "categories": {
+            "business": 1,
+            "status": 1,
+            "schema": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        }
+      ]
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 0,
+      "defined_key_names": [],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 1,
+      "extracted_key_names": [
+        "last_request"
+      ],
+      "unused_defined_keys": [],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 5,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "确认验收范围、签收最终结论",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "scenario_name": "验证页面主路径与真实接口数据一致性",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+        }
+      ]
+    },
+    "failure_reason_breakdown": [
+      {
+        "category": "assertion_failed",
+        "label": "Assertion Failed",
+        "count": 5,
+        "examples": [
+          {
+            "step_id": "scenario_001_step_02",
+            "scenario_name": "确认验收范围、签收最终结论",
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "scenario_name": "验证页面主路径与真实接口数据一致性",
+            "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+          }
+        ]
+      }
+    ],
+    "headline": "10/15 steps passed",
+    "summary_text": "任务 端到端测试9 当前状态为 failed，共分析 5 个场景，执行 15 个步骤；其中通过 10 个、失败 5 个，成功率 66.67%，平均耗时 154.95ms，最大耗时 254.37ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 5,
+    "executed_scenarios": 5,
+    "passed_scenarios": 0,
+    "failed_scenarios": 5,
+    "execution_status": "failed",
+    "total_steps": 15,
+    "executed_steps": 15,
+    "passed_steps": 10,
+    "failed_steps": 5,
+    "success_rate": 66.67,
+    "failure_rate": 33.33,
+    "avg_elapsed_ms": 154.95,
+    "max_elapsed_ms": 254.37,
+    "assertion_total": 19,
+    "assertion_passed": 14,
+    "assertion_failed": 5,
+    "assertion_pass_rate": 73.68,
+    "context_defined_keys": 0,
+    "context_used_keys": 0,
+    "context_extracted_keys": 1,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "端到端测试9",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "headline": "任务 端到端测试9 当前状态为 failed，共分析 5 个场景，执行 15 个步骤；其中通过 10 个、失败 5 个，成功率 66.67%，平均耗时 154.95ms，最大耗时 254.37ms。",
+    "success_rate": 66.67,
+    "failed_steps": 5,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 5,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "确认验收范围、签收最终结论",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "scenario_name": "验证页面主路径与真实接口数据一致性",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+        }
+      ]
+    },
+    "next_action": "优先处理失败步骤与失败原因分类"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "failed",
+    "scenario_count": 5,
+    "passed_scenarios": 0,
+    "failed_scenarios": 5,
+    "log_count": 45,
+    "has_failures": true,
+    "top_failure_category": "assertion_failed"
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [
+    {
+      "scenario_id": "scenario_001",
+      "scenario_name": "确认验收范围、签收最终结论",
+      "step_id": "scenario_001_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "确认验收范围、签收最终结论",
+      "status": "failed",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None",
+      "elapsed_ms": 151.39,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+          "server": "uvicorn",
+          "content-length": "22",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "detail": "Not Found"
+        },
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "elapsed_ms": 151.39,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 151.39,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_002",
+      "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+      "step_id": "scenario_002_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "保障主链路可运行，处理阻断性缺陷",
+      "status": "failed",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None",
+      "elapsed_ms": 126.62,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+          "server": "uvicorn",
+          "content-length": "22",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "detail": "Not Found"
+        },
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "elapsed_ms": 126.62,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 126.62,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_003",
+      "scenario_name": "验证页面主路径与真实接口数据一致性",
+      "step_id": "scenario_003_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "验证页面主路径与真实接口数据一致性",
+      "status": "failed",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None",
+      "elapsed_ms": 254.37,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+          "server": "uvicorn",
+          "content-length": "22",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "detail": "Not Found"
+        },
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "elapsed_ms": 254.37,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 254.37,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_004",
+      "scenario_name": "执行回归流程并输出问题清单",
+      "step_id": "scenario_004_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "执行回归流程并输出问题清单",
+      "status": "failed",
+      "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+      "elapsed_ms": 97.55,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+          "server": "uvicorn",
+          "content-length": "22",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "detail": "Not Found"
+        },
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "elapsed_ms": 97.55,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 97.55,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "scenario_id": "scenario_005",
+      "scenario_name": "保障测试环境地址、网络和依赖可达",
+      "step_id": "scenario_005_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "保障测试环境地址、网络和依赖可达",
+      "status": "failed",
+      "message": "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None; Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None; Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+      "elapsed_ms": 144.83,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 404,
+        "headers": {
+          "date": "Sat, 04 Apr 2026 16:10:07 GMT",
+          "server": "uvicorn",
+          "content-length": "22",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "detail": "Not Found"
+        },
+        "body_preview": "{\"detail\":\"Not Found\"}",
+        "elapsed_ms": 144.83,
+        "error": "HTTP Error 404: Not Found",
+        "error_category": "http_client_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/users",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 404,
+        "elapsed_ms": 144.83,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"detail\":\"Not Found\"}"
+      }
+    }
+  ],
+  "failure_reasons": [
+    {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 5,
+      "examples": [
+        {
+          "step_id": "scenario_001_step_02",
+          "scenario_name": "确认验收范围、签收最终结论",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "scenario_name": "验证页面主路径与真实接口数据一致性",
+          "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+        }
+      ]
+    }
+  ],
+  "assertion_stats": {
+    "total": 19,
+    "passed": 14,
+    "failed": 5,
+    "pass_rate": 73.68,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "step_assertion_quality": [
+    {
+      "step_id": "scenario_001_step_01",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_001_step_02",
+      "assertion_count": 3,
+      "generated_by_counts": {
+        "rules": 1,
+        "llm": 2
+      },
+      "categories": {
+        "status": 1,
+        "field_value": 1,
+        "performance": 1
+      },
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": ""
+    },
+    {
+      "step_id": "scenario_001_step_03",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_002_step_01",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_002_step_02",
+      "assertion_count": 2,
+      "generated_by_counts": {
+        "rules": 1,
+        "llm": 1
+      },
+      "categories": {
+        "status": 1,
+        "performance": 1
+      },
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": ""
+    },
+    {
+      "step_id": "scenario_002_step_03",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_003_step_01",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_003_step_02",
+      "assertion_count": 3,
+      "generated_by_counts": {
+        "rules": 1,
+        "llm": 2
+      },
+      "categories": {
+        "status": 1,
+        "field_value": 1,
+        "performance": 1
+      },
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": ""
+    },
+    {
+      "step_id": "scenario_003_step_03",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_004_step_01",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_004_step_02",
+      "assertion_count": 2,
+      "generated_by_counts": {
+        "rules": 1,
+        "llm": 1
+      },
+      "categories": {
+        "status": 1,
+        "performance": 1
+      },
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": ""
+    },
+    {
+      "step_id": "scenario_004_step_03",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_005_step_01",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    },
+    {
+      "step_id": "scenario_005_step_02",
+      "assertion_count": 4,
+      "generated_by_counts": {
+        "llm": 3,
+        "rules": 1
+      },
+      "categories": {
+        "business": 1,
+        "status": 1,
+        "schema": 1,
+        "performance": 1
+      },
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": ""
+    },
+    {
+      "step_id": "scenario_005_step_03",
+      "assertion_count": 0,
+      "generated_by_counts": {},
+      "categories": {},
+      "weak_assertion": false,
+      "fallback_reason": "",
+      "warning": "non_request_step"
+    }
+  ],
+  "context_stats": {
+    "defined_keys": [],
+    "defined_key_count": 0,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [
+      "last_request"
+    ],
+    "extracted_key_count": 1,
+    "unused_defined_keys": [],
+    "undefined_used_keys": [],
+    "save_rules": {}
+  },
+  "task_summary_text": "任务 端到端测试9 当前状态为 failed，共分析 5 个场景，执行 15 个步骤；其中通过 10 个、失败 5 个，成功率 66.67%，平均耗时 154.95ms，最大耗时 254.37ms。",
+  "findings": [
+    "确认验收范围、签收最终结论 / scenario_001_step_02: Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None",
+    "保障主链路可运行，处理阻断性缺陷 / scenario_002_step_02: Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None",
+    "验证页面主路径与真实接口数据一致性 / scenario_003_step_02: Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None",
+    "执行回归流程并输出问题清单 / scenario_004_step_02: Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+    "保障测试环境地址、网络和依赖可达 / scenario_005_step_02: Assertion failed [enhance_cand_04]: network_reachable eq True, actual=None; Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: content_type eq 'application/json', actual=None; Assertion failed [enhance_cand_02]: response_time lt 2000, actual=None",
+    "Failure categories: assertion_failed=5"
+  ],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 10,
+      "failed_steps": 5,
+      "success_rate": 66.67,
+      "failure_rate": 33.33,
+      "avg_elapsed_ms": 154.95,
+      "max_elapsed_ms": 254.37
+    },
+    "assertions": {
+      "passed": 14,
+      "failed": 5,
+      "pass_rate": 73.68
+    },
+    "assertion_quality": {
+      "rule_count": 5,
+      "llm_count": 9,
+      "llm_repair_count": 0,
+      "fallback_count": 0,
+      "high_confidence_count": 14,
+      "weak_assertion_step_count": 0,
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "assertion_count": 3,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_value": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "assertion_count": 2,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 1
+          },
+          "categories": {
+            "status": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_003_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "assertion_count": 3,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 2
+          },
+          "categories": {
+            "status": 1,
+            "field_value": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_004_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "assertion_count": 2,
+          "generated_by_counts": {
+            "rules": 1,
+            "llm": 1
+          },
+          "categories": {
+            "status": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_005_step_01",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "assertion_count": 4,
+          "generated_by_counts": {
+            "llm": 3,
+            "rules": 1
+          },
+          "categories": {
+            "business": 1,
+            "status": 1,
+            "schema": 1,
+            "performance": 1
+          },
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": ""
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "assertion_count": 0,
+          "generated_by_counts": {},
+          "categories": {},
+          "weak_assertion": false,
+          "fallback_reason": "",
+          "warning": "non_request_step"
+        }
+      ]
+    },
+    "context": {
+      "defined": 0,
+      "used": 0,
+      "extracted": 1
+    },
+    "failure_reasons": {
+      "assertion_failed": 5
+    }
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 5,
+        "total_steps": 15,
+        "passed_steps": 10,
+        "failed_steps": 5,
+        "success_rate": 66.67,
+        "avg_elapsed_ms": 154.95,
+        "max_elapsed_ms": 254.37
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 1,
+        "failure_reasons": [
+          {
+            "category": "assertion_failed",
+            "label": "Assertion Failed",
+            "count": 5,
+            "examples": [
+              {
+                "step_id": "scenario_001_step_02",
+                "scenario_name": "确认验收范围、签收最终结论",
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response.json().get('success') eq True, actual=None; Assertion failed [enhance_cand_04]: response_time lt 2000, actual=None"
+              },
+              {
+                "step_id": "scenario_002_step_02",
+                "scenario_name": "保障主链路可运行，处理阻断性缺陷",
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_02]: response_time lt 1000, actual=None"
+              },
+              {
+                "step_id": "scenario_003_step_02",
+                "scenario_name": "验证页面主路径与真实接口数据一致性",
+                "message": "Assertion failed [assertion_01]: status_code eq 200, actual=404; Assertion failed [enhance_cand_03]: response.json().input eq '验证页面主路径与真实接口数据一致性', actual=None; Assertion failed [enhance_cand_04]: response.elapsed.total_seconds() lt 2, actual=None"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 19,
+        "passed": 14,
+        "failed": 5,
+        "pass_rate": 73.68,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "quality_summary": {
+          "rule_count": 5,
+          "llm_count": 9,
+          "llm_repair_count": 0,
+          "fallback_count": 0,
+          "high_confidence_count": 14,
+          "weak_assertion_step_count": 0,
+          "steps": [
+            {
+              "step_id": "scenario_001_step_01",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_001_step_02",
+              "assertion_count": 3,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 2
+              },
+              "categories": {
+                "status": 1,
+                "field_value": 1,
+                "performance": 1
+              },
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": ""
+            },
+            {
+              "step_id": "scenario_001_step_03",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_002_step_01",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_002_step_02",
+              "assertion_count": 2,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 1
+              },
+              "categories": {
+                "status": 1,
+                "performance": 1
+              },
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": ""
+            },
+            {
+              "step_id": "scenario_002_step_03",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_003_step_01",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_003_step_02",
+              "assertion_count": 3,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 2
+              },
+              "categories": {
+                "status": 1,
+                "field_value": 1,
+                "performance": 1
+              },
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": ""
+            },
+            {
+              "step_id": "scenario_003_step_03",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_004_step_01",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_004_step_02",
+              "assertion_count": 2,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 1
+              },
+              "categories": {
+                "status": 1,
+                "performance": 1
+              },
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": ""
+            },
+            {
+              "step_id": "scenario_004_step_03",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_005_step_01",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            },
+            {
+              "step_id": "scenario_005_step_02",
+              "assertion_count": 4,
+              "generated_by_counts": {
+                "llm": 3,
+                "rules": 1
+              },
+              "categories": {
+                "business": 1,
+                "status": 1,
+                "schema": 1,
+                "performance": 1
+              },
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": ""
+            },
+            {
+              "step_id": "scenario_005_step_03",
+              "assertion_count": 0,
+              "generated_by_counts": {},
+              "categories": {},
+              "weak_assertion": false,
+              "fallback_reason": "",
+              "warning": "non_request_step"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [],
+        "defined_key_count": 0,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [
+          "last_request"
+        ],
+        "extracted_key_count": 1,
+        "unused_defined_keys": [],
+        "undefined_used_keys": [],
+        "save_rules": {}
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 154.95,
+        "max_elapsed_ms": 254.37
+      }
+    }
+  ]
+}

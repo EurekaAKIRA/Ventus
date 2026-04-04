@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from platform_shared.models import TaskContext
@@ -14,17 +14,21 @@ def normalize_input(
     source_type: str = "text",
     source_path: str | None = None,
     language: str = "zh-CN",
+    task_id: str | None = None,
+    created_at: str | None = None,
+    status: str = "received",
 ) -> dict:
     """Normalize raw input and build a task context payload."""
     normalized_name = task_name.strip() or "analysis_task"
-    task_id = f"{normalized_name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+    resolved_task_id = task_id or f"{normalized_name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
     context = TaskContext(
-        task_id=task_id,
+        task_id=resolved_task_id,
         task_name=normalized_name,
         source_type=source_type,
         source_path=source_path,
+        created_at=created_at or datetime.now(timezone.utc).isoformat(),
         language=language,
-        status="received",
+        status=status,
     )
     return {
         "task_context": context.to_dict(),

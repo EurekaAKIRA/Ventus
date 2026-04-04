@@ -43,6 +43,7 @@ def execute_test_case_dsl(
     elapsed_samples: list[float] = []
     context = ContextBus()
     runtime_state = _build_runtime_state(test_case_dsl)
+    assertion_inventory = _collect_assertion_inventory(test_case_dsl)
     for key, value in (runtime_state.get("context_seed") or {}).items():
         context.set(str(key), value)
 
@@ -121,6 +122,9 @@ def execute_test_case_dsl(
             "cookie_count": len(runtime_state["cookie_jar"]),
             "avg_elapsed_ms": round(sum(elapsed_samples) / len(elapsed_samples), 2) if elapsed_samples else 0,
             "max_elapsed_ms": round(max(elapsed_samples), 2) if elapsed_samples else 0,
+            "assertion_category_counts": assertion_inventory["category_counts"],
+            "assertion_generated_by_counts": assertion_inventory["generated_by_counts"],
+            "fallback_assertion_count": assertion_inventory["fallback_count"],
         },
         logs=logs,
     )
@@ -152,17 +156,18 @@ def _execute_non_request_step(step: dict, context: ContextBus) -> dict:
             "error_category": "context_error",
         }
     assertions = step.get("assertions") or []
-    assertion_errors = _evaluate_assertions(assertions, {}, context)
-    status = "failed" if assertion_errors else "passed"
-    message = "Assertions passed" if not assertion_errors else "; ".join(assertion_errors)
+    assertion_failures = _evaluate_assertions(assertions, {}, context)
+    status = "failed" if assertion_failures else "passed"
+    message = "Assertions passed" if not assertion_failures else "; ".join(item["message"] for item in assertion_failures)
     return {
         "step_id": step.get("step_id"),
         "step_type": step.get("step_type"),
         "text": step.get("text"),
         "status": status,
         "message": message,
-        "error_category": "assertion_error" if assertion_errors else "",
-        "assertion_summary": _build_assertion_summary(assertions, assertion_errors),
+        "error_category": "assertion_error" if assertion_failures else "",
+        "assertion_summary": _build_assertion_summary(assertions, assertion_failures),
+        "assertion_failures": assertion_failures,
     }
 
 
@@ -210,17 +215,17 @@ def _execute_request_step(
         logs.append(_build_context_log(step, saved_context))
 
     assertions = step.get("assertions") or []
-    assertion_errors = _evaluate_assertions(assertions, response_payload, context)
-    assertion_summary = _build_assertion_summary(assertions, assertion_errors)
+    assertion_failures = _evaluate_assertions(assertions, response_payload, context)
+    assertion_summary = _build_assertion_summary(assertions, assertion_failures)
     logs.append(_build_assertion_log(step, assertion_summary))
-    status = "failed" if assertion_errors else "passed"
+    status = "failed" if assertion_failures else "passed"
     error_category = response_payload.get("error_category", "")
-    if assertion_errors:
+    if assertion_failures:
         error_category = error_category or "assertion_error"
     message = (
         f"{request_spec.get('method', 'GET')} {request_spec.get('url')} -> {response_payload['status_code']}"
-        if not assertion_errors
-        else "; ".join(assertion_errors)
+        if not assertion_failures
+        else "; ".join(item["message"] for item in assertion_failures)
     )
     return {
         "step_id": step.get("step_id"),
@@ -250,6 +255,7 @@ def _execute_request_step(
         "context_snapshot": context.snapshot(),
         "saved_context": saved_context,
         "assertion_summary": assertion_summary,
+        "assertion_failures": assertion_failures,
     }
 
 
@@ -348,26 +354,32 @@ def _render_templates(payload: Any, context: ContextBus) -> Any:
     return payload
 
 
-def _evaluate_assertions(assertions: list[Any], response_payload: dict, context: ContextBus) -> list[str]:
-    errors: list[str] = []
+def _evaluate_assertions(assertions: list[Any], response_payload: dict, context: ContextBus) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
     for assertion in assertions:
         if isinstance(assertion, str):
             continue
-        source = assertion.get("source", "")
-        op = assertion.get("op", "eq")
+        normalized = _normalize_assertion(assertion)
+        source = normalized.get("source", "")
+        op = normalized.get("op", "eq")
         actual = _read_source(source, response_payload, context)
-        if (
-            isinstance(source, str)
-            and source.startswith("json.")
-            and op == "exists"
-            and actual is None
-        ):
-            inner = source[5:]
-            actual = _read_json_path_with_envelope(response_payload.get("json"), inner, None)
-        expected = _render_templates(assertion.get("expected"), context)
+        expected = _render_templates(normalized.get("expected"), context)
         if not _compare(actual, op, expected):
+            short_actual = _short_repr(actual)
             errors.append(
-                f"Assertion failed: {assertion.get('source')} {op} {expected!r}, actual={actual!r}"
+                {
+                    "assertion_id": normalized["assertion_id"],
+                    "source": source,
+                    "op": op,
+                    "expected": expected,
+                    "actual": actual,
+                    "category": normalized["category"],
+                    "severity": normalized["severity"],
+                    "confidence": normalized["confidence"],
+                    "generated_by": normalized["generated_by"],
+                    "fallback_used": normalized["fallback_used"],
+                    "message": f"Assertion failed [{normalized['assertion_id']}]: {source} {op} {expected!r}, actual={short_actual}",
+                }
             )
     return errors
 
@@ -378,6 +390,10 @@ def _compare(actual: Any, op: str, expected: Any) -> bool:
         return left == right
     if op == "ne":
         return left != right
+    if op == "in":
+        return _membership_compare(left, right, invert=False)
+    if op == "not_in":
+        return _membership_compare(left, right, invert=True)
     if op == "ge":
         return _safe_order_compare(left, right, lambda a, b: a >= b)
     if op == "le":
@@ -388,6 +404,8 @@ def _compare(actual: Any, op: str, expected: Any) -> bool:
         return right not in left if left is not None else False
     if op == "exists":
         return actual is not None
+    if op == "not_exists":
+        return actual is None
     if op == "gt":
         return _safe_order_compare(left, right, lambda a, b: a > b)
     if op == "lt":
@@ -404,6 +422,14 @@ def _compare(actual: Any, op: str, expected: Any) -> bool:
         return _safe_len(actual) > expected
     if op == "len_lt":
         return _safe_len(actual) < expected
+    if op == "len_ge":
+        return _safe_len(actual) >= expected
+    if op == "len_le":
+        return _safe_len(actual) <= expected
+    if op == "is_true":
+        return _coerce_bool(actual) is True
+    if op == "is_false":
+        return _coerce_bool(actual) is False
     return False
 
 
@@ -423,9 +449,9 @@ def _read_source(source: str, response_payload: dict, context: ContextBus, defau
     if source == "json":
         return response_payload.get("json", default)
     if source.startswith("json."):
-        return _read_json_path(response_payload.get("json"), source[5:], default)
+        return _read_json_path_with_envelope(response_payload.get("json"), source[5:], default)
     if source.startswith("json["):
-        return _read_json_path(response_payload.get("json"), source[4:], default)
+        return _read_json_path_with_envelope(response_payload.get("json"), source[4:], default)
     if source.startswith("headers."):
         return _read_header(response_payload.get("headers", {}), source[8:], default)
     if source.startswith("headers["):
@@ -525,6 +551,10 @@ def _safe_len(value: Any) -> int:
 
 
 def _coerce_pair(left: Any, right: Any) -> tuple[Any, Any]:
+    left_bool = _coerce_bool(left)
+    right_bool = _coerce_bool(right)
+    if left_bool is not None and right_bool is not None:
+        return left_bool, right_bool
     for caster in (int, float):
         try:
             if left is not None and right is not None:
@@ -532,6 +562,25 @@ def _coerce_pair(left: Any, right: Any) -> tuple[Any, Any]:
         except (TypeError, ValueError):
             continue
     return left, right
+
+
+def _coerce_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "1", "yes", "on"}:
+            return True
+        if lowered in {"false", "0", "no", "off"}:
+            return False
+    return None
+
+
+def _membership_compare(left: Any, right: Any, *, invert: bool) -> bool:
+    if not isinstance(right, (list, tuple, set)):
+        return False
+    outcome = left in right
+    return not outcome if invert else outcome
 
 
 def _safe_order_compare(left: Any, right: Any, comparator) -> bool:
@@ -740,14 +789,80 @@ def _build_assertion_log(step: dict[str, Any], assertion_summary: dict[str, Any]
     }
 
 
-def _build_assertion_summary(assertions: list[Any], assertion_errors: list[str]) -> dict[str, Any]:
-    total = len([item for item in assertions if not isinstance(item, str)])
+def _build_assertion_summary(assertions: list[Any], assertion_errors: list[dict[str, Any]]) -> dict[str, Any]:
+    normalized = [_normalize_assertion(item) for item in assertions if not isinstance(item, str)]
+    total = len(normalized)
     failed = len(assertion_errors)
+    category_counts: dict[str, int] = {}
+    generated_by_counts: dict[str, int] = {}
+    fallback_count = 0
+    for item in normalized:
+        category = item["category"]
+        generated_by = item["generated_by"]
+        category_counts[category] = category_counts.get(category, 0) + 1
+        generated_by_counts[generated_by] = generated_by_counts.get(generated_by, 0) + 1
+        if item["fallback_used"]:
+            fallback_count += 1
     return {
         "total": total,
         "passed": max(total - failed, 0),
         "failed": failed,
-        "failures": assertion_errors,
+        "failures": [item["message"] for item in assertion_errors],
+        "failure_details": assertion_errors,
+        "category_counts": category_counts,
+        "generated_by_counts": generated_by_counts,
+        "fallback_count": fallback_count,
+        "weak_assertion": bool(normalized) and all(item["source"] == "status_code" for item in normalized),
+    }
+
+
+def _normalize_assertion(assertion: dict[str, Any]) -> dict[str, Any]:
+    source = str(assertion.get("source", "")).strip()
+    op = str(assertion.get("op", "eq")).strip()
+    try:
+        confidence = float(assertion.get("confidence", 0.5) or 0.5)
+    except (TypeError, ValueError):
+        confidence = 0.5
+    return {
+        "assertion_id": str(assertion.get("assertion_id", f"{source or 'assertion'}_{op}")),
+        "source": source,
+        "op": op,
+        "expected": assertion.get("expected"),
+        "category": str(assertion.get("category", "business")),
+        "severity": str(assertion.get("severity", "major")),
+        "confidence": confidence,
+        "generated_by": str(assertion.get("generated_by", "rules")),
+        "fallback_used": bool(assertion.get("fallback_used", False)),
+    }
+
+
+def _short_repr(value: Any, max_chars: int = 120) -> str:
+    text = repr(value)
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 3] + "..."
+
+
+def _collect_assertion_inventory(test_case_dsl: dict[str, Any]) -> dict[str, Any]:
+    category_counts: dict[str, int] = {}
+    generated_by_counts: dict[str, int] = {}
+    fallback_count = 0
+    for scenario in test_case_dsl.get("scenarios", []):
+        for step in scenario.get("steps", []):
+            for assertion in step.get("assertions") or []:
+                if isinstance(assertion, str):
+                    continue
+                normalized = _normalize_assertion(assertion)
+                category = normalized["category"]
+                generated_by = normalized["generated_by"]
+                category_counts[category] = category_counts.get(category, 0) + 1
+                generated_by_counts[generated_by] = generated_by_counts.get(generated_by, 0) + 1
+                if normalized["fallback_used"]:
+                    fallback_count += 1
+    return {
+        "category_counts": category_counts,
+        "generated_by_counts": generated_by_counts,
+        "fallback_count": fallback_count,
     }
 
 

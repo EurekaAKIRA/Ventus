@@ -1,6 +1,7 @@
 import { Alert, Button, Card, Descriptions, Space, Steps, Tag, Typography } from "antd";
 import MetricCard from "../../components/MetricCard";
 import StatusTag from "../../components/StatusTag";
+import { formatDateTime } from "../../utils/dateFormat";
 import type { ExtendedTaskDetail } from "../hooks/useTaskDetailData";
 
 const { Title, Text } = Typography;
@@ -123,7 +124,7 @@ export function TaskDetailTopSection(props: {
                 <StatusTag status={uiExecutionStatus === "running" ? "running" : displayTaskStatus} />
               </Descriptions.Item>
               <Descriptions.Item label="来源类型">{detail.task_context.source_type}</Descriptions.Item>
-              <Descriptions.Item label="创建时间">{new Date(detail.task_context.created_at).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="创建时间">{formatDateTime(detail.task_context.created_at)}</Descriptions.Item>
               <Descriptions.Item label="语言">{detail.task_context.language}</Descriptions.Item>
               <Descriptions.Item label="target_system">{detail.target_system || "-"}</Descriptions.Item>
               <Descriptions.Item label="environment">{detail.environment || "-"}</Descriptions.Item>

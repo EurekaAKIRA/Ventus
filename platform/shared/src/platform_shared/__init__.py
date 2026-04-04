@@ -25,6 +25,7 @@ from .model_gateway import (
 )
 from .runtime_config import (
     ContractKnowledgeConfig,
+    AssertionEnhancementConfig,
     PlatformRuntimeConfig,
     RequirementAnalysisDefaults,
     RequirementAnalysisModelProfile,
@@ -56,6 +57,7 @@ __all__ = [
     "ModelGatewayResponseError",
     "ModelGatewayTimeoutError",
     "ContractKnowledgeConfig",
+    "AssertionEnhancementConfig",
     "PlatformRuntimeConfig",
     "RequirementAnalysisDefaults",
     "RequirementAnalysisModelProfile",

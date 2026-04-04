@@ -45,6 +45,10 @@ def run_analysis_pipeline(
     source_type: str = "text",
     source_path: str | None = None,
     artifacts_base_dir: str | None = None,
+    task_id: str | None = None,
+    created_at: str | None = None,
+    task_status: str = "received",
+    artifact_dir_name: str | None = None,
     use_llm: bool | None = None,
     rag_enabled: bool | None = None,
     retrieval_top_k: int | None = None,
@@ -66,6 +70,9 @@ def run_analysis_pipeline(
         requirement_text=requirement_text,
         source_type=source_type,
         source_path=source_path,
+        task_id=task_id,
+        created_at=created_at,
+        status=task_status,
     )
     task_context = TaskContext(**payload["task_context"])
 
@@ -91,6 +98,7 @@ def run_analysis_pipeline(
             task_context,
             scenarios,
             parsed_requirement=parsed_requirement.to_dict(),
+            enable_assertion_enhancement=parse_options.use_llm,
         )
     )
     feature_text = generate_feature(task_context.task_name, [scenario.to_dict() for scenario in scenarios])
@@ -135,16 +143,23 @@ def run_analysis_pipeline(
     result_payload["parse_metadata"] = parse_bundle.get("parse_metadata", {})
 
     if artifacts_base_dir:
-        persist_pipeline_artifacts(result_payload, artifacts_base_dir)
+        result_payload["artifact_dir"] = persist_pipeline_artifacts(
+            result_payload,
+            artifacts_base_dir,
+            task_dir_name=artifact_dir_name or task_context.task_id,
+        )
 
     return result_payload
 
 
-def persist_pipeline_artifacts(result: dict, artifacts_base_dir: str) -> str:
+def persist_pipeline_artifacts(result: dict, artifacts_base_dir: str, task_dir_name: str | None = None) -> str:
     """Persist the standard artifacts for one analysis task."""
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     task_context = result["task_context"]
-    task_dir = build_task_artifact_dir(artifacts_base_dir, task_context["task_name"], timestamp)
+    task_dir = build_task_artifact_dir(
+        artifacts_base_dir,
+        task_dir_name or task_context["task_name"],
+        None if task_dir_name else datetime.utcnow().strftime("%Y%m%d%H%M%S"),
+    )
     subdirs = ensure_task_subdirs(task_dir)
 
     write_text_artifact(

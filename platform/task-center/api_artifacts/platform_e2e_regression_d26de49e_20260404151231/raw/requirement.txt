@@ -1,0 +1,183 @@
+# Platform Task-Center E2E Spec
+
+Base URL:
+
+- `http://127.0.0.1:8001`
+
+Environment:
+
+- `test`
+
+Target system:
+
+- `http://127.0.0.1:8001`
+
+All APIs use the same response envelope:
+
+```json
+{
+  "success": true,
+  "code": "SOME_CODE",
+  "message": "some message",
+  "data": {},
+  "timestamp": "2026-04-04T15:00:00+00:00"
+}
+```
+
+## Step 1
+
+Request:
+
+- `POST /api/tasks`
+
+Request body:
+
+```json
+{
+  "task_name": "platform_e2e_regression_demo",
+  "source_type": "text",
+  "requirement_text": "Validate the current platform task-center main flow.",
+  "target_system": "http://127.0.0.1:8001",
+  "environment": "test"
+}
+```
+
+Expected:
+
+- HTTP `201`
+- `code = TASK_CREATED`
+- `data.task_id` exists
+- `data.task_context` exists
+- `data.task_context.task_id` exists
+- `data.task_context.task_name` exists
+
+Save context:
+
+- `task_id <- data.task_id`
+- `resource_id <- data.task_id`
+
+## Step 2
+
+Request:
+
+- `GET /api/tasks/{task_id}`
+
+Expected:
+
+- HTTP `200`
+- `code = TASK_DETAIL_OK`
+- `data.task_id = {task_id}`
+- `data.task_name` exists
+- `data.task_context` exists
+- `data.status` exists
+
+## Step 3
+
+Request:
+
+- `POST /api/tasks/{task_id}/parse`
+
+Request body:
+
+```json
+{
+  "use_llm": false,
+  "rag_enabled": true,
+  "retrieval_top_k": 5,
+  "rerank_enabled": false
+}
+```
+
+Expected:
+
+- HTTP `200`
+- `code = TASK_PARSED`
+- `data.task_id = {task_id}`
+- `data.parsed_requirement` exists
+- `data.parse_metadata` exists
+- `data.parse_metadata.parse_mode` exists
+- `data.parse_metadata.retrieval_mode` exists
+
+## Step 4
+
+Request:
+
+- `GET /api/tasks/{task_id}/dsl`
+
+Expected:
+
+- HTTP `200`
+- `code = DSL_OK`
+- `data.scenarios` exists
+- `data.scenarios` is not empty
+
+Required generated request steps:
+
+- `POST /api/tasks`
+- `POST /api/tasks/{task_id}/parse`
+- `POST /api/tasks/{task_id}/execute`
+
+Required create-step save_context:
+
+- `task_id = json.data.task_id`
+- `resource_id = json.data.task_id`
+
+## Step 5
+
+Request:
+
+- `POST /api/tasks/{task_id}/execute`
+
+Request body:
+
+```json
+{
+  "execution_mode": "api",
+  "environment": "test"
+}
+```
+
+Expected:
+
+- HTTP `200`
+- `code = TASK_EXECUTED`
+
+## Step 6
+
+Poll:
+
+- `GET /api/tasks/{task_id}/execution`
+
+Expected:
+
+- HTTP `200`
+- `code = EXECUTION_OK`
+- `data.status` reaches `passed` or `failed`
+- `data.scenario_results` exists
+
+## Step 7
+
+Request:
+
+- `GET /api/tasks/{task_id}/analysis-report`
+
+Expected:
+
+- HTTP `200`
+- `code = ANALYSIS_REPORT_OK`
+- `data.task_id = {task_id}`
+- `data.summary` exists
+- `data.quality_status` exists
+
+## Step 8
+
+Request:
+
+- `DELETE /api/tasks/{task_id}`
+
+Expected:
+
+- HTTP `200`
+- `code = TASK_ARCHIVED`
+- `data.task_id = {task_id}`
+- `data.archived = true`

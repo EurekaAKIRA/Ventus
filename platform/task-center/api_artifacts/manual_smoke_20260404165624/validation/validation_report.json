@@ -1,0 +1,19 @@
+{
+  "feature_name": "manual_smoke",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 1,
+    "average_step_count": 4.0,
+    "step_count": 4,
+    "parse_metrics": {
+      "actor_count": 1,
+      "entity_count": 10,
+      "action_count": 1,
+      "expected_count": 1,
+      "ambiguity_count": 1
+    },
+    "parse_mode": "rules"
+  }
+}

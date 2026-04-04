@@ -1,0 +1,258 @@
+{
+  "objective": "Platform 主链路联调需求说明（当前实现对齐版）",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "platform",
+    "主链路联调需求说明",
+    "当前实现对齐版",
+    "背景与目的",
+    "当前平台已经具备",
+    "task-center",
+    "主链路的联调能力",
+    "研发",
+    "测试与前端需要基于统一口径确认以下事项",
+    "平台主流程是否可在同一任务生命周期内闭环完成"
+  ],
+  "preconditions": [
+    "执行完成且进入终态"
+  ],
+  "actions": [
+    "文档描述是否与当前项目真实接口输入输出保持一致",
+    "用户提交待分析的需求内容并形成任务实体",
+    "本节用于明确“当前项目真实输入输出”，避免开发文档与实际实现偏离",
+    "任务创建接口的实际返回语义",
+    "单任务从“提交到报告”应可完整走通",
+    "开发文档中描述的关键输入输出与当前实现一致",
+    "检索策略在不同输入下出现回退",
+    "*可追踪性**：同一任务 ID 可串联输入、产物、执行、报告与历史",
+    "`POST /api/tasks`",
+    "`GET /api/tasks/{task_id}`",
+    "`POST /api/tasks/{task_id}/parse`",
+    "`GET /api/tasks/{task_id}/parsed-requirement`",
+    "`GET /api/tasks/{task_id}/retrieved-context`",
+    "`POST /api/tasks/{task_id}/scenarios/generate`",
+    "`GET /api/tasks/{task_id}/scenarios`",
+    "`GET /api/tasks/{task_id}/dsl`",
+    "`GET /api/tasks/{task_id}/feature`",
+    "`POST /api/tasks/{task_id}/execute`",
+    "`GET /api/tasks/{task_id}/execution`",
+    "`GET /api/tasks/{task_id}/execution/logs`",
+    "`GET /api/tasks/{task_id}/validation-report`",
+    "`GET /api/tasks/{task_id}/analysis-report`",
+    "`GET /api/tasks/{task_id}/artifacts`",
+    "`GET /api/tasks/{task_id}/artifacts/{type}`",
+    "`GET /api/history/tasks`",
+    "`GET /api/history/executions`",
+    "`DELETE /api/tasks/{task_id}`（归档）",
+    "`GET /api/environments`",
+    "`POST /api/environments`",
+    "`PUT /api/environments/{environment_name}`",
+    "`DELETE /api/environments/{environment_name}`",
+    "`POST /api/analysis/parse`（独立解析链路）",
+    "`GET /health`",
+    "`GET /version`",
+    "尤其是 `GET /api/tasks/{task_id}`，当前真实返回位于 `data` 下，包含：",
+    "当前 `POST /api/tasks` 的成功返回重点字段是：",
+    "当前实现中，不应把 `POST /api/tasks` 的返回简单理解为 `data.task_name` 平铺存在",
+    "当前 `POST /api/tasks/{task_id}/parse` 的成功返回重点字段是：",
+    "当前 `POST /api/tasks/{task_id}/execute` 能触发真实执行链路并生成结构化执行结果",
+    "`GET /execution`、`GET /analysis-report` 可正常读取"
+  ],
+  "expected_results": [
+    "任务归档后的可见性与一致性检查",
+    "从业务视角看，一次标准任务应经历以下过程：",
+    "统一响应 envelope",
+    "当前 task-center API 统一使用如下响应结构：",
+    "联调时应默认按统一 envelope 理解接口输出",
+    "涉及业务字段时，优先从 `data.*` 下查找，不应假设所有字段都平铺在顶层",
+    "关键 detail 接口的实际返回语义",
+    "当前项目中，以下接口返回的是“单对象详情”，不是列表：",
+    "尤其是 `GET /api/tasks/{task_id}`，当前真实返回位于 `data` 下，包含：",
+    "因此，联调和断言设计中不应把该接口当作列表接口，也不应假设存在 `data.tasks`",
+    "当前 `POST /api/tasks` 的成功返回重点字段是：",
+    "当前实现中，不应把 `POST /api/tasks` 的返回简单理解为 `data.task_name` 平铺存在",
+    "如果需要读取任务名称，应优先以 `data.task_context.task_name` 为准",
+    "解析接口的实际返回语义",
+    "当前 `POST /api/tasks/{task_id}/parse` 的成功返回重点字段是：",
+    "如果显式启用 `use_llm=true`，允许出现模型增强、fallback 和额外时延，不应把它作为默认稳定基线",
+    "少量场景失败但不阻断主链路闭环",
+    "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+    "归档动作生效后，任务应从活跃视图中消失",
+    "返回结构保持统一 envelope，便于前端统一处理",
+    "少量场景执行失败但不阻断整体链路",
+    "报告存在提示级告警（如步骤表达偏长）",
+    "*可解释性**：解析结果应能说明来自哪些上下文片段",
+    "执行时应提供明确目标系统来源（任务目标地址或环境配置）",
+    "若启用模型增强能力，应提前完成密钥与模型配置核验",
+    "联调前应确认当前服务进程已重启，避免沿用旧版本逻辑",
+    "后续更新本文件时，应遵循以下原则：",
+    "当接口真实返回字段发生变化时，优先同步本文件的“当前实现口径补充”章节",
+    "如果需要机器可执行的严格版本，应单独维护独立 spec，而不是挤占本文件的开发文档定位",
+    "GET /api/tasks/{task_id}/execution/explanations 返回步骤级说明与上下文，用于排错与审计"
+  ],
+  "constraints": [
+    "`GET /api/tasks/{task_id}/parsed-requirement`",
+    "`data.parsed_requirement`",
+    "但在当前项目阶段，端到端验收更关注“是否走通并产出结构化结果”，而不是要求所有自动生成场景都必须通过",
+    "1 必须满足",
+    "风险与已知限制",
+    "测试数据需避免依赖不可控的外部实时状态"
+  ],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_039",
+    "contract_execution_explanations",
+    "chunk_037",
+    "contract_post_tasks",
+    "chunk_008"
+  ],
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/tasks",
+      "description": "### 5.1 任务与解析（必测）"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}",
+      "description": "/api/tasks"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks/{task_id}/parse",
+      "description": "/api/tasks/{task_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/parsed-requirement",
+      "description": "/api/tasks/{task_id}/parse"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/retrieved-context",
+      "description": "/api/tasks/{task_id}/parsed-requirement"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks/{task_id}/scenarios/generate",
+      "description": "### 5.2 场景与 DSL（必测）"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/scenarios",
+      "description": "/generate"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/dsl",
+      "description": "/api/tasks/{task_id}/scenarios"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/feature",
+      "description": "/api/tasks/{task_id}/dsl"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks/{task_id}/execute",
+      "description": "### 5.3 执行与结果（必测）"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/execution",
+      "description": "/api/tasks/{task_id}/execute"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/execution/logs",
+      "description": "/api/tasks/{task_id}/execution"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/validation-report",
+      "description": "/api/tasks/{task_id}/execution/logs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/analysis-report",
+      "description": "/api/tasks/{task_id}/validation-report"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/artifacts",
+      "description": "### 5.4 产物与历史（建议纳入）"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/artifacts/{type}",
+      "description": "/api/tasks/{task_id}/artifacts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/history/tasks",
+      "description": "/api/tasks/{task_id}/artifacts/{type}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/history/executions",
+      "description": "/api/history/tasks"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tasks/{task_id}",
+      "description": "（归档）"
+    },
+    {
+      "method": "GET",
+      "path": "/api/environments",
+      "description": "### 5.5 环境与扩展能力（按需）"
+    },
+    {
+      "method": "POST",
+      "path": "/api/environments",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/environments/{environment_name}",
+      "description": "/api/environments"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/environments/{environment_name}",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/analysis/parse",
+      "description": "（独立解析链路）"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "description": "/api/analysis/parse（独立解析链路）"
+    },
+    {
+      "method": "GET",
+      "path": "/version",
+      "description": "/health"
+    },
+    {
+      "method": "GET",
+      "path": "/execution",
+      "description": "、 /analysis-report 可正常读取"
+    },
+    {
+      "method": "GET",
+      "path": "/analysis-report",
+      "description": "/execution、 可正常读取"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}/execution/explanations",
+      "description": "返回步骤级说明与上下文，用于排错与审计"
+    }
+  ]
+}

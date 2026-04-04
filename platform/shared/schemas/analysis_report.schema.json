@@ -16,6 +16,7 @@
     "failed_steps",
     "failure_reasons",
     "assertion_stats",
+    "step_assertion_quality",
     "context_stats",
     "task_summary_text",
     "findings",
@@ -55,7 +56,8 @@
         "assertion_pass_rate": { "type": "number" },
         "context_defined_keys": { "type": "number" },
         "context_used_keys": { "type": "number" },
-        "context_extracted_keys": { "type": "number" }
+        "context_extracted_keys": { "type": "number" },
+        "assertion_quality_summary": { "type": "object" }
       }
     },
     "dashboard": {
@@ -85,6 +87,7 @@
         "totals": { "type": "object" },
         "status_breakdown": { "type": "object" },
         "assertion_summary": { "type": "object" },
+        "assertion_quality_summary": { "type": "object" },
         "context_summary": { "type": "object" },
         "top_failure_reason": { "type": ["object", "null"] },
         "failure_reason_breakdown": { "type": "array", "items": { "type": "object" } },
@@ -223,6 +226,10 @@
         "validation_errors": { "type": "number" },
         "validation_warnings": { "type": "number" }
       }
+    },
+    "step_assertion_quality": {
+      "type": "array",
+      "items": { "type": "object" }
     },
     "context_stats": {
       "type": "object",

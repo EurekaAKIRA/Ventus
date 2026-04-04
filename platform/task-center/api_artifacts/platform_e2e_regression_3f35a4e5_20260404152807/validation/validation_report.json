@@ -1,0 +1,19 @@
+{
+  "feature_name": "platform_e2e_regression_3f35a4e5",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 8,
+    "average_step_count": 4.12,
+    "step_count": 33,
+    "parse_metrics": {
+      "actor_count": 1,
+      "entity_count": 10,
+      "action_count": 37,
+      "expected_count": 28,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "rules"
+  }
+}

@@ -1,0 +1,1217 @@
+{
+  "cleaned_text": "# Platform Task-Center E2E Spec\n\nBase URL:\n\n- `http://127.0.0.1:8001`\n\nEnvironment:\n\n- `test`\n\nTarget system:\n\n- `http://127.0.0.1:8001`\n\nAll APIs use the same response envelope:\n\n{\n\"success\": true,\n\"code\": \"SOME_CODE\",\n\"message\": \"some message\",\n\"data\": {},\n\"timestamp\": \"2026-04-04T15:00:00+00:00\"\n}\n\n## Step 1\n\nRequest:\n\n- `POST /api/tasks`\n\nRequest body:\n\n{\n\"task_name\": \"platform_e2e_regression_demo\",\n\"source_type\": \"text\",\n\"requirement_text\": \"Validate the current platform task-center main flow.\",\n\"target_system\": \"http://127.0.0.1:8001\",\n\"environment\": \"test\"\n}\n\nExpected:\n\n- HTTP `201`\n- `code = TASK_CREATED`\n- `data.task_id` exists\n- `data.task_context` exists\n- `data.task_context.task_id` exists\n- `data.task_context.task_name` exists\n\nSave context:\n\n- `task_id <- data.task_id`\n- `resource_id <- data.task_id`\n\n## Step 2\n\nRequest:\n\n- `GET /api/tasks/{task_id}`\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_DETAIL_OK`\n- `data.task_id = {task_id}`\n- `data.task_name` exists\n- `data.task_context` exists\n- `data.status` exists\n\n## Step 3\n\nRequest:\n\n- `POST /api/tasks/{task_id}/parse`\n\nRequest body:\n\n{\n\"use_llm\": false,\n\"rag_enabled\": true,\n\"retrieval_top_k\": 5,\n\"rerank_enabled\": false\n}\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_PARSED`\n- `data.task_id = {task_id}`\n- `data.parsed_requirement` exists\n- `data.parse_metadata` exists\n- `data.parse_metadata.parse_mode` exists\n- `data.parse_metadata.retrieval_mode` exists\n\n## Step 4\n\nRequest:\n\n- `GET /api/tasks/{task_id}/dsl`\n\nExpected:\n\n- HTTP `200`\n- `code = DSL_OK`\n- `data.scenarios` exists\n- `data.scenarios` is not empty\n\nRequired generated request steps:\n\n- `POST /api/tasks`\n- `POST /api/tasks/{task_id}/parse`\n- `POST /api/tasks/{task_id}/execute`\n\nRequired create-step save_context:\n\n- `task_id = json.data.task_id`\n- `resource_id = json.data.task_id`\n\n## Step 5\n\nRequest:\n\n- `POST /api/tasks/{task_id}/execute`\n\nRequest body:\n\n{\n\"execution_mode\": \"api\",\n\"environment\": \"test\"\n}\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_EXECUTED`\n\n## Step 6\n\nPoll:\n\n- `GET /api/tasks/{task_id}/execution`\n\nExpected:\n\n- HTTP `200`\n- `code = EXECUTION_OK`\n- `data.status` reaches `passed` or `failed`\n- `data.scenario_results` exists\n\n## Step 7\n\nRequest:\n\n- `GET /api/tasks/{task_id}/analysis-report`\n\nExpected:\n\n- HTTP `200`\n- `code = ANALYSIS_REPORT_OK`\n- `data.task_id = {task_id}`\n- `data.summary` exists\n- `data.quality_status` exists\n\n## Step 8\n\nRequest:\n\n- `DELETE /api/tasks/{task_id}`\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`",
+  "outline": [
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Platform Task-Center E2E Spec",
+      "line": 1
+    },
+    {
+      "type": "bullet",
+      "text": "`http://127.0.0.1:8001`",
+      "line": 5
+    },
+    {
+      "type": "bullet",
+      "text": "`test`",
+      "line": 9
+    },
+    {
+      "type": "bullet",
+      "text": "`http://127.0.0.1:8001`",
+      "line": 13
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Step 1",
+      "line": 25
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks`",
+      "line": 29
+    },
+    {
+      "type": "bullet",
+      "text": "HTTP `201`",
+      "line": 43
+    },
+    {
+      "type": "bullet",
+      "text": "`code = TASK_CREATED`",
+      "line": 44
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_id` exists",
+      "line": 45
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_context` exists",
+      "line": 46
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_context.task_id` exists",
+      "line": 47
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_context.task_name` exists",
+      "line": 48
+    },
+    {
+      "type": "bullet",
+      "text": "`task_id <- data.task_id`",
+      "line": 52
+    },
+    {
+      "type": "bullet",
+      "text": "`resource_id <- data.task_id`",
+      "line": 53
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Step 2",
+      "line": 55
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}`",
+      "line": 59
+    },
+    {
+      "type": "bullet",
+      "text": "HTTP `200`",
+      "line": 63
+    },
+    {
+      "type": "bullet",
+      "text": "`code = TASK_DETAIL_OK`",
+      "line": 64
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_id = {task_id}`",
+      "line": 65
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_name` exists",
+      "line": 66
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_context` exists",
+      "line": 67
+    },
+    {
+      "type": "bullet",
+      "text": "`data.status` exists",
+      "line": 68
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Step 3",
+      "line": 70
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks/{task_id}/parse`",
+      "line": 74
+    },
+    {
+      "type": "bullet",
+      "text": "HTTP `200`",
+      "line": 87
+    },
+    {
+      "type": "bullet",
+      "text": "`code = TASK_PARSED`",
+      "line": 88
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_id = {task_id}`",
+      "line": 89
+    },
+    {
+      "type": "bullet",
+      "text": "`data.parsed_requirement` exists",
+      "line": 90
+    },
+    {
+      "type": "bullet",
+      "text": "`data.parse_metadata` exists",
+      "line": 91
+    },
+    {
+      "type": "bullet",
+      "text": "`data.parse_metadata.parse_mode` exists",
+      "line": 92
+    },
+    {
+      "type": "bullet",
+      "text": "`data.parse_metadata.retrieval_mode` exists",
+      "line": 93
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Step 4",
+      "line": 95
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/dsl`",
+      "line": 99
+    },
+    {
+      "type": "bullet",
+      "text": "HTTP `200`",
+      "line": 103
+    },
+    {
+      "type": "bullet",
+      "text": "`code = DSL_OK`",
+      "line": 104
+    },
+    {
+      "type": "bullet",
+      "text": "`data.scenarios` exists",
+      "line": 105
+    },
+    {
+      "type": "bullet",
+      "text": "`data.scenarios` is not empty",
+      "line": 106
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks`",
+      "line": 110
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks/{task_id}/parse`",
+      "line": 111
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks/{task_id}/execute`",
+      "line": 112
+    },
+    {
+      "type": "bullet",
+      "text": "`task_id = json.data.task_id`",
+      "line": 116
+    },
+    {
+      "type": "bullet",
+      "text": "`resource_id = json.data.task_id`",
+      "line": 117
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Step 5",
+      "line": 119
+    },
+    {
+      "type": "bullet",
+      "text": "`POST /api/tasks/{task_id}/execute`",
+      "line": 123
+    },
+    {
+      "type": "bullet",
+      "text": "HTTP `200`",
+      "line": 134
+    },
+    {
+      "type": "bullet",
+      "text": "`code = TASK_EXECUTED`",
+      "line": 135
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Step 6",
+      "line": 137
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/execution`",
+      "line": 141
+    },
+    {
+      "type": "bullet",
+      "text": "HTTP `200`",
+      "line": 145
+    },
+    {
+      "type": "bullet",
+      "text": "`code = EXECUTION_OK`",
+      "line": 146
+    },
+    {
+      "type": "bullet",
+      "text": "`data.status` reaches `passed` or `failed`",
+      "line": 147
+    },
+    {
+      "type": "bullet",
+      "text": "`data.scenario_results` exists",
+      "line": 148
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Step 7",
+      "line": 150
+    },
+    {
+      "type": "bullet",
+      "text": "`GET /api/tasks/{task_id}/analysis-report`",
+      "line": 154
+    },
+    {
+      "type": "bullet",
+      "text": "HTTP `200`",
+      "line": 158
+    },
+    {
+      "type": "bullet",
+      "text": "`code = ANALYSIS_REPORT_OK`",
+      "line": 159
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_id = {task_id}`",
+      "line": 160
+    },
+    {
+      "type": "bullet",
+      "text": "`data.summary` exists",
+      "line": 161
+    },
+    {
+      "type": "bullet",
+      "text": "`data.quality_status` exists",
+      "line": 162
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Step 8",
+      "line": 164
+    },
+    {
+      "type": "bullet",
+      "text": "`DELETE /api/tasks/{task_id}`",
+      "line": 168
+    },
+    {
+      "type": "bullet",
+      "text": "HTTP `200`",
+      "line": 172
+    },
+    {
+      "type": "bullet",
+      "text": "`code = TASK_ARCHIVED`",
+      "line": 173
+    },
+    {
+      "type": "bullet",
+      "text": "`data.task_id = {task_id}`",
+      "line": 174
+    },
+    {
+      "type": "bullet",
+      "text": "`data.archived = true`",
+      "line": 175
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "content": "Base URL:",
+      "section_title": "Platform Task-Center E2E Spec",
+      "source_file": "",
+      "source_block": "section_1_paragraph_1_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "base",
+        "url"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_002",
+      "content": "- `http://127.0.0.1:8001`",
+      "section_title": "Platform Task-Center E2E Spec",
+      "source_file": "",
+      "source_block": "section_1_paragraph_2_part_1",
+      "tokens_estimate": 12,
+      "keywords": [
+        "http"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_003",
+      "content": "Environment:",
+      "section_title": "Platform Task-Center E2E Spec",
+      "source_file": "",
+      "source_block": "section_1_paragraph_3_part_1",
+      "tokens_estimate": 6,
+      "keywords": [
+        "environment"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_004",
+      "content": "- `test`",
+      "section_title": "Platform Task-Center E2E Spec",
+      "source_file": "",
+      "source_block": "section_1_paragraph_4_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "test"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_005",
+      "content": "Target system:",
+      "section_title": "Platform Task-Center E2E Spec",
+      "source_file": "",
+      "source_block": "section_1_paragraph_5_part_1",
+      "tokens_estimate": 7,
+      "keywords": [
+        "target",
+        "system"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_006",
+      "content": "- `http://127.0.0.1:8001`",
+      "section_title": "Platform Task-Center E2E Spec",
+      "source_file": "",
+      "source_block": "section_1_paragraph_6_part_1",
+      "tokens_estimate": 12,
+      "keywords": [
+        "http"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_007",
+      "content": "All APIs use the same response envelope:",
+      "section_title": "Platform Task-Center E2E Spec",
+      "source_file": "",
+      "source_block": "section_1_paragraph_7_part_1",
+      "tokens_estimate": 20,
+      "keywords": [
+        "all",
+        "apis",
+        "use",
+        "the",
+        "same",
+        "response",
+        "envelope"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_008",
+      "content": "{\n\"success\": true,\n\"code\": \"SOME_CODE\",\n\"message\": \"some message\",\n\"data\": {},\n\"timestamp\": \"2026-04-04T15:00:00+00:00\"\n}",
+      "section_title": "Platform Task-Center E2E Spec",
+      "source_file": "",
+      "source_block": "section_1_paragraph_8_part_1",
+      "tokens_estimate": 60,
+      "keywords": [
+        "success",
+        "true",
+        "code",
+        "some_code",
+        "message",
+        "some",
+        "data",
+        "timestamp"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_009",
+      "content": "Request:",
+      "section_title": "Step 1",
+      "source_file": "",
+      "source_block": "section_2_paragraph_1_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "request"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_010",
+      "content": "- `POST /api/tasks`",
+      "section_title": "Step 1",
+      "source_file": "",
+      "source_block": "section_2_paragraph_2_part_1",
+      "tokens_estimate": 9,
+      "keywords": [
+        "post",
+        "api",
+        "tasks"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_011",
+      "content": "Request body:",
+      "section_title": "Step 1",
+      "source_file": "",
+      "source_block": "section_2_paragraph_3_part_1",
+      "tokens_estimate": 6,
+      "keywords": [
+        "request",
+        "body"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_012",
+      "content": "{\n\"task_name\": \"platform_e2e_regression_demo\",\n\"source_type\": \"text\",\n\"requirement_text\": \"Validate the current platform task-center main flow.\",\n\"target_system\": \"http://127.0.0.1:8001\",\n\"environment\": \"test\"\n}",
+      "section_title": "Step 1",
+      "source_file": "",
+      "source_block": "section_2_paragraph_4_part_1",
+      "tokens_estimate": 105,
+      "keywords": [
+        "task_name",
+        "platform_e2e_regression_demo",
+        "source_type",
+        "text",
+        "requirement_text",
+        "validate",
+        "the",
+        "current"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_013",
+      "content": "Expected:",
+      "section_title": "Step 1",
+      "source_file": "",
+      "source_block": "section_2_paragraph_5_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "expected"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_014",
+      "content": "- HTTP `201`\n- `code = TASK_CREATED`\n- `data.task_id` exists\n- `data.task_context` exists\n- `data.task_context.task_id` exists\n- `data.task_context.task_name` exists",
+      "section_title": "Step 1",
+      "source_file": "",
+      "source_block": "section_2_paragraph_6_part_1",
+      "tokens_estimate": 82,
+      "keywords": [
+        "http",
+        "code",
+        "task_created",
+        "data.task_id",
+        "exists",
+        "data.task_context",
+        "data.task_context.task_id",
+        "data.task_context.task_name"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_015",
+      "content": "Save context:",
+      "section_title": "Step 1",
+      "source_file": "",
+      "source_block": "section_2_paragraph_7_part_1",
+      "tokens_estimate": 6,
+      "keywords": [
+        "save",
+        "context"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_016",
+      "content": "- `task_id <- data.task_id`\n- `resource_id <- data.task_id`",
+      "section_title": "Step 1",
+      "source_file": "",
+      "source_block": "section_2_paragraph_8_part_1",
+      "tokens_estimate": 29,
+      "keywords": [
+        "task_id",
+        "data.task_id",
+        "resource_id"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_017",
+      "content": "Request:",
+      "section_title": "Step 2",
+      "source_file": "",
+      "source_block": "section_3_paragraph_1_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "request"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_018",
+      "content": "- `GET /api/tasks/{task_id}`",
+      "section_title": "Step 2",
+      "source_file": "",
+      "source_block": "section_3_paragraph_2_part_1",
+      "tokens_estimate": 14,
+      "keywords": [
+        "get",
+        "api",
+        "tasks",
+        "task_id"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_019",
+      "content": "Expected:",
+      "section_title": "Step 2",
+      "source_file": "",
+      "source_block": "section_3_paragraph_3_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "expected"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_020",
+      "content": "- HTTP `200`\n- `code = TASK_DETAIL_OK`\n- `data.task_id = {task_id}`\n- `data.task_name` exists\n- `data.task_context` exists\n- `data.status` exists",
+      "section_title": "Step 2",
+      "source_file": "",
+      "source_block": "section_3_paragraph_4_part_1",
+      "tokens_estimate": 72,
+      "keywords": [
+        "http",
+        "code",
+        "task_detail_ok",
+        "data.task_id",
+        "task_id",
+        "data.task_name",
+        "exists",
+        "data.task_context"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_021",
+      "content": "Request:",
+      "section_title": "Step 3",
+      "source_file": "",
+      "source_block": "section_4_paragraph_1_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "request"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_022",
+      "content": "- `POST /api/tasks/{task_id}/parse`",
+      "section_title": "Step 3",
+      "source_file": "",
+      "source_block": "section_4_paragraph_2_part_1",
+      "tokens_estimate": 17,
+      "keywords": [
+        "post",
+        "api",
+        "tasks",
+        "task_id",
+        "parse"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_023",
+      "content": "Request body:",
+      "section_title": "Step 3",
+      "source_file": "",
+      "source_block": "section_4_paragraph_3_part_1",
+      "tokens_estimate": 6,
+      "keywords": [
+        "request",
+        "body"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_024",
+      "content": "{\n\"use_llm\": false,\n\"rag_enabled\": true,\n\"retrieval_top_k\": 5,\n\"rerank_enabled\": false\n}",
+      "section_title": "Step 3",
+      "source_file": "",
+      "source_block": "section_4_paragraph_4_part_1",
+      "tokens_estimate": 44,
+      "keywords": [
+        "use_llm",
+        "false",
+        "rag_enabled",
+        "true",
+        "retrieval_top_k",
+        "rerank_enabled"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_025",
+      "content": "Expected:",
+      "section_title": "Step 3",
+      "source_file": "",
+      "source_block": "section_4_paragraph_5_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "expected"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_026",
+      "content": "- HTTP `200`\n- `code = TASK_PARSED`\n- `data.task_id = {task_id}`\n- `data.parsed_requirement` exists\n- `data.parse_metadata` exists\n- `data.parse_metadata.parse_mode` exists\n- `data.parse_metadata.retrieval_mode` exists",
+      "section_title": "Step 3",
+      "source_file": "",
+      "source_block": "section_4_paragraph_6_part_1",
+      "tokens_estimate": 109,
+      "keywords": [
+        "http",
+        "code",
+        "task_parsed",
+        "data.task_id",
+        "task_id",
+        "data.parsed_requirement",
+        "exists",
+        "data.parse_metadata"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_027",
+      "content": "Request:",
+      "section_title": "Step 4",
+      "source_file": "",
+      "source_block": "section_5_paragraph_1_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "request"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_028",
+      "content": "- `GET /api/tasks/{task_id}/dsl`",
+      "section_title": "Step 4",
+      "source_file": "",
+      "source_block": "section_5_paragraph_2_part_1",
+      "tokens_estimate": 16,
+      "keywords": [
+        "get",
+        "api",
+        "tasks",
+        "task_id",
+        "dsl"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_029",
+      "content": "Expected:",
+      "section_title": "Step 4",
+      "source_file": "",
+      "source_block": "section_5_paragraph_3_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "expected"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_030",
+      "content": "- HTTP `200`\n- `code = DSL_OK`\n- `data.scenarios` exists\n- `data.scenarios` is not empty",
+      "section_title": "Step 4",
+      "source_file": "",
+      "source_block": "section_5_paragraph_4_part_1",
+      "tokens_estimate": 44,
+      "keywords": [
+        "http",
+        "code",
+        "dsl_ok",
+        "data.scenarios",
+        "exists",
+        "is",
+        "not",
+        "empty"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_031",
+      "content": "Required generated request steps:",
+      "section_title": "Step 4",
+      "source_file": "",
+      "source_block": "section_5_paragraph_5_part_1",
+      "tokens_estimate": 16,
+      "keywords": [
+        "required",
+        "generated",
+        "request",
+        "steps"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_032",
+      "content": "- `POST /api/tasks`\n- `POST /api/tasks/{task_id}/parse`\n- `POST /api/tasks/{task_id}/execute`",
+      "section_title": "Step 4",
+      "source_file": "",
+      "source_block": "section_5_paragraph_6_part_1",
+      "tokens_estimate": 46,
+      "keywords": [
+        "post",
+        "api",
+        "tasks",
+        "task_id",
+        "parse",
+        "execute"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_033",
+      "content": "Required create-step save_context:",
+      "section_title": "Step 4",
+      "source_file": "",
+      "source_block": "section_5_paragraph_7_part_1",
+      "tokens_estimate": 17,
+      "keywords": [
+        "required",
+        "create-step",
+        "save_context"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_034",
+      "content": "- `task_id = json.data.task_id`\n- `resource_id = json.data.task_id`",
+      "section_title": "Step 4",
+      "source_file": "",
+      "source_block": "section_5_paragraph_8_part_1",
+      "tokens_estimate": 33,
+      "keywords": [
+        "task_id",
+        "json.data.task_id",
+        "resource_id"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_035",
+      "content": "Request:",
+      "section_title": "Step 5",
+      "source_file": "",
+      "source_block": "section_6_paragraph_1_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "request"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_036",
+      "content": "- `POST /api/tasks/{task_id}/execute`",
+      "section_title": "Step 5",
+      "source_file": "",
+      "source_block": "section_6_paragraph_2_part_1",
+      "tokens_estimate": 18,
+      "keywords": [
+        "post",
+        "api",
+        "tasks",
+        "task_id",
+        "execute"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_037",
+      "content": "Request body:",
+      "section_title": "Step 5",
+      "source_file": "",
+      "source_block": "section_6_paragraph_3_part_1",
+      "tokens_estimate": 6,
+      "keywords": [
+        "request",
+        "body"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_038",
+      "content": "{\n\"execution_mode\": \"api\",\n\"environment\": \"test\"\n}",
+      "section_title": "Step 5",
+      "source_file": "",
+      "source_block": "section_6_paragraph_4_part_1",
+      "tokens_estimate": 25,
+      "keywords": [
+        "execution_mode",
+        "api",
+        "environment",
+        "test"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_039",
+      "content": "Expected:",
+      "section_title": "Step 5",
+      "source_file": "",
+      "source_block": "section_6_paragraph_5_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "expected"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_040",
+      "content": "- HTTP `200`\n- `code = TASK_EXECUTED`",
+      "section_title": "Step 5",
+      "source_file": "",
+      "source_block": "section_6_paragraph_6_part_1",
+      "tokens_estimate": 18,
+      "keywords": [
+        "http",
+        "code",
+        "task_executed"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_041",
+      "content": "Poll:",
+      "section_title": "Step 6",
+      "source_file": "",
+      "source_block": "section_7_paragraph_1_part_1",
+      "tokens_estimate": 2,
+      "keywords": [
+        "poll"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_042",
+      "content": "- `GET /api/tasks/{task_id}/execution`",
+      "section_title": "Step 6",
+      "source_file": "",
+      "source_block": "section_7_paragraph_2_part_1",
+      "tokens_estimate": 19,
+      "keywords": [
+        "get",
+        "api",
+        "tasks",
+        "task_id",
+        "execution"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_043",
+      "content": "Expected:",
+      "section_title": "Step 6",
+      "source_file": "",
+      "source_block": "section_7_paragraph_3_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "expected"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_044",
+      "content": "- HTTP `200`\n- `code = EXECUTION_OK`\n- `data.status` reaches `passed` or `failed`\n- `data.scenario_results` exists",
+      "section_title": "Step 6",
+      "source_file": "",
+      "source_block": "section_7_paragraph_4_part_1",
+      "tokens_estimate": 57,
+      "keywords": [
+        "http",
+        "code",
+        "execution_ok",
+        "data.status",
+        "reaches",
+        "passed",
+        "or",
+        "failed"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_045",
+      "content": "Request:",
+      "section_title": "Step 7",
+      "source_file": "",
+      "source_block": "section_8_paragraph_1_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "request"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_046",
+      "content": "- `GET /api/tasks/{task_id}/analysis-report`",
+      "section_title": "Step 7",
+      "source_file": "",
+      "source_block": "section_8_paragraph_2_part_1",
+      "tokens_estimate": 22,
+      "keywords": [
+        "get",
+        "api",
+        "tasks",
+        "task_id",
+        "analysis-report"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_047",
+      "content": "Expected:",
+      "section_title": "Step 7",
+      "source_file": "",
+      "source_block": "section_8_paragraph_3_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "expected"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_048",
+      "content": "- HTTP `200`\n- `code = ANALYSIS_REPORT_OK`\n- `data.task_id = {task_id}`\n- `data.summary` exists\n- `data.quality_status` exists",
+      "section_title": "Step 7",
+      "source_file": "",
+      "source_block": "section_8_paragraph_4_part_1",
+      "tokens_estimate": 63,
+      "keywords": [
+        "http",
+        "code",
+        "analysis_report_ok",
+        "data.task_id",
+        "task_id",
+        "data.summary",
+        "exists",
+        "data.quality_status"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_049",
+      "content": "Request:",
+      "section_title": "Step 8",
+      "source_file": "",
+      "source_block": "section_9_paragraph_1_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "request"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_050",
+      "content": "- `DELETE /api/tasks/{task_id}`",
+      "section_title": "Step 8",
+      "source_file": "",
+      "source_block": "section_9_paragraph_2_part_1",
+      "tokens_estimate": 15,
+      "keywords": [
+        "delete",
+        "api",
+        "tasks",
+        "task_id"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_051",
+      "content": "Expected:",
+      "section_title": "Step 8",
+      "source_file": "",
+      "source_block": "section_9_paragraph_3_part_1",
+      "tokens_estimate": 4,
+      "keywords": [
+        "expected"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_052",
+      "content": "- HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`",
+      "section_title": "Step 8",
+      "source_file": "",
+      "source_block": "section_9_paragraph_4_part_1",
+      "tokens_estimate": 45,
+      "keywords": [
+        "http",
+        "code",
+        "task_archived",
+        "data.task_id",
+        "task_id",
+        "data.archived",
+        "true"
+      ],
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "contract_post_tasks",
+      "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+      "section_title": "创建任务 POST /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 65,
+      "keywords": [
+        "POST",
+        "/api/tasks",
+        "task_name",
+        "创建任务",
+        "task_id",
+        "requirement"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_get_task",
+      "content": "GET /api/tasks/{task_id} 返回任务状态、流水线阶段、artifact 路径等。路径参数 task_id 为创建任务接口返回的标识。",
+      "section_title": "任务详情 GET /api/tasks/{task_id}",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 38,
+      "keywords": [
+        "GET",
+        "/api/tasks",
+        "task_id",
+        "详情",
+        "状态"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_task_list",
+      "content": "GET /api/tasks 支持分页与筛选，用于控制台列表页展示历史任务。",
+      "section_title": "任务列表 GET /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 19,
+      "keywords": [
+        "GET",
+        "/api/tasks",
+        "列表",
+        "分页"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execute",
+      "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+      "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 43,
+      "keywords": [
+        "POST",
+        "execute",
+        "执行",
+        "task_id",
+        "dry_run"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_preflight",
+      "content": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行。",
+      "section_title": "预检 POST /api/tasks/{task_id}/preflight-check",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 35,
+      "keywords": [
+        "preflight",
+        "预检",
+        "task_id",
+        "校验"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execution_explanations",
+      "content": "GET /api/tasks/{task_id}/execution/explanations 返回步骤级说明与上下文，用于排错与审计。",
+      "section_title": "执行说明 GET /api/tasks/{task_id}/execution/explanations",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 34,
+      "keywords": [
+        "explanations",
+        "执行说明",
+        "task_id",
+        "步骤"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_parse_requirement",
+      "content": "需求分析模块将自然语言或文档解析为结构化字段：objective、actors、actions、expected_results、ambiguities 等；可结合 RAG 检索上下文提升准确度。",
+      "section_title": "需求解析（分析服务）",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 49,
+      "keywords": [
+        "解析",
+        "requirement",
+        "RAG",
+        "objective",
+        "actions"
+      ],
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_envelope_errors",
+      "content": "平台 HTTP API 错误宜使用统一 envelope（如 code、message、details），前端与自动化应优先解析该结构而非裸文本。",
+      "section_title": "统一错误响应",
+      "source_file": "platform_api_knowledge.json",
+      "source_block": "curated_snippet",
+      "tokens_estimate": 36,
+      "keywords": [
+        "错误",
+        "envelope",
+        "422",
+        "message",
+        "code"
+      ],
+      "doc_type": "platform_contract"
+    }
+  ]
+}

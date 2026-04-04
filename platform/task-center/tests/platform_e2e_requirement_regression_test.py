@@ -3,6 +3,7 @@
 Usage:
   python platform/task-center/tests/platform_e2e_requirement_regression_test.py
   python platform/task-center/tests/platform_e2e_requirement_regression_test.py --api-base http://127.0.0.1:8001
+  python platform/task-center/tests/platform_e2e_requirement_regression_test.py --use-llm
 """
 
 from __future__ import annotations
@@ -76,6 +77,11 @@ def main() -> int:
         default=180.0,
         help="Polling timeout for execute endpoint",
     )
+    parser.add_argument(
+        "--use-llm",
+        action="store_true",
+        help="Enable the slower LLM-enhanced parse path for an explicit extended regression run",
+    )
     args = parser.parse_args()
 
     base = args.api_base.rstrip("/")
@@ -113,7 +119,7 @@ def main() -> int:
             "POST",
             f"{base}/api/tasks/{task_id}/parse",
             payload={
-                "use_llm": True,
+                "use_llm": args.use_llm,
                 "rag_enabled": True,
                 "retrieval_top_k": 5,
                 "rerank_enabled": False,
@@ -127,6 +133,7 @@ def main() -> int:
         # e2e ??????????????? rules ???
         llm_attempted = parse_meta.get("llm_attempted")
         assert isinstance(llm_attempted, bool), f"llm_attempted should be bool, got: {parse_meta}"
+        assert llm_attempted is args.use_llm, f"llm_attempted should mirror --use-llm, got: {parse_meta}"
         assert parse_meta.get("retrieval_mode") in {"vector+keyword", "keyword"}, \
             f"retrieval_mode unexpected: {parse_meta.get('retrieval_mode')}"
         assert parse_meta.get("parse_mode") in {"llm", "rules"}, \

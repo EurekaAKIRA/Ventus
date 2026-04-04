@@ -1,0 +1,712 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "端到端测试9_20260404160833",
+  "task_name": "端到端测试9",
+  "feature_name": "端到端测试9",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "确认验收范围、签收最终结论",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "确认验收范围、签收最终结论",
+          "request": {
+            "method": "POST",
+            "url": "/users",
+            "json": {
+              "input": "确认验收范围、签收最终结论"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "response.json().get('success')",
+              "op": "eq",
+              "severity": "major",
+              "category": "field_value",
+              "confidence": 0.95,
+              "generated_by": "llm",
+              "reasoning": "预期接口返回成功标识为true",
+              "fallback_used": false,
+              "expected": true
+            },
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "response_time",
+              "op": "lt",
+              "severity": "minor",
+              "category": "performance",
+              "confidence": 0.85,
+              "generated_by": "llm",
+              "reasoning": "接口响应时间应小于2秒以保证用户体验",
+              "fallback_used": false,
+              "expected": 2000
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": true,
+            "fallback_reason": "",
+            "invalid_assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 3,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "平台主流程可在同一任务生命周期内闭环完成",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "平台主流程可在同一任务生命周期内闭环完成"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "保障主链路可运行，处理阻断性缺陷",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "保障主链路可运行，处理阻断性缺陷",
+          "request": {
+            "method": "POST",
+            "url": "/users",
+            "json": {
+              "input": "保障主链路可运行，处理阻断性缺陷"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "response_time",
+              "op": "lt",
+              "severity": "major",
+              "category": "performance",
+              "confidence": 0.95,
+              "generated_by": "llm",
+              "reasoning": "主链路响应时间应小于1秒以保证可用性",
+              "fallback_used": false,
+              "expected": 1000
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": true,
+            "fallback_reason": "",
+            "invalid_assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 2,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "关键中间产物可追踪、可复核、可回放",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "关键中间产物可追踪、可复核、可回放"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "验证页面主路径与真实接口数据一致性",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "验证页面主路径与真实接口数据一致性",
+          "request": {
+            "method": "POST",
+            "url": "/users",
+            "json": {
+              "input": "验证页面主路径与真实接口数据一致性"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "enhance_cand_03",
+              "source": "response.json().input",
+              "op": "eq",
+              "severity": "major",
+              "category": "field_value",
+              "confidence": 0.9,
+              "generated_by": "llm",
+              "reasoning": "Check if the input value in the response matches the one sent in the request.",
+              "fallback_used": false,
+              "expected": "验证页面主路径与真实接口数据一致性"
+            },
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "response.elapsed.total_seconds()",
+              "op": "lt",
+              "severity": "minor",
+              "category": "performance",
+              "confidence": 0.8,
+              "generated_by": "llm",
+              "reasoning": "Ensure the API response time is within an acceptable limit for performance.",
+              "fallback_used": false,
+              "expected": 2
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": true,
+            "fallback_reason": "",
+            "invalid_assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 3,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "执行与分析结果满足当前阶段演示与验收所需的最小可信度",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "执行与分析结果满足当前阶段演示与验收所需的最小可信度"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "执行回归流程并输出问题清单",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "执行回归流程并输出问题清单",
+          "request": {
+            "method": "POST",
+            "url": "/users",
+            "json": {
+              "input": "执行回归流程并输出问题清单"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "response_time",
+              "op": "lt",
+              "severity": "major",
+              "category": "performance",
+              "confidence": 0.95,
+              "generated_by": "llm",
+              "reasoning": "确保接口响应在合理时间内完成，提升用户体验",
+              "fallback_used": false,
+              "expected": 2000
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": true,
+            "fallback_reason": "",
+            "invalid_assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 2,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "任务归档后的可见性与一致性检查通过",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "任务归档后的可见性与一致性检查通过"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "保障测试环境地址、网络和依赖可达",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "保障测试环境地址、网络和依赖可达",
+          "request": {
+            "method": "POST",
+            "url": "/users",
+            "json": {
+              "input": "保障测试环境地址、网络和依赖可达"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "network_reachable",
+              "op": "eq",
+              "severity": "critical",
+              "category": "business",
+              "confidence": 0.99,
+              "generated_by": "llm",
+              "reasoning": "The test environment network must be reachable to ensure the main link can run properly",
+              "fallback_used": false,
+              "expected": true
+            },
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "enhance_cand_03",
+              "source": "content_type",
+              "op": "eq",
+              "severity": "major",
+              "category": "schema",
+              "confidence": 0.95,
+              "generated_by": "llm",
+              "reasoning": "The response should be in JSON format as the request is sending JSON data",
+              "fallback_used": false,
+              "expected": "application/json"
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "response_time",
+              "op": "lt",
+              "severity": "major",
+              "category": "performance",
+              "confidence": 0.9,
+              "generated_by": "llm",
+              "reasoning": "Ensure the API responds within an acceptable time frame for a smooth user experience",
+              "fallback_used": false,
+              "expected": 2000
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": true,
+            "fallback_reason": "",
+            "invalid_assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 3,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 4,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 5,
+      "scenario_count": 5,
+      "parsed_entities": [
+        "platform",
+        "主链路联调需求说明",
+        "当前实现对齐版",
+        "背景与目的",
+        "当前平台已经具备",
+        "任务接入与任务状态流转",
+        "需求解析与检索增强",
+        "场景、DSL、Feature 的产物生成",
+        "API 执行、日志、报告与历史查询能力",
+        "任务归档后的可见性与一致性检查",
+        "压测云平台对接能力",
+        "多租户与权限边界",
+        "生产级高并发与容量基准",
+        "第三方系统稳定性背书",
+        "web - ui 执行模式"
+      ]
+    }
+  }
+}

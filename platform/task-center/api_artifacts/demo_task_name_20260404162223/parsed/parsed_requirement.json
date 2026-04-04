@@ -1,0 +1,37 @@
+{
+  "objective": "demo requirement text",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "demo",
+    "requirement",
+    "text",
+    "post",
+    "api",
+    "tasks",
+    "创建任务",
+    "请求体常用字段",
+    "task_name",
+    "必填"
+  ],
+  "preconditions": [],
+  "actions": [
+    "执行核心业务动作"
+  ],
+  "expected_results": [
+    "系统返回符合需求的可观察结果"
+  ],
+  "constraints": [
+    "demo requirement text"
+  ],
+  "ambiguities": [],
+  "source_chunks": [
+    "chunk_001",
+    "contract_post_tasks",
+    "contract_parse_requirement",
+    "contract_execute",
+    "contract_task_list"
+  ],
+  "api_endpoints": []
+}

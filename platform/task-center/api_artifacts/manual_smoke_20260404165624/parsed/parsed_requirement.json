@@ -1,0 +1,37 @@
+{
+  "objective": "????",
+  "actors": [
+    "用户"
+  ],
+  "entities": [
+    "平台",
+    "http",
+    "api",
+    "错误宜使用统一",
+    "envelope",
+    "code",
+    "message",
+    "details",
+    "前端与自动化应优先解析该结构而非裸文本",
+    "post"
+  ],
+  "preconditions": [],
+  "actions": [
+    "执行核心业务动作"
+  ],
+  "expected_results": [
+    "系统返回符合需求的可观察结果"
+  ],
+  "constraints": [],
+  "ambiguities": [
+    "需求文本较短，建议补充业务目标、接口路径和断言细节"
+  ],
+  "source_chunks": [
+    "chunk_001",
+    "contract_envelope_errors",
+    "contract_preflight",
+    "contract_execute",
+    "contract_task_list"
+  ],
+  "api_endpoints": []
+}

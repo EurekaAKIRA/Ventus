@@ -100,6 +100,26 @@ $env:HUNYUAN_EMBEDDING_MODEL="hunyuan-embedding"
 python run_platform.py server-smoke-test
 ```
 
+### 运行 e2e 需求文档回归
+
+先启动后端：
+
+```powershell
+python run_platform.py serve-api
+```
+
+默认走稳定的 rules + RAG 基线路径：
+
+```powershell
+python platform/task-center/tests/platform_e2e_requirement_regression_test.py --api-base http://127.0.0.1:8001
+```
+
+如需显式验证 LLM 增强链路，再额外加上 `--use-llm`：
+
+```powershell
+python platform/task-center/tests/platform_e2e_requirement_regression_test.py --api-base http://127.0.0.1:8001 --use-llm
+```
+
 ### 杩愯鍚庣鏍囧噯娴嬭瘯鐢ㄤ緥锛堣繛鐪熷疄鍚庣锛?
 
 鍏堝惎鍔ㄥ悗绔細

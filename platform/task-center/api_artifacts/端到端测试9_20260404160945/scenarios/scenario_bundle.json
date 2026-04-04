@@ -1,0 +1,2321 @@
+{
+  "task_context": {
+    "task_id": "端到端测试9_20260404160833",
+    "task_name": "端到端测试9",
+    "source_type": "text",
+    "source_path": null,
+    "created_at": "2026-04-04T16:08:33.310825+00:00",
+    "language": "zh-CN",
+    "status": "received",
+    "notes": []
+  },
+  "raw_requirement": "# Platform 主链路联调需求说明（当前实现对齐版）\n\n## 1. 背景与目的\n\n当前平台已经具备 task-center 主链路的联调能力，研发、测试与前端需要基于统一口径确认以下事项：\n\n- 平台主流程是否可在同一任务生命周期内闭环完成；\n- 关键中间产物是否可追踪、可复核、可回放；\n- 执行与分析结果是否满足当前阶段演示与验收所需的最小可信度；\n- 文档描述是否与当前项目真实接口输入输出保持一致。\n\n本文档用于指导当前版本的平台端到端联调与验收。  \n它是开发文档和验收口径说明，不是接口手册，也不是自动化脚本逐步说明书。\n\n## 2. 适用范围\n\n### 2.1 本次纳入\n\n- 任务接入与任务状态流转；\n- 需求解析与检索增强；\n- 场景、DSL、Feature 的产物生成；\n- API 执行、日志、报告与历史查询能力；\n- 任务归档后的可见性与一致性检查。\n\n### 2.2 本次不纳入\n\n- 压测云平台对接能力；\n- 多租户与权限边界；\n- 生产级高并发与容量基准；\n- 第三方系统稳定性背书；\n- `web-ui` 执行模式的正式验收。\n\n## 3. 角色与职责\n\n- **产品/项目负责人**：确认验收范围、签收最终结论。\n- **后端研发**：保障主链路可运行，处理阻断性缺陷。\n- **前端研发**：验证页面主路径与真实接口数据一致性。\n- **测试工程师**：执行回归流程并输出问题清单。\n- **运维或环境负责人**：保障测试环境地址、网络和依赖可达。\n\n## 4. 业务过程描述（非接口步骤版）\n\n从业务视角看，一次标准任务应经历以下过程：\n\n1. 用户提交待分析的需求内容并形成任务实体；\n2. 系统完成需求结构化，补充检索上下文，形成后续生成的语义基础；\n3. 系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅；\n4. 系统在指定环境中执行任务，输出过程日志与结果状态；\n5. 系统聚合校验与分析报告，支持从任务维度查看历史与产物；\n6. 任务结束后可归档，归档后不再作为活跃任务参与主流程。\n\n> 说明：上述过程强调业务闭环，不要求阅读者记忆具体路径与方法名。\n\n## 5. 接口基线（来源：`docs/frontend_api_list.md`）\n\n为避免联调过程出现“口径不一致”，本需求文档采用 `docs/frontend_api_list.md` 作为接口基线。",
+  "parsed_requirement": {
+    "objective": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+    "actors": [
+      "产品/项目负责人",
+      "后端研发",
+      "前端研发",
+      "测试工程师",
+      "运维或环境负责人",
+      "用户"
+    ],
+    "entities": [
+      "platform",
+      "主链路联调需求说明",
+      "当前实现对齐版",
+      "背景与目的",
+      "当前平台已经具备",
+      "任务接入与任务状态流转",
+      "需求解析与检索增强",
+      "场景、DSL、Feature 的产物生成",
+      "API 执行、日志、报告与历史查询能力",
+      "任务归档后的可见性与一致性检查",
+      "压测云平台对接能力",
+      "多租户与权限边界",
+      "生产级高并发与容量基准",
+      "第三方系统稳定性背书",
+      "web - ui 执行模式"
+    ],
+    "preconditions": [],
+    "actions": [
+      "确认验收范围、签收最终结论",
+      "保障主链路可运行，处理阻断性缺陷",
+      "验证页面主路径与真实接口数据一致性",
+      "执行回归流程并输出问题清单",
+      "保障测试环境地址、网络和依赖可达",
+      "用户提交待分析的需求内容并形成任务实体",
+      "系统完成需求结构化，补充检索上下文，形成后续生成的语义基础",
+      "系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅",
+      "系统在指定环境中执行任务，输出过程日志与结果状态",
+      "系统聚合校验与分析报告，支持从任务维度查看历史与产物",
+      "任务结束后进行归档，归档后不再作为活跃任务参与主流程",
+      "确认文档描述与当前项目真实接口输入输出保持一致"
+    ],
+    "expected_results": [
+      "平台主流程可在同一任务生命周期内闭环完成",
+      "关键中间产物可追踪、可复核、可回放",
+      "执行与分析结果满足当前阶段演示与验收所需的最小可信度",
+      "任务归档后的可见性与一致性检查通过",
+      "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程"
+    ],
+    "constraints": [
+      "本文档不是接口手册，也不是自动化脚本逐步说明书",
+      "本次不纳入压测云平台对接能力、多租户与权限边界、生产级高并发与容量基准、第三方系统稳定性背书、web - ui 执行模式的正式验收"
+    ],
+    "ambiguities": [],
+    "source_chunks": [
+      "chunk_006",
+      "chunk_008",
+      "chunk_004",
+      "chunk_001",
+      "contract_preflight"
+    ],
+    "api_endpoints": []
+  },
+  "retrieved_context": [
+    {
+      "chunk_id": "chunk_006",
+      "content": "- **产品/项目负责人**：确认验收范围、签收最终结论。\n- **后端研发**：保障主链路可运行，处理阻断性缺陷。\n- **前端研发**：验证页面主路径与真实接口数据一致性。\n- **测试工程师**：执行回归流程并输出问题清单。\n- **运维或环境负责人**：保障测试环境地址、网络和依赖可达。",
+      "score": 8.99,
+      "section_title": "3. 角色与职责",
+      "source_file": "",
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_008",
+      "content": "1. 用户提交待分析的需求内容并形成任务实体；\n2. 系统完成需求结构化，补充检索上下文，形成后续生成的语义基础；\n3. 系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅；\n4. 系统在指定环境中执行任务，输出过程日志与结果状态；\n5. 系统聚合校验与分析报告，支持从任务维度查看历史与产物；\n6. 任务结束后可归档，归档后不再作为活跃任务参与主流程。",
+      "score": 8.656,
+      "section_title": "4. 业务过程描述（非接口步骤版）",
+      "source_file": "",
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_004",
+      "content": "- 任务接入与任务状态流转；\n- 需求解析与检索增强；\n- 场景、DSL、Feature 的产物生成；\n- API 执行、日志、报告与历史查询能力；\n- 任务归档后的可见性与一致性检查。",
+      "score": 7.675,
+      "section_title": "2.1 本次纳入",
+      "source_file": "",
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "chunk_001",
+      "content": "当前平台已经具备 task-center 主链路的联调能力，研发、测试与前端需要基于统一口径确认以下事项：",
+      "score": 7.44,
+      "section_title": "1. 背景与目的",
+      "source_file": "",
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "contract_preflight",
+      "content": "POST /api/tasks/{task_id}/preflight-check 在执行前校验环境与依赖，返回可读原因与建议，减少无效执行。",
+      "score": 6.909,
+      "section_title": "预检 POST /api/tasks/{task_id}/preflight-check",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "确认验收范围、签收最终结论",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "确认验收范围、签收最终结论"
+        },
+        {
+          "type": "then",
+          "text": "平台主流程可在同一任务生命周期内闭环完成"
+        }
+      ],
+      "assertions": [
+        "平台主流程可在同一任务生命周期内闭环完成"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "保障主链路可运行，处理阻断性缺陷",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "保障主链路可运行，处理阻断性缺陷"
+        },
+        {
+          "type": "then",
+          "text": "关键中间产物可追踪、可复核、可回放"
+        }
+      ],
+      "assertions": [
+        "关键中间产物可追踪、可复核、可回放"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "验证页面主路径与真实接口数据一致性",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "验证页面主路径与真实接口数据一致性"
+        },
+        {
+          "type": "then",
+          "text": "执行与分析结果满足当前阶段演示与验收所需的最小可信度"
+        }
+      ],
+      "assertions": [
+        "执行与分析结果满足当前阶段演示与验收所需的最小可信度"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "执行回归流程并输出问题清单",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "执行回归流程并输出问题清单"
+        },
+        {
+          "type": "then",
+          "text": "任务归档后的可见性与一致性检查通过"
+        }
+      ],
+      "assertions": [
+        "任务归档后的可见性与一致性检查通过"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "保障测试环境地址、网络和依赖可达",
+      "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "保障测试环境地址、网络和依赖可达"
+        },
+        {
+          "type": "then",
+          "text": "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程"
+        }
+      ],
+      "assertions": [
+        "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "chunk_001",
+        "contract_preflight"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    }
+  ],
+  "test_case_dsl": {
+    "dsl_version": "0.2.0",
+    "task_id": "端到端测试9_20260404160833",
+    "task_name": "端到端测试9",
+    "feature_name": "端到端测试9",
+    "execution_mode": "api",
+    "scenarios": [
+      {
+        "scenario_id": "scenario_001",
+        "name": "确认验收范围、签收最终结论",
+        "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "chunk_006",
+          "chunk_008",
+          "chunk_004",
+          "chunk_001",
+          "contract_preflight"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "step_type": "when",
+            "text": "确认验收范围、签收最终结论",
+            "request": {
+              "method": "POST",
+              "url": "/users",
+              "json": {
+                "input": "确认验收范围、签收最终结论"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "response.json().get('success')",
+                "op": "eq",
+                "severity": "major",
+                "category": "field_value",
+                "confidence": 0.95,
+                "generated_by": "llm",
+                "reasoning": "预期接口返回成功标识为true",
+                "fallback_used": false,
+                "expected": true
+              },
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "response_time",
+                "op": "lt",
+                "severity": "minor",
+                "category": "performance",
+                "confidence": 0.85,
+                "generated_by": "llm",
+                "reasoning": "接口响应时间应小于2秒以保证用户体验",
+                "fallback_used": false,
+                "expected": 2000
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": true,
+              "fallback_reason": "",
+              "invalid_assertion_count": 1,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 2,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 3,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "step_type": "then",
+            "text": "平台主流程可在同一任务生命周期内闭环完成",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "平台主流程可在同一任务生命周期内闭环完成"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_002",
+        "name": "保障主链路可运行，处理阻断性缺陷",
+        "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "chunk_006",
+          "chunk_008",
+          "chunk_004",
+          "chunk_001",
+          "contract_preflight"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_002_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "step_type": "when",
+            "text": "保障主链路可运行，处理阻断性缺陷",
+            "request": {
+              "method": "POST",
+              "url": "/users",
+              "json": {
+                "input": "保障主链路可运行，处理阻断性缺陷"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "response_time",
+                "op": "lt",
+                "severity": "major",
+                "category": "performance",
+                "confidence": 0.95,
+                "generated_by": "llm",
+                "reasoning": "主链路响应时间应小于1秒以保证可用性",
+                "fallback_used": false,
+                "expected": 1000
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": true,
+              "fallback_reason": "",
+              "invalid_assertion_count": 1,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 1,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 2,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "step_type": "then",
+            "text": "关键中间产物可追踪、可复核、可回放",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "关键中间产物可追踪、可复核、可回放"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_003",
+        "name": "验证页面主路径与真实接口数据一致性",
+        "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "chunk_006",
+          "chunk_008",
+          "chunk_004",
+          "chunk_001",
+          "contract_preflight"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_003_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "step_type": "when",
+            "text": "验证页面主路径与真实接口数据一致性",
+            "request": {
+              "method": "POST",
+              "url": "/users",
+              "json": {
+                "input": "验证页面主路径与真实接口数据一致性"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "enhance_cand_03",
+                "source": "response.json().input",
+                "op": "eq",
+                "severity": "major",
+                "category": "field_value",
+                "confidence": 0.9,
+                "generated_by": "llm",
+                "reasoning": "Check if the input value in the response matches the one sent in the request.",
+                "fallback_used": false,
+                "expected": "验证页面主路径与真实接口数据一致性"
+              },
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "response.elapsed.total_seconds()",
+                "op": "lt",
+                "severity": "minor",
+                "category": "performance",
+                "confidence": 0.8,
+                "generated_by": "llm",
+                "reasoning": "Ensure the API response time is within an acceptable limit for performance.",
+                "fallback_used": false,
+                "expected": 2
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": true,
+              "fallback_reason": "",
+              "invalid_assertion_count": 1,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 2,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 3,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "step_type": "then",
+            "text": "执行与分析结果满足当前阶段演示与验收所需的最小可信度",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "执行与分析结果满足当前阶段演示与验收所需的最小可信度"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_004",
+        "name": "执行回归流程并输出问题清单",
+        "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "chunk_006",
+          "chunk_008",
+          "chunk_004",
+          "chunk_001",
+          "contract_preflight"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_004_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "step_type": "when",
+            "text": "执行回归流程并输出问题清单",
+            "request": {
+              "method": "POST",
+              "url": "/users",
+              "json": {
+                "input": "执行回归流程并输出问题清单"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "response_time",
+                "op": "lt",
+                "severity": "major",
+                "category": "performance",
+                "confidence": 0.95,
+                "generated_by": "llm",
+                "reasoning": "确保接口响应在合理时间内完成，提升用户体验",
+                "fallback_used": false,
+                "expected": 2000
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": true,
+              "fallback_reason": "",
+              "invalid_assertion_count": 1,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 1,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 2,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "step_type": "then",
+            "text": "任务归档后的可见性与一致性检查通过",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "任务归档后的可见性与一致性检查通过"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_005",
+        "name": "保障测试环境地址、网络和依赖可达",
+        "goal": "Platform 主链路联调需求说明（当前实现对齐版），用于指导当前版本的平台端到端联调与验收，是开发文档和验收口径说明",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "chunk_006",
+          "chunk_008",
+          "chunk_004",
+          "chunk_001",
+          "contract_preflight"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_005_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "step_type": "when",
+            "text": "保障测试环境地址、网络和依赖可达",
+            "request": {
+              "method": "POST",
+              "url": "/users",
+              "json": {
+                "input": "保障测试环境地址、网络和依赖可达"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "network_reachable",
+                "op": "eq",
+                "severity": "critical",
+                "category": "business",
+                "confidence": 0.99,
+                "generated_by": "llm",
+                "reasoning": "The test environment network must be reachable to ensure the main link can run properly",
+                "fallback_used": false,
+                "expected": true
+              },
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "enhance_cand_03",
+                "source": "content_type",
+                "op": "eq",
+                "severity": "major",
+                "category": "schema",
+                "confidence": 0.95,
+                "generated_by": "llm",
+                "reasoning": "The response should be in JSON format as the request is sending JSON data",
+                "fallback_used": false,
+                "expected": "application/json"
+              },
+              {
+                "assertion_id": "enhance_cand_02",
+                "source": "response_time",
+                "op": "lt",
+                "severity": "major",
+                "category": "performance",
+                "confidence": 0.9,
+                "generated_by": "llm",
+                "reasoning": "Ensure the API responds within an acceptable time frame for a smooth user experience",
+                "fallback_used": false,
+                "expected": 2000
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": true,
+              "fallback_reason": "",
+              "invalid_assertion_count": 1,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 3,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 4,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "step_type": "then",
+            "text": "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "从业务视角看，一次标准任务经历提交需求、需求结构化、输出可执行场景及 DSL 和 Feature 文本、执行任务、聚合报告、任务归档的过程"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "source_type": "text",
+      "language": "zh-CN",
+      "case_generation": {
+        "api_scenario_count": 5,
+        "scenario_count": 5,
+        "parsed_entities": [
+          "platform",
+          "主链路联调需求说明",
+          "当前实现对齐版",
+          "背景与目的",
+          "当前平台已经具备",
+          "任务接入与任务状态流转",
+          "需求解析与检索增强",
+          "场景、DSL、Feature 的产物生成",
+          "API 执行、日志、报告与历史查询能力",
+          "任务归档后的可见性与一致性检查",
+          "压测云平台对接能力",
+          "多租户与权限边界",
+          "生产级高并发与容量基准",
+          "第三方系统稳定性背书",
+          "web - ui 执行模式"
+        ]
+      }
+    }
+  },
+  "validation_report": {
+    "feature_name": "端到端测试9",
+    "passed": true,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "scenario_count": 5,
+      "average_step_count": 3.2,
+      "step_count": 16,
+      "parse_metrics": {
+        "actor_count": 6,
+        "entity_count": 15,
+        "action_count": 12,
+        "expected_count": 5,
+        "ambiguity_count": 0
+      },
+      "parse_mode": "llm"
+    }
+  },
+  "analysis_report": {
+    "task_id": "端到端测试9_20260404160833",
+    "task_name": "端到端测试9",
+    "quality_status": "passed",
+    "report_version": "1.1.0",
+    "generated_at": "2026-04-04T16:09:45.071021+00:00",
+    "summary": {
+      "scenario_count": 5,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "total_steps": 15,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "validation_passed": true,
+      "warning_count": 0,
+      "error_count": 0,
+      "execution_status": "not_started",
+      "assertion_total": 19,
+      "assertion_passed": 19,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 0,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "assertion_quality_summary": {
+        "rule_count": 5,
+        "llm_count": 9,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 14,
+        "weak_assertion_step_count": 0,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_value": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1
+            },
+            "categories": {
+              "status": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_value": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1
+            },
+            "categories": {
+              "status": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "assertion_count": 4,
+            "generated_by_counts": {
+              "llm": 3,
+              "rules": 1
+            },
+            "categories": {
+              "business": 1,
+              "status": 1,
+              "schema": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "enhancement": {
+        "parse_mode": "llm",
+        "llm_attempted": true,
+        "llm_used": true,
+        "rag_used": true,
+        "rag_fallback_reason": "",
+        "fallback_reason": "",
+        "llm_error_type": "",
+        "llm_provider_profile": "tencent_hunyuan_openai_compat",
+        "model_profile": "default",
+        "retrieval_mode": "vector+keyword",
+        "retrieval_top_k": 5,
+        "rerank_enabled": false,
+        "retrieval_metrics": {
+          "returned_count": 5,
+          "requested_top_k": 5,
+          "coverage_ratio": 1.0,
+          "duplicate_ratio": 0.0,
+          "score_avg": 7.934,
+          "rerank_applied": false,
+          "embedded_chunk_count": 18,
+          "embedding_coverage": 1.0,
+          "embedding_error": "",
+          "embedding_error_detail": "",
+          "retrieval_min_final_score": 0.0,
+          "retrieval_candidates_before_threshold": 5,
+          "retrieval_low_score_rejection": false
+        },
+        "contract_knowledge": {
+          "enabled": true,
+          "merged_snippet_count": 8,
+          "official_score_boost": 2.0,
+          "min_retrieval_score": 0.0
+        },
+        "retrieval_scoring": {
+          "lexical_weight": 4.0,
+          "vector_weight": 6.0,
+          "rerank_vector_weight": 7.0,
+          "rerank_lexical_weight": 2.0,
+          "rerank_title_boost": 0.2,
+          "rerank_content_boost": 0.2
+        },
+        "performance": {
+          "elapsed_ms": 19417.45,
+          "target_ms": 20000.0,
+          "within_target": true,
+          "slow_reason": ""
+        },
+        "document_char_count": 1022,
+        "cleaned_char_count": 1020,
+        "chunk_count": 18,
+        "embedding_batch_size": 32,
+        "estimated_embedding_calls": 1,
+        "processing_tier": "realtime",
+        "large_document_warning": ""
+      }
+    },
+    "dashboard": {
+      "task_id": "端到端测试9_20260404160833",
+      "task_name": "端到端测试9",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "summary": {
+        "scenario_count": 5,
+        "executed_scenarios": 0,
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0,
+        "assertion_total": 19,
+        "assertion_pass_rate": 100.0,
+        "context_defined_keys": 0,
+        "context_used_keys": 0,
+        "context_extracted_keys": 0,
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0
+      },
+      "cards": [
+        {
+          "key": "scenarios",
+          "label": "Scenarios",
+          "value": 5
+        },
+        {
+          "key": "steps",
+          "label": "Total Steps",
+          "value": 15
+        },
+        {
+          "key": "passed_steps",
+          "label": "Passed",
+          "value": 0
+        },
+        {
+          "key": "failed_steps",
+          "label": "Failed",
+          "value": 0
+        },
+        {
+          "key": "success_rate",
+          "label": "Success Rate",
+          "value": 0.0
+        },
+        {
+          "key": "avg_elapsed_ms",
+          "label": "Avg Elapsed(ms)",
+          "value": 0.0
+        },
+        {
+          "key": "max_elapsed_ms",
+          "label": "Max Elapsed(ms)",
+          "value": 0.0
+        }
+      ],
+      "totals": {
+        "scenarios": 5,
+        "steps": 15,
+        "assertions": 19,
+        "requests": 0
+      },
+      "status_breakdown": {
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "passed_steps": 0,
+        "failed_steps": 0
+      },
+      "assertion_summary": {
+        "total": 19,
+        "passed": 19,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "assertion_quality_summary": {
+        "rule_count": 5,
+        "llm_count": 9,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 14,
+        "weak_assertion_step_count": 0,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_value": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1
+            },
+            "categories": {
+              "status": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_value": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1
+            },
+            "categories": {
+              "status": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "assertion_count": 4,
+            "generated_by_counts": {
+              "llm": 3,
+              "rules": 1
+            },
+            "categories": {
+              "business": 1,
+              "status": 1,
+              "schema": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "performance_summary": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "is_load_test": false
+      },
+      "context_summary": {
+        "defined_keys": 0,
+        "defined_key_names": [],
+        "used_keys": 0,
+        "used_key_names": [],
+        "extracted_keys": 0,
+        "extracted_key_names": [],
+        "unused_defined_keys": [],
+        "undefined_used_keys": []
+      },
+      "top_failure_reason": null,
+      "failure_reason_breakdown": [],
+      "headline": "0/15 steps passed",
+      "summary_text": "任务 端到端测试9 当前状态为 passed，已生成 5 个场景、15 个步骤，尚未开始执行。"
+    },
+    "dashboard_summary": {
+      "scenario_count": 5,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "execution_status": "not_started",
+      "total_steps": 15,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "assertion_total": 19,
+      "assertion_passed": 19,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 0,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "task_summary": {
+      "task_name": "端到端测试9",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "headline": "任务 端到端测试9 当前状态为 passed，已生成 5 个场景、15 个步骤，尚未开始执行。",
+      "success_rate": 0.0,
+      "failed_steps": 0,
+      "total_requests": 0,
+      "throughput": 0.0,
+      "top_failure_reason": null,
+      "next_action": "执行任务以生成运行报告"
+    },
+    "execution_overview": {
+      "executor": null,
+      "status": "not_started",
+      "scenario_count": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "log_count": 0,
+      "has_failures": false,
+      "top_failure_category": null
+    },
+    "performance_stats": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "failed_steps": [],
+    "failure_reasons": [],
+    "assertion_stats": {
+      "total": 19,
+      "passed": 19,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "validation_errors": 0,
+      "validation_warnings": 0
+    },
+    "step_assertion_quality": [
+      {
+        "step_id": "scenario_001_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_001_step_02",
+        "assertion_count": 3,
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 2
+        },
+        "categories": {
+          "status": 1,
+          "field_value": 1,
+          "performance": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_001_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_002_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_002_step_02",
+        "assertion_count": 2,
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 1
+        },
+        "categories": {
+          "status": 1,
+          "performance": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_002_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_003_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_003_step_02",
+        "assertion_count": 3,
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 2
+        },
+        "categories": {
+          "status": 1,
+          "field_value": 1,
+          "performance": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_003_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_004_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_004_step_02",
+        "assertion_count": 2,
+        "generated_by_counts": {
+          "rules": 1,
+          "llm": 1
+        },
+        "categories": {
+          "status": 1,
+          "performance": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_004_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_005_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_005_step_02",
+        "assertion_count": 4,
+        "generated_by_counts": {
+          "llm": 3,
+          "rules": 1
+        },
+        "categories": {
+          "business": 1,
+          "status": 1,
+          "schema": 1,
+          "performance": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_005_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      }
+    ],
+    "context_stats": {
+      "defined_keys": [],
+      "defined_key_count": 0,
+      "used_keys": [],
+      "used_key_count": 0,
+      "extracted_keys": [],
+      "extracted_key_count": 0,
+      "unused_defined_keys": [],
+      "undefined_used_keys": [],
+      "save_rules": {}
+    },
+    "task_summary_text": "任务 端到端测试9 当前状态为 passed，已生成 5 个场景、15 个步骤，尚未开始执行。",
+    "findings": [],
+    "chart_data": {
+      "validation": {
+        "passed": 1,
+        "failed": 0,
+        "warnings": 0,
+        "errors": 0
+      },
+      "execution": {
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      },
+      "assertions": {
+        "passed": 19,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "assertion_quality": {
+        "rule_count": 5,
+        "llm_count": 9,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 14,
+        "weak_assertion_step_count": 0,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_value": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1
+            },
+            "categories": {
+              "status": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_value": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 1,
+              "llm": 1
+            },
+            "categories": {
+              "status": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "assertion_count": 4,
+            "generated_by_counts": {
+              "llm": 3,
+              "rules": 1
+            },
+            "categories": {
+              "business": 1,
+              "status": 1,
+              "schema": 1,
+              "performance": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "context": {
+        "defined": 0,
+        "used": 0,
+        "extracted": 0
+      },
+      "failure_reasons": {}
+    },
+    "report_sections": [
+      {
+        "key": "overview",
+        "title": "执行概览",
+        "items": {
+          "scenario_count": 5,
+          "total_steps": 15,
+          "passed_steps": 0,
+          "failed_steps": 0,
+          "success_rate": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      },
+      {
+        "key": "failures",
+        "title": "失败分析",
+        "items": {
+          "failure_reason_count": 0,
+          "failure_reasons": []
+        }
+      },
+      {
+        "key": "assertions",
+        "title": "断言统计",
+        "items": {
+          "total": 19,
+          "passed": 19,
+          "failed": 0,
+          "pass_rate": 100.0,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "quality_summary": {
+            "rule_count": 5,
+            "llm_count": 9,
+            "llm_repair_count": 0,
+            "fallback_count": 0,
+            "high_confidence_count": 14,
+            "weak_assertion_step_count": 0,
+            "steps": [
+              {
+                "step_id": "scenario_001_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_001_step_02",
+                "assertion_count": 3,
+                "generated_by_counts": {
+                  "rules": 1,
+                  "llm": 2
+                },
+                "categories": {
+                  "status": 1,
+                  "field_value": 1,
+                  "performance": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_001_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_002_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_002_step_02",
+                "assertion_count": 2,
+                "generated_by_counts": {
+                  "rules": 1,
+                  "llm": 1
+                },
+                "categories": {
+                  "status": 1,
+                  "performance": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_002_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_003_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_003_step_02",
+                "assertion_count": 3,
+                "generated_by_counts": {
+                  "rules": 1,
+                  "llm": 2
+                },
+                "categories": {
+                  "status": 1,
+                  "field_value": 1,
+                  "performance": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_003_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_004_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_004_step_02",
+                "assertion_count": 2,
+                "generated_by_counts": {
+                  "rules": 1,
+                  "llm": 1
+                },
+                "categories": {
+                  "status": 1,
+                  "performance": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_004_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_005_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_005_step_02",
+                "assertion_count": 4,
+                "generated_by_counts": {
+                  "llm": 3,
+                  "rules": 1
+                },
+                "categories": {
+                  "business": 1,
+                  "status": 1,
+                  "schema": 1,
+                  "performance": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_005_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "key": "context",
+        "title": "上下文提取",
+        "items": {
+          "defined_keys": [],
+          "defined_key_count": 0,
+          "used_keys": [],
+          "used_key_count": 0,
+          "extracted_keys": [],
+          "extracted_key_count": 0,
+          "unused_defined_keys": [],
+          "undefined_used_keys": [],
+          "save_rules": {}
+        }
+      },
+      {
+        "key": "performance",
+        "title": "性能摘要",
+        "items": {
+          "total_requests": 0,
+          "success_count": 0,
+          "failure_count": 0,
+          "throughput": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      }
+    ]
+  },
+  "parse_metadata": {
+    "parse_mode": "llm",
+    "llm_attempted": true,
+    "llm_used": true,
+    "rag_used": true,
+    "rag_fallback_reason": "",
+    "fallback_reason": "",
+    "llm_error_type": "",
+    "llm_provider_profile": "tencent_hunyuan_openai_compat",
+    "model_profile": "default",
+    "retrieval_mode": "vector+keyword",
+    "retrieval_top_k": 5,
+    "rerank_enabled": false,
+    "retrieval_metrics": {
+      "returned_count": 5,
+      "requested_top_k": 5,
+      "coverage_ratio": 1.0,
+      "duplicate_ratio": 0.0,
+      "score_avg": 7.934,
+      "rerank_applied": false,
+      "embedded_chunk_count": 18,
+      "embedding_coverage": 1.0,
+      "embedding_error": "",
+      "embedding_error_detail": "",
+      "retrieval_min_final_score": 0.0,
+      "retrieval_candidates_before_threshold": 5,
+      "retrieval_low_score_rejection": false
+    },
+    "contract_knowledge": {
+      "enabled": true,
+      "merged_snippet_count": 8,
+      "official_score_boost": 2.0,
+      "min_retrieval_score": 0.0
+    },
+    "retrieval_scoring": {
+      "lexical_weight": 4.0,
+      "vector_weight": 6.0,
+      "rerank_vector_weight": 7.0,
+      "rerank_lexical_weight": 2.0,
+      "rerank_title_boost": 0.2,
+      "rerank_content_boost": 0.2
+    },
+    "performance": {
+      "elapsed_ms": 19417.45,
+      "target_ms": 20000.0,
+      "within_target": true,
+      "slow_reason": ""
+    },
+    "document_char_count": 1022,
+    "cleaned_char_count": 1020,
+    "chunk_count": 18,
+    "embedding_batch_size": 32,
+    "estimated_embedding_calls": 1,
+    "processing_tier": "realtime",
+    "large_document_warning": ""
+  }
+}

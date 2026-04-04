@@ -667,6 +667,10 @@ def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) ->
         source_type=task.source_type,
         source_path=task.source_path,
         artifacts_base_dir=registry.artifacts_root,
+        task_id=task.task_id,
+        created_at=(task.task_context or {}).get("created_at") or task.created_at,
+        task_status=(task.task_context or {}).get("status") or task.status or "received",
+        artifact_dir_name=task.task_id,
         use_llm=parse_options.use_llm if parse_options else None,
         rag_enabled=parse_options.rag_enabled if parse_options else None,
         retrieval_top_k=parse_options.retrieval_top_k if parse_options else None,
@@ -677,15 +681,9 @@ def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) ->
     task.pipeline_result["parse_metadata"] = _parse_metadata_payload(result.get("parse_metadata", {}))
     task.status = "parsed"
     task.task_context = result.get("task_context", task.task_context)
-    task.artifact_dir = _find_latest_artifact_dir(task.task_name)
+    task.artifact_dir = result.get("artifact_dir") or task.artifact_dir
     registry.save(task)
     return result
-
-
-def _find_latest_artifact_dir(task_name: str) -> str | None:
-    root = Path(registry.artifacts_root)
-    matches = sorted(root.glob(f"{task_name}_*"), key=lambda path: path.stat().st_mtime, reverse=True)
-    return str(matches[0]) if matches else None
 
 
 def _build_task_analysis_report(task) -> dict[str, Any]:
@@ -755,7 +753,6 @@ def create_task(payload: CreateTaskRequest):
         environment=payload.environment,
         task_context=context,
     )
-    registry.save(record)
     return _success_response(
         {"task_id": record.task_id, "task_context": record.task_context},
         code="TASK_CREATED",
@@ -1170,6 +1167,7 @@ def get_dashboard(task_id: str):
         "execution_overview": analysis_report.get("execution_overview", {}),
         "performance_stats": analysis_report.get("performance_stats", {}),
         "assertion_stats": analysis_report.get("assertion_stats", {}),
+        "step_assertion_quality": analysis_report.get("step_assertion_quality", []),
         "context_stats": analysis_report.get("context_stats", {}),
         "task_summary_text": analysis_report.get("task_summary_text", ""),
         "findings": analysis_report.get("findings", []),

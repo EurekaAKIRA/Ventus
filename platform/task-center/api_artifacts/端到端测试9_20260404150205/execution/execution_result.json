@@ -1,0 +1,1058 @@
+{
+  "task_id": "端到端测试9_20260404150058",
+  "executor": "api-runner",
+  "status": "failed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "`POST /api/tasks`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks`",
+          "status": "failed",
+          "message": "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None",
+          "error_category": "assertion_error",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "requirement_text",
+              "source_type",
+              "target_system",
+              "task_name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 201,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 15:03:23 GMT",
+              "server": "uvicorn",
+              "content-length": "387",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_CREATED",
+              "message": "task created",
+              "data": {
+                "task_id": "demo_task_name_20260404150324",
+                "task_context": {
+                  "task_id": "demo_task_name_20260404150324",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "source_path": null,
+                  "created_at": "2026-04-04T15:03:24.012600+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                }
+              },
+              "timestamp": "2026-04-04T15:03:27.516813+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_context\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_name\":\"demo_task_name\",",
+            "elapsed_ms": 3611.77,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 201,
+            "elapsed_ms": 3611.77,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_c",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 387
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 201,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 15:03:23 GMT",
+                "server": "uvicorn",
+                "content-length": "387",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_context\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-04T15:03:24.012600+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]}},\"timestamp\":\"2026-04-04T15:03:27.516813+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_CREATED",
+                "message": "task created",
+                "data": {
+                  "task_id": "demo_task_name_20260404150324",
+                  "task_context": {
+                    "task_id": "demo_task_name_20260404150324",
+                    "task_name": "demo_task_name",
+                    "source_type": "text",
+                    "source_path": null,
+                    "created_at": "2026-04-04T15:03:24.012600+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  }
+                },
+                "timestamp": "2026-04-04T15:03:27.516813+00:00"
+              },
+              "elapsed_ms": 3611.77,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 201,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "requirement_text",
+                "source_type",
+                "target_system",
+                "task_name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260404150324",
+            "resource_id": "demo_task_name_20260404150324"
+          },
+          "saved_context": {
+            "task_id": "demo_task_name_20260404150324",
+            "resource_id": "demo_task_name_20260404150324"
+          },
+          "assertion_summary": {
+            "total": 3,
+            "passed": 2,
+            "failed": 1,
+            "failures": [
+              "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "enhance_cand_04",
+                "source": "json.data.task_name",
+                "op": "eq",
+                "expected": "demo_task_name",
+                "actual": null,
+                "category": "field_value",
+                "severity": "major",
+                "confidence": 0.9,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None"
+              }
+            ],
+            "category_counts": {
+              "status": 1,
+              "field_presence": 1,
+              "field_value": 1
+            },
+            "generated_by_counts": {
+              "rules": 2,
+              "llm": 1
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "json.data.task_name",
+              "op": "eq",
+              "expected": "demo_task_name",
+              "actual": null,
+              "category": "field_value",
+              "severity": "major",
+              "confidence": 0.9,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "平台主流程可在同一任务生命周期内闭环完成",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "status": "failed",
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}`",
+          "status": "failed",
+          "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None; Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None",
+          "error_category": "assertion_error",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260404150324",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260404150324",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Sat, 04 Apr 2026 15:03:27 GMT",
+              "server": "uvicorn",
+              "content-length": "807",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_DETAIL_OK",
+              "message": "task detail",
+              "data": {
+                "task_id": "demo_task_name_20260404150324",
+                "task_name": "demo_task_name",
+                "source_type": "text",
+                "target_system": "http://127.0.0.1:8001",
+                "environment": "test",
+                "created_at": "2026-04-04T15:03:24.012685+00:00",
+                "status": "received",
+                "archived": false,
+                "task_context": {
+                  "task_id": "demo_task_name_20260404150324",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "source_path": null,
+                  "created_at": "2026-04-04T15:03:24.012600+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                },
+                "artifact_dir": null,
+                "parse_metadata": null,
+                "parsed_requirement": null,
+                "retrieved_context": null,
+                "scenarios": null,
+                "test_case_dsl": null,
+                "validation_report": null,
+                "analysis_report": null,
+                "feature_text": null,
+                "execution_result": null
+              },
+              "timestamp": "2026-04-04T15:03:27.659095+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:80",
+            "elapsed_ms": 161.51,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 161.51,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 807
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Sat, 04 Apr 2026 15:03:27 GMT",
+                "server": "uvicorn",
+                "content-length": "807",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:8001\",\"environment\":\"test\",\"created_at\":\"2026-04-04T15:03:24.012685+00:00\",\"status\":\"received\",\"archived\":false,\"task_context\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-04T15:03:24.012600+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]},\"artifact_dir\":null,\"parse_metadata\":null,\"parsed_requirement\":null,\"retrieved_context\":null,\"scenarios\":null,\"test_case_dsl\":null,\"validation_report\":null,\"analysis_report\":null,\"feature_text\":null,\"execution_result\":null},\"timestamp\":\"2026-04-04T15:03:27.659095+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_DETAIL_OK",
+                "message": "task detail",
+                "data": {
+                  "task_id": "demo_task_name_20260404150324",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "target_system": "http://127.0.0.1:8001",
+                  "environment": "test",
+                  "created_at": "2026-04-04T15:03:24.012685+00:00",
+                  "status": "received",
+                  "archived": false,
+                  "task_context": {
+                    "task_id": "demo_task_name_20260404150324",
+                    "task_name": "demo_task_name",
+                    "source_type": "text",
+                    "source_path": null,
+                    "created_at": "2026-04-04T15:03:24.012600+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  },
+                  "artifact_dir": null,
+                  "parse_metadata": null,
+                  "parsed_requirement": null,
+                  "retrieved_context": null,
+                  "scenarios": null,
+                  "test_case_dsl": null,
+                  "validation_report": null,
+                  "analysis_report": null,
+                  "feature_text": null,
+                  "execution_result": null
+                },
+                "timestamp": "2026-04-04T15:03:27.659095+00:00"
+              },
+              "elapsed_ms": 161.51,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260404150324",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260404150324",
+            "resource_id": "demo_task_name_20260404150324"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 6,
+            "passed": 4,
+            "failed": 2,
+            "failures": [
+              "Assertion failed [assertion_03]: json.tasks exists None, actual=None",
+              "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+            ],
+            "failure_details": [
+              {
+                "assertion_id": "assertion_03",
+                "source": "json.tasks",
+                "op": "exists",
+                "expected": null,
+                "actual": null,
+                "category": "field_presence",
+                "severity": "major",
+                "confidence": 0.72,
+                "generated_by": "rules",
+                "fallback_used": false,
+                "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None"
+              },
+              {
+                "assertion_id": "enhance_cand_03",
+                "source": "json.tasks",
+                "op": "exists",
+                "expected": true,
+                "actual": null,
+                "category": "field_presence",
+                "severity": "major",
+                "confidence": 0.72,
+                "generated_by": "llm",
+                "fallback_used": false,
+                "message": "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+              }
+            ],
+            "category_counts": {
+              "status": 1,
+              "schema": 2,
+              "field_presence": 3
+            },
+            "generated_by_counts": {
+              "rules": 3,
+              "llm": 3
+            },
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": [
+            {
+              "assertion_id": "assertion_03",
+              "source": "json.tasks",
+              "op": "exists",
+              "expected": null,
+              "actual": null,
+              "category": "field_presence",
+              "severity": "major",
+              "confidence": 0.72,
+              "generated_by": "rules",
+              "fallback_used": false,
+              "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None"
+            },
+            {
+              "assertion_id": "enhance_cand_03",
+              "source": "json.tasks",
+              "op": "exists",
+              "expected": true,
+              "actual": null,
+              "category": "field_presence",
+              "severity": "major",
+              "confidence": 0.72,
+              "generated_by": "llm",
+              "fallback_used": false,
+              "message": "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+            }
+          ]
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "关键中间产物可追踪、可复核、可回放",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": [],
+            "failure_details": [],
+            "category_counts": {},
+            "generated_by_counts": {},
+            "fallback_count": 0,
+            "weak_assertion": false
+          },
+          "assertion_failures": []
+        }
+      ],
+      "failed_steps": 1
+    }
+  ],
+  "metrics": {
+    "scenario_count": 2,
+    "step_count": 6,
+    "passed_step_count": 4,
+    "failed_step_count": 2,
+    "context_key_count": 5,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 1886.64,
+    "max_elapsed_ms": 3611.77,
+    "assertion_category_counts": {
+      "status": 2,
+      "field_presence": 4,
+      "field_value": 1,
+      "schema": 2
+    },
+    "assertion_generated_by_counts": {
+      "rules": 5,
+      "llm": 4
+    },
+    "fallback_assertion_count": 0
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks`",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 201",
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 3611.77,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 387
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: resource_id, task_id",
+      "saved_context": {
+        "task_id": "demo_task_name_20260404150324",
+        "resource_id": "demo_task_name_20260404150324"
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=2 failed=1",
+      "assertion_summary": {
+        "total": 3,
+        "passed": 2,
+        "failed": 1,
+        "failures": [
+          "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "json.data.task_name",
+            "op": "eq",
+            "expected": "demo_task_name",
+            "actual": null,
+            "category": "field_value",
+            "severity": "major",
+            "confidence": 0.9,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "field_presence": 1,
+          "field_value": 1
+        },
+        "generated_by_counts": {
+          "rules": 2,
+          "llm": 1
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "error_category": "assertion_error",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 3611.77,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 387
+      },
+      "assertion_summary": {
+        "total": 3,
+        "passed": 2,
+        "failed": 1,
+        "failures": [
+          "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "enhance_cand_04",
+            "source": "json.data.task_name",
+            "op": "eq",
+            "expected": "demo_task_name",
+            "actual": null,
+            "category": "field_value",
+            "severity": "major",
+            "confidence": 0.9,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_04]: json.data.task_name eq 'demo_task_name', actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "field_presence": 1,
+          "field_value": 1
+        },
+        "generated_by_counts": {
+          "rules": 2,
+          "llm": 1
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "平台主流程可在同一任务生命周期内闭环完成",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}`",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260404150324",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260404150324",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_002_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 161.51,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 807
+      }
+    },
+    {
+      "level": "error",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertions passed=4 failed=2",
+      "assertion_summary": {
+        "total": 6,
+        "passed": 4,
+        "failed": 2,
+        "failures": [
+          "Assertion failed [assertion_03]: json.tasks exists None, actual=None",
+          "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_03",
+            "source": "json.tasks",
+            "op": "exists",
+            "expected": null,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.72,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_03",
+            "source": "json.tasks",
+            "op": "exists",
+            "expected": true,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.72,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "schema": 2,
+          "field_presence": 3
+        },
+        "generated_by_counts": {
+          "rules": 3,
+          "llm": 3
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "error",
+      "event": "step_result",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None; Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None",
+      "status": "failed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "error_category": "assertion_error",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260404150324",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 161.51,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260404150324\",\"task_",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 807
+      },
+      "assertion_summary": {
+        "total": 6,
+        "passed": 4,
+        "failed": 2,
+        "failures": [
+          "Assertion failed [assertion_03]: json.tasks exists None, actual=None",
+          "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+        ],
+        "failure_details": [
+          {
+            "assertion_id": "assertion_03",
+            "source": "json.tasks",
+            "op": "exists",
+            "expected": null,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.72,
+            "generated_by": "rules",
+            "fallback_used": false,
+            "message": "Assertion failed [assertion_03]: json.tasks exists None, actual=None"
+          },
+          {
+            "assertion_id": "enhance_cand_03",
+            "source": "json.tasks",
+            "op": "exists",
+            "expected": true,
+            "actual": null,
+            "category": "field_presence",
+            "severity": "major",
+            "confidence": 0.72,
+            "generated_by": "llm",
+            "fallback_used": false,
+            "message": "Assertion failed [enhance_cand_03]: json.tasks exists True, actual=None"
+          }
+        ],
+        "category_counts": {
+          "status": 1,
+          "schema": 2,
+          "field_presence": 3
+        },
+        "generated_by_counts": {
+          "rules": 3,
+          "llm": 3
+        },
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_03",
+      "step_type": "then",
+      "message": "关键中间产物可追踪、可复核、可回放",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": [],
+        "failure_details": [],
+        "category_counts": {},
+        "generated_by_counts": {},
+        "fallback_count": 0,
+        "weak_assertion": false
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "端到端测试9_20260404150058"
+      }
+    },
+    "executed_at": "2026-04-04T15:03:27.805449+00:00"
+  }
+}

@@ -56,6 +56,7 @@ def build_analysis_report(
         "success_count": step_stats["performance_stats"]["success_count"],
         "failure_count": step_stats["performance_stats"]["failure_count"],
         "throughput": step_stats["performance_stats"]["throughput"],
+        "assertion_quality_summary": step_stats["assertion_quality_summary"],
     }
     task_summary_text = _build_task_summary_text(task_context.task_name, quality_status, summary)
     dashboard_summary = _build_dashboard_summary(summary, step_stats["assertion_stats"], step_stats["context_stats"])
@@ -70,6 +71,7 @@ def build_analysis_report(
         summary=summary,
         failure_reasons=failure_reasons,
         assertion_stats=step_stats["assertion_stats"],
+        assertion_quality_summary=step_stats["assertion_quality_summary"],
         context_stats=step_stats["context_stats"],
     )
 
@@ -86,6 +88,7 @@ def build_analysis_report(
             summary=dashboard_summary,
             failure_reasons=failure_reasons,
             assertion_stats=step_stats["assertion_stats"],
+            assertion_quality_summary=step_stats["assertion_quality_summary"],
             context_stats=step_stats["context_stats"],
             task_summary_text=task_summary_text,
             performance_stats=step_stats["performance_stats"],
@@ -106,9 +109,10 @@ def build_analysis_report(
         failed_steps=step_stats["failed_steps"],
         failure_reasons=failure_reasons,
         assertion_stats=step_stats["assertion_stats"],
+        step_assertion_quality=step_stats["step_assertion_quality"],
         context_stats=step_stats["context_stats"],
         task_summary_text=task_summary_text,
-        findings=_build_findings(validation_report, step_stats["failed_steps"], failure_reasons),
+        findings=_build_findings(validation_report, step_stats["failed_steps"], failure_reasons, step_stats["quality_warnings"]),
         chart_data={
             "validation": {
                 "passed": 1 if validation_report.passed else 0,
@@ -129,6 +133,7 @@ def build_analysis_report(
                 "failed": step_stats["assertion_stats"]["failed"],
                 "pass_rate": step_stats["assertion_stats"]["pass_rate"],
             },
+            "assertion_quality": step_stats["assertion_quality_summary"],
             "context": {
                 "defined": step_stats["context_stats"]["defined_key_count"],
                 "used": step_stats["context_stats"]["used_key_count"],
@@ -255,6 +260,7 @@ def _collect_step_stats(
     success_count = int(metrics.get("success_count", 0) or 0)
     failure_count = int(metrics.get("failure_count", 0) or 0)
     throughput = round(float(metrics.get("throughput", 0.0) or 0.0), 2)
+    assertion_quality_summary = _collect_assertion_quality_summary(dsl_steps)
 
     return {
         "total_steps": total_steps,
@@ -289,6 +295,8 @@ def _collect_step_stats(
             "validation_errors": len(validation_report.errors),
             "validation_warnings": len(validation_report.warnings),
         },
+        "assertion_quality_summary": assertion_quality_summary,
+        "step_assertion_quality": assertion_quality_summary["steps"],
         "context_stats": {
             "defined_keys": sorted(save_context_map.keys()),
             "defined_key_count": len(save_context_map),
@@ -307,6 +315,7 @@ def _collect_step_stats(
             "throughput": throughput,
             "is_load_test": total_requests > 0 or throughput > 0,
         },
+        "quality_warnings": _build_assertion_quality_warnings(assertion_quality_summary),
     }
 
 
@@ -443,8 +452,10 @@ def _build_findings(
     validation_report: ValidationReport,
     failed_steps: list[dict[str, Any]],
     failure_reasons: list[dict[str, Any]],
+    quality_warnings: list[str],
 ) -> list[str]:
     findings = list(validation_report.errors) + list(validation_report.warnings)
+    findings.extend(quality_warnings)
     findings.extend(
         f"{item['scenario_name']} / {item['step_id']}: {item['message']}"
         for item in failed_steps[:5]
@@ -456,6 +467,67 @@ def _build_findings(
             + ", ".join(f"{item['category']}={item['count']}" for item in failure_reasons)
         )
     return findings
+
+
+def _collect_assertion_quality_summary(dsl_steps: list[dict[str, Any]]) -> dict[str, Any]:
+    rule_count = 0
+    llm_count = 0
+    llm_repair_count = 0
+    fallback_count = 0
+    high_confidence_count = 0
+    weak_assertion_step_count = 0
+    steps: list[dict[str, Any]] = []
+    for step in dsl_steps:
+        assertions = [item for item in (step.get("assertions") or []) if isinstance(item, dict)]
+        generated_by_counts: dict[str, int] = {}
+        categories: dict[str, int] = {}
+        for assertion in assertions:
+            generated_by = str(assertion.get("generated_by", "rules"))
+            category = str(assertion.get("category", "business"))
+            generated_by_counts[generated_by] = generated_by_counts.get(generated_by, 0) + 1
+            categories[category] = categories.get(category, 0) + 1
+            if bool(assertion.get("fallback_used", False)):
+                fallback_count += 1
+            if float(assertion.get("confidence", 0.0) or 0.0) >= 0.8:
+                high_confidence_count += 1
+        rule_count += generated_by_counts.get("rules", 0)
+        llm_count += generated_by_counts.get("llm", 0)
+        llm_repair_count += generated_by_counts.get("llm_repair", 0)
+        weak = bool(assertions) and all(item.get("source") == "status_code" for item in assertions)
+        if weak:
+            weak_assertion_step_count += 1
+        step_quality = step.get("assertion_quality") or {}
+        steps.append(
+            {
+                "step_id": step.get("step_id"),
+                "assertion_count": len(assertions),
+                "generated_by_counts": generated_by_counts,
+                "categories": categories,
+                "weak_assertion": weak,
+                "fallback_reason": step_quality.get("fallback_reason", ""),
+                "warning": step_quality.get("warning", ""),
+            }
+        )
+    return {
+        "rule_count": rule_count,
+        "llm_count": llm_count,
+        "llm_repair_count": llm_repair_count,
+        "fallback_count": fallback_count,
+        "high_confidence_count": high_confidence_count,
+        "weak_assertion_step_count": weak_assertion_step_count,
+        "steps": steps,
+    }
+
+
+def _build_assertion_quality_warnings(assertion_quality_summary: dict[str, Any]) -> list[str]:
+    warnings: list[str] = []
+    weak_count = int(assertion_quality_summary.get("weak_assertion_step_count", 0) or 0)
+    if weak_count:
+        warnings.append(f"存在 {weak_count} 个步骤仅包含状态码断言")
+    fallback_count = int(assertion_quality_summary.get("fallback_count", 0) or 0)
+    if fallback_count:
+        warnings.append(f"有 {fallback_count} 条断言使用了规则兜底")
+    return warnings
 
 
 def _merge_failure_reasons(
@@ -498,6 +570,7 @@ def _build_dashboard(
     summary: dict[str, Any],
     failure_reasons: list[dict[str, Any]],
     assertion_stats: dict[str, Any],
+    assertion_quality_summary: dict[str, Any],
     context_stats: dict[str, Any],
     task_summary_text: str,
     performance_stats: dict[str, Any],
@@ -568,6 +641,7 @@ def _build_dashboard(
             "failed": assertion_stats["failed"],
             "pass_rate": assertion_stats["pass_rate"],
         },
+        "assertion_quality_summary": assertion_quality_summary,
         "performance_summary": performance_stats,
         "context_summary": {
             "defined_keys": context_stats["defined_key_count"],
@@ -668,6 +742,7 @@ def _build_report_sections(
     summary: dict[str, Any],
     failure_reasons: list[dict[str, Any]],
     assertion_stats: dict[str, Any],
+    assertion_quality_summary: dict[str, Any],
     context_stats: dict[str, Any],
 ) -> list[dict[str, Any]]:
     return [
@@ -695,7 +770,10 @@ def _build_report_sections(
         {
             "key": "assertions",
             "title": "断言统计",
-            "items": assertion_stats,
+            "items": {
+                **assertion_stats,
+                "quality_summary": assertion_quality_summary,
+            },
         },
         {
             "key": "context",

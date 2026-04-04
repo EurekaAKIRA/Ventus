@@ -45,10 +45,11 @@ export function useExecutionCaseRows(params: {
     const dslCases: TestCaseDslScenario[] = detail?.test_case_dsl?.scenarios ?? [];
     const scenarioResults: ExecutionScenarioResult[] = detail?.execution_result?.scenario_results ?? [];
     const scenarioMetas: ScenarioModel[] = detail?.scenarios ?? [];
+    const activeStreamEvents = uiExecutionStatus === "running" ? streamEvents : [];
 
     const streamStepTrackerMap = (() => {
       const tracker = new Map<string, StreamStepTracker>();
-      streamEvents.forEach((evt) => {
+      activeStreamEvents.forEach((evt) => {
         const payload = parseStreamPayload(evt.data);
         const scenarioId = typeof payload?.scenario_id === "string" ? payload.scenario_id : "";
         if (!scenarioId) {

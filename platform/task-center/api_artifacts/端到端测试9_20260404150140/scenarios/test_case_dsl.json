@@ -1,0 +1,361 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "端到端测试9_20260404150038",
+  "task_name": "端到端测试9",
+  "feature_name": "端到端测试9",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "`POST /api/tasks`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "contract_preflight",
+        "contract_execute"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks`",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks",
+            "json": {
+              "task_name": "demo_task_name",
+              "source_type": "text",
+              "requirement_text": "demo requirement text",
+              "target_system": "http://127.0.0.1:8001",
+              "environment": "test"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 201
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "json.data.task_id",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.93,
+              "generated_by": "rules",
+              "reasoning": "saved_context_exists",
+              "fallback_used": false
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "json.data.task_id",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.93,
+              "generated_by": "llm",
+              "reasoning": "saved_context_exists",
+              "fallback_used": false,
+              "expected": true
+            },
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "json.data.environment",
+              "op": "eq",
+              "severity": "major",
+              "category": "field_value",
+              "confidence": 0.9,
+              "generated_by": "llm",
+              "reasoning": "The request contains environment field with value 'test', so we assert the response data has the same value",
+              "fallback_used": false,
+              "expected": "test"
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [
+            "resource_id",
+            "task_id"
+          ],
+          "save_context": {
+            "task_id": "json.data.task_id",
+            "resource_id": "json.data.task_id"
+          },
+          "assertion_quality": {
+            "llm_attempted": true,
+            "fallback_reason": "",
+            "invalid_assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 2,
+              "llm": 2,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 4,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "平台主流程可在同一任务生命周期内闭环完成",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "平台主流程可在同一任务生命周期内闭环完成"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "goal": "Platform 主链路联调需求说明（企业版草案）",
+      "priority": "P2",
+      "preconditions": [
+        "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。"
+      ],
+      "source_chunks": [
+        "chunk_006",
+        "chunk_008",
+        "chunk_004",
+        "contract_preflight",
+        "contract_execute"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台主流程是否可在同一任务生命周期内闭环完成；关键中间产物是否可追踪、可复核、可回放；执行与分析结果是否满足演示与验收所需的最小可信度。",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}`",
+          "request": {
+            "method": "GET",
+            "url": "/api/tasks/{{task_id}}"
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "assertion_id": "assertion_01",
+              "source": "status_code",
+              "op": "eq",
+              "severity": "critical",
+              "category": "status",
+              "confidence": 0.98,
+              "generated_by": "rules",
+              "reasoning": "request_status_template",
+              "fallback_used": false,
+              "expected": 200
+            },
+            {
+              "assertion_id": "assertion_02",
+              "source": "json",
+              "op": "exists",
+              "severity": "major",
+              "category": "schema",
+              "confidence": 0.82,
+              "generated_by": "rules",
+              "reasoning": "query_response_present",
+              "fallback_used": false
+            },
+            {
+              "assertion_id": "enhance_cand_02",
+              "source": "json",
+              "op": "exists",
+              "severity": "major",
+              "category": "schema",
+              "confidence": 0.82,
+              "generated_by": "llm",
+              "reasoning": "query_response_present",
+              "fallback_used": false,
+              "expected": true
+            },
+            {
+              "assertion_id": "assertion_03",
+              "source": "json.tasks",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.72,
+              "generated_by": "rules",
+              "reasoning": "expected_field_present",
+              "fallback_used": false
+            },
+            {
+              "assertion_id": "enhance_cand_03",
+              "source": "json.tasks",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.72,
+              "generated_by": "llm",
+              "reasoning": "expected_field_present",
+              "fallback_used": false,
+              "expected": true
+            },
+            {
+              "assertion_id": "enhance_cand_04",
+              "source": "json.task_id",
+              "op": "exists",
+              "severity": "major",
+              "category": "field_presence",
+              "confidence": 0.7,
+              "generated_by": "llm",
+              "reasoning": "known_endpoint_fields_includes_task_id_so_it_should_be_in_response",
+              "fallback_used": false,
+              "expected": true
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": true,
+            "fallback_reason": "",
+            "invalid_assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 3,
+              "llm": 3,
+              "llm_repair": 0,
+              "manual": 0
+            },
+            "high_confidence_count": 3,
+            "weak_assertion": false,
+            "warning": ""
+          }
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "关键中间产物可追踪、可复核、可回放",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "关键中间产物可追踪、可复核、可回放"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {},
+          "assertion_quality": {
+            "llm_attempted": false,
+            "fallback_reason": "",
+            "invalid_assertion_count": 0,
+            "generated_by_counts": {
+              "rules": 0,
+              "llm": 0,
+              "llm_repair": 0,
+              "manual": 1
+            },
+            "high_confidence_count": 0,
+            "weak_assertion": true,
+            "warning": "non_request_step"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 2,
+      "scenario_count": 2,
+      "parsed_entities": [
+        "platform",
+        "主链路联调需求说明",
+        "企业版草案",
+        "背景与目的",
+        "当前平台已进入联调阶段",
+        "任务接入与任务状态流转",
+        "需求解析与检索增强",
+        "场景、DSL、Feature 的产物生成",
+        "API 执行、日志、报告与历史可查询能力",
+        "任务归档后的可见性与一致性检查",
+        "压测云平台对接能力",
+        "多租户与权限边界",
+        "生产级高并发与容量基准",
+        "第三方系统稳定性背书"
+      ]
+    }
+  }
+}

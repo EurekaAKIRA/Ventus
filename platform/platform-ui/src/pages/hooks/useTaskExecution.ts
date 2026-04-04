@@ -210,6 +210,14 @@ export function useTaskExecution(params: {
   }, [taskId]);
 
   useEffect(() => {
+    if (executionStatus === "running") {
+      return;
+    }
+    setStreamEvents([]);
+    setStreamStatus("idle");
+  }, [executionStatus, taskId]);
+
+  useEffect(() => {
     if (executionStatus !== "running") {
       return;
     }

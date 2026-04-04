@@ -75,3 +75,40 @@ def test_parse_golden_extracts_endpoint_description_from_markdown_table() -> Non
     endpoint_map = {f"{item['method']} {item['path']}": item.get("description", "") for item in endpoints}
     assert endpoint_map["POST /api/auth/login"] == "用户登录"
     assert endpoint_map["GET /api/user/profile"] == "获取个人中心"
+
+
+def test_parse_golden_dev_doc_ignores_role_bullets_as_actions() -> None:
+    result = parse_requirement_bundle(
+        requirement_text="""
+        # Platform 主链路联调需求说明
+
+        ## 角色与职责
+        - **产品/项目负责人**：确认验收范围、签收最终结论。
+        - **后端研发**：保障主链路可运行，处理阻断性缺陷。
+        - **前端研发**：验证页面主路径与真实接口数据一致性。
+
+        ## 接口基线
+        - `POST /api/tasks`
+        - `GET /api/tasks/{task_id}`
+        - `POST /api/tasks/{task_id}/parse`
+        """,
+        options=AnalysisParseOptions(
+            use_llm=False,
+            rag_enabled=False,
+            retrieval_top_k=3,
+            rerank_enabled=False,
+        ),
+    )
+    parsed = result["parsed_requirement"]
+    actions = " ".join(parsed["actions"])
+    endpoints = {f"{item['method']} {item['path']}" for item in parsed["api_endpoints"]}
+
+    assert "确认验收范围" not in actions
+    assert "保障主链路可运行" not in actions
+    assert "验证页面主路径" not in actions
+    assert "POST /api/tasks" in actions
+    assert endpoints == {
+        "POST /api/tasks",
+        "GET /api/tasks/{task_id}",
+        "POST /api/tasks/{task_id}/parse",
+    }

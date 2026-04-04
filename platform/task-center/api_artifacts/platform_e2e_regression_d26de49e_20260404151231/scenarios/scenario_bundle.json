@@ -1,0 +1,3266 @@
+{
+  "task_context": {
+    "task_id": "platform_e2e_regression_d26de49e_20260404151213",
+    "task_name": "platform_e2e_regression_d26de49e",
+    "source_type": "text",
+    "source_path": null,
+    "created_at": "2026-04-04T15:12:13.353391+00:00",
+    "language": "zh-CN",
+    "status": "received",
+    "notes": []
+  },
+  "raw_requirement": "# Platform Task-Center E2E Spec\n\nBase URL:\n\n- `http://127.0.0.1:8001`\n\nEnvironment:\n\n- `test`\n\nTarget system:\n\n- `http://127.0.0.1:8001`\n\nAll APIs use the same response envelope:\n\n```json\n{\n  \"success\": true,\n  \"code\": \"SOME_CODE\",\n  \"message\": \"some message\",\n  \"data\": {},\n  \"timestamp\": \"2026-04-04T15:00:00+00:00\"\n}\n```\n\n## Step 1\n\nRequest:\n\n- `POST /api/tasks`\n\nRequest body:\n\n```json\n{\n  \"task_name\": \"platform_e2e_regression_demo\",\n  \"source_type\": \"text\",\n  \"requirement_text\": \"Validate the current platform task-center main flow.\",\n  \"target_system\": \"http://127.0.0.1:8001\",\n  \"environment\": \"test\"\n}\n```\n\nExpected:\n\n- HTTP `201`\n- `code = TASK_CREATED`\n- `data.task_id` exists\n- `data.task_context` exists\n- `data.task_context.task_id` exists\n- `data.task_context.task_name` exists\n\nSave context:\n\n- `task_id <- data.task_id`\n- `resource_id <- data.task_id`\n\n## Step 2\n\nRequest:\n\n- `GET /api/tasks/{task_id}`\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_DETAIL_OK`\n- `data.task_id = {task_id}`\n- `data.task_name` exists\n- `data.task_context` exists\n- `data.status` exists\n\n## Step 3\n\nRequest:\n\n- `POST /api/tasks/{task_id}/parse`\n\nRequest body:\n\n```json\n{\n  \"use_llm\": false,\n  \"rag_enabled\": true,\n  \"retrieval_top_k\": 5,\n  \"rerank_enabled\": false\n}\n```\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_PARSED`\n- `data.task_id = {task_id}`\n- `data.parsed_requirement` exists\n- `data.parse_metadata` exists\n- `data.parse_metadata.parse_mode` exists\n- `data.parse_metadata.retrieval_mode` exists\n\n## Step 4\n\nRequest:\n\n- `GET /api/tasks/{task_id}/dsl`\n\nExpected:\n\n- HTTP `200`\n- `code = DSL_OK`\n- `data.scenarios` exists\n- `data.scenarios` is not empty\n\nRequired generated request steps:\n\n- `POST /api/tasks`\n- `POST /api/tasks/{task_id}/parse`\n- `POST /api/tasks/{task_id}/execute`\n\nRequired create-step save_context:\n\n- `task_id = json.data.task_id`\n- `resource_id = json.data.task_id`\n\n## Step 5\n\nRequest:\n\n- `POST /api/tasks/{task_id}/execute`\n\nRequest body:\n\n```json\n{\n  \"execution_mode\": \"api\",\n  \"environment\": \"test\"\n}\n```\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_EXECUTED`\n\n## Step 6\n\nPoll:\n\n- `GET /api/tasks/{task_id}/execution`\n\nExpected:\n\n- HTTP `200`\n- `code = EXECUTION_OK`\n- `data.status` reaches `passed` or `failed`\n- `data.scenario_results` exists\n\n## Step 7\n\nRequest:\n\n- `GET /api/tasks/{task_id}/analysis-report`\n\nExpected:\n\n- HTTP `200`\n- `code = ANALYSIS_REPORT_OK`\n- `data.task_id = {task_id}`\n- `data.summary` exists\n- `data.quality_status` exists\n\n## Step 8\n\nRequest:\n\n- `DELETE /api/tasks/{task_id}`\n\nExpected:\n\n- HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`",
+  "parsed_requirement": {
+    "objective": "Platform Task-Center E2E Spec",
+    "actors": [
+      "用户"
+    ],
+    "entities": [
+      "platform",
+      "task-center",
+      "e2e",
+      "spec",
+      "base",
+      "url",
+      "http",
+      "environment",
+      "test",
+      "target"
+    ],
+    "preconditions": [],
+    "actions": [
+      "HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`\nPOST /api/tasks 创建任务",
+      "`POST /api/tasks`",
+      "`GET /api/tasks/{task_id}`",
+      "`POST /api/tasks/{task_id}/parse`",
+      "`GET /api/tasks/{task_id}/dsl`",
+      "`POST /api/tasks/{task_id}/execute`",
+      "`GET /api/tasks/{task_id}/execution`",
+      "`GET /api/tasks/{task_id}/analysis-report`",
+      "`DELETE /api/tasks/{task_id}`"
+    ],
+    "expected_results": [
+      "成功时响应 data 中含 task_id，用于后续查询与执行"
+    ],
+    "constraints": [
+      "\"requirement_text\": \"Validate the current platform task-center main flow.\",",
+      "`data.parsed_requirement` exists",
+      "Required generated request steps:",
+      "Required create-step save_context:",
+      "请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment"
+    ],
+    "ambiguities": [],
+    "source_chunks": [
+      "contract_post_tasks",
+      "chunk_012",
+      "contract_execute",
+      "contract_execution_explanations",
+      "contract_get_task"
+    ],
+    "api_endpoints": [
+      {
+        "method": "POST",
+        "path": "/api/tasks",
+        "description": "Request"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}",
+        "description": "Request"
+      },
+      {
+        "method": "POST",
+        "path": "/api/tasks/{task_id}/parse",
+        "description": "Request"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/dsl",
+        "description": "Request"
+      },
+      {
+        "method": "POST",
+        "path": "/api/tasks/{task_id}/execute",
+        "description": "/api/tasks/{task_id}/parse"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/execution",
+        "description": "Poll"
+      },
+      {
+        "method": "GET",
+        "path": "/api/tasks/{task_id}/analysis-report",
+        "description": "Request"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/tasks/{task_id}",
+        "description": "Request"
+      }
+    ]
+  },
+  "retrieved_context": [
+    {
+      "chunk_id": "contract_post_tasks",
+      "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+      "score": 9.737,
+      "section_title": "创建任务 POST /api/tasks",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "chunk_012",
+      "content": "{\n\"task_name\": \"platform_e2e_regression_demo\",\n\"source_type\": \"text\",\n\"requirement_text\": \"Validate the current platform task-center main flow.\",\n\"target_system\": \"http://127.0.0.1:8001\",\n\"environment\": \"test\"\n}",
+      "score": 9.565,
+      "section_title": "Step 1",
+      "source_file": "",
+      "doc_type": ""
+    },
+    {
+      "chunk_id": "contract_execute",
+      "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+      "score": 8.486,
+      "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_execution_explanations",
+      "content": "GET /api/tasks/{task_id}/execution/explanations 返回步骤级说明与上下文，用于排错与审计。",
+      "score": 8.237,
+      "section_title": "执行说明 GET /api/tasks/{task_id}/execution/explanations",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    },
+    {
+      "chunk_id": "contract_get_task",
+      "content": "GET /api/tasks/{task_id} 返回任务状态、流水线阶段、artifact 路径等。路径参数 task_id 为创建任务接口返回的标识。",
+      "score": 8.12,
+      "section_title": "任务详情 GET /api/tasks/{task_id}",
+      "source_file": "platform_api_knowledge.json",
+      "doc_type": "platform_contract"
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archive",
+      "goal": "Platform Task-Center E2E Spec",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`\nPOST /api/tasks 创建任务"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "priority": "P0",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "goal": "Platform Task-Center E2E Spec",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}`"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "`POST /api/tasks/{task_id}/parse`",
+      "goal": "Platform Task-Center E2E Spec",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "`POST /api/tasks/{task_id}/parse`"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "`GET /api/tasks/{task_id}/dsl`",
+      "goal": "Platform Task-Center E2E Spec",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}/dsl`"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "`POST /api/tasks/{task_id}/execute`",
+      "goal": "Platform Task-Center E2E Spec",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "`POST /api/tasks/{task_id}/execute`"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "`GET /api/tasks/{task_id}/execution`",
+      "goal": "Platform Task-Center E2E Spec",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}/execution`"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "`GET /api/tasks/{task_id}/analysis-report`",
+      "goal": "Platform Task-Center E2E Spec",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "`GET /api/tasks/{task_id}/analysis-report`"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "priority": "P2",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "`DELETE /api/tasks/{task_id}`",
+      "goal": "Platform Task-Center E2E Spec",
+      "steps": [
+        {
+          "type": "given",
+          "text": "从有效的 API 入口开始执行"
+        },
+        {
+          "type": "when",
+          "text": "`DELETE /api/tasks/{task_id}`"
+        },
+        {
+          "type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+        }
+      ],
+      "assertions": [
+        "成功时响应 data 中含 task_id，用于后续查询与执行"
+      ],
+      "source_chunks": [
+        "contract_post_tasks",
+        "chunk_012",
+        "contract_execute",
+        "contract_execution_explanations",
+        "contract_get_task"
+      ],
+      "priority": "P0",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ]
+    }
+  ],
+  "test_case_dsl": {
+    "dsl_version": "0.2.0",
+    "task_id": "platform_e2e_regression_d26de49e_20260404151213",
+    "task_name": "platform_e2e_regression_d26de49e",
+    "feature_name": "platform_e2e_regression_d26de49e",
+    "execution_mode": "api",
+    "scenarios": [
+      {
+        "scenario_id": "scenario_001",
+        "name": "HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archive",
+        "goal": "Platform Task-Center E2E Spec",
+        "priority": "P0",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "contract_post_tasks",
+          "chunk_012",
+          "contract_execute",
+          "contract_execution_explanations",
+          "contract_get_task"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "step_type": "when",
+            "text": "HTTP `200`\n- `code = TASK_ARCHIVED`\n- `data.task_id = {task_id}`\n- `data.archived = true`\nPOST /api/tasks 创建任务",
+            "request": {
+              "method": "POST",
+              "url": "/api/tasks",
+              "json": {
+                "task_name": "demo_task_name",
+                "source_type": "text",
+                "requirement_text": "demo requirement text",
+                "target_system": "http://127.0.0.1:8001",
+                "environment": "test"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "assertion_02",
+                "source": "json.data.task_id",
+                "op": "exists",
+                "severity": "major",
+                "category": "field_presence",
+                "confidence": 0.93,
+                "generated_by": "rules",
+                "reasoning": "saved_context_exists",
+                "fallback_used": false
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [
+              "resource_id",
+              "task_id"
+            ],
+            "save_context": {
+              "task_id": "json.data.task_id",
+              "resource_id": "json.data.task_id"
+            },
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 1,
+              "generated_by_counts": {
+                "rules": 2,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 2,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_002",
+        "name": "`GET /api/tasks/{task_id}`",
+        "goal": "Platform Task-Center E2E Spec",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "contract_post_tasks",
+          "chunk_012",
+          "contract_execute",
+          "contract_execution_explanations",
+          "contract_get_task"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_002_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "assertion_02",
+                "source": "json",
+                "op": "exists",
+                "severity": "major",
+                "category": "schema",
+                "confidence": 0.82,
+                "generated_by": "rules",
+                "reasoning": "query_response_present",
+                "fallback_used": false
+              },
+              {
+                "assertion_id": "assertion_03",
+                "source": "json.task_name",
+                "op": "exists",
+                "severity": "major",
+                "category": "field_presence",
+                "confidence": 0.72,
+                "generated_by": "rules",
+                "reasoning": "expected_field_present",
+                "fallback_used": false
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 3,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 2,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_003",
+        "name": "`POST /api/tasks/{task_id}/parse`",
+        "goal": "Platform Task-Center E2E Spec",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "contract_post_tasks",
+          "chunk_012",
+          "contract_execute",
+          "contract_execution_explanations",
+          "contract_get_task"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_003_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "step_type": "when",
+            "text": "`POST /api/tasks/{task_id}/parse`",
+            "request": {
+              "method": "POST",
+              "url": "/api/tasks/{{task_id}}/parse",
+              "json": {
+                "use_llm": false,
+                "rag_enabled": true,
+                "retrieval_top_k": 5,
+                "rerank_enabled": false
+              },
+              "timeout": 180
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "in",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.96,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": [
+                  200,
+                  201
+                ]
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 1,
+              "weak_assertion": true,
+              "warning": "weak_assertion_set"
+            }
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_004",
+        "name": "`GET /api/tasks/{task_id}/dsl`",
+        "goal": "Platform Task-Center E2E Spec",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "contract_post_tasks",
+          "chunk_012",
+          "contract_execute",
+          "contract_execution_explanations",
+          "contract_get_task"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_004_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}/dsl`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}/dsl"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "assertion_02",
+                "source": "json",
+                "op": "exists",
+                "severity": "major",
+                "category": "schema",
+                "confidence": 0.82,
+                "generated_by": "rules",
+                "reasoning": "query_response_present",
+                "fallback_used": false
+              },
+              {
+                "assertion_id": "assertion_03",
+                "source": "json.task_name",
+                "op": "exists",
+                "severity": "major",
+                "category": "field_presence",
+                "confidence": 0.72,
+                "generated_by": "rules",
+                "reasoning": "expected_field_present",
+                "fallback_used": false
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 3,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 2,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_005",
+        "name": "`POST /api/tasks/{task_id}/execute`",
+        "goal": "Platform Task-Center E2E Spec",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "contract_post_tasks",
+          "chunk_012",
+          "contract_execute",
+          "contract_execution_explanations",
+          "contract_get_task"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_005_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "step_type": "when",
+            "text": "`POST /api/tasks/{task_id}/execute`",
+            "request": {
+              "method": "POST",
+              "url": "/api/tasks/{{task_id}}/execute",
+              "json": {
+                "execution_mode": "api",
+                "environment": "test"
+              }
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "in",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.96,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": [
+                  200,
+                  201
+                ]
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 1,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 1,
+              "weak_assertion": true,
+              "warning": "weak_assertion_set"
+            }
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_006",
+        "name": "`GET /api/tasks/{task_id}/execution`",
+        "goal": "Platform Task-Center E2E Spec",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "contract_post_tasks",
+          "chunk_012",
+          "contract_execute",
+          "contract_execution_explanations",
+          "contract_get_task"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_006_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_006_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}/execution`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}/execution"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "assertion_02",
+                "source": "json",
+                "op": "exists",
+                "severity": "major",
+                "category": "schema",
+                "confidence": 0.82,
+                "generated_by": "rules",
+                "reasoning": "query_response_present",
+                "fallback_used": false
+              },
+              {
+                "assertion_id": "assertion_03",
+                "source": "json.task_name",
+                "op": "exists",
+                "severity": "major",
+                "category": "field_presence",
+                "confidence": 0.72,
+                "generated_by": "rules",
+                "reasoning": "expected_field_present",
+                "fallback_used": false
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 3,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 2,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_006_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_007",
+        "name": "`GET /api/tasks/{task_id}/analysis-report`",
+        "goal": "Platform Task-Center E2E Spec",
+        "priority": "P2",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "contract_post_tasks",
+          "chunk_012",
+          "contract_execute",
+          "contract_execution_explanations",
+          "contract_get_task"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_007_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_007_step_02",
+            "step_type": "when",
+            "text": "`GET /api/tasks/{task_id}/analysis-report`",
+            "request": {
+              "method": "GET",
+              "url": "/api/tasks/{{task_id}}/analysis-report"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "eq",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.98,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": 200
+              },
+              {
+                "assertion_id": "assertion_02",
+                "source": "json",
+                "op": "exists",
+                "severity": "major",
+                "category": "schema",
+                "confidence": 0.82,
+                "generated_by": "rules",
+                "reasoning": "query_response_present",
+                "fallback_used": false
+              },
+              {
+                "assertion_id": "assertion_03",
+                "source": "json.task_name",
+                "op": "exists",
+                "severity": "major",
+                "category": "field_presence",
+                "confidence": 0.72,
+                "generated_by": "rules",
+                "reasoning": "expected_field_present",
+                "fallback_used": false
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 3,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 2,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_007_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "scenario_008",
+        "name": "`DELETE /api/tasks/{task_id}`",
+        "goal": "Platform Task-Center E2E Spec",
+        "priority": "P0",
+        "preconditions": [
+          "从有效的 API 入口开始执行"
+        ],
+        "source_chunks": [
+          "contract_post_tasks",
+          "chunk_012",
+          "contract_execute",
+          "contract_execution_explanations",
+          "contract_get_task"
+        ],
+        "steps": [
+          {
+            "step_id": "scenario_008_step_01",
+            "step_type": "given",
+            "text": "从有效的 API 入口开始执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          },
+          {
+            "step_id": "scenario_008_step_02",
+            "step_type": "when",
+            "text": "`DELETE /api/tasks/{task_id}`",
+            "request": {
+              "method": "DELETE",
+              "url": "/api/tasks/{{task_id}}"
+            },
+            "load_profile": {},
+            "assertions": [
+              {
+                "assertion_id": "assertion_01",
+                "source": "status_code",
+                "op": "in",
+                "severity": "critical",
+                "category": "status",
+                "confidence": 0.96,
+                "generated_by": "rules",
+                "reasoning": "request_status_template",
+                "fallback_used": false,
+                "expected": [
+                  200,
+                  204
+                ]
+              },
+              {
+                "assertion_id": "assertion_02",
+                "source": "error",
+                "op": "not_exists",
+                "severity": "major",
+                "category": "business",
+                "confidence": 0.68,
+                "generated_by": "rules",
+                "reasoning": "delete_no_runtime_error",
+                "fallback_used": false
+              }
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 2,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 0
+              },
+              "high_confidence_count": 1,
+              "weak_assertion": false,
+              "warning": ""
+            }
+          },
+          {
+            "step_id": "scenario_008_step_03",
+            "step_type": "then",
+            "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+            "request": {},
+            "load_profile": {},
+            "assertions": [
+              "成功时响应 data 中含 task_id，用于后续查询与执行"
+            ],
+            "uses_context": [],
+            "saves_context": [],
+            "save_context": {},
+            "assertion_quality": {
+              "llm_attempted": false,
+              "fallback_reason": "",
+              "invalid_assertion_count": 0,
+              "generated_by_counts": {
+                "rules": 0,
+                "llm": 0,
+                "llm_repair": 0,
+                "manual": 1
+              },
+              "high_confidence_count": 0,
+              "weak_assertion": true,
+              "warning": "non_request_step"
+            }
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "source_type": "text",
+      "language": "zh-CN",
+      "case_generation": {
+        "api_scenario_count": 8,
+        "scenario_count": 8,
+        "parsed_entities": [
+          "platform",
+          "task-center",
+          "e2e",
+          "spec",
+          "base",
+          "url",
+          "http",
+          "environment",
+          "test",
+          "target"
+        ]
+      }
+    }
+  },
+  "validation_report": {
+    "feature_name": "platform_e2e_regression_d26de49e",
+    "passed": true,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "scenario_count": 8,
+      "average_step_count": 3.12,
+      "step_count": 25,
+      "parse_metrics": {
+        "actor_count": 1,
+        "entity_count": 10,
+        "action_count": 9,
+        "expected_count": 1,
+        "ambiguity_count": 0
+      },
+      "parse_mode": "rules"
+    }
+  },
+  "analysis_report": {
+    "task_id": "platform_e2e_regression_d26de49e_20260404151213",
+    "task_name": "platform_e2e_regression_d26de49e",
+    "quality_status": "passed",
+    "report_version": "1.1.0",
+    "generated_at": "2026-04-04T15:12:31.848072+00:00",
+    "summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "total_steps": 24,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "validation_passed": true,
+      "warning_count": 0,
+      "error_count": 0,
+      "execution_status": "not_started",
+      "assertion_total": 26,
+      "assertion_passed": 26,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "assertion_quality_summary": {
+        "rule_count": 18,
+        "llm_count": 0,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 13,
+        "weak_assertion_step_count": 2,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1
+            },
+            "categories": {
+              "status": 1
+            },
+            "weak_assertion": true,
+            "fallback_reason": "",
+            "warning": "weak_assertion_set"
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1
+            },
+            "categories": {
+              "status": 1
+            },
+            "weak_assertion": true,
+            "fallback_reason": "",
+            "warning": "weak_assertion_set"
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_006_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_006_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_006_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_007_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_007_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_007_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_008_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_008_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "business": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_008_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "enhancement": {
+        "parse_mode": "rules",
+        "llm_attempted": false,
+        "llm_used": false,
+        "rag_used": true,
+        "rag_fallback_reason": "",
+        "fallback_reason": "",
+        "llm_error_type": "",
+        "llm_provider_profile": "tencent_hunyuan_openai_compat",
+        "model_profile": "default",
+        "retrieval_mode": "vector+keyword",
+        "retrieval_top_k": 5,
+        "rerank_enabled": false,
+        "retrieval_metrics": {
+          "returned_count": 5,
+          "requested_top_k": 5,
+          "coverage_ratio": 1.0,
+          "duplicate_ratio": 0.0,
+          "score_avg": 8.829,
+          "rerank_applied": false,
+          "embedded_chunk_count": 60,
+          "embedding_coverage": 1.0,
+          "embedding_error": "",
+          "embedding_error_detail": "",
+          "retrieval_min_final_score": 0.0,
+          "retrieval_candidates_before_threshold": 5,
+          "retrieval_low_score_rejection": false
+        },
+        "contract_knowledge": {
+          "enabled": true,
+          "merged_snippet_count": 8,
+          "official_score_boost": 2.0,
+          "min_retrieval_score": 0.0
+        },
+        "retrieval_scoring": {
+          "lexical_weight": 4.0,
+          "vector_weight": 6.0,
+          "rerank_vector_weight": 7.0,
+          "rerank_lexical_weight": 2.0,
+          "rerank_title_boost": 0.2,
+          "rerank_content_boost": 0.2
+        },
+        "performance": {
+          "elapsed_ms": 18487.33,
+          "target_ms": 8000.0,
+          "within_target": false,
+          "slow_reason": "large_input_or_retrieval_cost"
+        },
+        "document_char_count": 2625,
+        "cleaned_char_count": 2545,
+        "chunk_count": 60,
+        "embedding_batch_size": 32,
+        "estimated_embedding_calls": 2,
+        "processing_tier": "realtime",
+        "large_document_warning": ""
+      }
+    },
+    "dashboard": {
+      "task_id": "platform_e2e_regression_d26de49e_20260404151213",
+      "task_name": "platform_e2e_regression_d26de49e",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "summary": {
+        "scenario_count": 8,
+        "executed_scenarios": 0,
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0,
+        "assertion_total": 26,
+        "assertion_pass_rate": 100.0,
+        "context_defined_keys": 2,
+        "context_used_keys": 0,
+        "context_extracted_keys": 0,
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0
+      },
+      "cards": [
+        {
+          "key": "scenarios",
+          "label": "Scenarios",
+          "value": 8
+        },
+        {
+          "key": "steps",
+          "label": "Total Steps",
+          "value": 24
+        },
+        {
+          "key": "passed_steps",
+          "label": "Passed",
+          "value": 0
+        },
+        {
+          "key": "failed_steps",
+          "label": "Failed",
+          "value": 0
+        },
+        {
+          "key": "success_rate",
+          "label": "Success Rate",
+          "value": 0.0
+        },
+        {
+          "key": "avg_elapsed_ms",
+          "label": "Avg Elapsed(ms)",
+          "value": 0.0
+        },
+        {
+          "key": "max_elapsed_ms",
+          "label": "Max Elapsed(ms)",
+          "value": 0.0
+        }
+      ],
+      "totals": {
+        "scenarios": 8,
+        "steps": 24,
+        "assertions": 26,
+        "requests": 0
+      },
+      "status_breakdown": {
+        "passed_scenarios": 0,
+        "failed_scenarios": 0,
+        "passed_steps": 0,
+        "failed_steps": 0
+      },
+      "assertion_summary": {
+        "total": 26,
+        "passed": 26,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "assertion_quality_summary": {
+        "rule_count": 18,
+        "llm_count": 0,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 13,
+        "weak_assertion_step_count": 2,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1
+            },
+            "categories": {
+              "status": 1
+            },
+            "weak_assertion": true,
+            "fallback_reason": "",
+            "warning": "weak_assertion_set"
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1
+            },
+            "categories": {
+              "status": 1
+            },
+            "weak_assertion": true,
+            "fallback_reason": "",
+            "warning": "weak_assertion_set"
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_006_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_006_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_006_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_007_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_007_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_007_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_008_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_008_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "business": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_008_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "performance_summary": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "is_load_test": false
+      },
+      "context_summary": {
+        "defined_keys": 2,
+        "defined_key_names": [
+          "resource_id",
+          "task_id"
+        ],
+        "used_keys": 0,
+        "used_key_names": [],
+        "extracted_keys": 0,
+        "extracted_key_names": [],
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": []
+      },
+      "top_failure_reason": null,
+      "failure_reason_breakdown": [],
+      "headline": "0/24 steps passed",
+      "summary_text": "任务 platform_e2e_regression_d26de49e 当前状态为 passed，已生成 8 个场景、24 个步骤，尚未开始执行。"
+    },
+    "dashboard_summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "execution_status": "not_started",
+      "total_steps": 24,
+      "executed_steps": 0,
+      "passed_steps": 0,
+      "failed_steps": 0,
+      "success_rate": 0.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 0.0,
+      "max_elapsed_ms": 0.0,
+      "assertion_total": 26,
+      "assertion_passed": 26,
+      "assertion_failed": 0,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 0,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "task_summary": {
+      "task_name": "platform_e2e_regression_d26de49e",
+      "quality_status": "passed",
+      "execution_status": "not_started",
+      "headline": "任务 platform_e2e_regression_d26de49e 当前状态为 passed，已生成 8 个场景、24 个步骤，尚未开始执行。",
+      "success_rate": 0.0,
+      "failed_steps": 0,
+      "total_requests": 0,
+      "throughput": 0.0,
+      "top_failure_reason": null,
+      "next_action": "执行任务以生成运行报告"
+    },
+    "execution_overview": {
+      "executor": null,
+      "status": "not_started",
+      "scenario_count": 0,
+      "passed_scenarios": 0,
+      "failed_scenarios": 0,
+      "log_count": 0,
+      "has_failures": false,
+      "top_failure_category": null
+    },
+    "performance_stats": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "failed_steps": [],
+    "failure_reasons": [],
+    "assertion_stats": {
+      "total": 26,
+      "passed": 26,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "validation_errors": 0,
+      "validation_warnings": 0
+    },
+    "step_assertion_quality": [
+      {
+        "step_id": "scenario_001_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_001_step_02",
+        "assertion_count": 2,
+        "generated_by_counts": {
+          "rules": 2
+        },
+        "categories": {
+          "status": 1,
+          "field_presence": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_001_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_002_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_002_step_02",
+        "assertion_count": 3,
+        "generated_by_counts": {
+          "rules": 3
+        },
+        "categories": {
+          "status": 1,
+          "schema": 1,
+          "field_presence": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_002_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_003_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_003_step_02",
+        "assertion_count": 1,
+        "generated_by_counts": {
+          "rules": 1
+        },
+        "categories": {
+          "status": 1
+        },
+        "weak_assertion": true,
+        "fallback_reason": "",
+        "warning": "weak_assertion_set"
+      },
+      {
+        "step_id": "scenario_003_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_004_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_004_step_02",
+        "assertion_count": 3,
+        "generated_by_counts": {
+          "rules": 3
+        },
+        "categories": {
+          "status": 1,
+          "schema": 1,
+          "field_presence": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_004_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_005_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_005_step_02",
+        "assertion_count": 1,
+        "generated_by_counts": {
+          "rules": 1
+        },
+        "categories": {
+          "status": 1
+        },
+        "weak_assertion": true,
+        "fallback_reason": "",
+        "warning": "weak_assertion_set"
+      },
+      {
+        "step_id": "scenario_005_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_006_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_006_step_02",
+        "assertion_count": 3,
+        "generated_by_counts": {
+          "rules": 3
+        },
+        "categories": {
+          "status": 1,
+          "schema": 1,
+          "field_presence": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_006_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_007_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_007_step_02",
+        "assertion_count": 3,
+        "generated_by_counts": {
+          "rules": 3
+        },
+        "categories": {
+          "status": 1,
+          "schema": 1,
+          "field_presence": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_007_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_008_step_01",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      },
+      {
+        "step_id": "scenario_008_step_02",
+        "assertion_count": 2,
+        "generated_by_counts": {
+          "rules": 2
+        },
+        "categories": {
+          "status": 1,
+          "business": 1
+        },
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": ""
+      },
+      {
+        "step_id": "scenario_008_step_03",
+        "assertion_count": 0,
+        "generated_by_counts": {},
+        "categories": {},
+        "weak_assertion": false,
+        "fallback_reason": "",
+        "warning": "non_request_step"
+      }
+    ],
+    "context_stats": {
+      "defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "defined_key_count": 2,
+      "used_keys": [],
+      "used_key_count": 0,
+      "extracted_keys": [],
+      "extracted_key_count": 0,
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": [],
+      "save_rules": {
+        "task_id": "json.data.task_id",
+        "resource_id": "json.data.task_id"
+      }
+    },
+    "task_summary_text": "任务 platform_e2e_regression_d26de49e 当前状态为 passed，已生成 8 个场景、24 个步骤，尚未开始执行。",
+    "findings": [
+      "存在 2 个步骤仅包含状态码断言"
+    ],
+    "chart_data": {
+      "validation": {
+        "passed": 1,
+        "failed": 0,
+        "warnings": 0,
+        "errors": 0
+      },
+      "execution": {
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "success_rate": 0.0,
+        "failure_rate": 0.0,
+        "avg_elapsed_ms": 0.0,
+        "max_elapsed_ms": 0.0
+      },
+      "assertions": {
+        "passed": 26,
+        "failed": 0,
+        "pass_rate": 100.0
+      },
+      "assertion_quality": {
+        "rule_count": 18,
+        "llm_count": 0,
+        "llm_repair_count": 0,
+        "fallback_count": 0,
+        "high_confidence_count": 13,
+        "weak_assertion_step_count": 2,
+        "steps": [
+          {
+            "step_id": "scenario_001_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_001_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_001_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_002_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_002_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_003_step_02",
+            "assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1
+            },
+            "categories": {
+              "status": 1
+            },
+            "weak_assertion": true,
+            "fallback_reason": "",
+            "warning": "weak_assertion_set"
+          },
+          {
+            "step_id": "scenario_003_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_004_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_004_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_005_step_02",
+            "assertion_count": 1,
+            "generated_by_counts": {
+              "rules": 1
+            },
+            "categories": {
+              "status": 1
+            },
+            "weak_assertion": true,
+            "fallback_reason": "",
+            "warning": "weak_assertion_set"
+          },
+          {
+            "step_id": "scenario_005_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_006_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_006_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_006_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_007_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_007_step_02",
+            "assertion_count": 3,
+            "generated_by_counts": {
+              "rules": 3
+            },
+            "categories": {
+              "status": 1,
+              "schema": 1,
+              "field_presence": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_007_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_008_step_01",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          },
+          {
+            "step_id": "scenario_008_step_02",
+            "assertion_count": 2,
+            "generated_by_counts": {
+              "rules": 2
+            },
+            "categories": {
+              "status": 1,
+              "business": 1
+            },
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": ""
+          },
+          {
+            "step_id": "scenario_008_step_03",
+            "assertion_count": 0,
+            "generated_by_counts": {},
+            "categories": {},
+            "weak_assertion": false,
+            "fallback_reason": "",
+            "warning": "non_request_step"
+          }
+        ]
+      },
+      "context": {
+        "defined": 2,
+        "used": 0,
+        "extracted": 0
+      },
+      "failure_reasons": {}
+    },
+    "report_sections": [
+      {
+        "key": "overview",
+        "title": "执行概览",
+        "items": {
+          "scenario_count": 8,
+          "total_steps": 24,
+          "passed_steps": 0,
+          "failed_steps": 0,
+          "success_rate": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      },
+      {
+        "key": "failures",
+        "title": "失败分析",
+        "items": {
+          "failure_reason_count": 0,
+          "failure_reasons": []
+        }
+      },
+      {
+        "key": "assertions",
+        "title": "断言统计",
+        "items": {
+          "total": 26,
+          "passed": 26,
+          "failed": 0,
+          "pass_rate": 100.0,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "quality_summary": {
+            "rule_count": 18,
+            "llm_count": 0,
+            "llm_repair_count": 0,
+            "fallback_count": 0,
+            "high_confidence_count": 13,
+            "weak_assertion_step_count": 2,
+            "steps": [
+              {
+                "step_id": "scenario_001_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_001_step_02",
+                "assertion_count": 2,
+                "generated_by_counts": {
+                  "rules": 2
+                },
+                "categories": {
+                  "status": 1,
+                  "field_presence": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_001_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_002_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_002_step_02",
+                "assertion_count": 3,
+                "generated_by_counts": {
+                  "rules": 3
+                },
+                "categories": {
+                  "status": 1,
+                  "schema": 1,
+                  "field_presence": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_002_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_003_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_003_step_02",
+                "assertion_count": 1,
+                "generated_by_counts": {
+                  "rules": 1
+                },
+                "categories": {
+                  "status": 1
+                },
+                "weak_assertion": true,
+                "fallback_reason": "",
+                "warning": "weak_assertion_set"
+              },
+              {
+                "step_id": "scenario_003_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_004_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_004_step_02",
+                "assertion_count": 3,
+                "generated_by_counts": {
+                  "rules": 3
+                },
+                "categories": {
+                  "status": 1,
+                  "schema": 1,
+                  "field_presence": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_004_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_005_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_005_step_02",
+                "assertion_count": 1,
+                "generated_by_counts": {
+                  "rules": 1
+                },
+                "categories": {
+                  "status": 1
+                },
+                "weak_assertion": true,
+                "fallback_reason": "",
+                "warning": "weak_assertion_set"
+              },
+              {
+                "step_id": "scenario_005_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_006_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_006_step_02",
+                "assertion_count": 3,
+                "generated_by_counts": {
+                  "rules": 3
+                },
+                "categories": {
+                  "status": 1,
+                  "schema": 1,
+                  "field_presence": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_006_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_007_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_007_step_02",
+                "assertion_count": 3,
+                "generated_by_counts": {
+                  "rules": 3
+                },
+                "categories": {
+                  "status": 1,
+                  "schema": 1,
+                  "field_presence": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_007_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_008_step_01",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              },
+              {
+                "step_id": "scenario_008_step_02",
+                "assertion_count": 2,
+                "generated_by_counts": {
+                  "rules": 2
+                },
+                "categories": {
+                  "status": 1,
+                  "business": 1
+                },
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": ""
+              },
+              {
+                "step_id": "scenario_008_step_03",
+                "assertion_count": 0,
+                "generated_by_counts": {},
+                "categories": {},
+                "weak_assertion": false,
+                "fallback_reason": "",
+                "warning": "non_request_step"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "key": "context",
+        "title": "上下文提取",
+        "items": {
+          "defined_keys": [
+            "resource_id",
+            "task_id"
+          ],
+          "defined_key_count": 2,
+          "used_keys": [],
+          "used_key_count": 0,
+          "extracted_keys": [],
+          "extracted_key_count": 0,
+          "unused_defined_keys": [
+            "resource_id",
+            "task_id"
+          ],
+          "undefined_used_keys": [],
+          "save_rules": {
+            "task_id": "json.data.task_id",
+            "resource_id": "json.data.task_id"
+          }
+        }
+      },
+      {
+        "key": "performance",
+        "title": "性能摘要",
+        "items": {
+          "total_requests": 0,
+          "success_count": 0,
+          "failure_count": 0,
+          "throughput": 0.0,
+          "avg_elapsed_ms": 0.0,
+          "max_elapsed_ms": 0.0
+        }
+      }
+    ]
+  },
+  "parse_metadata": {
+    "parse_mode": "rules",
+    "llm_attempted": false,
+    "llm_used": false,
+    "rag_used": true,
+    "rag_fallback_reason": "",
+    "fallback_reason": "",
+    "llm_error_type": "",
+    "llm_provider_profile": "tencent_hunyuan_openai_compat",
+    "model_profile": "default",
+    "retrieval_mode": "vector+keyword",
+    "retrieval_top_k": 5,
+    "rerank_enabled": false,
+    "retrieval_metrics": {
+      "returned_count": 5,
+      "requested_top_k": 5,
+      "coverage_ratio": 1.0,
+      "duplicate_ratio": 0.0,
+      "score_avg": 8.829,
+      "rerank_applied": false,
+      "embedded_chunk_count": 60,
+      "embedding_coverage": 1.0,
+      "embedding_error": "",
+      "embedding_error_detail": "",
+      "retrieval_min_final_score": 0.0,
+      "retrieval_candidates_before_threshold": 5,
+      "retrieval_low_score_rejection": false
+    },
+    "contract_knowledge": {
+      "enabled": true,
+      "merged_snippet_count": 8,
+      "official_score_boost": 2.0,
+      "min_retrieval_score": 0.0
+    },
+    "retrieval_scoring": {
+      "lexical_weight": 4.0,
+      "vector_weight": 6.0,
+      "rerank_vector_weight": 7.0,
+      "rerank_lexical_weight": 2.0,
+      "rerank_title_boost": 0.2,
+      "rerank_content_boost": 0.2
+    },
+    "performance": {
+      "elapsed_ms": 18487.33,
+      "target_ms": 8000.0,
+      "within_target": false,
+      "slow_reason": "large_input_or_retrieval_cost"
+    },
+    "document_char_count": 2625,
+    "cleaned_char_count": 2545,
+    "chunk_count": 60,
+    "embedding_batch_size": 32,
+    "estimated_embedding_calls": 2,
+    "processing_tier": "realtime",
+    "large_document_warning": ""
+  }
+}
