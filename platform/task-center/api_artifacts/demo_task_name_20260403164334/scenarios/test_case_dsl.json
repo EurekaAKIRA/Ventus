@@ -1,0 +1,108 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "demo_task_name_20260403164323",
+  "task_name": "demo_task_name",
+  "feature_name": "demo_task_name",
+  "execution_mode": "api",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "demo requirement text\nPOST /api/tasks 创建任务",
+      "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+      "priority": "P0",
+      "preconditions": [
+        "从有效的 API 入口开始执行"
+      ],
+      "source_chunks": [
+        "chunk_001",
+        "contract_post_tasks",
+        "contract_parse_requirement",
+        "contract_execute",
+        "contract_task_list"
+      ],
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "从有效的 API 入口开始执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "demo requirement text\nPOST /api/tasks 创建任务",
+          "request": {
+            "method": "POST",
+            "url": "/api/tasks",
+            "json": {
+              "task_name": "demo_task_name",
+              "source_type": "text",
+              "requirement_text": "demo requirement text",
+              "target_system": "http://127.0.0.1:8001",
+              "environment": "test"
+            }
+          },
+          "load_profile": {},
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 201
+            },
+            {
+              "source": "json.data.task_id",
+              "op": "exists"
+            }
+          ],
+          "uses_context": [],
+          "saves_context": [
+            "resource_id",
+            "task_id"
+          ],
+          "save_context": {
+            "task_id": "json.data.task_id",
+            "resource_id": "json.data.task_id"
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+          "request": {},
+          "load_profile": {},
+          "assertions": [
+            "成功时响应 data 中含 task_id，用于后续查询与执行"
+          ],
+          "uses_context": [],
+          "saves_context": [],
+          "save_context": {}
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source_type": "text",
+    "language": "zh-CN",
+    "case_generation": {
+      "api_scenario_count": 1,
+      "scenario_count": 1,
+      "parsed_entities": [
+        "demo",
+        "requirement",
+        "text",
+        "post",
+        "api",
+        "tasks",
+        "创建任务",
+        "请求体常用字段",
+        "task_name",
+        "必填"
+      ]
+    }
+  }
+}

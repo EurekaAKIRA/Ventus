@@ -1,0 +1,19 @@
+{
+  "feature_name": "ui_smoke_1775236693690",
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "scenario_count": 8,
+    "average_step_count": 3.12,
+    "step_count": 25,
+    "parse_metrics": {
+      "actor_count": 1,
+      "entity_count": 10,
+      "action_count": 29,
+      "expected_count": 11,
+      "ambiguity_count": 0
+    },
+    "parse_mode": "rules"
+  }
+}

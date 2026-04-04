@@ -3,7 +3,7 @@
   "task_name": "端到端测试9",
   "quality_status": "warning",
   "report_version": "1.1.0",
-  "generated_at": "2026-04-03T14:18:22.035831+00:00",
+  "generated_at": "2026-04-03T15:37:26.421422+00:00",
   "summary": {
     "scenario_count": 2,
     "executed_scenarios": 2,
@@ -15,8 +15,8 @@
     "failed_steps": 0,
     "success_rate": 100.0,
     "failure_rate": 0.0,
-    "avg_elapsed_ms": 732.04,
-    "max_elapsed_ms": 1448.93,
+    "avg_elapsed_ms": 899.64,
+    "max_elapsed_ms": 1799.28,
     "validation_passed": true,
     "warning_count": 1,
     "error_count": 0,
@@ -47,8 +47,8 @@
       "failure_rate": 0.0,
       "passed_steps": 6,
       "failed_steps": 0,
-      "avg_elapsed_ms": 732.04,
-      "max_elapsed_ms": 1448.93,
+      "avg_elapsed_ms": 899.64,
+      "max_elapsed_ms": 1799.28,
       "assertion_total": 5,
       "assertion_pass_rate": 100.0,
       "context_defined_keys": 2,
@@ -88,12 +88,12 @@
       {
         "key": "avg_elapsed_ms",
         "label": "Avg Elapsed(ms)",
-        "value": 732.04
+        "value": 899.64
       },
       {
         "key": "max_elapsed_ms",
         "label": "Max Elapsed(ms)",
-        "value": 1448.93
+        "value": 1799.28
       }
     ],
     "totals": {
@@ -164,7 +164,7 @@
       }
     ],
     "headline": "6/6 steps passed",
-    "summary_text": "任务 端到端测试9 当前状态为 warning，共分析 2 个场景，执行 6 个步骤；其中通过 6 个、失败 0 个，成功率 100.0%，平均耗时 732.04ms，最大耗时 1448.93ms。"
+    "summary_text": "任务 端到端测试9 当前状态为 warning，共分析 2 个场景，执行 6 个步骤；其中通过 6 个、失败 0 个，成功率 100.0%，平均耗时 899.64ms，最大耗时 1799.28ms。"
   },
   "dashboard_summary": {
     "scenario_count": 2,
@@ -178,8 +178,8 @@
     "failed_steps": 0,
     "success_rate": 100.0,
     "failure_rate": 0.0,
-    "avg_elapsed_ms": 732.04,
-    "max_elapsed_ms": 1448.93,
+    "avg_elapsed_ms": 899.64,
+    "max_elapsed_ms": 1799.28,
     "assertion_total": 5,
     "assertion_passed": 5,
     "assertion_failed": 0,
@@ -196,7 +196,7 @@
     "task_name": "端到端测试9",
     "quality_status": "warning",
     "execution_status": "passed",
-    "headline": "任务 端到端测试9 当前状态为 warning，共分析 2 个场景，执行 6 个步骤；其中通过 6 个、失败 0 个，成功率 100.0%，平均耗时 732.04ms，最大耗时 1448.93ms。",
+    "headline": "任务 端到端测试9 当前状态为 warning，共分析 2 个场景，执行 6 个步骤；其中通过 6 个、失败 0 个，成功率 100.0%，平均耗时 899.64ms，最大耗时 1799.28ms。",
     "success_rate": 100.0,
     "failed_steps": 0,
     "total_requests": 0,
@@ -275,7 +275,7 @@
       "resource_id": "json.data.task_id"
     }
   },
-  "task_summary_text": "任务 端到端测试9 当前状态为 warning，共分析 2 个场景，执行 6 个步骤；其中通过 6 个、失败 0 个，成功率 100.0%，平均耗时 732.04ms，最大耗时 1448.93ms。",
+  "task_summary_text": "任务 端到端测试9 当前状态为 warning，共分析 2 个场景，执行 6 个步骤；其中通过 6 个、失败 0 个，成功率 100.0%，平均耗时 899.64ms，最大耗时 1799.28ms。",
   "findings": [
     "步骤过长，建议拆分：假如 当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：平台...",
     "Failure categories: validation_warning=1"
@@ -292,8 +292,8 @@
       "failed_steps": 0,
       "success_rate": 100.0,
       "failure_rate": 0.0,
-      "avg_elapsed_ms": 732.04,
-      "max_elapsed_ms": 1448.93
+      "avg_elapsed_ms": 899.64,
+      "max_elapsed_ms": 1799.28
     },
     "assertions": {
       "passed": 5,
@@ -319,8 +319,8 @@
         "passed_steps": 6,
         "failed_steps": 0,
         "success_rate": 100.0,
-        "avg_elapsed_ms": 732.04,
-        "max_elapsed_ms": 1448.93
+        "avg_elapsed_ms": 899.64,
+        "max_elapsed_ms": 1799.28
       }
     },
     {
@@ -390,8 +390,8 @@
         "success_count": 0,
         "failure_count": 0,
         "throughput": 0.0,
-        "avg_elapsed_ms": 732.04,
-        "max_elapsed_ms": 1448.93
+        "avg_elapsed_ms": 899.64,
+        "max_elapsed_ms": 1799.28
       }
     }
   ]

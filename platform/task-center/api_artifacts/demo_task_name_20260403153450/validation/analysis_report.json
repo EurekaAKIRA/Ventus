@@ -1,0 +1,342 @@
+{
+  "task_id": "demo_task_name_20260403153439",
+  "task_name": "demo_task_name",
+  "quality_status": "passed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-03T16:14:20.119514+00:00",
+  "summary": {
+    "scenario_count": 1,
+    "executed_scenarios": 1,
+    "passed_scenarios": 1,
+    "failed_scenarios": 0,
+    "total_steps": 3,
+    "executed_steps": 3,
+    "passed_steps": 3,
+    "failed_steps": 0,
+    "success_rate": 100.0,
+    "failure_rate": 0.0,
+    "avg_elapsed_ms": 3155.83,
+    "max_elapsed_ms": 3155.83,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "passed",
+    "assertion_total": 3,
+    "assertion_passed": 3,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "dashboard": {
+    "task_id": "demo_task_name_20260403153439",
+    "task_name": "demo_task_name",
+    "quality_status": "passed",
+    "execution_status": "passed",
+    "summary": {
+      "scenario_count": 1,
+      "executed_scenarios": 1,
+      "passed_scenarios": 1,
+      "failed_scenarios": 0,
+      "success_rate": 100.0,
+      "failure_rate": 0.0,
+      "passed_steps": 3,
+      "failed_steps": 0,
+      "avg_elapsed_ms": 3155.83,
+      "max_elapsed_ms": 3155.83,
+      "assertion_total": 3,
+      "assertion_pass_rate": 100.0,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 3,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 1
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 3
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 3
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 0
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 100.0
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 3155.83
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 3155.83
+      }
+    ],
+    "totals": {
+      "scenarios": 1,
+      "steps": 3,
+      "assertions": 3,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 1,
+      "failed_scenarios": 0,
+      "passed_steps": 3,
+      "failed_steps": 0
+    },
+    "assertion_summary": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 2,
+      "defined_key_names": [
+        "resource_id",
+        "task_id"
+      ],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 3,
+      "extracted_key_names": [
+        "last_request",
+        "resource_id",
+        "task_id"
+      ],
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": null,
+    "failure_reason_breakdown": [],
+    "headline": "3/3 steps passed",
+    "summary_text": "任务 demo_task_name 当前状态为 passed，共分析 1 个场景，执行 3 个步骤；其中通过 3 个、失败 0 个，成功率 100.0%，平均耗时 3155.83ms，最大耗时 3155.83ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 1,
+    "executed_scenarios": 1,
+    "passed_scenarios": 1,
+    "failed_scenarios": 0,
+    "execution_status": "passed",
+    "total_steps": 3,
+    "executed_steps": 3,
+    "passed_steps": 3,
+    "failed_steps": 0,
+    "success_rate": 100.0,
+    "failure_rate": 0.0,
+    "avg_elapsed_ms": 3155.83,
+    "max_elapsed_ms": 3155.83,
+    "assertion_total": 3,
+    "assertion_passed": 3,
+    "assertion_failed": 0,
+    "assertion_pass_rate": 100.0,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "demo_task_name",
+    "quality_status": "passed",
+    "execution_status": "passed",
+    "headline": "任务 demo_task_name 当前状态为 passed，共分析 1 个场景，执行 3 个步骤；其中通过 3 个、失败 0 个，成功率 100.0%，平均耗时 3155.83ms，最大耗时 3155.83ms。",
+    "success_rate": 100.0,
+    "failed_steps": 0,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": null,
+    "next_action": "可进入联调或演示环节"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "passed",
+    "scenario_count": 1,
+    "passed_scenarios": 1,
+    "failed_scenarios": 0,
+    "log_count": 10,
+    "has_failures": false,
+    "top_failure_category": null
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [],
+  "failure_reasons": [],
+  "assertion_stats": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "pass_rate": 100.0,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "context_stats": {
+    "defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "defined_key_count": 2,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [
+      "last_request",
+      "resource_id",
+      "task_id"
+    ],
+    "extracted_key_count": 3,
+    "unused_defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "task_id": "json.data.task_id",
+      "resource_id": "json.data.task_id"
+    }
+  },
+  "task_summary_text": "任务 demo_task_name 当前状态为 passed，共分析 1 个场景，执行 3 个步骤；其中通过 3 个、失败 0 个，成功率 100.0%，平均耗时 3155.83ms，最大耗时 3155.83ms。",
+  "findings": [],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 3,
+      "failed_steps": 0,
+      "success_rate": 100.0,
+      "failure_rate": 0.0,
+      "avg_elapsed_ms": 3155.83,
+      "max_elapsed_ms": 3155.83
+    },
+    "assertions": {
+      "passed": 3,
+      "failed": 0,
+      "pass_rate": 100.0
+    },
+    "context": {
+      "defined": 2,
+      "used": 0,
+      "extracted": 3
+    },
+    "failure_reasons": {}
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 1,
+        "total_steps": 3,
+        "passed_steps": 3,
+        "failed_steps": 0,
+        "success_rate": 100.0,
+        "avg_elapsed_ms": 3155.83,
+        "max_elapsed_ms": 3155.83
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 0,
+        "failure_reasons": []
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "pass_rate": 100.0,
+        "validation_errors": 0,
+        "validation_warnings": 0
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "defined_key_count": 2,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [
+          "last_request",
+          "resource_id",
+          "task_id"
+        ],
+        "extracted_key_count": 3,
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "task_id": "json.data.task_id",
+          "resource_id": "json.data.task_id"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 3155.83,
+        "max_elapsed_ms": 3155.83
+      }
+    }
+  ]
+}

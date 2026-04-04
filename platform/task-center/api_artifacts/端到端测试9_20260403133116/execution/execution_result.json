@@ -57,7 +57,7 @@
           "response": {
             "status_code": 201,
             "headers": {
-              "date": "Fri, 03 Apr 2026 14:09:54 GMT",
+              "date": "Fri, 03 Apr 2026 14:44:03 GMT",
               "server": "uvicorn",
               "content-length": "387",
               "content-type": "application/json",
@@ -68,28 +68,28 @@
               "code": "TASK_CREATED",
               "message": "task created",
               "data": {
-                "task_id": "demo_task_name_20260403140955",
+                "task_id": "demo_task_name_20260403144404",
                 "task_context": {
-                  "task_id": "demo_task_name_20260403140955",
+                  "task_id": "demo_task_name_20260403144404",
                   "task_name": "demo_task_name",
                   "source_type": "text",
                   "source_path": null,
-                  "created_at": "2026-04-03T14:09:55.941021+00:00",
+                  "created_at": "2026-04-03T14:44:04.955641+00:00",
                   "language": "zh-CN",
                   "status": "received",
                   "notes": []
                 }
               },
-              "timestamp": "2026-04-03T14:09:57.353802+00:00"
+              "timestamp": "2026-04-03T14:44:06.738426+00:00"
             },
-            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_context\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_name\":\"demo_task_name\",",
-            "elapsed_ms": 1448.93,
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_context\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_name\":\"demo_task_name\",",
+            "elapsed_ms": 1799.28,
             "error": "",
             "error_category": ""
           },
           "response_summary": {
             "status_code": 201,
-            "elapsed_ms": 1448.93,
+            "elapsed_ms": 1799.28,
             "content_type": "application/json",
             "json_keys": [
               "code",
@@ -98,7 +98,7 @@
               "success",
               "timestamp"
             ],
-            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_c",
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_c",
             "error_category": "",
             "parse_error": "",
             "body_size": 387
@@ -107,33 +107,33 @@
             "last_response": {
               "status_code": 201,
               "headers": {
-                "date": "Fri, 03 Apr 2026 14:09:54 GMT",
+                "date": "Fri, 03 Apr 2026 14:44:03 GMT",
                 "server": "uvicorn",
                 "content-length": "387",
                 "content-type": "application/json",
                 "connection": "close"
               },
-              "body_text": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_context\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-03T14:09:55.941021+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]}},\"timestamp\":\"2026-04-03T14:09:57.353802+00:00\"}",
+              "body_text": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_context\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-03T14:44:04.955641+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]}},\"timestamp\":\"2026-04-03T14:44:06.738426+00:00\"}",
               "json": {
                 "success": true,
                 "code": "TASK_CREATED",
                 "message": "task created",
                 "data": {
-                  "task_id": "demo_task_name_20260403140955",
+                  "task_id": "demo_task_name_20260403144404",
                   "task_context": {
-                    "task_id": "demo_task_name_20260403140955",
+                    "task_id": "demo_task_name_20260403144404",
                     "task_name": "demo_task_name",
                     "source_type": "text",
                     "source_path": null,
-                    "created_at": "2026-04-03T14:09:55.941021+00:00",
+                    "created_at": "2026-04-03T14:44:04.955641+00:00",
                     "language": "zh-CN",
                     "status": "received",
                     "notes": []
                   }
                 },
-                "timestamp": "2026-04-03T14:09:57.353802+00:00"
+                "timestamp": "2026-04-03T14:44:06.738426+00:00"
               },
-              "elapsed_ms": 1448.93,
+              "elapsed_ms": 1799.28,
               "error": "",
               "error_category": "",
               "parse_error": ""
@@ -157,12 +157,12 @@
               "form_keys": [],
               "cookie_header_present": false
             },
-            "task_id": "demo_task_name_20260403140955",
-            "resource_id": "demo_task_name_20260403140955"
+            "task_id": "demo_task_name_20260403144404",
+            "resource_id": "demo_task_name_20260403144404"
           },
           "saved_context": {
-            "task_id": "demo_task_name_20260403140955",
-            "resource_id": "demo_task_name_20260403140955"
+            "task_id": "demo_task_name_20260403144404",
+            "resource_id": "demo_task_name_20260403144404"
           },
           "assertion_summary": {
             "total": 2,
@@ -212,18 +212,18 @@
           "step_type": "when",
           "text": "`GET /api/tasks/{task_id}`",
           "status": "passed",
-          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403140955 -> 200",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403144404 -> 200",
           "error_category": "",
           "request": {
             "method": "GET",
-            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403140955",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403144404",
             "headers": {},
             "params": {},
             "auth_type": ""
           },
           "request_summary": {
             "method": "GET",
-            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403140955",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403144404",
             "headers": {},
             "params": {},
             "has_json_body": false,
@@ -236,7 +236,7 @@
           "response": {
             "status_code": 200,
             "headers": {
-              "date": "Fri, 03 Apr 2026 14:09:57 GMT",
+              "date": "Fri, 03 Apr 2026 14:44:06 GMT",
               "server": "uvicorn",
               "content-length": "807",
               "content-type": "application/json",
@@ -247,20 +247,20 @@
               "code": "TASK_DETAIL_OK",
               "message": "task detail",
               "data": {
-                "task_id": "demo_task_name_20260403140955",
+                "task_id": "demo_task_name_20260403144404",
                 "task_name": "demo_task_name",
                 "source_type": "text",
                 "target_system": "http://127.0.0.1:8001",
                 "environment": "test",
-                "created_at": "2026-04-03T14:09:55.941021+00:00",
+                "created_at": "2026-04-03T14:44:04.955641+00:00",
                 "status": "received",
                 "archived": false,
                 "task_context": {
-                  "task_id": "demo_task_name_20260403140955",
+                  "task_id": "demo_task_name_20260403144404",
                   "task_name": "demo_task_name",
                   "source_type": "text",
                   "source_path": null,
-                  "created_at": "2026-04-03T14:09:55.941021+00:00",
+                  "created_at": "2026-04-03T14:44:04.955641+00:00",
                   "language": "zh-CN",
                   "status": "received",
                   "notes": []
@@ -276,16 +276,16 @@
                 "feature_text": null,
                 "execution_result": null
               },
-              "timestamp": "2026-04-03T14:09:57.369765+00:00"
+              "timestamp": "2026-04-03T14:44:06.743919+00:00"
             },
-            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:80",
-            "elapsed_ms": 15.14,
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:80",
+            "elapsed_ms": 0.0,
             "error": "",
             "error_category": ""
           },
           "response_summary": {
             "status_code": 200,
-            "elapsed_ms": 15.14,
+            "elapsed_ms": 0.0,
             "content_type": "application/json",
             "json_keys": [
               "code",
@@ -294,7 +294,7 @@
               "success",
               "timestamp"
             ],
-            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_",
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_",
             "error_category": "",
             "parse_error": "",
             "body_size": 807
@@ -303,32 +303,32 @@
             "last_response": {
               "status_code": 200,
               "headers": {
-                "date": "Fri, 03 Apr 2026 14:09:57 GMT",
+                "date": "Fri, 03 Apr 2026 14:44:06 GMT",
                 "server": "uvicorn",
                 "content-length": "807",
                 "content-type": "application/json",
                 "connection": "close"
               },
-              "body_text": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:8001\",\"environment\":\"test\",\"created_at\":\"2026-04-03T14:09:55.941021+00:00\",\"status\":\"received\",\"archived\":false,\"task_context\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-03T14:09:55.941021+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]},\"artifact_dir\":null,\"parse_metadata\":null,\"parsed_requirement\":null,\"retrieved_context\":null,\"scenarios\":null,\"test_case_dsl\":null,\"validation_report\":null,\"analysis_report\":null,\"feature_text\":null,\"execution_result\":null},\"timestamp\":\"2026-04-03T14:09:57.369765+00:00\"}",
+              "body_text": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:8001\",\"environment\":\"test\",\"created_at\":\"2026-04-03T14:44:04.955641+00:00\",\"status\":\"received\",\"archived\":false,\"task_context\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-03T14:44:04.955641+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]},\"artifact_dir\":null,\"parse_metadata\":null,\"parsed_requirement\":null,\"retrieved_context\":null,\"scenarios\":null,\"test_case_dsl\":null,\"validation_report\":null,\"analysis_report\":null,\"feature_text\":null,\"execution_result\":null},\"timestamp\":\"2026-04-03T14:44:06.743919+00:00\"}",
               "json": {
                 "success": true,
                 "code": "TASK_DETAIL_OK",
                 "message": "task detail",
                 "data": {
-                  "task_id": "demo_task_name_20260403140955",
+                  "task_id": "demo_task_name_20260403144404",
                   "task_name": "demo_task_name",
                   "source_type": "text",
                   "target_system": "http://127.0.0.1:8001",
                   "environment": "test",
-                  "created_at": "2026-04-03T14:09:55.941021+00:00",
+                  "created_at": "2026-04-03T14:44:04.955641+00:00",
                   "status": "received",
                   "archived": false,
                   "task_context": {
-                    "task_id": "demo_task_name_20260403140955",
+                    "task_id": "demo_task_name_20260403144404",
                     "task_name": "demo_task_name",
                     "source_type": "text",
                     "source_path": null,
-                    "created_at": "2026-04-03T14:09:55.941021+00:00",
+                    "created_at": "2026-04-03T14:44:04.955641+00:00",
                     "language": "zh-CN",
                     "status": "received",
                     "notes": []
@@ -344,9 +344,9 @@
                   "feature_text": null,
                   "execution_result": null
                 },
-                "timestamp": "2026-04-03T14:09:57.369765+00:00"
+                "timestamp": "2026-04-03T14:44:06.743919+00:00"
               },
-              "elapsed_ms": 15.14,
+              "elapsed_ms": 0.0,
               "error": "",
               "error_category": "",
               "parse_error": ""
@@ -354,7 +354,7 @@
             "last_status_code": 200,
             "last_request": {
               "method": "GET",
-              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403140955",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403144404",
               "headers": {},
               "params": {},
               "has_json_body": false,
@@ -364,8 +364,8 @@
               "form_keys": [],
               "cookie_header_present": false
             },
-            "task_id": "demo_task_name_20260403140955",
-            "resource_id": "demo_task_name_20260403140955"
+            "task_id": "demo_task_name_20260403144404",
+            "resource_id": "demo_task_name_20260403144404"
           },
           "saved_context": {},
           "assertion_summary": {
@@ -400,8 +400,8 @@
     "failed_step_count": 0,
     "context_key_count": 5,
     "cookie_count": 0,
-    "avg_elapsed_ms": 732.04,
-    "max_elapsed_ms": 1448.93
+    "avg_elapsed_ms": 899.64,
+    "max_elapsed_ms": 1799.28
   },
   "logs": [
     {
@@ -468,7 +468,7 @@
       "message": "Received 201",
       "response_summary": {
         "status_code": 201,
-        "elapsed_ms": 1448.93,
+        "elapsed_ms": 1799.28,
         "content_type": "application/json",
         "json_keys": [
           "code",
@@ -477,7 +477,7 @@
           "success",
           "timestamp"
         ],
-        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_c",
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_c",
         "error_category": "",
         "parse_error": "",
         "body_size": 387
@@ -489,8 +489,8 @@
       "step_id": "scenario_001_step_02",
       "message": "Saved context keys: resource_id, task_id",
       "saved_context": {
-        "task_id": "demo_task_name_20260403140955",
-        "resource_id": "demo_task_name_20260403140955"
+        "task_id": "demo_task_name_20260403144404",
+        "resource_id": "demo_task_name_20260403144404"
       }
     },
     {
@@ -533,7 +533,7 @@
       },
       "response_summary": {
         "status_code": 201,
-        "elapsed_ms": 1448.93,
+        "elapsed_ms": 1799.28,
         "content_type": "application/json",
         "json_keys": [
           "code",
@@ -542,7 +542,7 @@
           "success",
           "timestamp"
         ],
-        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_c",
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_c",
         "error_category": "",
         "parse_error": "",
         "body_size": 387
@@ -615,10 +615,10 @@
       "level": "info",
       "event": "request_prepared",
       "step_id": "scenario_002_step_02",
-      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403140955",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403144404",
       "request_summary": {
         "method": "GET",
-        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403140955",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403144404",
         "headers": {},
         "params": {},
         "has_json_body": false,
@@ -636,7 +636,7 @@
       "message": "Received 200",
       "response_summary": {
         "status_code": 200,
-        "elapsed_ms": 15.14,
+        "elapsed_ms": 0.0,
         "content_type": "application/json",
         "json_keys": [
           "code",
@@ -645,7 +645,7 @@
           "success",
           "timestamp"
         ],
-        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_",
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_",
         "error_category": "",
         "parse_error": "",
         "body_size": 807
@@ -667,13 +667,13 @@
       "level": "info",
       "event": "step_result",
       "step_id": "scenario_002_step_02",
-      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403140955 -> 200",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403144404 -> 200",
       "status": "passed",
       "scenario_id": "scenario_002",
       "scenario_name": "`GET /api/tasks/{task_id}`",
       "request_summary": {
         "method": "GET",
-        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403140955",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403144404",
         "headers": {},
         "params": {},
         "has_json_body": false,
@@ -685,7 +685,7 @@
       },
       "response_summary": {
         "status_code": 200,
-        "elapsed_ms": 15.14,
+        "elapsed_ms": 0.0,
         "content_type": "application/json",
         "json_keys": [
           "code",
@@ -694,7 +694,7 @@
           "success",
           "timestamp"
         ],
-        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403140955\",\"task_",
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403144404\",\"task_",
         "error_category": "",
         "parse_error": "",
         "body_size": 807
@@ -743,6 +743,6 @@
         "task_id": "端到端测试9_20260403133039"
       }
     },
-    "executed_at": "2026-04-03T14:09:57.372012+00:00"
+    "executed_at": "2026-04-03T14:44:06.749736+00:00"
   }
 }

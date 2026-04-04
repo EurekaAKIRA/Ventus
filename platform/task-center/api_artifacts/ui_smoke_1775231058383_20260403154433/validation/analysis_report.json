@@ -1,0 +1,467 @@
+{
+  "task_id": "ui_smoke_1775231058383_20260403154421",
+  "task_name": "ui_smoke_1775231058383",
+  "quality_status": "failed",
+  "report_version": "1.1.0",
+  "generated_at": "2026-04-03T15:44:56.576699+00:00",
+  "summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "total_steps": 24,
+    "executed_steps": 24,
+    "passed_steps": 23,
+    "failed_steps": 1,
+    "success_rate": 95.83,
+    "failure_rate": 4.17,
+    "avg_elapsed_ms": 2344.04,
+    "max_elapsed_ms": 13078.75,
+    "validation_passed": true,
+    "warning_count": 0,
+    "error_count": 0,
+    "execution_status": "failed",
+    "assertion_total": 17,
+    "assertion_passed": 16,
+    "assertion_failed": 1,
+    "assertion_pass_rate": 94.12,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "dashboard": {
+    "task_id": "ui_smoke_1775231058383_20260403154421",
+    "task_name": "ui_smoke_1775231058383",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "summary": {
+      "scenario_count": 8,
+      "executed_scenarios": 8,
+      "passed_scenarios": 7,
+      "failed_scenarios": 1,
+      "success_rate": 95.83,
+      "failure_rate": 4.17,
+      "passed_steps": 23,
+      "failed_steps": 1,
+      "avg_elapsed_ms": 2344.04,
+      "max_elapsed_ms": 13078.75,
+      "assertion_total": 17,
+      "assertion_pass_rate": 94.12,
+      "context_defined_keys": 2,
+      "context_used_keys": 0,
+      "context_extracted_keys": 3,
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0
+    },
+    "cards": [
+      {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "value": 8
+      },
+      {
+        "key": "steps",
+        "label": "Total Steps",
+        "value": 24
+      },
+      {
+        "key": "passed_steps",
+        "label": "Passed",
+        "value": 23
+      },
+      {
+        "key": "failed_steps",
+        "label": "Failed",
+        "value": 1
+      },
+      {
+        "key": "success_rate",
+        "label": "Success Rate",
+        "value": 95.83
+      },
+      {
+        "key": "avg_elapsed_ms",
+        "label": "Avg Elapsed(ms)",
+        "value": 2344.04
+      },
+      {
+        "key": "max_elapsed_ms",
+        "label": "Max Elapsed(ms)",
+        "value": 13078.75
+      }
+    ],
+    "totals": {
+      "scenarios": 8,
+      "steps": 24,
+      "assertions": 17,
+      "requests": 0
+    },
+    "status_breakdown": {
+      "passed_scenarios": 7,
+      "failed_scenarios": 1,
+      "passed_steps": 23,
+      "failed_steps": 1
+    },
+    "assertion_summary": {
+      "total": 17,
+      "passed": 16,
+      "failed": 1,
+      "pass_rate": 94.12
+    },
+    "performance_summary": {
+      "total_requests": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "throughput": 0.0,
+      "is_load_test": false
+    },
+    "context_summary": {
+      "defined_keys": 2,
+      "defined_key_names": [
+        "resource_id",
+        "task_id"
+      ],
+      "used_keys": 0,
+      "used_key_names": [],
+      "extracted_keys": 3,
+      "extracted_key_names": [
+        "last_request",
+        "resource_id",
+        "task_id"
+      ],
+      "unused_defined_keys": [
+        "resource_id",
+        "task_id"
+      ],
+      "undefined_used_keys": []
+    },
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_006_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "message": "Assertion failed: status_code eq 200, actual=500"
+        }
+      ]
+    },
+    "failure_reason_breakdown": [
+      {
+        "category": "assertion_failed",
+        "label": "Assertion Failed",
+        "count": 1,
+        "examples": [
+          {
+            "step_id": "scenario_006_step_02",
+            "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+            "message": "Assertion failed: status_code eq 200, actual=500"
+          }
+        ]
+      }
+    ],
+    "headline": "23/24 steps passed",
+    "summary_text": "任务 ui_smoke_1775231058383 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 23 个、失败 1 个，成功率 95.83%，平均耗时 2344.04ms，最大耗时 13078.75ms。"
+  },
+  "dashboard_summary": {
+    "scenario_count": 8,
+    "executed_scenarios": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "execution_status": "failed",
+    "total_steps": 24,
+    "executed_steps": 24,
+    "passed_steps": 23,
+    "failed_steps": 1,
+    "success_rate": 95.83,
+    "failure_rate": 4.17,
+    "avg_elapsed_ms": 2344.04,
+    "max_elapsed_ms": 13078.75,
+    "assertion_total": 17,
+    "assertion_passed": 16,
+    "assertion_failed": 1,
+    "assertion_pass_rate": 94.12,
+    "context_defined_keys": 2,
+    "context_used_keys": 0,
+    "context_extracted_keys": 3,
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0
+  },
+  "task_summary": {
+    "task_name": "ui_smoke_1775231058383",
+    "quality_status": "failed",
+    "execution_status": "failed",
+    "headline": "任务 ui_smoke_1775231058383 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 23 个、失败 1 个，成功率 95.83%，平均耗时 2344.04ms，最大耗时 13078.75ms。",
+    "success_rate": 95.83,
+    "failed_steps": 1,
+    "total_requests": 0,
+    "throughput": 0.0,
+    "top_failure_reason": {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_006_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "message": "Assertion failed: status_code eq 200, actual=500"
+        }
+      ]
+    },
+    "next_action": "优先处理失败步骤与失败原因分类"
+  },
+  "execution_overview": {
+    "executor": "api-runner",
+    "status": "failed",
+    "scenario_count": 8,
+    "passed_scenarios": 7,
+    "failed_scenarios": 1,
+    "log_count": 73,
+    "has_failures": true,
+    "top_failure_category": "assertion_failed"
+  },
+  "performance_stats": {
+    "total_requests": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "throughput": 0.0,
+    "is_load_test": false
+  },
+  "failed_steps": [
+    {
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "step_id": "scenario_006_step_02",
+      "step_index": 2,
+      "step_type": "when",
+      "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "status": "failed",
+      "message": "Assertion failed: status_code eq 200, actual=500",
+      "category": "assertion_failed",
+      "reason_detail": "Assertion failed: status_code eq 200, actual=500",
+      "elapsed_ms": 2234.58,
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403154437/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "auth_type": ""
+      },
+      "response": {
+        "status_code": 500,
+        "headers": {
+          "date": "Fri, 03 Apr 2026 15:44:52 GMT",
+          "server": "uvicorn",
+          "content-length": "426",
+          "content-type": "application/json",
+          "connection": "close"
+        },
+        "json": {
+          "success": false,
+          "code": "INTERNAL_ERROR",
+          "message": "unexpected server error",
+          "data": {
+            "detail": "[WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'E:\\\\ending\\\\LaVague-main\\\\platform\\\\task-center\\\\api_artifacts\\\\tasks.json.21228.20260403154454.tmp' -> 'E:\\\\ending\\\\LaVague-main\\\\platform\\\\task-center\\\\api_artifacts\\\\tasks.json'"
+          },
+          "timestamp": "2026-04-03T15:44:56.183737+00:00"
+        },
+        "body_preview": "{\"success\":false,\"code\":\"INTERNAL_ERROR\",\"message\":\"unexpected server error\",\"data\":{\"detail\":\"[WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'E:\\\\\\\\ending\\\\\\\\LaVague-main\\\\\\\\platform\\\\\\\\task-center\\\\\\\\api_artif",
+        "elapsed_ms": 2234.58,
+        "error": "HTTP Error 500: Internal Server Error",
+        "error_category": "http_server_error"
+      },
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403154437/scenarios/generate",
+        "has_headers": false,
+        "has_params": false,
+        "has_json": false,
+        "has_data": false
+      },
+      "response_summary": {
+        "status_code": 500,
+        "elapsed_ms": 2234.58,
+        "has_json": true,
+        "header_count": 5,
+        "body_preview": "{\"success\":false,\"code\":\"INTERNAL_ERROR\",\"message\":\"unexpected server error\",\"data\":{\"detail\":\"[WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'E:\\\\\\\\ending\\\\\\\\LaVague-main\\\\\\\\platform\\\\\\\\task-center\\\\\\\\api_artif"
+      }
+    }
+  ],
+  "failure_reasons": [
+    {
+      "category": "assertion_failed",
+      "label": "Assertion Failed",
+      "count": 1,
+      "examples": [
+        {
+          "step_id": "scenario_006_step_02",
+          "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "message": "Assertion failed: status_code eq 200, actual=500"
+        }
+      ]
+    }
+  ],
+  "assertion_stats": {
+    "total": 17,
+    "passed": 16,
+    "failed": 1,
+    "pass_rate": 94.12,
+    "validation_errors": 0,
+    "validation_warnings": 0
+  },
+  "context_stats": {
+    "defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "defined_key_count": 2,
+    "used_keys": [],
+    "used_key_count": 0,
+    "extracted_keys": [
+      "last_request",
+      "resource_id",
+      "task_id"
+    ],
+    "extracted_key_count": 3,
+    "unused_defined_keys": [
+      "resource_id",
+      "task_id"
+    ],
+    "undefined_used_keys": [],
+    "save_rules": {
+      "task_id": "json.data.task_id",
+      "resource_id": "json.data.task_id"
+    }
+  },
+  "task_summary_text": "任务 ui_smoke_1775231058383 当前状态为 failed，共分析 8 个场景，执行 24 个步骤；其中通过 23 个、失败 1 个，成功率 95.83%，平均耗时 2344.04ms，最大耗时 13078.75ms。",
+  "findings": [
+    "`POST /api/tasks/{task_id}/scenarios/generate` / scenario_006_step_02: Assertion failed: status_code eq 200, actual=500",
+    "Failure categories: assertion_failed=1"
+  ],
+  "chart_data": {
+    "validation": {
+      "passed": 1,
+      "failed": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "execution": {
+      "passed_steps": 23,
+      "failed_steps": 1,
+      "success_rate": 95.83,
+      "failure_rate": 4.17,
+      "avg_elapsed_ms": 2344.04,
+      "max_elapsed_ms": 13078.75
+    },
+    "assertions": {
+      "passed": 16,
+      "failed": 1,
+      "pass_rate": 94.12
+    },
+    "context": {
+      "defined": 2,
+      "used": 0,
+      "extracted": 3
+    },
+    "failure_reasons": {
+      "assertion_failed": 1
+    }
+  },
+  "report_sections": [
+    {
+      "key": "overview",
+      "title": "执行概览",
+      "items": {
+        "scenario_count": 8,
+        "total_steps": 24,
+        "passed_steps": 23,
+        "failed_steps": 1,
+        "success_rate": 95.83,
+        "avg_elapsed_ms": 2344.04,
+        "max_elapsed_ms": 13078.75
+      }
+    },
+    {
+      "key": "failures",
+      "title": "失败分析",
+      "items": {
+        "failure_reason_count": 1,
+        "failure_reasons": [
+          {
+            "category": "assertion_failed",
+            "label": "Assertion Failed",
+            "count": 1,
+            "examples": [
+              {
+                "step_id": "scenario_006_step_02",
+                "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+                "message": "Assertion failed: status_code eq 200, actual=500"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "assertions",
+      "title": "断言统计",
+      "items": {
+        "total": 17,
+        "passed": 16,
+        "failed": 1,
+        "pass_rate": 94.12,
+        "validation_errors": 0,
+        "validation_warnings": 0
+      }
+    },
+    {
+      "key": "context",
+      "title": "上下文提取",
+      "items": {
+        "defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "defined_key_count": 2,
+        "used_keys": [],
+        "used_key_count": 0,
+        "extracted_keys": [
+          "last_request",
+          "resource_id",
+          "task_id"
+        ],
+        "extracted_key_count": 3,
+        "unused_defined_keys": [
+          "resource_id",
+          "task_id"
+        ],
+        "undefined_used_keys": [],
+        "save_rules": {
+          "task_id": "json.data.task_id",
+          "resource_id": "json.data.task_id"
+        }
+      }
+    },
+    {
+      "key": "performance",
+      "title": "性能摘要",
+      "items": {
+        "total_requests": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "throughput": 0.0,
+        "avg_elapsed_ms": 2344.04,
+        "max_elapsed_ms": 13078.75
+      }
+    }
+  ]
+}

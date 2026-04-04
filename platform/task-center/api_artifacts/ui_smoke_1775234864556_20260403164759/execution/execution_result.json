@@ -1,0 +1,3270 @@
+{
+  "task_id": "ui_smoke_1775234864556_20260403164747",
+  "executor": "api-runner",
+  "status": "passed",
+  "scenario_results": [
+    {
+      "scenario_id": "scenario_001",
+      "name": "`POST /api/tasks`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_001_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks`",
+          "status": "passed",
+          "message": "POST http://127.0.0.1:8001/api/tasks -> 201",
+          "error_category": "",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "environment",
+              "requirement_text",
+              "source_type",
+              "target_system",
+              "task_name"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 201,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 16:48:01 GMT",
+              "server": "uvicorn",
+              "content-length": "387",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_CREATED",
+              "message": "task created",
+              "data": {
+                "task_id": "demo_task_name_20260403164802",
+                "task_context": {
+                  "task_id": "demo_task_name_20260403164802",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "source_path": null,
+                  "created_at": "2026-04-03T16:48:02.276718+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                }
+              },
+              "timestamp": "2026-04-03T16:48:04.949778+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_context\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_name\":\"demo_task_name\",",
+            "elapsed_ms": 2691.25,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 201,
+            "elapsed_ms": 2691.25,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_c",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 387
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 201,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 16:48:01 GMT",
+                "server": "uvicorn",
+                "content-length": "387",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_context\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-03T16:48:02.276718+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]}},\"timestamp\":\"2026-04-03T16:48:04.949778+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_CREATED",
+                "message": "task created",
+                "data": {
+                  "task_id": "demo_task_name_20260403164802",
+                  "task_context": {
+                    "task_id": "demo_task_name_20260403164802",
+                    "task_name": "demo_task_name",
+                    "source_type": "text",
+                    "source_path": null,
+                    "created_at": "2026-04-03T16:48:02.276718+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  }
+                },
+                "timestamp": "2026-04-03T16:48:04.949778+00:00"
+              },
+              "elapsed_ms": 2691.25,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 201,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "environment",
+                "requirement_text",
+                "source_type",
+                "target_system",
+                "task_name"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "saved_context": {
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "assertion_summary": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_001_step_03",
+          "step_type": "then",
+          "text": "任务归档后的可见性与一致性检查",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ],
+      "failed_steps": 0
+    },
+    {
+      "scenario_id": "scenario_002",
+      "name": "`GET /api/tasks/{task_id}`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_002_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802 -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 16:48:03 GMT",
+              "server": "uvicorn",
+              "content-length": "807",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_DETAIL_OK",
+              "message": "task detail",
+              "data": {
+                "task_id": "demo_task_name_20260403164802",
+                "task_name": "demo_task_name",
+                "source_type": "text",
+                "target_system": "http://127.0.0.1:8001",
+                "environment": "test",
+                "created_at": "2026-04-03T16:48:02.276718+00:00",
+                "status": "received",
+                "archived": false,
+                "task_context": {
+                  "task_id": "demo_task_name_20260403164802",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "source_path": null,
+                  "created_at": "2026-04-03T16:48:02.276718+00:00",
+                  "language": "zh-CN",
+                  "status": "received",
+                  "notes": []
+                },
+                "artifact_dir": null,
+                "parse_metadata": null,
+                "parsed_requirement": null,
+                "retrieved_context": null,
+                "scenarios": null,
+                "test_case_dsl": null,
+                "validation_report": null,
+                "analysis_report": null,
+                "feature_text": null,
+                "execution_result": null
+              },
+              "timestamp": "2026-04-03T16:48:04.957941+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:80",
+            "elapsed_ms": 3.08,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 3.08,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 807
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 16:48:03 GMT",
+                "server": "uvicorn",
+                "content-length": "807",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"target_system\":\"http://127.0.0.1:8001\",\"environment\":\"test\",\"created_at\":\"2026-04-03T16:48:02.276718+00:00\",\"status\":\"received\",\"archived\":false,\"task_context\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"source_path\":null,\"created_at\":\"2026-04-03T16:48:02.276718+00:00\",\"language\":\"zh-CN\",\"status\":\"received\",\"notes\":[]},\"artifact_dir\":null,\"parse_metadata\":null,\"parsed_requirement\":null,\"retrieved_context\":null,\"scenarios\":null,\"test_case_dsl\":null,\"validation_report\":null,\"analysis_report\":null,\"feature_text\":null,\"execution_result\":null},\"timestamp\":\"2026-04-03T16:48:04.957941+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_DETAIL_OK",
+                "message": "task detail",
+                "data": {
+                  "task_id": "demo_task_name_20260403164802",
+                  "task_name": "demo_task_name",
+                  "source_type": "text",
+                  "target_system": "http://127.0.0.1:8001",
+                  "environment": "test",
+                  "created_at": "2026-04-03T16:48:02.276718+00:00",
+                  "status": "received",
+                  "archived": false,
+                  "task_context": {
+                    "task_id": "demo_task_name_20260403164802",
+                    "task_name": "demo_task_name",
+                    "source_type": "text",
+                    "source_path": null,
+                    "created_at": "2026-04-03T16:48:02.276718+00:00",
+                    "language": "zh-CN",
+                    "status": "received",
+                    "notes": []
+                  },
+                  "artifact_dir": null,
+                  "parse_metadata": null,
+                  "parsed_requirement": null,
+                  "retrieved_context": null,
+                  "scenarios": null,
+                  "test_case_dsl": null,
+                  "validation_report": null,
+                  "analysis_report": null,
+                  "feature_text": null,
+                  "execution_result": null
+                },
+                "timestamp": "2026-04-03T16:48:04.957941+00:00"
+              },
+              "elapsed_ms": 3.08,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_002_step_03",
+          "step_type": "then",
+          "text": "从业务视角看，一次标准任务应经历以下过程：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ],
+      "failed_steps": 0
+    },
+    {
+      "scenario_id": "scenario_003",
+      "name": "`POST /api/tasks/{task_id}/parse`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_003_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/parse`",
+          "status": "passed",
+          "message": "POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parse -> 200",
+          "error_category": "",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parse",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parse",
+            "headers": {},
+            "params": {},
+            "has_json_body": true,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [
+              "rag_enabled",
+              "rerank_enabled",
+              "retrieval_top_k",
+              "use_llm"
+            ],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 16:48:03 GMT",
+              "server": "uvicorn",
+              "content-length": "2009",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "TASK_PARSED",
+              "message": "task parsed",
+              "data": {
+                "task_id": "demo_task_name_20260403164802",
+                "status": "parsed",
+                "parsed_requirement": {
+                  "objective": "demo requirement text\nPOST /api/tasks 创建任务",
+                  "actors": [
+                    "用户"
+                  ],
+                  "entities": [
+                    "demo",
+                    "requirement",
+                    "text",
+                    "post",
+                    "api",
+                    "tasks",
+                    "创建任务",
+                    "请求体常用字段",
+                    "task_name",
+                    "必填"
+                  ],
+                  "preconditions": [],
+                  "actions": [
+                    "demo requirement text\nPOST /api/tasks 创建任务"
+                  ],
+                  "expected_results": [
+                    "成功时响应 data 中含 task_id，用于后续查询与执行"
+                  ],
+                  "constraints": [
+                    "demo requirement text",
+                    "请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment"
+                  ],
+                  "ambiguities": [],
+                  "source_chunks": [
+                    "chunk_001",
+                    "contract_post_tasks",
+                    "contract_parse_requirement",
+                    "contract_execute",
+                    "contract_task_list"
+                  ],
+                  "api_endpoints": [
+                    {
+                      "method": "POST",
+                      "path": "/api/tasks",
+                      "description": "创建任务。请求体常用字段：task_name（必填）、source_type、r"
+                    }
+                  ]
+                },
+                "parse_metadata": {
+                  "parse_mode": "rules",
+                  "llm_attempted": false,
+                  "llm_used": false,
+                  "rag_used": true,
+                  "rag_fallback_reason": "",
+                  "fallback_reason": "",
+                  "llm_error_type": "",
+                  "llm_provider_profile": "tencent_hunyuan_openai_compat",
+                  "model_profile": "default",
+                  "retrieval_mode": "keyword",
+                  "retrieval_top_k": 5,
+                  "rerank_enabled": false,
+                  "document_char_count": 0,
+                  "cleaned_char_count": 0,
+                  "chunk_count": 0,
+                  "embedding_batch_size": 32,
+                  "estimated_embedding_calls": 0,
+                  "processing_tier": "realtime",
+                  "large_document_warning": "",
+                  "retrieval_metrics": {
+                    "returned_count": 0,
+                    "requested_top_k": 0,
+                    "coverage_ratio": 0.0,
+                    "duplicate_ratio": 0.0,
+                    "score_avg": 0.0,
+                    "rerank_applied": false,
+                    "embedded_chunk_count": 0,
+                    "embedding_coverage": 0.0,
+                    "embedding_error": "",
+                    "embedding_error_detail": ""
+                  },
+                  "retrieval_scoring": {
+                    "lexical_weight": 4.0,
+                    "vector_weight": 6.0,
+                    "rerank_vector_weight": 7.0,
+                    "rerank_lexical_weight": 2.0,
+                    "rerank_title_boost": 0.2,
+                    "rerank_content_boost": 0.2
+                  },
+                  "performance": {
+                    "elapsed_ms": 0.0,
+                    "target_ms": 0.0,
+                    "within_target": true,
+                    "slow_reason": ""
+                  }
+                }
+              },
+              "timestamp": "2026-04-03T16:48:17.616318+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"status\":\"parsed\",\"parsed_requirement\":{\"objective\":\"demo requirement text\\nPOST /api/tas",
+            "elapsed_ms": 12657.34,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 12657.34,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"status\":",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 1859
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 16:48:03 GMT",
+                "server": "uvicorn",
+                "content-length": "2009",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"status\":\"parsed\",\"parsed_requirement\":{\"objective\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"actors\":[\"用户\"],\"entities\":[\"demo\",\"requirement\",\"text\",\"post\",\"api\",\"tasks\",\"创建任务\",\"请求体常用字段\",\"task_name\",\"必填\"],\"preconditions\":[],\"actions\":[\"demo requirement text\\nPOST /api/tasks 创建任务\"],\"expected_results\":[\"成功时响应 data 中含 task_id，用于后续查询与执行\"],\"constraints\":[\"demo requirement text\",\"请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment\"],\"ambiguities\":[],\"source_chunks\":[\"chunk_001\",\"contract_post_tasks\",\"contract_parse_requirement\",\"contract_execute\",\"contract_task_list\"],\"api_endpoints\":[{\"method\":\"POST\",\"path\":\"/api/tasks\",\"description\":\"创建任务。请求体常用字段：task_name（必填）、source_type、r\"}]},\"parse_metadata\":{\"parse_mode\":\"rules\",\"llm_attempted\":false,\"llm_used\":false,\"rag_used\":true,\"rag_fallback_reason\":\"\",\"fallback_reason\":\"\",\"llm_error_type\":\"\",\"llm_provider_profile\":\"tencent_hunyuan_openai_compat\",\"model_profile\":\"default\",\"retrieval_mode\":\"keyword\",\"retrieval_top_k\":5,\"rerank_enabled\":false,\"document_char_count\":0,\"cleaned_char_count\":0,\"chunk_count\":0,\"embedding_batch_size\":32,\"estimated_embedding_calls\":0,\"processing_tier\":\"realtime\",\"large_document_warning\":\"\",\"retrieval_metrics\":{\"returned_count\":0,\"requested_top_k\":0,\"coverage_ratio\":0.0,\"duplicate_ratio\":0.0,\"score_avg\":0.0,\"rerank_applied\":false,\"embedded_chunk_count\":0,\"embedding_coverage\":0.0,\"embedding_error\":\"\",\"embedding_error_detail\":\"\"},\"retrieval_scoring\":{\"lexical_weight\":4.0,\"vector_weight\":6.0,\"rerank_vector_weight\":7.0,\"rerank_lexical_weight\":2.0,\"rerank_title_boost\":0.2,\"rerank_content_boost\":0.2},\"performance\":{\"elapsed_ms\":0.0,\"target_ms\":0.0,\"within_target\":true,\"slow_reason\":\"\"}}},\"timestamp\":\"2026-04-03T16:48:17.616318+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "TASK_PARSED",
+                "message": "task parsed",
+                "data": {
+                  "task_id": "demo_task_name_20260403164802",
+                  "status": "parsed",
+                  "parsed_requirement": {
+                    "objective": "demo requirement text\nPOST /api/tasks 创建任务",
+                    "actors": [
+                      "用户"
+                    ],
+                    "entities": [
+                      "demo",
+                      "requirement",
+                      "text",
+                      "post",
+                      "api",
+                      "tasks",
+                      "创建任务",
+                      "请求体常用字段",
+                      "task_name",
+                      "必填"
+                    ],
+                    "preconditions": [],
+                    "actions": [
+                      "demo requirement text\nPOST /api/tasks 创建任务"
+                    ],
+                    "expected_results": [
+                      "成功时响应 data 中含 task_id，用于后续查询与执行"
+                    ],
+                    "constraints": [
+                      "demo requirement text",
+                      "请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment"
+                    ],
+                    "ambiguities": [],
+                    "source_chunks": [
+                      "chunk_001",
+                      "contract_post_tasks",
+                      "contract_parse_requirement",
+                      "contract_execute",
+                      "contract_task_list"
+                    ],
+                    "api_endpoints": [
+                      {
+                        "method": "POST",
+                        "path": "/api/tasks",
+                        "description": "创建任务。请求体常用字段：task_name（必填）、source_type、r"
+                      }
+                    ]
+                  },
+                  "parse_metadata": {
+                    "parse_mode": "rules",
+                    "llm_attempted": false,
+                    "llm_used": false,
+                    "rag_used": true,
+                    "rag_fallback_reason": "",
+                    "fallback_reason": "",
+                    "llm_error_type": "",
+                    "llm_provider_profile": "tencent_hunyuan_openai_compat",
+                    "model_profile": "default",
+                    "retrieval_mode": "keyword",
+                    "retrieval_top_k": 5,
+                    "rerank_enabled": false,
+                    "document_char_count": 0,
+                    "cleaned_char_count": 0,
+                    "chunk_count": 0,
+                    "embedding_batch_size": 32,
+                    "estimated_embedding_calls": 0,
+                    "processing_tier": "realtime",
+                    "large_document_warning": "",
+                    "retrieval_metrics": {
+                      "returned_count": 0,
+                      "requested_top_k": 0,
+                      "coverage_ratio": 0.0,
+                      "duplicate_ratio": 0.0,
+                      "score_avg": 0.0,
+                      "rerank_applied": false,
+                      "embedded_chunk_count": 0,
+                      "embedding_coverage": 0.0,
+                      "embedding_error": "",
+                      "embedding_error_detail": ""
+                    },
+                    "retrieval_scoring": {
+                      "lexical_weight": 4.0,
+                      "vector_weight": 6.0,
+                      "rerank_vector_weight": 7.0,
+                      "rerank_lexical_weight": 2.0,
+                      "rerank_title_boost": 0.2,
+                      "rerank_content_boost": 0.2
+                    },
+                    "performance": {
+                      "elapsed_ms": 0.0,
+                      "target_ms": 0.0,
+                      "within_target": true,
+                      "slow_reason": ""
+                    }
+                  }
+                },
+                "timestamp": "2026-04-03T16:48:17.616318+00:00"
+              },
+              "elapsed_ms": 12657.34,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parse",
+              "headers": {},
+              "params": {},
+              "has_json_body": true,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [
+                "rag_enabled",
+                "rerank_enabled",
+                "retrieval_top_k",
+                "use_llm"
+              ],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_003_step_03",
+          "step_type": "then",
+          "text": "任务结束后可归档，归档后不应继续作为活跃任务参与主流程",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ],
+      "failed_steps": 0
+    },
+    {
+      "scenario_id": "scenario_004",
+      "name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_004_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_004_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/parsed-requirement`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parsed-requirement -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parsed-requirement",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parsed-requirement",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 16:48:17 GMT",
+              "server": "uvicorn",
+              "content-length": "956",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "PARSED_REQUIREMENT_OK",
+              "message": "parsed requirement",
+              "data": {
+                "objective": "demo requirement text\nPOST /api/tasks 创建任务",
+                "actors": [
+                  "用户"
+                ],
+                "entities": [
+                  "demo",
+                  "requirement",
+                  "text",
+                  "post",
+                  "api",
+                  "tasks",
+                  "创建任务",
+                  "请求体常用字段",
+                  "task_name",
+                  "必填"
+                ],
+                "preconditions": [],
+                "actions": [
+                  "demo requirement text\nPOST /api/tasks 创建任务"
+                ],
+                "expected_results": [
+                  "成功时响应 data 中含 task_id，用于后续查询与执行"
+                ],
+                "constraints": [
+                  "demo requirement text",
+                  "请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment"
+                ],
+                "ambiguities": [],
+                "source_chunks": [
+                  "chunk_001",
+                  "contract_post_tasks",
+                  "contract_parse_requirement",
+                  "contract_execute",
+                  "contract_task_list"
+                ],
+                "api_endpoints": [
+                  {
+                    "method": "POST",
+                    "path": "/api/tasks",
+                    "description": "创建任务。请求体常用字段：task_name（必填）、source_type、r"
+                  }
+                ]
+              },
+              "timestamp": "2026-04-03T16:48:17.646095+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"actors\":[\"用户\"],\"entities\":[\"demo\",\"requirement\",\"text\",",
+            "elapsed_ms": 29.78,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 29.78,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 806
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 16:48:17 GMT",
+                "server": "uvicorn",
+                "content-length": "956",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"actors\":[\"用户\"],\"entities\":[\"demo\",\"requirement\",\"text\",\"post\",\"api\",\"tasks\",\"创建任务\",\"请求体常用字段\",\"task_name\",\"必填\"],\"preconditions\":[],\"actions\":[\"demo requirement text\\nPOST /api/tasks 创建任务\"],\"expected_results\":[\"成功时响应 data 中含 task_id，用于后续查询与执行\"],\"constraints\":[\"demo requirement text\",\"请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment\"],\"ambiguities\":[],\"source_chunks\":[\"chunk_001\",\"contract_post_tasks\",\"contract_parse_requirement\",\"contract_execute\",\"contract_task_list\"],\"api_endpoints\":[{\"method\":\"POST\",\"path\":\"/api/tasks\",\"description\":\"创建任务。请求体常用字段：task_name（必填）、source_type、r\"}]},\"timestamp\":\"2026-04-03T16:48:17.646095+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "PARSED_REQUIREMENT_OK",
+                "message": "parsed requirement",
+                "data": {
+                  "objective": "demo requirement text\nPOST /api/tasks 创建任务",
+                  "actors": [
+                    "用户"
+                  ],
+                  "entities": [
+                    "demo",
+                    "requirement",
+                    "text",
+                    "post",
+                    "api",
+                    "tasks",
+                    "创建任务",
+                    "请求体常用字段",
+                    "task_name",
+                    "必填"
+                  ],
+                  "preconditions": [],
+                  "actions": [
+                    "demo requirement text\nPOST /api/tasks 创建任务"
+                  ],
+                  "expected_results": [
+                    "成功时响应 data 中含 task_id，用于后续查询与执行"
+                  ],
+                  "constraints": [
+                    "demo requirement text",
+                    "请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment"
+                  ],
+                  "ambiguities": [],
+                  "source_chunks": [
+                    "chunk_001",
+                    "contract_post_tasks",
+                    "contract_parse_requirement",
+                    "contract_execute",
+                    "contract_task_list"
+                  ],
+                  "api_endpoints": [
+                    {
+                      "method": "POST",
+                      "path": "/api/tasks",
+                      "description": "创建任务。请求体常用字段：task_name（必填）、source_type、r"
+                    }
+                  ]
+                },
+                "timestamp": "2026-04-03T16:48:17.646095+00:00"
+              },
+              "elapsed_ms": 29.78,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parsed-requirement",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_004_step_03",
+          "step_type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ],
+      "failed_steps": 0
+    },
+    {
+      "scenario_id": "scenario_005",
+      "name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_005_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/retrieved-context`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/retrieved-context -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/retrieved-context",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/retrieved-context",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 16:48:17 GMT",
+              "server": "uvicorn",
+              "content-length": "1658",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "RETRIEVED_CONTEXT_OK",
+              "message": "retrieved context",
+              "data": [
+                {
+                  "chunk_id": "chunk_001",
+                  "content": "demo requirement text",
+                  "score": 10.0,
+                  "section_title": "未命名章节",
+                  "source_file": "",
+                  "doc_type": ""
+                },
+                {
+                  "chunk_id": "contract_post_tasks",
+                  "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+                  "score": 6.934,
+                  "section_title": "创建任务 POST /api/tasks",
+                  "source_file": "platform_api_knowledge.json",
+                  "doc_type": "platform_contract"
+                },
+                {
+                  "chunk_id": "contract_parse_requirement",
+                  "content": "需求分析模块将自然语言或文档解析为结构化字段：objective、actors、actions、expected_results、ambiguities 等；可结合 RAG 检索上下文提升准确度。",
+                  "score": 6.894,
+                  "section_title": "需求解析（分析服务）",
+                  "source_file": "platform_api_knowledge.json",
+                  "doc_type": "platform_contract"
+                },
+                {
+                  "chunk_id": "contract_execute",
+                  "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+                  "score": 6.605,
+                  "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+                  "source_file": "platform_api_knowledge.json",
+                  "doc_type": "platform_contract"
+                },
+                {
+                  "chunk_id": "contract_task_list",
+                  "content": "GET /api/tasks 支持分页与筛选，用于控制台列表页展示历史任务。",
+                  "score": 6.512,
+                  "section_title": "任务列表 GET /api/tasks",
+                  "source_file": "platform_api_knowledge.json",
+                  "doc_type": "platform_contract"
+                }
+              ],
+              "timestamp": "2026-04-03T16:48:17.646095+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"demo requirement text\",\"score\":10.0,\"section_title\":\"未命名章节\",\"source_file\":\"\",\"doc",
+            "elapsed_ms": 41.64,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 41.64,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"d",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 1326
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 16:48:17 GMT",
+                "server": "uvicorn",
+                "content-length": "1658",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"demo requirement text\",\"score\":10.0,\"section_title\":\"未命名章节\",\"source_file\":\"\",\"doc_type\":\"\"},{\"chunk_id\":\"contract_post_tasks\",\"content\":\"POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。\",\"score\":6.934,\"section_title\":\"创建任务 POST /api/tasks\",\"source_file\":\"platform_api_knowledge.json\",\"doc_type\":\"platform_contract\"},{\"chunk_id\":\"contract_parse_requirement\",\"content\":\"需求分析模块将自然语言或文档解析为结构化字段：objective、actors、actions、expected_results、ambiguities 等；可结合 RAG 检索上下文提升准确度。\",\"score\":6.894,\"section_title\":\"需求解析（分析服务）\",\"source_file\":\"platform_api_knowledge.json\",\"doc_type\":\"platform_contract\"},{\"chunk_id\":\"contract_execute\",\"content\":\"POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。\",\"score\":6.605,\"section_title\":\"执行用例 POST /api/tasks/{task_id}/execute\",\"source_file\":\"platform_api_knowledge.json\",\"doc_type\":\"platform_contract\"},{\"chunk_id\":\"contract_task_list\",\"content\":\"GET /api/tasks 支持分页与筛选，用于控制台列表页展示历史任务。\",\"score\":6.512,\"section_title\":\"任务列表 GET /api/tasks\",\"source_file\":\"platform_api_knowledge.json\",\"doc_type\":\"platform_contract\"}],\"timestamp\":\"2026-04-03T16:48:17.646095+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "RETRIEVED_CONTEXT_OK",
+                "message": "retrieved context",
+                "data": [
+                  {
+                    "chunk_id": "chunk_001",
+                    "content": "demo requirement text",
+                    "score": 10.0,
+                    "section_title": "未命名章节",
+                    "source_file": "",
+                    "doc_type": ""
+                  },
+                  {
+                    "chunk_id": "contract_post_tasks",
+                    "content": "POST /api/tasks 创建任务。请求体常用字段：task_name（必填）、source_type、requirement_text、target_system、environment。成功时响应 data 中含 task_id，用于后续查询与执行。",
+                    "score": 6.934,
+                    "section_title": "创建任务 POST /api/tasks",
+                    "source_file": "platform_api_knowledge.json",
+                    "doc_type": "platform_contract"
+                  },
+                  {
+                    "chunk_id": "contract_parse_requirement",
+                    "content": "需求分析模块将自然语言或文档解析为结构化字段：objective、actors、actions、expected_results、ambiguities 等；可结合 RAG 检索上下文提升准确度。",
+                    "score": 6.894,
+                    "section_title": "需求解析（分析服务）",
+                    "source_file": "platform_api_knowledge.json",
+                    "doc_type": "platform_contract"
+                  },
+                  {
+                    "chunk_id": "contract_execute",
+                    "content": "POST /api/tasks/{task_id}/execute 触发或继续执行生成的测试场景。请求可含 environment、dry_run 等选项。需已有可执行产物。",
+                    "score": 6.605,
+                    "section_title": "执行用例 POST /api/tasks/{task_id}/execute",
+                    "source_file": "platform_api_knowledge.json",
+                    "doc_type": "platform_contract"
+                  },
+                  {
+                    "chunk_id": "contract_task_list",
+                    "content": "GET /api/tasks 支持分页与筛选，用于控制台列表页展示历史任务。",
+                    "score": 6.512,
+                    "section_title": "任务列表 GET /api/tasks",
+                    "source_file": "platform_api_knowledge.json",
+                    "doc_type": "platform_contract"
+                  }
+                ],
+                "timestamp": "2026-04-03T16:48:17.646095+00:00"
+              },
+              "elapsed_ms": 41.64,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/retrieved-context",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_005_step_03",
+          "step_type": "then",
+          "text": "归档动作生效后，任务应从活跃视图中消失",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ],
+      "failed_steps": 0
+    },
+    {
+      "scenario_id": "scenario_006",
+      "name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_006_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_02",
+          "step_type": "when",
+          "text": "`POST /api/tasks/{task_id}/scenarios/generate`",
+          "status": "passed",
+          "message": "POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios/generate -> 200",
+          "error_category": "",
+          "request": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios/generate",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "POST",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios/generate",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 16:48:17 GMT",
+              "server": "uvicorn",
+              "content-length": "873",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "SCENARIOS_READY",
+              "message": "scenarios generated",
+              "data": {
+                "task_id": "demo_task_name_20260403164802",
+                "scenario_count": 1,
+                "scenarios": [
+                  {
+                    "scenario_id": "scenario_001",
+                    "name": "demo requirement text\nPOST /api/tasks 创建任务",
+                    "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+                    "steps": [
+                      {
+                        "type": "given",
+                        "text": "从有效的 API 入口开始执行"
+                      },
+                      {
+                        "type": "when",
+                        "text": "demo requirement text\nPOST /api/tasks 创建任务"
+                      },
+                      {
+                        "type": "then",
+                        "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+                      }
+                    ],
+                    "assertions": [
+                      "成功时响应 data 中含 task_id，用于后续查询与执行"
+                    ],
+                    "source_chunks": [
+                      "chunk_001",
+                      "contract_post_tasks",
+                      "contract_parse_requirement",
+                      "contract_execute",
+                      "contract_task_list"
+                    ],
+                    "priority": "P0",
+                    "preconditions": [
+                      "从有效的 API 入口开始执行"
+                    ]
+                  }
+                ]
+              },
+              "timestamp": "2026-04-03T16:48:19.167390+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"scenario_count\":1,\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"demo re",
+            "elapsed_ms": 1479.66,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 1479.66,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_2026040316480",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 741
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 16:48:17 GMT",
+                "server": "uvicorn",
+                "content-length": "873",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"scenario_count\":1,\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"goal\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"steps\":[{\"type\":\"given\",\"text\":\"从有效的 API 入口开始执行\"},{\"type\":\"when\",\"text\":\"demo requirement text\\nPOST /api/tasks 创建任务\"},{\"type\":\"then\",\"text\":\"成功时响应 data 中含 task_id，用于后续查询与执行\"}],\"assertions\":[\"成功时响应 data 中含 task_id，用于后续查询与执行\"],\"source_chunks\":[\"chunk_001\",\"contract_post_tasks\",\"contract_parse_requirement\",\"contract_execute\",\"contract_task_list\"],\"priority\":\"P0\",\"preconditions\":[\"从有效的 API 入口开始执行\"]}]},\"timestamp\":\"2026-04-03T16:48:19.167390+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "SCENARIOS_READY",
+                "message": "scenarios generated",
+                "data": {
+                  "task_id": "demo_task_name_20260403164802",
+                  "scenario_count": 1,
+                  "scenarios": [
+                    {
+                      "scenario_id": "scenario_001",
+                      "name": "demo requirement text\nPOST /api/tasks 创建任务",
+                      "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+                      "steps": [
+                        {
+                          "type": "given",
+                          "text": "从有效的 API 入口开始执行"
+                        },
+                        {
+                          "type": "when",
+                          "text": "demo requirement text\nPOST /api/tasks 创建任务"
+                        },
+                        {
+                          "type": "then",
+                          "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+                        }
+                      ],
+                      "assertions": [
+                        "成功时响应 data 中含 task_id，用于后续查询与执行"
+                      ],
+                      "source_chunks": [
+                        "chunk_001",
+                        "contract_post_tasks",
+                        "contract_parse_requirement",
+                        "contract_execute",
+                        "contract_task_list"
+                      ],
+                      "priority": "P0",
+                      "preconditions": [
+                        "从有效的 API 入口开始执行"
+                      ]
+                    }
+                  ]
+                },
+                "timestamp": "2026-04-03T16:48:19.167390+00:00"
+              },
+              "elapsed_ms": 1479.66,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "POST",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios/generate",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_006_step_03",
+          "step_type": "then",
+          "text": "返回结构需保持统一 envelope，便于前端统一处理",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ],
+      "failed_steps": 0
+    },
+    {
+      "scenario_id": "scenario_007",
+      "name": "`GET /api/tasks/{task_id}/scenarios`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_007_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/scenarios`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 16:48:18 GMT",
+              "server": "uvicorn",
+              "content-length": "793",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "SCENARIOS_OK",
+              "message": "scenarios fetched",
+              "data": [
+                {
+                  "scenario_id": "scenario_001",
+                  "name": "demo requirement text\nPOST /api/tasks 创建任务",
+                  "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+                  "steps": [
+                    {
+                      "type": "given",
+                      "text": "从有效的 API 入口开始执行"
+                    },
+                    {
+                      "type": "when",
+                      "text": "demo requirement text\nPOST /api/tasks 创建任务"
+                    },
+                    {
+                      "type": "then",
+                      "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+                    }
+                  ],
+                  "assertions": [
+                    "成功时响应 data 中含 task_id，用于后续查询与执行"
+                  ],
+                  "source_chunks": [
+                    "chunk_001",
+                    "contract_post_tasks",
+                    "contract_parse_requirement",
+                    "contract_execute",
+                    "contract_task_list"
+                  ],
+                  "priority": "P0",
+                  "preconditions": [
+                    "从有效的 API 入口开始执行"
+                  ]
+                }
+              ],
+              "timestamp": "2026-04-03T16:48:19.174125+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"goal\":\"demo requirement text\\nPOST /api/",
+            "elapsed_ms": 6.73,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 6.73,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"demo r",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 661
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 16:48:18 GMT",
+                "server": "uvicorn",
+                "content-length": "793",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"goal\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"steps\":[{\"type\":\"given\",\"text\":\"从有效的 API 入口开始执行\"},{\"type\":\"when\",\"text\":\"demo requirement text\\nPOST /api/tasks 创建任务\"},{\"type\":\"then\",\"text\":\"成功时响应 data 中含 task_id，用于后续查询与执行\"}],\"assertions\":[\"成功时响应 data 中含 task_id，用于后续查询与执行\"],\"source_chunks\":[\"chunk_001\",\"contract_post_tasks\",\"contract_parse_requirement\",\"contract_execute\",\"contract_task_list\"],\"priority\":\"P0\",\"preconditions\":[\"从有效的 API 入口开始执行\"]}],\"timestamp\":\"2026-04-03T16:48:19.174125+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "SCENARIOS_OK",
+                "message": "scenarios fetched",
+                "data": [
+                  {
+                    "scenario_id": "scenario_001",
+                    "name": "demo requirement text\nPOST /api/tasks 创建任务",
+                    "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+                    "steps": [
+                      {
+                        "type": "given",
+                        "text": "从有效的 API 入口开始执行"
+                      },
+                      {
+                        "type": "when",
+                        "text": "demo requirement text\nPOST /api/tasks 创建任务"
+                      },
+                      {
+                        "type": "then",
+                        "text": "成功时响应 data 中含 task_id，用于后续查询与执行"
+                      }
+                    ],
+                    "assertions": [
+                      "成功时响应 data 中含 task_id，用于后续查询与执行"
+                    ],
+                    "source_chunks": [
+                      "chunk_001",
+                      "contract_post_tasks",
+                      "contract_parse_requirement",
+                      "contract_execute",
+                      "contract_task_list"
+                    ],
+                    "priority": "P0",
+                    "preconditions": [
+                      "从有效的 API 入口开始执行"
+                    ]
+                  }
+                ],
+                "timestamp": "2026-04-03T16:48:19.174125+00:00"
+              },
+              "elapsed_ms": 6.73,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_007_step_03",
+          "step_type": "then",
+          "text": "少量场景执行失败但不阻断整体链路",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ],
+      "failed_steps": 0
+    },
+    {
+      "scenario_id": "scenario_008",
+      "name": "`GET /api/tasks/{task_id}/dsl`",
+      "status": "passed",
+      "steps": [
+        {
+          "step_id": "scenario_008_step_01",
+          "step_type": "given",
+          "text": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_008_step_02",
+          "step_type": "when",
+          "text": "`GET /api/tasks/{task_id}/dsl`",
+          "status": "passed",
+          "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/dsl -> 200",
+          "error_category": "",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/dsl",
+            "headers": {},
+            "params": {},
+            "auth_type": ""
+          },
+          "request_summary": {
+            "method": "GET",
+            "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/dsl",
+            "headers": {},
+            "params": {},
+            "has_json_body": false,
+            "has_form_body": false,
+            "auth_type": "",
+            "body_keys": [],
+            "form_keys": [],
+            "cookie_header_present": false
+          },
+          "response": {
+            "status_code": 200,
+            "headers": {
+              "date": "Fri, 03 Apr 2026 16:48:18 GMT",
+              "server": "uvicorn",
+              "content-length": "1968",
+              "content-type": "application/json",
+              "connection": "close"
+            },
+            "json": {
+              "success": true,
+              "code": "DSL_OK",
+              "message": "dsl fetched",
+              "data": {
+                "dsl_version": "0.2.0",
+                "task_id": "demo_task_name_20260403164804",
+                "task_name": "demo_task_name",
+                "feature_name": "demo_task_name",
+                "execution_mode": "api",
+                "scenarios": [
+                  {
+                    "scenario_id": "scenario_001",
+                    "name": "demo requirement text\nPOST /api/tasks 创建任务",
+                    "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+                    "priority": "P0",
+                    "preconditions": [
+                      "从有效的 API 入口开始执行"
+                    ],
+                    "source_chunks": [
+                      "chunk_001",
+                      "contract_post_tasks",
+                      "contract_parse_requirement",
+                      "contract_execute",
+                      "contract_task_list"
+                    ],
+                    "steps": [
+                      {
+                        "step_id": "scenario_001_step_01",
+                        "step_type": "given",
+                        "text": "从有效的 API 入口开始执行",
+                        "request": {},
+                        "load_profile": {},
+                        "assertions": [],
+                        "uses_context": [],
+                        "saves_context": [],
+                        "save_context": {}
+                      },
+                      {
+                        "step_id": "scenario_001_step_02",
+                        "step_type": "when",
+                        "text": "demo requirement text\nPOST /api/tasks 创建任务",
+                        "request": {
+                          "method": "POST",
+                          "url": "/api/tasks",
+                          "json": {
+                            "task_name": "demo_task_name",
+                            "source_type": "text",
+                            "requirement_text": "demo requirement text",
+                            "target_system": "http://127.0.0.1:8001",
+                            "environment": "test"
+                          }
+                        },
+                        "load_profile": {},
+                        "assertions": [
+                          {
+                            "source": "status_code",
+                            "op": "eq",
+                            "expected": 201
+                          },
+                          {
+                            "source": "json.data.task_id",
+                            "op": "exists"
+                          }
+                        ],
+                        "uses_context": [],
+                        "saves_context": [
+                          "resource_id",
+                          "task_id"
+                        ],
+                        "save_context": {
+                          "task_id": "json.data.task_id",
+                          "resource_id": "json.data.task_id"
+                        }
+                      },
+                      {
+                        "step_id": "scenario_001_step_03",
+                        "step_type": "then",
+                        "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+                        "request": {},
+                        "load_profile": {},
+                        "assertions": [
+                          "成功时响应 data 中含 task_id，用于后续查询与执行"
+                        ],
+                        "uses_context": [],
+                        "saves_context": [],
+                        "save_context": {}
+                      }
+                    ]
+                  }
+                ],
+                "metadata": {
+                  "source_type": "text",
+                  "language": "zh-CN",
+                  "case_generation": {
+                    "api_scenario_count": 1,
+                    "scenario_count": 1,
+                    "parsed_entities": [
+                      "demo",
+                      "requirement",
+                      "text",
+                      "post",
+                      "api",
+                      "tasks",
+                      "创建任务",
+                      "请求体常用字段",
+                      "task_name",
+                      "必填"
+                    ]
+                  }
+                }
+              },
+              "timestamp": "2026-04-03T16:48:19.191567+00:00"
+            },
+            "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260403164804\",\"task_name\":\"demo_task_name\",\"feature_name\":\"demo_task_name\",\"execution_",
+            "elapsed_ms": 17.44,
+            "error": "",
+            "error_category": ""
+          },
+          "response_summary": {
+            "status_code": 200,
+            "elapsed_ms": 17.44,
+            "content_type": "application/json",
+            "json_keys": [
+              "code",
+              "data",
+              "message",
+              "success",
+              "timestamp"
+            ],
+            "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260403",
+            "error_category": "",
+            "parse_error": "",
+            "body_size": 1810
+          },
+          "context_snapshot": {
+            "last_response": {
+              "status_code": 200,
+              "headers": {
+                "date": "Fri, 03 Apr 2026 16:48:18 GMT",
+                "server": "uvicorn",
+                "content-length": "1968",
+                "content-type": "application/json",
+                "connection": "close"
+              },
+              "body_text": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260403164804\",\"task_name\":\"demo_task_name\",\"feature_name\":\"demo_task_name\",\"execution_mode\":\"api\",\"scenarios\":[{\"scenario_id\":\"scenario_001\",\"name\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"goal\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"priority\":\"P0\",\"preconditions\":[\"从有效的 API 入口开始执行\"],\"source_chunks\":[\"chunk_001\",\"contract_post_tasks\",\"contract_parse_requirement\",\"contract_execute\",\"contract_task_list\"],\"steps\":[{\"step_id\":\"scenario_001_step_01\",\"step_type\":\"given\",\"text\":\"从有效的 API 入口开始执行\",\"request\":{},\"load_profile\":{},\"assertions\":[],\"uses_context\":[],\"saves_context\":[],\"save_context\":{}},{\"step_id\":\"scenario_001_step_02\",\"step_type\":\"when\",\"text\":\"demo requirement text\\nPOST /api/tasks 创建任务\",\"request\":{\"method\":\"POST\",\"url\":\"/api/tasks\",\"json\":{\"task_name\":\"demo_task_name\",\"source_type\":\"text\",\"requirement_text\":\"demo requirement text\",\"target_system\":\"http://127.0.0.1:8001\",\"environment\":\"test\"}},\"load_profile\":{},\"assertions\":[{\"source\":\"status_code\",\"op\":\"eq\",\"expected\":201},{\"source\":\"json.data.task_id\",\"op\":\"exists\"}],\"uses_context\":[],\"saves_context\":[\"resource_id\",\"task_id\"],\"save_context\":{\"task_id\":\"json.data.task_id\",\"resource_id\":\"json.data.task_id\"}},{\"step_id\":\"scenario_001_step_03\",\"step_type\":\"then\",\"text\":\"成功时响应 data 中含 task_id，用于后续查询与执行\",\"request\":{},\"load_profile\":{},\"assertions\":[\"成功时响应 data 中含 task_id，用于后续查询与执行\"],\"uses_context\":[],\"saves_context\":[],\"save_context\":{}}]}],\"metadata\":{\"source_type\":\"text\",\"language\":\"zh-CN\",\"case_generation\":{\"api_scenario_count\":1,\"scenario_count\":1,\"parsed_entities\":[\"demo\",\"requirement\",\"text\",\"post\",\"api\",\"tasks\",\"创建任务\",\"请求体常用字段\",\"task_name\",\"必填\"]}}},\"timestamp\":\"2026-04-03T16:48:19.191567+00:00\"}",
+              "json": {
+                "success": true,
+                "code": "DSL_OK",
+                "message": "dsl fetched",
+                "data": {
+                  "dsl_version": "0.2.0",
+                  "task_id": "demo_task_name_20260403164804",
+                  "task_name": "demo_task_name",
+                  "feature_name": "demo_task_name",
+                  "execution_mode": "api",
+                  "scenarios": [
+                    {
+                      "scenario_id": "scenario_001",
+                      "name": "demo requirement text\nPOST /api/tasks 创建任务",
+                      "goal": "demo requirement text\nPOST /api/tasks 创建任务",
+                      "priority": "P0",
+                      "preconditions": [
+                        "从有效的 API 入口开始执行"
+                      ],
+                      "source_chunks": [
+                        "chunk_001",
+                        "contract_post_tasks",
+                        "contract_parse_requirement",
+                        "contract_execute",
+                        "contract_task_list"
+                      ],
+                      "steps": [
+                        {
+                          "step_id": "scenario_001_step_01",
+                          "step_type": "given",
+                          "text": "从有效的 API 入口开始执行",
+                          "request": {},
+                          "load_profile": {},
+                          "assertions": [],
+                          "uses_context": [],
+                          "saves_context": [],
+                          "save_context": {}
+                        },
+                        {
+                          "step_id": "scenario_001_step_02",
+                          "step_type": "when",
+                          "text": "demo requirement text\nPOST /api/tasks 创建任务",
+                          "request": {
+                            "method": "POST",
+                            "url": "/api/tasks",
+                            "json": {
+                              "task_name": "demo_task_name",
+                              "source_type": "text",
+                              "requirement_text": "demo requirement text",
+                              "target_system": "http://127.0.0.1:8001",
+                              "environment": "test"
+                            }
+                          },
+                          "load_profile": {},
+                          "assertions": [
+                            {
+                              "source": "status_code",
+                              "op": "eq",
+                              "expected": 201
+                            },
+                            {
+                              "source": "json.data.task_id",
+                              "op": "exists"
+                            }
+                          ],
+                          "uses_context": [],
+                          "saves_context": [
+                            "resource_id",
+                            "task_id"
+                          ],
+                          "save_context": {
+                            "task_id": "json.data.task_id",
+                            "resource_id": "json.data.task_id"
+                          }
+                        },
+                        {
+                          "step_id": "scenario_001_step_03",
+                          "step_type": "then",
+                          "text": "成功时响应 data 中含 task_id，用于后续查询与执行",
+                          "request": {},
+                          "load_profile": {},
+                          "assertions": [
+                            "成功时响应 data 中含 task_id，用于后续查询与执行"
+                          ],
+                          "uses_context": [],
+                          "saves_context": [],
+                          "save_context": {}
+                        }
+                      ]
+                    }
+                  ],
+                  "metadata": {
+                    "source_type": "text",
+                    "language": "zh-CN",
+                    "case_generation": {
+                      "api_scenario_count": 1,
+                      "scenario_count": 1,
+                      "parsed_entities": [
+                        "demo",
+                        "requirement",
+                        "text",
+                        "post",
+                        "api",
+                        "tasks",
+                        "创建任务",
+                        "请求体常用字段",
+                        "task_name",
+                        "必填"
+                      ]
+                    }
+                  }
+                },
+                "timestamp": "2026-04-03T16:48:19.191567+00:00"
+              },
+              "elapsed_ms": 17.44,
+              "error": "",
+              "error_category": "",
+              "parse_error": ""
+            },
+            "last_status_code": 200,
+            "last_request": {
+              "method": "GET",
+              "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/dsl",
+              "headers": {},
+              "params": {},
+              "has_json_body": false,
+              "has_form_body": false,
+              "auth_type": "",
+              "body_keys": [],
+              "form_keys": [],
+              "cookie_header_present": false
+            },
+            "task_id": "demo_task_name_20260403164802",
+            "resource_id": "demo_task_name_20260403164802"
+          },
+          "saved_context": {},
+          "assertion_summary": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "failures": []
+          }
+        },
+        {
+          "step_id": "scenario_008_step_03",
+          "step_type": "then",
+          "text": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+          "status": "passed",
+          "message": "Assertions passed",
+          "error_category": "",
+          "assertion_summary": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "failures": []
+          }
+        }
+      ],
+      "failed_steps": 0
+    }
+  ],
+  "metrics": {
+    "scenario_count": 8,
+    "step_count": 24,
+    "passed_step_count": 24,
+    "failed_step_count": 0,
+    "context_key_count": 5,
+    "cookie_count": 0,
+    "avg_elapsed_ms": 2115.86,
+    "max_elapsed_ms": 12657.34
+  },
+  "logs": [
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks`",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_001_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_001_step_02",
+      "message": "Received 201",
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 2691.25,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 387
+      }
+    },
+    {
+      "level": "info",
+      "event": "context_saved",
+      "step_id": "scenario_001_step_02",
+      "message": "Saved context keys: resource_id, task_id",
+      "saved_context": {
+        "task_id": "demo_task_name_20260403164802",
+        "resource_id": "demo_task_name_20260403164802"
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_001_step_02",
+      "message": "Assertions passed=2 failed=0",
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_02",
+      "message": "POST http://127.0.0.1:8001/api/tasks -> 201",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "environment",
+          "requirement_text",
+          "source_type",
+          "target_system",
+          "task_name"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 201,
+        "elapsed_ms": 2691.25,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_CREATED\",\"message\":\"task created\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_c",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 387
+      },
+      "assertion_summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_001_step_03",
+      "step_type": "then",
+      "message": "任务归档后的可见性与一致性检查",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_001_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_001",
+      "scenario_name": "`POST /api/tasks`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}`",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_002_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_002_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 3.08,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 807
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_002_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802 -> 200",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 3.08,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_DETAIL_OK\",\"message\":\"task detail\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"task_",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 807
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_002_step_03",
+      "step_type": "then",
+      "message": "从业务视角看，一次标准任务应经历以下过程：",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_002_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_002",
+      "scenario_name": "`GET /api/tasks/{task_id}`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+      "scenario_id": "scenario_003",
+      "scenario_name": "`POST /api/tasks/{task_id}/parse`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_003",
+      "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks/{task_id}/parse`",
+      "scenario_id": "scenario_003",
+      "scenario_name": "`POST /api/tasks/{task_id}/parse`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_003_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parse",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "rag_enabled",
+          "rerank_enabled",
+          "retrieval_top_k",
+          "use_llm"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_003_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 12657.34,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"status\":",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1859
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_003_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_02",
+      "message": "POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parse -> 200",
+      "status": "passed",
+      "scenario_id": "scenario_003",
+      "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parse",
+        "headers": {},
+        "params": {},
+        "has_json_body": true,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [
+          "rag_enabled",
+          "rerank_enabled",
+          "retrieval_top_k",
+          "use_llm"
+        ],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 12657.34,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"TASK_PARSED\",\"message\":\"task parsed\",\"data\":{\"task_id\":\"demo_task_name_20260403164802\",\"status\":",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1859
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_003_step_03",
+      "step_type": "then",
+      "message": "任务结束后可归档，归档后不应继续作为活跃任务参与主流程",
+      "scenario_id": "scenario_003",
+      "scenario_name": "`POST /api/tasks/{task_id}/parse`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_003_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_003",
+      "scenario_name": "`POST /api/tasks/{task_id}/parse`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+      "scenario_id": "scenario_004",
+      "scenario_name": "`GET /api/tasks/{task_id}/parsed-requirement`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_004",
+      "scenario_name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "scenario_id": "scenario_004",
+      "scenario_name": "`GET /api/tasks/{task_id}/parsed-requirement`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_004_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parsed-requirement",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_004_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 29.78,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 806
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_004_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parsed-requirement -> 200",
+      "status": "passed",
+      "scenario_id": "scenario_004",
+      "scenario_name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/parsed-requirement",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 29.78,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"PARSED_REQUIREMENT_OK\",\"message\":\"parsed requirement\",\"data\":{\"objective\":\"demo requirement text",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 806
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_004_step_03",
+      "step_type": "then",
+      "message": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+      "scenario_id": "scenario_004",
+      "scenario_name": "`GET /api/tasks/{task_id}/parsed-requirement`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_004_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_004",
+      "scenario_name": "`GET /api/tasks/{task_id}/parsed-requirement`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+      "scenario_id": "scenario_005",
+      "scenario_name": "`GET /api/tasks/{task_id}/retrieved-context`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_005",
+      "scenario_name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "scenario_id": "scenario_005",
+      "scenario_name": "`GET /api/tasks/{task_id}/retrieved-context`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_005_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/retrieved-context",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/retrieved-context",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_005_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 41.64,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"d",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1326
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_005_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/retrieved-context -> 200",
+      "status": "passed",
+      "scenario_id": "scenario_005",
+      "scenario_name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/retrieved-context",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 41.64,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"RETRIEVED_CONTEXT_OK\",\"message\":\"retrieved context\",\"data\":[{\"chunk_id\":\"chunk_001\",\"content\":\"d",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1326
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_005_step_03",
+      "step_type": "then",
+      "message": "归档动作生效后，任务应从活跃视图中消失",
+      "scenario_id": "scenario_005",
+      "scenario_name": "`GET /api/tasks/{task_id}/retrieved-context`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_005_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_005",
+      "scenario_name": "`GET /api/tasks/{task_id}/retrieved-context`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_02",
+      "step_type": "when",
+      "message": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_006_step_02",
+      "message": "Dispatching POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios/generate",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_006_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 1479.66,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_2026040316480",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 741
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_006_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_02",
+      "message": "POST http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios/generate -> 200",
+      "status": "passed",
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "request_summary": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios/generate",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 1479.66,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_READY\",\"message\":\"scenarios generated\",\"data\":{\"task_id\":\"demo_task_name_2026040316480",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 741
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_006_step_03",
+      "step_type": "then",
+      "message": "返回结构需保持统一 envelope，便于前端统一处理",
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_006_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_006",
+      "scenario_name": "`POST /api/tasks/{task_id}/scenarios/generate`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+      "scenario_id": "scenario_007",
+      "scenario_name": "`GET /api/tasks/{task_id}/scenarios`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_007",
+      "scenario_name": "`GET /api/tasks/{task_id}/scenarios`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/scenarios`",
+      "scenario_id": "scenario_007",
+      "scenario_name": "`GET /api/tasks/{task_id}/scenarios`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_007_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_007_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 6.73,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"demo r",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 661
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_007_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios -> 200",
+      "status": "passed",
+      "scenario_id": "scenario_007",
+      "scenario_name": "`GET /api/tasks/{task_id}/scenarios`",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/scenarios",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 6.73,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"SCENARIOS_OK\",\"message\":\"scenarios fetched\",\"data\":[{\"scenario_id\":\"scenario_001\",\"name\":\"demo r",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 661
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_007_step_03",
+      "step_type": "then",
+      "message": "少量场景执行失败但不阻断整体链路",
+      "scenario_id": "scenario_007",
+      "scenario_name": "`GET /api/tasks/{task_id}/scenarios`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_007_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_007",
+      "scenario_name": "`GET /api/tasks/{task_id}/scenarios`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_01",
+      "step_type": "given",
+      "message": "当前平台已进入联调阶段，研发、测试与前端需要基于统一口径确认以下事项：",
+      "scenario_id": "scenario_008",
+      "scenario_name": "`GET /api/tasks/{task_id}/dsl`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_01",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_008",
+      "scenario_name": "`GET /api/tasks/{task_id}/dsl`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_02",
+      "step_type": "when",
+      "message": "`GET /api/tasks/{task_id}/dsl`",
+      "scenario_id": "scenario_008",
+      "scenario_name": "`GET /api/tasks/{task_id}/dsl`"
+    },
+    {
+      "level": "info",
+      "event": "request_prepared",
+      "step_id": "scenario_008_step_02",
+      "message": "Dispatching GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/dsl",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      }
+    },
+    {
+      "level": "info",
+      "event": "response_received",
+      "step_id": "scenario_008_step_02",
+      "message": "Received 200",
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.44,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260403",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1810
+      }
+    },
+    {
+      "level": "info",
+      "event": "assertions_evaluated",
+      "step_id": "scenario_008_step_02",
+      "message": "Assertions passed=1 failed=0",
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_02",
+      "message": "GET http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/dsl -> 200",
+      "status": "passed",
+      "scenario_id": "scenario_008",
+      "scenario_name": "`GET /api/tasks/{task_id}/dsl`",
+      "request_summary": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8001/api/tasks/demo_task_name_20260403164802/dsl",
+        "headers": {},
+        "params": {},
+        "has_json_body": false,
+        "has_form_body": false,
+        "auth_type": "",
+        "body_keys": [],
+        "form_keys": [],
+        "cookie_header_present": false
+      },
+      "response_summary": {
+        "status_code": 200,
+        "elapsed_ms": 17.44,
+        "content_type": "application/json",
+        "json_keys": [
+          "code",
+          "data",
+          "message",
+          "success",
+          "timestamp"
+        ],
+        "body_preview": "{\"success\":true,\"code\":\"DSL_OK\",\"message\":\"dsl fetched\",\"data\":{\"dsl_version\":\"0.2.0\",\"task_id\":\"demo_task_name_20260403",
+        "error_category": "",
+        "parse_error": "",
+        "body_size": 1810
+      },
+      "assertion_summary": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "level": "info",
+      "event": "step_start",
+      "step_id": "scenario_008_step_03",
+      "step_type": "then",
+      "message": "关键中间产物（解析结果、场景、DSL、Feature）应可回读",
+      "scenario_id": "scenario_008",
+      "scenario_name": "`GET /api/tasks/{task_id}/dsl`"
+    },
+    {
+      "level": "info",
+      "event": "step_result",
+      "step_id": "scenario_008_step_03",
+      "message": "Assertions passed",
+      "status": "passed",
+      "scenario_id": "scenario_008",
+      "scenario_name": "`GET /api/tasks/{task_id}/dsl`",
+      "assertion_summary": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
+      }
+    }
+  ],
+  "metadata": {
+    "execution": {
+      "environment": "test",
+      "execution_mode": "api",
+      "base_url": "http://127.0.0.1:8001",
+      "default_headers": {},
+      "auth": {},
+      "cookies": {},
+      "context": {
+        "task_id": "ui_smoke_1775234864556_20260403164747"
+      }
+    },
+    "executed_at": "2026-04-03T16:48:19.197564+00:00"
+  }
+}
