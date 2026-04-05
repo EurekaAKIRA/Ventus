@@ -9,6 +9,8 @@ from typing import Any
 
 from platform_shared.models import AnalysisReport, TaskContext, ValidationReport
 
+from .assertion_stats import compute_assertion_execution_stats
+
 
 def build_analysis_report(
     task_context: TaskContext,
@@ -141,7 +143,6 @@ def _collect_step_stats(
     elapsed_samples: list[float] = []
     failure_counter: Counter[str] = Counter()
     failure_examples: dict[str, list[dict[str, Any]]] = {}
-    failed_assertion_count = 0
     context_snapshots: list[dict[str, Any]] = []
 
     for scenario in scenario_results:
@@ -180,8 +181,6 @@ def _collect_step_stats(
                         "response_summary": _build_response_summary(step.get("response") or {}),
                     }
                 )
-                if category == "assertion_failed":
-                    failed_assertion_count += 1
 
             if isinstance(elapsed_ms, (int, float)):
                 elapsed_samples.append(float(elapsed_ms))
@@ -206,7 +205,9 @@ def _collect_step_stats(
         avg_elapsed_ms = round(sum(elapsed_samples) / len(elapsed_samples), 2)
         max_elapsed_ms = round(max(elapsed_samples), 2)
 
-    total_assertions = sum(len(step.get("assertions") or []) for step in dsl_steps)
+    total_assertions, passed_assertion_count, failed_assertion_count = compute_assertion_execution_stats(
+        scenario_results, test_case_dsl
+    )
     used_context_keys = sorted({key for step in dsl_steps for key in (step.get("uses_context") or [])})
     save_context_map: dict[str, Any] = {}
     for step in dsl_steps:
@@ -215,7 +216,6 @@ def _collect_step_stats(
         for key in (step.get("saves_context") or []):
             save_context_map.setdefault(key, "unspecified")
 
-    passed_assertion_count = max(total_assertions - failed_assertion_count, 0)
     extracted_keys = _collect_extracted_keys(metrics, context_snapshots, save_context_map)
 
     return {

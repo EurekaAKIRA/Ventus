@@ -100,7 +100,6 @@ def run_analysis_pipeline(
             task_context,
             scenarios,
             parsed_requirement=parsed_requirement.to_dict(),
-            enable_assertion_enhancement=parse_options.use_llm,
         )
     )
     feature_text = generate_feature(task_context.task_name, [scenario.to_dict() for scenario in scenarios])
