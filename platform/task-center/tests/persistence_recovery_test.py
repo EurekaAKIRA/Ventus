@@ -70,6 +70,18 @@ def main() -> int:
         second_task_id = second_create_resp.json()["data"]["task_id"]
         assert second_task_id != task_id
 
+        implicit_dsl_resp = client.get(f"/api/tasks/{second_task_id}/dsl")
+        assert implicit_dsl_resp.status_code == 200
+        implicit_dsl = implicit_dsl_resp.json()["data"]
+        implicit_text = str(implicit_dsl)
+        assert "enhance_cand_" not in implicit_text
+        assert "repair_cand_" not in implicit_text
+
+        implicit_detail_resp = client.get(f"/api/tasks/{second_task_id}")
+        assert implicit_detail_resp.status_code == 200
+        implicit_parse_meta = implicit_detail_resp.json()["data"]["parse_metadata"]
+        assert implicit_parse_meta["llm_attempted"] is False
+
         assert client.post(f"/api/tasks/{task_id}/parse").status_code == 200
         detail_resp = client.get(f"/api/tasks/{task_id}")
         assert detail_resp.status_code == 200

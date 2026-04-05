@@ -5,6 +5,7 @@ Default provider profile is Tencent Hunyuan (OpenAI-compatible API).
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 from math import sqrt
@@ -21,6 +22,8 @@ from platform_shared import (
     get_requirement_analysis_runtime_config,
 )
 
+_LOG = logging.getLogger(__name__)
+
 
 @dataclass(slots=True)
 class OpenAIEnhancementConfig:
@@ -36,7 +39,8 @@ class OpenAIEnhancementConfig:
         embedding_model = (_first_env("HUNYUAN_EMBEDDING_MODEL", "OPENAI_EMBEDDING_MODEL") or profile.embedding_model).strip()
         llm_model = (_first_env("HUNYUAN_LLM_MODEL", "OPENAI_LLM_MODEL") or profile.llm_model).strip()
         timeout = _resolve_float("HUNYUAN_TIMEOUT_SECONDS", "OPENAI_TIMEOUT_SECONDS", default=profile.timeout_seconds)
-        retries = _resolve_int("HUNYUAN_RETRIES", "OPENAI_RETRIES", default=profile.retries)
+        embedding_retries = _resolve_int("HUNYUAN_RETRIES", "OPENAI_RETRIES", default=profile.retries)
+        llm_retries = _resolve_int("HUNYUAN_LLM_RETRIES", "OPENAI_LLM_RETRIES", default=profile.llm_retries)
         gateway = ModelGateway(
             ModelGatewayConfig(
                 llm=ModelEndpointConfig(
@@ -45,7 +49,7 @@ class OpenAIEnhancementConfig:
                     api_base=base_url,
                     api_key=api_key,
                     timeout=timeout,
-                    retries=retries,
+                    retries=llm_retries,
                 ),
                 embedding=ModelEndpointConfig(
                     provider="openai",
@@ -53,7 +57,7 @@ class OpenAIEnhancementConfig:
                     api_base=base_url,
                     api_key=api_key,
                     timeout=timeout,
-                    retries=retries,
+                    retries=embedding_retries,
                 ),
                 vision=ModelEndpointConfig(
                     provider="openai",
@@ -61,7 +65,7 @@ class OpenAIEnhancementConfig:
                     api_base=base_url,
                     api_key=api_key,
                     timeout=timeout,
-                    retries=retries,
+                    retries=embedding_retries,
                 ),
             )
         )
@@ -107,11 +111,64 @@ def enhance_parsed_requirement(
     return payload
 
 
-_MAX_REQUIREMENT_CHARS = 1500
-_MAX_CHUNK_CONTENT_CHARS = 300
-_MAX_CONTEXT_CHUNKS = 3
-_MAX_RESULT_LIST_ITEMS = 5
-_MAX_RESULT_ITEM_CHARS = 150
+def _env_int_bounded(name: str, *, default: int, min_value: int, max_value: int) -> int:
+    raw = (os.getenv(name) or "").strip()
+    if raw.isdigit():
+        return max(min_value, min(max_value, int(raw)))
+    return default
+
+
+def _llm_parse_max_requirement_chars() -> int:
+    return _env_int_bounded("LLM_PARSE_MAX_REQUIREMENT_CHARS", default=12_000, min_value=1_500, max_value=100_000)
+
+
+def _llm_parse_head_tail_chars() -> tuple[int, int]:
+    head = _env_int_bounded("LLM_PARSE_HEAD_CHARS", default=6_000, min_value=500, max_value=80_000)
+    tail = _env_int_bounded("LLM_PARSE_TAIL_CHARS", default=5_000, min_value=500, max_value=80_000)
+    return head, tail
+
+
+def _llm_parse_context_limits() -> tuple[int, int]:
+    max_chunks = _env_int_bounded("LLM_PARSE_MAX_CONTEXT_CHUNKS", default=8, min_value=1, max_value=20)
+    max_chunk_chars = _env_int_bounded("LLM_PARSE_MAX_CHUNK_CHARS", default=1_200, min_value=100, max_value=8_000)
+    return max_chunks, max_chunk_chars
+
+
+def _llm_parse_rule_list_limits() -> tuple[int, int]:
+    max_items = _env_int_bounded("LLM_PARSE_MAX_RULE_LIST_ITEMS", default=12, min_value=3, max_value=50)
+    max_item_chars = _env_int_bounded("LLM_PARSE_MAX_RULE_ITEM_CHARS", default=400, min_value=50, max_value=2_000)
+    return max_items, max_item_chars
+
+
+def _compose_requirement_text_for_llm(full_text: str) -> str:
+    """Fit long specs into the LLM budget: full text if short, else head + tail with a clear gap marker."""
+    max_total = _llm_parse_max_requirement_chars()
+    text = (full_text or "").strip()
+    if len(text) <= max_total:
+        return text
+    head_n, tail_n = _llm_parse_head_tail_chars()
+    marker = "\n\n--- [文档中间已省略; 以下为文档末尾摘录] ---\n\n"
+    budget = max_total - len(marker)
+    if budget < 800:
+        return text[:max_total]
+    head_n = min(head_n, max(budget - 100, budget // 2))
+    tail_n = min(tail_n, max(budget - head_n, 0))
+    if tail_n <= 0:
+        return text[:max_total]
+    return text[:head_n] + marker + text[-tail_n:]
+
+
+def _build_retrieved_context_preview(retrieved_context: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    max_chunks, max_chunk_chars = _llm_parse_context_limits()
+    preview: list[dict[str, Any]] = []
+    for item in retrieved_context[:max_chunks]:
+        preview.append({
+            "chunk_id": item.get("chunk_id", ""),
+            "section_title": item.get("section_title", ""),
+            "content": str(item.get("content", ""))[:max_chunk_chars],
+            "score": item.get("score", 0),
+        })
+    return preview
 
 
 def enhance_parsed_requirement_with_metadata(
@@ -120,20 +177,12 @@ def enhance_parsed_requirement_with_metadata(
     rule_based_result: dict[str, Any],
     config: OpenAIEnhancementConfig,
 ) -> tuple[dict[str, Any] | None, str, str]:
-    truncated_text = requirement_text[:_MAX_REQUIREMENT_CHARS]
-    context_preview = [
-        {
-            "chunk_id": item.get("chunk_id", ""),
-            "section_title": item.get("section_title", ""),
-            "content": item.get("content", "")[:_MAX_CHUNK_CONTENT_CHARS],
-            "score": item.get("score", 0),
-        }
-        for item in retrieved_context[:_MAX_CONTEXT_CHUNKS]
-    ]
+    composed_requirement = _compose_requirement_text_for_llm(requirement_text)
+    context_preview = _build_retrieved_context_preview(retrieved_context)
     truncated_rule = _truncate_rule_based_result(rule_based_result)
     prompt = {
         "task": "Enhance parsed requirement JSON",
-        "requirement_text": truncated_text,
+        "requirement_text": composed_requirement,
         "retrieved_context": context_preview,
         "rule_based_result": truncated_rule,
         "output_schema": {
@@ -145,7 +194,7 @@ def enhance_parsed_requirement_with_metadata(
             "expected_results": ["string"],
             "constraints": ["string"],
             "ambiguities": ["string"],
-            "api_endpoints": [{"method": "string", "path": "string", "description": "string"}],
+            "api_endpoints": [{"method": "string", "path": "string", "description": "string", "group": "string", "depends_on": ["string"]}],
         },
         "constraints": [
             "Return strict JSON only",
@@ -153,24 +202,60 @@ def enhance_parsed_requirement_with_metadata(
             "Do not fabricate unavailable domain facts",
             "Prefer concrete and testable actions/assertions",
             "If the document contains explicit API paths (e.g. POST /api/login), extract each into api_endpoints with method, path, and a short description; leave api_endpoints empty if none are present",
+            "For API specification tables (Method | Path | ...), normalize paths: strip markdown backticks; every valid HTTP method + path row should become one api_endpoints entry; method must be GET, POST, PUT, PATCH, or DELETE; path must start with /",
+            "For numbered end-to-end / main-flow narratives (e.g. 创建→解析→执行), express them as a small set of high-level, ordered actions in business language—do not copy raw markdown table rows into actions or preconditions",
+            "Do not treat documentation meta-lines (e.g. 本文档不是测试步骤书, 字段以契约为准) as the sole primary user action; prefer real product flows and API surfaces described in the body",
+            "Merge duplicate api_endpoints entries with the same method and path",
         ],
     }
     try:
+        llm_ep = config.gateway.config.llm
+    except AttributeError:
+        llm_ep = None
+    if llm_ep is not None:
+        llm_label = f"model={llm_ep.model!r} base={llm_ep.api_base!r} timeout_s={llm_ep.timeout} max_attempts={llm_ep.retries + 1}"
+    else:
+        llm_label = "llm_endpoint=unknown"
+    ctx_chars = sum(len(str(c.get("content", ""))) for c in context_preview)
+    _LOG.info(
+        "LLM requirement enhancement request start %s req_chars=%s context_chunks=%s context_body_chars=%s rule_keys=%s",
+        llm_label,
+        len(composed_requirement),
+        len(context_preview),
+        ctx_chars,
+        sorted(truncated_rule.keys()),
+    )
+    try:
         parsed = config.gateway.chat_json(
-            system_prompt="You are a QA requirement parser. Return strict JSON only.",
+            system_prompt=(
+                "You are a senior QA/requirements analyst. Parse technical product and API specification "
+                "documents into structured JSON for test scenario generation. "
+                "Respect the user's language (e.g. zh-CN). Return strict JSON only, no markdown fences."
+            ),
             user_payload=prompt,
             temperature=0.1,
         )
     except ModelGatewayResponseError as exc:
+        _LOG.warning("LLM requirement enhancement failed reason=llm_response_invalid error_type=%s %s", exc.__class__.__name__, exc)
         return None, "llm_response_invalid", exc.__class__.__name__
     except ModelGatewayTimeoutError as exc:
+        max_att = (llm_ep.retries + 1) if llm_ep is not None else 0
+        _LOG.warning(
+            "LLM requirement enhancement failed reason=llm_timeout error_type=%s after_max_attempts=%s %s",
+            exc.__class__.__name__,
+            max_att,
+            exc,
+        )
         return None, "llm_timeout", exc.__class__.__name__
     except ModelGatewayError as exc:
         reason, error_type = _classify_gateway_error(exc)
+        _LOG.warning("LLM requirement enhancement failed reason=%s error_type=%s %s", reason, error_type, exc)
         return None, reason, error_type
     except Exception as exc:  # pragma: no cover - defensive fallback
+        _LOG.warning("LLM requirement enhancement failed reason=llm_runtime_error error_type=%s %s", exc.__class__.__name__, exc)
         return None, "llm_runtime_error", exc.__class__.__name__
     if not isinstance(parsed, dict):
+        _LOG.warning("LLM requirement enhancement failed reason=llm_response_invalid error_type=NonDictJSONResponse")
         return None, "llm_response_invalid", "NonDictJSONResponse"
     allowed = {
         "objective",
@@ -183,6 +268,24 @@ def enhance_parsed_requirement_with_metadata(
         "ambiguities",
         "api_endpoints",
     }
+    list_string_fields = {
+        "actors",
+        "entities",
+        "preconditions",
+        "actions",
+        "expected_results",
+        "constraints",
+        "ambiguities",
+    }
+
+    def _normalize_string_list(value: Any) -> list[str]:
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str):
+            stripped = value.strip()
+            return [stripped] if stripped else []
+        return []
+
     cleaned: dict[str, Any] = {}
     for key, value in parsed.items():
         if key not in allowed:
@@ -192,20 +295,32 @@ def enhance_parsed_requirement_with_metadata(
                 endpoints = []
                 for ep in value:
                     if isinstance(ep, dict) and ep.get("path"):
-                        endpoints.append({
+                        entry: dict[str, Any] = {
                             "method": str(ep.get("method", "POST")).strip().upper(),
                             "path": str(ep.get("path", "")).strip(),
                             "description": str(ep.get("description", "")).strip(),
-                        })
+                        }
+                        if ep.get("group"):
+                            entry["group"] = str(ep["group"]).strip()
+                        if ep.get("depends_on") and isinstance(ep["depends_on"], list):
+                            entry["depends_on"] = [str(d).strip() for d in ep["depends_on"] if str(d).strip()]
+                        endpoints.append(entry)
                 cleaned[key] = endpoints
-        elif isinstance(value, list):
-            cleaned[key] = [str(item).strip() for item in value if str(item).strip()]
+        elif key in list_string_fields:
+            cleaned[key] = _normalize_string_list(value)
         elif value is None:
             continue
         else:
             cleaned[key] = str(value).strip()
     if not cleaned:
+        _LOG.warning("LLM requirement enhancement failed reason=llm_response_invalid error_type=EmptyJSONPayload")
         return None, "llm_response_invalid", "EmptyJSONPayload"
+    _LOG.info(
+        "LLM requirement enhancement succeeded %s payload_keys=%s api_endpoints=%s",
+        llm_label,
+        sorted(cleaned.keys()),
+        len(cleaned.get("api_endpoints", [])) if isinstance(cleaned.get("api_endpoints"), list) else 0,
+    )
     return cleaned, "", ""
 
 
@@ -253,13 +368,15 @@ def _resolve_float(primary: str, fallback: str, *, default: float) -> float:
 
 def _truncate_rule_based_result(result: dict[str, Any]) -> dict[str, Any]:
     """Trim list fields so the LLM prompt stays within a reasonable token budget."""
+    max_items, max_item_chars = _llm_parse_rule_list_limits()
+    max_str = _llm_parse_max_requirement_chars()
     out: dict[str, Any] = {}
     for key, value in result.items():
         if isinstance(value, list):
-            trimmed = [str(item)[:_MAX_RESULT_ITEM_CHARS] for item in value[:_MAX_RESULT_LIST_ITEMS]]
+            trimmed = [str(item)[:max_item_chars] for item in value[:max_items]]
             out[key] = trimmed
         elif isinstance(value, str):
-            out[key] = value[:_MAX_REQUIREMENT_CHARS]
+            out[key] = value[:max_str]
         else:
             out[key] = value
     return out

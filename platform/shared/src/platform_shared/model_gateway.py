@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
+
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -16,7 +19,7 @@ class ModelEndpointConfig:
     model: str
     api_base: str
     api_key: str
-    timeout: float = 20.0
+    timeout: float = 30.0
     retries: int = 1
 
 
@@ -104,18 +107,64 @@ class ModelGateway:
         payload: dict[str, Any],
     ) -> dict[str, Any]:
         last_error: Exception | None = None
-        for attempt in range(endpoint.retries + 1):
+        max_attempts = endpoint.retries + 1
+        for attempt in range(max_attempts):
             try:
-                return self._request_json_once(endpoint, path, payload)
+                result = self._request_json_once(endpoint, path, payload)
+                if attempt > 0:
+                    _LOG.info(
+                        "model_gateway request succeeded after retry path=%s attempt=%s/%s model=%s",
+                        path,
+                        attempt + 1,
+                        max_attempts,
+                        endpoint.model,
+                    )
+                return result
             except ModelGatewayTimeoutError as exc:
                 last_error = exc
-                break  # timeout won't improve with same payload; fail fast
+                if attempt >= endpoint.retries:
+                    _LOG.warning(
+                        "model_gateway request exhausted timeouts path=%s attempts=%s model=%s error=%s",
+                        path,
+                        max_attempts,
+                        endpoint.model,
+                        exc,
+                    )
+                    break
+                backoff = min(0.2 * (attempt + 1), 0.8)
+                _LOG.warning(
+                    "model_gateway request timeout path=%s attempt=%s/%s model=%s backoff_s=%.2f error=%s",
+                    path,
+                    attempt + 1,
+                    max_attempts,
+                    endpoint.model,
+                    backoff,
+                    exc,
+                )
             except ModelGatewayError as exc:
                 last_error = exc
                 msg = str(exc).lower()
                 is_client_error = any(f"http {code}" in msg for code in ("400", "401", "403", "404", "422"))
                 if is_client_error or attempt >= endpoint.retries:
+                    if attempt >= endpoint.retries and not is_client_error:
+                        _LOG.warning(
+                            "model_gateway request failed path=%s attempts=%s model=%s error=%s",
+                            path,
+                            attempt + 1,
+                            endpoint.model,
+                            exc,
+                        )
                     break  # 4xx client errors: retrying won't help
+                backoff = min(0.2 * (attempt + 1), 0.8)
+                _LOG.warning(
+                    "model_gateway request error will_retry path=%s attempt=%s/%s model=%s backoff_s=%.2f error=%s",
+                    path,
+                    attempt + 1,
+                    max_attempts,
+                    endpoint.model,
+                    backoff,
+                    exc,
+                )
             if attempt < endpoint.retries:
                 time.sleep(min(0.2 * (attempt + 1), 0.8))
         if isinstance(last_error, ModelGatewayError):

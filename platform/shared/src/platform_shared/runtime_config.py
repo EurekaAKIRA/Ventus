@@ -11,7 +11,7 @@ from typing import Any
 @dataclass(frozen=True, slots=True)
 class RequirementAnalysisDefaults:
     use_llm: bool = False
-    rag_enabled: bool = True
+    rag_enabled: bool = False
     retrieval_top_k: int = 5
     rerank_enabled: bool = False
 
@@ -44,8 +44,9 @@ class RequirementAnalysisModelProfile:
     llm_model: str = "hunyuan-turbos-latest"
     embedding_model: str = "hunyuan-embedding"
     vision_model: str = "hunyuan-vision"
-    timeout_seconds: float = 20.0
+    timeout_seconds: float = 30.0
     retries: int = 1
+    llm_retries: int = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,8 +124,9 @@ def _load_platform_runtime_config() -> PlatformRuntimeConfig:
                 llm_model=str(payload.get("llm_model", "hunyuan-turbos-latest")).strip() or "hunyuan-turbos-latest",
                 embedding_model=str(payload.get("embedding_model", "hunyuan-embedding")).strip() or "hunyuan-embedding",
                 vision_model=str(payload.get("vision_model", "hunyuan-vision")).strip() or "hunyuan-vision",
-                timeout_seconds=_as_float(payload.get("timeout_seconds"), default=20.0, min_value=1.0, max_value=120.0),
+                timeout_seconds=_as_float(payload.get("timeout_seconds"), default=30.0, min_value=1.0, max_value=120.0),
                 retries=_as_int(payload.get("retries"), default=1, min_value=0, max_value=5),
+                llm_retries=_as_int(payload.get("llm_retries"), default=3, min_value=0, max_value=10),
             )
     if not parsed_profiles:
         parsed_profiles = {"default": RequirementAnalysisModelProfile()}
@@ -135,7 +137,7 @@ def _load_platform_runtime_config() -> PlatformRuntimeConfig:
         requirement_analysis=RequirementAnalysisRuntimeConfig(
             defaults=RequirementAnalysisDefaults(
                 use_llm=_as_bool(defaults.get("use_llm"), default=False),
-                rag_enabled=_as_bool(defaults.get("rag_enabled"), default=True),
+                rag_enabled=_as_bool(defaults.get("rag_enabled"), default=False),
                 retrieval_top_k=_as_int(defaults.get("retrieval_top_k"), default=5, min_value=1, max_value=20),
                 rerank_enabled=_as_bool(defaults.get("rerank_enabled"), default=False),
             ),

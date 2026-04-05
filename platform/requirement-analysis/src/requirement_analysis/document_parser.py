@@ -122,12 +122,101 @@ def extract_candidate_test_points(text: str) -> list[dict]:
     return cues
 
 
+_TABLE_SEPARATOR_RE = re.compile(r"^\|?\s*[-:]+[-|\s:]+\|?\s*$")
+_TABLE_ROW_RE = re.compile(r"^\|.*\|")
+
+
+class MarkdownTable:
+    """Parsed markdown table with typed access to rows and columns."""
+
+    __slots__ = ("headers", "rows", "section_title", "line_start")
+
+    def __init__(
+        self,
+        headers: list[str],
+        rows: list[list[str]],
+        section_title: str = "",
+        line_start: int = 0,
+    ):
+        self.headers = headers
+        self.rows = rows
+        self.section_title = section_title
+        self.line_start = line_start
+
+    @property
+    def column_count(self) -> int:
+        return len(self.headers)
+
+    def column(self, name: str) -> list[str]:
+        """Return all values for a column identified by header name (case-insensitive)."""
+        lowered = name.lower()
+        for idx, header in enumerate(self.headers):
+            if header.lower() == lowered:
+                return [row[idx] if idx < len(row) else "" for row in self.rows]
+        return []
+
+    def to_dict(self) -> dict:
+        return {
+            "headers": self.headers,
+            "rows": self.rows,
+            "section_title": self.section_title,
+            "line_start": self.line_start,
+        }
+
+
+def _split_table_cells(line: str) -> list[str]:
+    return [cell.strip().strip("`").strip() for cell in line.strip().strip("|").split("|")]
+
+
+def extract_markdown_tables(text: str) -> list[MarkdownTable]:
+    """Identify markdown tables in *text* and return structured ``MarkdownTable`` objects."""
+    lines = text.splitlines()
+    tables: list[MarkdownTable] = []
+    current_heading = ""
+    i = 0
+    while i < len(lines):
+        stripped = lines[i].strip()
+        if stripped.startswith("#"):
+            current_heading = stripped.lstrip("#").strip()
+            i += 1
+            continue
+
+        if (
+            i + 2 < len(lines)
+            and _TABLE_ROW_RE.match(stripped)
+            and _TABLE_SEPARATOR_RE.match(lines[i + 1].strip())
+        ):
+            header_cells = _split_table_cells(stripped)
+            data_rows: list[list[str]] = []
+            j = i + 2
+            while j < len(lines) and _TABLE_ROW_RE.match(lines[j].strip()):
+                row_cells = _split_table_cells(lines[j])
+                while len(row_cells) < len(header_cells):
+                    row_cells.append("")
+                data_rows.append(row_cells[: len(header_cells)])
+                j += 1
+            tables.append(
+                MarkdownTable(
+                    headers=header_cells,
+                    rows=data_rows,
+                    section_title=current_heading,
+                    line_start=i + 1,
+                )
+            )
+            i = j
+            continue
+        i += 1
+    return tables
+
+
 def parse_document(text: str) -> dict:
     """Build a parsed document payload for downstream modules."""
     cleaned_text = clean_document_text(text)
+    tables = extract_markdown_tables(cleaned_text)
     return {
         "cleaned_text": cleaned_text,
         "outline": extract_document_outline(cleaned_text),
         "keywords": extract_keywords(cleaned_text),
         "candidate_test_points": extract_candidate_test_points(cleaned_text),
+        "tables": [table.to_dict() for table in tables],
     }

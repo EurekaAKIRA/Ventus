@@ -73,7 +73,70 @@ def _extract_api_endpoints(text: str) -> list[dict]:
         if key not in seen:
             seen.add(key)
             endpoints.append({"method": method, "path": path, "description": description_map.get(key, "")})
+    return _enrich_endpoints(endpoints, text)
+
+
+def _infer_endpoint_group(path: str) -> str:
+    """Derive a functional group label from the path structure."""
+    segments = [s for s in path.strip("/").split("/") if s and not s.startswith("{")]
+    if len(segments) >= 3:
+        return segments[1]
+    if len(segments) >= 2:
+        return segments[1]
+    if segments:
+        return segments[0]
+    return "default"
+
+
+def _infer_depends_on(path: str, all_paths: list[str]) -> list[str]:
+    """Find parent endpoints that this path depends on (sub-resource relationship)."""
+    deps: list[str] = []
+    norm = path.rstrip("/")
+    for candidate in all_paths:
+        cand_norm = candidate.rstrip("/")
+        if cand_norm != norm and norm.startswith(cand_norm + "/"):
+            deps.append(candidate)
+    return deps
+
+
+def _enrich_endpoints(endpoints: list[dict], text: str) -> list[dict]:
+    """Add group, depends_on, and field placeholders to raw endpoint dicts."""
+    all_paths = [str(ep.get("path", "")) for ep in endpoints]
+    section_map = _map_paths_to_sections(text)
+    for ep in endpoints:
+        path = str(ep.get("path", ""))
+        if not ep.get("group"):
+            ep["group"] = section_map.get(path) or _infer_endpoint_group(path)
+        if not ep.get("depends_on"):
+            ep["depends_on"] = _infer_depends_on(path, all_paths)
+        ep.setdefault("request_body_fields", [])
+        ep.setdefault("response_fields", [])
     return endpoints
+
+
+_SECTION_HEADING_RE = re.compile(r"^#{1,4}\s+(.+)", re.MULTILINE)
+
+
+def _map_paths_to_sections(text: str) -> dict[str, str]:
+    """Map endpoint paths to their enclosing markdown section heading."""
+    mapping: dict[str, str] = {}
+    current_heading = ""
+    for line in text.splitlines():
+        heading_match = _SECTION_HEADING_RE.match(line.strip())
+        if heading_match:
+            current_heading = heading_match.group(1).strip().strip("#").strip()
+            continue
+        if not current_heading:
+            continue
+        for m in _EXPLICIT_ENDPOINT_RE.finditer(line):
+            mapping.setdefault(m.group(2), current_heading)
+        if _TABLE_ROW_RE.match(line.strip()):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) >= 3:
+                path = cells[2].strip().strip("`").strip()
+                if path.startswith("/"):
+                    mapping.setdefault(path, current_heading)
+    return mapping
 
 
 def _extract_endpoint_descriptions(text: str) -> dict[str, str]:
@@ -93,8 +156,8 @@ def _extract_endpoint_pairs_from_tables(text: str) -> list[tuple[str, str]]:
         cells = [cell.strip() for cell in raw_line.strip("|").split("|")]
         if len(cells) < 3:
             continue
-        method = cells[1].strip().upper()
-        path = cells[2].strip()
+        method = cells[1].strip().strip("`").strip().upper()
+        path = cells[2].strip().strip("`").strip()
         if method in {"GET", "POST", "PUT", "PATCH", "DELETE"} and path.startswith("/"):
             pairs.append((method, path))
     return pairs
@@ -108,8 +171,8 @@ def _extract_endpoint_descriptions_from_tables(lines: list[str]) -> dict[str, st
         cells = [cell.strip() for cell in raw_line.strip("|").split("|")]
         if len(cells) < 3:
             continue
-        method_candidate = cells[1].strip().upper()
-        path_candidate = cells[2].strip()
+        method_candidate = cells[1].strip().strip("`").strip().upper()
+        path_candidate = cells[2].strip().strip("`").strip()
         if method_candidate not in {"GET", "POST", "PUT", "PATCH", "DELETE"}:
             continue
         if not path_candidate.startswith("/"):
@@ -188,8 +251,13 @@ def _filter_actions(actions: list[str], *, explicit_endpoint_actions: list[str],
         if _is_non_executable_action(normalized):
             continue
         filtered.append(normalized)
-    if api_endpoints:
-        return explicit_endpoint_actions or filtered
+    if api_endpoints and explicit_endpoint_actions:
+        seen = {_normalize_statement(a) for a in explicit_endpoint_actions}
+        merged = list(explicit_endpoint_actions)
+        for action in filtered:
+            if _normalize_statement(action) not in seen:
+                merged.append(action)
+        return merged
     return filtered
 
 
@@ -291,6 +359,50 @@ def _dedupe(items: list[str]) -> list[str]:
     return seen
 
 
+def _endpoint_key(ep: dict) -> str:
+    return f"{str(ep.get('method', '')).strip().upper()} {str(ep.get('path', '')).strip()}"
+
+
+def _union_endpoints(llm_endpoints: list[dict], rule_endpoints: list[dict]) -> list[dict]:
+    """Merge LLM and rule-based endpoints by (method, path). LLM entries take priority; rule entries fill gaps."""
+    if not llm_endpoints:
+        return list(rule_endpoints)
+    if not rule_endpoints:
+        return list(llm_endpoints)
+    rule_by_key = {_endpoint_key(ep): ep for ep in rule_endpoints}
+    merged: list[dict] = []
+    seen: set[str] = set()
+    for ep in llm_endpoints:
+        key = _endpoint_key(ep)
+        seen.add(key)
+        rule_ep = rule_by_key.get(key, {})
+        combined = dict(rule_ep)
+        combined.update({k: v for k, v in ep.items() if v})
+        merged.append(combined)
+    for ep in rule_endpoints:
+        key = _endpoint_key(ep)
+        if key and key not in seen:
+            merged.append(ep)
+            seen.add(key)
+    return merged
+
+
+def _union_strings(primary: list[str], secondary: list[str]) -> list[str]:
+    """Merge two string lists, keeping order and deduplicating by normalized text."""
+    if not primary:
+        return list(secondary)
+    if not secondary:
+        return list(primary)
+    merged = list(primary)
+    seen = {_normalize_statement(s) for s in primary}
+    for item in secondary:
+        norm = _normalize_statement(item)
+        if norm and norm not in seen:
+            merged.append(item)
+            seen.add(norm)
+    return merged
+
+
 def parse_requirement(
     requirement_text: str,
     retrieved_context: list[dict] | None = None,
@@ -384,17 +496,25 @@ def parse_requirement(
                 diagnostics["fallback_reason"] = "llm_runtime_error"
                 diagnostics["llm_error_type"] = "unexpected_exception"
 
+    merged_endpoints = _union_endpoints(
+        llm_merged.get("api_endpoints") or [],
+        rule_endpoints,
+    )
+    merged_actions = _union_strings(
+        llm_merged.get("actions") or [],
+        _dedupe(actions),
+    )
     parsed = ParsedRequirement(
         objective=str(llm_merged.get("objective") or objective),
         actors=list(llm_merged.get("actors") or _extract_actors(merged_text)),
         entities=list(llm_merged.get("entities") or extract_keywords(merged_text, limit=10)),
         preconditions=list(llm_merged.get("preconditions") or _dedupe(preconditions)),
-        actions=list(llm_merged.get("actions") or _dedupe(actions)),
+        actions=merged_actions or _dedupe(actions),
         expected_results=list(llm_merged.get("expected_results") or _dedupe(expectations)),
         constraints=list(llm_merged.get("constraints") or _dedupe(constraints)),
         ambiguities=_dedupe(list(llm_merged.get("ambiguities") or []) + ambiguities),
         source_chunks=[item.get("chunk_id", "") for item in retrieved_context if item.get("chunk_id")],
-        api_endpoints=list(llm_merged.get("api_endpoints") or rule_endpoints),
+        api_endpoints=merged_endpoints or rule_endpoints,
     )
     if out_diagnostics is not None:
         out_diagnostics.update(diagnostics)

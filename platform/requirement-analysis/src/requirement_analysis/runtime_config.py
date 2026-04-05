@@ -10,7 +10,7 @@ from platform_shared.runtime_config import get_requirement_analysis_runtime_conf
 @dataclass(frozen=True, slots=True)
 class AnalysisDefaults:
     use_llm: bool = False
-    rag_enabled: bool = True
+    rag_enabled: bool = False
     retrieval_top_k: int = 5
     rerank_enabled: bool = False
 

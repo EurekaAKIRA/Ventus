@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import re
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
@@ -72,6 +74,151 @@ TASK_DETAIL_FIELD_ALLOWLIST = {
     "feature_text",
     "execution_result",
 }
+REQUEST_ASSERTION_SOURCE_ALLOWLIST: tuple[tuple[str, set[str]], ...] = (
+    (
+        "/api/tasks",
+        {
+            "status_code",
+            "json",
+            "json.data",
+            "json.data.task_id",
+            "json.data.task_context",
+            "json.data.task_context.task_id",
+            "json.data.task_context.task_name",
+            "json.data.task_context.source_type",
+            "elapsed_ms",
+            "headers.content-type",
+        },
+    ),
+    (
+        "/api/tasks/{task_id}",
+        {
+            "status_code",
+            "json",
+            "json.data",
+            "json.data.task_id",
+            "json.data.task_name",
+            "json.data.status",
+            "json.data.task_context",
+            "json.data.parse_metadata",
+            "json.data.parsed_requirement",
+            "json.data.retrieved_context",
+            "json.data.scenarios",
+            "json.data.test_case_dsl",
+            "json.data.analysis_report",
+            "json.data.execution_result",
+            "elapsed_ms",
+            "headers.content-type",
+        },
+    ),
+    (
+        "/api/tasks/{task_id}/parse",
+        {
+            "status_code",
+            "json",
+            "json.task_id",
+            "json.status",
+            "json.parsed_requirement",
+            "json.parse_metadata",
+            "elapsed_ms",
+            "headers.content-type",
+        },
+    ),
+    (
+        "/api/tasks/{task_id}/parsed-requirement",
+        {
+            "status_code",
+            "json",
+            "json.objective",
+            "json.actions",
+            "json.expected_results",
+            "json.api_endpoints",
+            "json.entities",
+            "elapsed_ms",
+            "headers.content-type",
+        },
+    ),
+    (
+        "/api/tasks/{task_id}/retrieved-context",
+        {
+            "status_code",
+            "json",
+            "json.data",
+            "json.items",
+            "elapsed_ms",
+            "headers.content-type",
+        },
+    ),
+    (
+        "/api/tasks/{task_id}/scenarios/generate",
+        {
+            "status_code",
+            "json",
+            "json.task_id",
+            "json.scenario_count",
+            "json.scenarios",
+            "elapsed_ms",
+            "headers.content-type",
+        },
+    ),
+    (
+        "/api/tasks/{task_id}/scenarios",
+        {
+            "status_code",
+            "json",
+            "json.scenarios",
+            "json.items",
+            "elapsed_ms",
+            "headers.content-type",
+        },
+    ),
+    (
+        "/api/tasks/{task_id}/dsl",
+        {
+            "status_code",
+            "json",
+            "json.task_id",
+            "json.task_name",
+            "json.scenarios",
+            "json.metadata",
+            "json.dsl_version",
+            "elapsed_ms",
+            "headers.content-type",
+        },
+    ),
+)
+SIMPLE_ENDPOINT_SEGMENTS = frozenset({
+    "health", "healthz", "ready", "readyz", "live", "livez",
+    "ping", "version", "info", "docs", "openapi.json", "swagger",
+    "status", "metrics", "favicon.ico",
+})
+
+
+def _is_simple_endpoint(url: str) -> bool:
+    """Return True for infrastructure/utility endpoints that need only minimal assertions."""
+    last_segment = url.rstrip("/").rsplit("/", 1)[-1].lower()
+    return last_segment in SIMPLE_ENDPOINT_SEGMENTS
+
+
+NON_EXECUTABLE_ASSERTION_HINTS = (
+    "当前 task-center api 统一使用如下响应结构",
+    "因此，联调和断言设计中不应",
+    "不应把任务详情查询接口当作列表接口",
+    "不应假设存在",
+    "响应结构",
+    "断言设计",
+    "联调",
+)
+HIGH_VALUE_ASSERTION_ENDPOINT_SUFFIXES = (
+    "/api/tasks",
+    "/api/tasks/{task_id}/parse",
+    "/api/tasks/{task_id}/scenarios/generate",
+    "/api/tasks/{task_id}/dsl",
+    "/api/tasks/{task_id}/execute",
+    "/api/tasks/{task_id}/analysis-report",
+    "/api/tasks/{task_id}/validation-report",
+)
+_ASSERTION_LLM_CACHE: dict[str, tuple[list[dict[str, Any]], str, str]] = {}
 
 
 @dataclass(slots=True)
@@ -112,6 +259,7 @@ class AssertionPlanner:
             normalized = normalize_assertions(
                 self._coerce_assertions(self.fallback_assertions),
                 max_assertions=max(1, self.runtime.max_assertions_per_step),
+                request=self.request,
             )
             return PlannedAssertions(
                 assertions=normalized,
@@ -133,9 +281,9 @@ class AssertionPlanner:
         llm_assertions: list[dict[str, Any]] = []
         llm_error_type = ""
         known_fields = _extract_known_fields(self.parsed_requirement, self.step)
-        if self.enable_llm:
+        if self.enable_llm and _should_attempt_llm_for_step(self.step, self.request):
             llm_attempted = True
-            llm_assertions, fallback_reason, llm_error_type = generate_assertion_candidates(
+            llm_assertions, fallback_reason, llm_error_type = _generate_assertion_candidates_cached(
                 mode="enhance",
                 task_context=self.task_context.to_dict(),
                 parsed_requirement=self.parsed_requirement,
@@ -147,7 +295,7 @@ class AssertionPlanner:
                 provider_profile=self.runtime.provider_profile,
             )
             if self.runtime.repair_enabled and _is_weak_assertion_set(rule_assertions + llm_assertions):
-                repair_assertions, repair_reason, repair_error_type = generate_assertion_candidates(
+                repair_assertions, repair_reason, repair_error_type = _generate_assertion_candidates_cached(
                     mode="repair",
                     task_context=self.task_context.to_dict(),
                     parsed_requirement=self.parsed_requirement,
@@ -171,12 +319,14 @@ class AssertionPlanner:
             combined,
             min_confidence=self.runtime.min_confidence if self.runtime.quality_gate_enabled else 0.0,
             max_assertions=self.runtime.max_assertions_per_step,
+            request=self.request,
         )
         invalid_count = max(len(combined) - len(normalized), 0)
         if not normalized:
             normalized = normalize_assertions(
                 rule_assertions,
                 max_assertions=self.runtime.max_assertions_per_step,
+                request=self.request,
             )
             fallback_reason = fallback_reason or "quality_gate_rejected_all"
         if fallback_reason:
@@ -285,6 +435,7 @@ def normalize_assertions(
     *,
     min_confidence: float = 0.0,
     max_assertions: int = 6,
+    request: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     normalized: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str]] = set()
@@ -294,6 +445,8 @@ def normalize_assertions(
         source = str(raw.get("source", "")).strip()
         op = str(raw.get("op", "")).strip()
         if not source or op not in ALLOWED_ASSERTION_OPS:
+            continue
+        if request and not _is_allowed_source_for_request(source, request):
             continue
         try:
             confidence = float(raw.get("confidence", 0.5) or 0.5)
@@ -407,6 +560,8 @@ def _resolve_expected_statuses(intent: str, request: dict[str, Any], step: dict[
 
 
 def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, Any], request: dict[str, Any] | None = None) -> list[str]:
+    if request and _is_simple_endpoint(str(request.get("url", ""))):
+        return []
     text = " ".join(
         [
             str(step.get("text", "")),
@@ -440,6 +595,68 @@ def _filter_known_fields_for_request(fields: list[str], request: dict[str, Any])
     if not allowed:
         return fields
     return [field for field in fields if field.lower() in allowed]
+
+
+def _is_allowed_source_for_request(source: str, request: dict[str, Any]) -> bool:
+    normalized_source = source.strip().lower()
+    if not normalized_source:
+        return False
+    if normalized_source.startswith("context."):
+        return True
+    if normalized_source in {"status_code", "elapsed_ms", "error", "body_text", "json"}:
+        return True
+    if normalized_source.startswith("headers."):
+        return normalized_source in {"headers.content-type", "headers.set-cookie"}
+    if normalized_source.startswith("response."):
+        return False
+
+    url = str(request.get("url", "")).lower()
+    for suffix, allowed in REQUEST_ASSERTION_SOURCE_ALLOWLIST:
+        if url.endswith(suffix):
+            return normalized_source in allowed
+    if _is_simple_endpoint(url):
+        return normalized_source in {"status_code", "json", "elapsed_ms", "error"}
+    if normalized_source.startswith("json."):
+        return True
+    return False
+
+
+def _should_attempt_llm_for_step(step: dict[str, Any], request: dict[str, Any]) -> bool:
+    text = str(step.get("text", "")).strip()
+    lowered = text.lower()
+    url = str(request.get("url", "")).lower()
+    if not request or not text:
+        return False
+    if any(hint in lowered for hint in NON_EXECUTABLE_ASSERTION_HINTS):
+        return False
+    if len(text) > 120 and "`/" not in text and "/api/" not in lowered:
+        return False
+    if not any(url.endswith(suffix) for suffix in HIGH_VALUE_ASSERTION_ENDPOINT_SUFFIXES):
+        return False
+    return True
+
+
+def _generate_assertion_candidates_cached(**kwargs: Any) -> tuple[list[dict[str, Any]], str, str]:
+    cache_key = json.dumps(
+        {
+            "mode": kwargs.get("mode"),
+            "request": kwargs.get("request"),
+            "step_text": str((kwargs.get("step") or {}).get("text", "")),
+            "rule_assertions": kwargs.get("rule_assertions"),
+            "known_endpoint_fields": kwargs.get("known_endpoint_fields"),
+            "provider_profile": kwargs.get("provider_profile"),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        default=str,
+    )
+    cached = _ASSERTION_LLM_CACHE.get(cache_key)
+    if cached is not None:
+        assertions, fallback_reason, error_type = cached
+        return deepcopy(assertions), fallback_reason, error_type
+    result = generate_assertion_candidates(**kwargs)
+    _ASSERTION_LLM_CACHE[cache_key] = (deepcopy(result[0]), result[1], result[2])
+    return deepcopy(result[0]), result[1], result[2]
 
 
 def _looks_like_collection(request: dict[str, Any], step: dict[str, Any]) -> bool:

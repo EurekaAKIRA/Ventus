@@ -71,7 +71,7 @@ class AssertionLLMConfig:
         base_url = (_first_env("HUNYUAN_BASE_URL", "OPENAI_BASE_URL") or profile.base_url).rstrip("/")
         llm_model = (_first_env("HUNYUAN_LLM_MODEL", "OPENAI_LLM_MODEL") or profile.llm_model).strip()
         timeout = _resolve_float("HUNYUAN_TIMEOUT_SECONDS", "OPENAI_TIMEOUT_SECONDS", default=profile.timeout_seconds)
-        retries = _resolve_int("HUNYUAN_RETRIES", "OPENAI_RETRIES", default=profile.retries)
+        llm_retries = _resolve_int("HUNYUAN_LLM_RETRIES", "OPENAI_LLM_RETRIES", default=profile.llm_retries)
         return cls(
             gateway=ModelGateway(
                 ModelGatewayConfig(
@@ -81,7 +81,7 @@ class AssertionLLMConfig:
                         api_base=base_url,
                         api_key=api_key,
                         timeout=timeout,
-                        retries=retries,
+                        retries=llm_retries,
                     )
                 )
             ),

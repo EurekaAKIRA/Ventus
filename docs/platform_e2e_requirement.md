@@ -184,7 +184,7 @@ task-center 对外 REST 接口（除部分流式端点外）采用统一 **envel
 | 选项 | 建议默认（稳定基线） |
 | --- | --- |
 | `use_llm` | `false` |
-| `rag_enabled` | `true` |
+| `rag_enabled` | `false` |
 | `retrieval_top_k` | `5` |
 | `rerank_enabled` | `false` |
 

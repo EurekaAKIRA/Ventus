@@ -61,6 +61,70 @@ class RetrievedChunk:
 
 
 @dataclass(slots=True)
+class FieldSpec:
+    """Describes a single request-body or response field."""
+
+    name: str
+    field_type: str = "string"
+    required: bool = False
+    description: str = ""
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "FieldSpec":
+        return cls(
+            name=str(data.get("name", "")),
+            field_type=str(data.get("field_type", data.get("type", "string"))),
+            required=bool(data.get("required", False)),
+            description=str(data.get("description", "")),
+        )
+
+
+@dataclass(slots=True)
+class EndpointSpec:
+    """Rich endpoint descriptor extracted from requirement documents."""
+
+    method: str
+    path: str
+    description: str = ""
+    group: str = ""
+    request_body_fields: list[FieldSpec] = field(default_factory=list)
+    response_fields: list[FieldSpec] = field(default_factory=list)
+    depends_on: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "method": self.method,
+            "path": self.path,
+            "description": self.description,
+            "group": self.group,
+            "request_body_fields": [f.to_dict() for f in self.request_body_fields],
+            "response_fields": [f.to_dict() for f in self.response_fields],
+            "depends_on": self.depends_on,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "EndpointSpec":
+        return cls(
+            method=str(data.get("method", "")).strip().upper(),
+            path=str(data.get("path", "")).strip(),
+            description=str(data.get("description", "")).strip(),
+            group=str(data.get("group", "")).strip(),
+            request_body_fields=[
+                FieldSpec.from_dict(f) if isinstance(f, dict) else FieldSpec(name=str(f))
+                for f in (data.get("request_body_fields") or [])
+            ],
+            response_fields=[
+                FieldSpec.from_dict(f) if isinstance(f, dict) else FieldSpec(name=str(f))
+                for f in (data.get("response_fields") or [])
+            ],
+            depends_on=list(data.get("depends_on") or []),
+        )
+
+
+@dataclass(slots=True)
 class ParsedRequirement:
     """Structured requirement representation."""
 

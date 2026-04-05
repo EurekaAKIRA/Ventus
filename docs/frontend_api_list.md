@@ -213,7 +213,7 @@
   "source_type": "text",
   "requirement_text": "鐢ㄦ埛鐧诲綍鍚庡簲杩涘叆涓汉涓績骞剁湅鍒版樀绉?,
   "use_llm": false,
-  "rag_enabled": true,
+  "rag_enabled": false,
   "retrieval_top_k": 5,
   "rerank_enabled": false
 }
@@ -235,7 +235,7 @@
 鍙€夊寮哄弬鏁帮紙璇锋眰鍙傛暟浼樺厛绾ф渶楂橈級锛?
 
 - `use_llm`锛堥粯璁?`false`锛?
-- `rag_enabled`锛堥粯璁?`true`锛?
+- `rag_enabled`锛堥粯璁?`false`锛?
 - `retrieval_top_k`锛堥粯璁?`5`锛?
 - `rerank_enabled`锛堥粯璁?`false`锛?
 

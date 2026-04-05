@@ -76,7 +76,7 @@
 默认值：
 
 - `use_llm=false`
-- `rag_enabled=true`
+- `rag_enabled=false`
 - `retrieval_top_k=5`
 - `rerank_enabled=false`
 - `model_profile=default`
