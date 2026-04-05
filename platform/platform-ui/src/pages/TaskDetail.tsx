@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo } from "react";
+﻿import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Button,
@@ -37,6 +37,9 @@ import {
 
 const FEATURE_PREVIEW_LINES = 18;
 const DSL_PREVIEW_SCENARIOS = 4;
+
+/** Silent full-detail poll: slower while user reads; execution tab uses its own poller when running. */
+const SILENT_DETAIL_POLL_MS = 15000;
 
 const STAGE_LABELS: Record<StageKey, string> = {
   basic: "任务基础信息",
@@ -88,6 +91,7 @@ export default function TaskDetail() {
     setShowTopOverview,
   } = useTaskDetailData({ taskId, fromCreateFlow });
   const executionStatus = deriveExecutionStatus(detail);
+  const taskLifecycleStatus = normalizeStatus(detail?.task_context?.status);
   const activeTabKey = resolveTabKey(searchParams.get("tab"));
   const shouldCompareLatest = searchParams.get("compare") === "latest";
   const {
@@ -134,23 +138,29 @@ export default function TaskDetail() {
     setSearchParams(nextParams, { replace: true });
   };
 
-  const taskLifecycleStatus = normalizeStatus(detail?.task_context?.status);
-  const shouldAutoRefreshCards =
-    ["received", "parsed", "generated", "running"].includes(taskLifecycleStatus) ||
-    executionStatus === "running";
+  /** Only poll full detail while pipeline may advance without execution running; execution uses useTaskExecution poller. */
+  const shouldSilentPollFullDetail =
+    detail !== null &&
+    ["received", "parsed", "generated"].includes(taskLifecycleStatus) &&
+    executionStatus !== "running";
+
+  const loadRef = useRef(load);
+  loadRef.current = load;
+  const refreshingRef = useRef(refreshing);
+  refreshingRef.current = refreshing;
 
   useEffect(() => {
-    if (!detail || !shouldAutoRefreshCards) {
+    if (!shouldSilentPollFullDetail || !taskId) {
       return;
     }
     const timer = window.setInterval(() => {
-      if (refreshing) {
+      if (refreshingRef.current) {
         return;
       }
-      void load({ mode: "silent" });
-    }, 2500);
+      void loadRef.current({ mode: "silent" });
+    }, SILENT_DETAIL_POLL_MS);
     return () => window.clearInterval(timer);
-  }, [detail, shouldAutoRefreshCards, taskId, refreshing]);
+  }, [shouldSilentPollFullDetail, taskId]);
 
   const primaryAnalysisReport = taskDashboard?.analysis_report ?? detail?.analysis_report;
 
@@ -195,7 +205,7 @@ export default function TaskDetail() {
     return <Empty description="任务不存在或响应为空" />;
   }
 
-  const taskStatus = normalizeStatus(detail.task_context.status);
+  const taskStatus = taskLifecycleStatus;
   const displayTaskStatus = executionStatus === "not_started" ? taskStatus : executionStatus;
   const hasParsedResult = Boolean(detail.parsed_requirement);
   const hasScenarios = Boolean(detail.scenarios?.length);

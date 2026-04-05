@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from platform_shared.endpoint_policy import filter_executable_api_endpoints
 from platform_shared.models import ParsedRequirement
 
 from .document_parser import extract_candidate_test_points, extract_keywords
@@ -222,10 +223,23 @@ def _extract_explicit_endpoint_actions(text: str) -> list[str]:
     return action_sentences
 
 
+def _is_meta_documentation_reference_action(text: str) -> bool:
+    """Prose that cites GET /docs / Swagger for contract reference, not an executable step."""
+    lowered = text.lower()
+    if "/docs" not in text and "get /docs" not in lowered and "`/docs`" not in text:
+        return False
+    return any(
+        k in text
+        for k in ("契约", "为准", "参考", "openapi", "swagger", "替代物", "不是完整", "api-contract")
+    )
+
+
 def _is_non_executable_action(text: str) -> bool:
     normalized = _normalize_statement(text)
     lowered = normalized.lower()
     if not normalized:
+        return True
+    if _is_meta_documentation_reference_action(normalized):
         return True
     if normalized.startswith("**") and "：" in normalized:
         return True
@@ -409,8 +423,15 @@ def parse_requirement(
     use_llm: bool = False,
     llm_config: OpenAIEnhancementConfig | None = None,
     out_diagnostics: dict[str, Any] | None = None,
+    *,
+    llm_retrieved_context: list[dict] | None = None,
 ) -> dict:
-    """Parse requirement text into a structured, test-oriented representation."""
+    """Parse requirement text into a structured, test-oriented representation.
+
+    When ``llm_retrieved_context`` is not None, only the LLM enhancement step uses it
+    (e.g. empty list to skip RAG snippets in the model prompt); rule extraction still
+    uses ``retrieved_context``.
+    """
     base_text = requirement_text.strip()
     retrieved_context = retrieved_context or []
     merged_text = _merge_context(base_text, retrieved_context)
@@ -463,6 +484,8 @@ def parse_requirement(
         "fallback_reason": "",
         "llm_error_type": "",
     }
+    context_for_llm = retrieved_context if llm_retrieved_context is None else llm_retrieved_context
+
     if use_llm:
         if llm_config is None:
             ambiguities.append("已启用 LLM 增强，但缺少 OPENAI_API_KEY 或相关配置")
@@ -472,7 +495,7 @@ def parse_requirement(
             try:
                 llm_payload, fallback_reason, llm_error_type = enhance_parsed_requirement_with_metadata(
                     requirement_text=base_text or merged_text,
-                    retrieved_context=retrieved_context,
+                    retrieved_context=context_for_llm,
                     rule_based_result={
                         "objective": objective,
                         "actors": _extract_actors(merged_text),
@@ -496,9 +519,11 @@ def parse_requirement(
                 diagnostics["fallback_reason"] = "llm_runtime_error"
                 diagnostics["llm_error_type"] = "unexpected_exception"
 
-    merged_endpoints = _union_endpoints(
-        llm_merged.get("api_endpoints") or [],
-        rule_endpoints,
+    merged_endpoints = filter_executable_api_endpoints(
+        _union_endpoints(
+            llm_merged.get("api_endpoints") or [],
+            rule_endpoints,
+        )
     )
     merged_actions = _union_strings(
         llm_merged.get("actions") or [],
@@ -514,7 +539,7 @@ def parse_requirement(
         constraints=list(llm_merged.get("constraints") or _dedupe(constraints)),
         ambiguities=_dedupe(list(llm_merged.get("ambiguities") or []) + ambiguities),
         source_chunks=[item.get("chunk_id", "") for item in retrieved_context if item.get("chunk_id")],
-        api_endpoints=merged_endpoints or rule_endpoints,
+        api_endpoints=merged_endpoints or filter_executable_api_endpoints(list(rule_endpoints)),
     )
     if out_diagnostics is not None:
         out_diagnostics.update(diagnostics)

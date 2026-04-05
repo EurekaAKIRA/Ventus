@@ -1,5 +1,5 @@
 import { message } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchAnalysisReport,
   fetchDsl,
@@ -67,7 +67,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
   const [selectedTestPoint, setSelectedTestPoint] = useState("all");
   const [showTopOverview, setShowTopOverview] = useState(false);
 
-  const load = async (options?: { mode?: LoadMode }) => {
+  const load = useCallback(async (options?: { mode?: LoadMode }) => {
     const mode = options?.mode ?? "initial";
     const requestId = ++requestSeqRef.current;
     activeRequestRef.current = requestId;
@@ -185,7 +185,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
         setRefreshStageText("");
       }
     }
-  };
+  }, [taskId]);
 
   useEffect(() => {
     setFeatureExpanded(false);

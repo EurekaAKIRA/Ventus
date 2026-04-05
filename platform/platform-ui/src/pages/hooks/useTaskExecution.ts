@@ -225,9 +225,7 @@ export function useTaskExecution(params: {
     const timer = window.setInterval(async () => {
       try {
         const executionResult = await fetchExecution(taskId);
-        if (pollingError) {
-          setPollingError(null);
-        }
+        setPollingError(null);
         setDetail((prev) =>
           prev
             ? {
@@ -259,7 +257,7 @@ export function useTaskExecution(params: {
     }, 2500);
 
     return () => window.clearInterval(timer);
-  }, [executionStatus, pollingError, taskId, setDetail]);
+  }, [executionStatus, taskId, setDetail]);
 
   useEffect(() => {
     const hasFailedExecution = executionStatus === "failed";

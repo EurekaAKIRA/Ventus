@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from platform_shared import TaskContext, get_requirement_analysis_runtime_config
+from platform_shared.endpoint_policy import expects_json_envelope
 
 from .assertion_llm import (
     ALLOWED_ASSERTION_CATEGORIES,
@@ -413,9 +414,10 @@ class RuleAssertionBuilder:
             else:
                 assertions.append(_assertion("json.id", "exists", None, "major", "field_presence", 0.7, "generic_create_identifier", "rules"))
         if self.intent == "query":
-            assertions.append(_assertion("json", "exists", None, "major", "schema", 0.82, "query_response_present", "rules"))
-            if _looks_like_collection(self.request, self.step):
-                assertions.append(_assertion(_infer_collection_source(self.request, self.step), "len_gt", 0, "major", "collection", 0.86, "collection_not_empty", "rules"))
+            if expects_json_envelope(url):
+                assertions.append(_assertion("json", "exists", None, "major", "schema", 0.82, "query_response_present", "rules"))
+                if _looks_like_collection(self.request, self.step):
+                    assertions.append(_assertion(_infer_collection_source(self.request, self.step), "len_gt", 0, "major", "collection", 0.86, "collection_not_empty", "rules"))
         if self.intent == "update":
             assertions.append(_assertion("json", "exists", None, "major", "schema", 0.76, "update_response_present", "rules"))
         if self.intent == "delete":
@@ -560,8 +562,10 @@ def _resolve_expected_statuses(intent: str, request: dict[str, Any], step: dict[
 
 
 def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, Any], request: dict[str, Any] | None = None) -> list[str]:
-    if request and _is_simple_endpoint(str(request.get("url", ""))):
-        return []
+    if request:
+        req_url = str(request.get("url", ""))
+        if not expects_json_envelope(req_url) or _is_simple_endpoint(req_url):
+            return []
     text = " ".join(
         [
             str(step.get("text", "")),
@@ -603,18 +607,27 @@ def _is_allowed_source_for_request(source: str, request: dict[str, Any]) -> bool
         return False
     if normalized_source.startswith("context."):
         return True
-    if normalized_source in {"status_code", "elapsed_ms", "error", "body_text", "json"}:
-        return True
-    if normalized_source.startswith("headers."):
-        return normalized_source in {"headers.content-type", "headers.set-cookie"}
     if normalized_source.startswith("response."):
         return False
 
-    url = str(request.get("url", "")).lower()
+    url = str(request.get("url", ""))
+    url_lower = url.lower()
+
+    if normalized_source in {"status_code", "elapsed_ms", "error", "body_text"}:
+        return True
+    if normalized_source.startswith("headers."):
+        return normalized_source in {"headers.content-type", "headers.set-cookie"}
+
+    if not expects_json_envelope(url):
+        return normalized_source in {"status_code", "elapsed_ms", "error", "body_text", "headers.content-type"}
+
+    if normalized_source == "json":
+        return True
+
     for suffix, allowed in REQUEST_ASSERTION_SOURCE_ALLOWLIST:
-        if url.endswith(suffix):
+        if url_lower.endswith(suffix):
             return normalized_source in allowed
-    if _is_simple_endpoint(url):
+    if _is_simple_endpoint(url_lower):
         return normalized_source in {"status_code", "json", "elapsed_ms", "error"}
     if normalized_source.startswith("json."):
         return True

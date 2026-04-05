@@ -117,6 +117,7 @@ def parse_requirement_bundle(
                 enhanced_payload = parse_requirement_rules(
                     requirement_text=llm_requirement,
                     retrieved_context=[item.to_dict() for item in retrieved_context],
+                    llm_retrieved_context=[] if not parse_options.rag_enabled else None,
                     use_llm=True,
                     llm_config=enhancement_config,
                     out_diagnostics=llm_diagnostics,
