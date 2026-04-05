@@ -93,54 +93,21 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     }
 
     try {
-      const detailPromise = fetchTaskDetail(taskId)
-        .then((value) => {
-          if (mode !== "silent") {
-            updateStage("basic", "finish");
-            updateStage("artifacts", "process");
-          }
-          return value;
-        })
-        .catch((error) => {
-          if (mode !== "silent" && isLatest()) {
-            updateStage("basic", "error");
-            setStageError((error as Error).message || "任务详情加载失败");
-          }
-          throw error;
-        });
-      const artifactPromise = fetchTaskArtifacts(taskId)
-        .then((value) => {
-          if (mode !== "silent") {
-            updateStage("artifacts", "finish");
-            updateStage("dashboard", "process");
-          }
-          return value;
-        })
-        .catch((error) => {
-          if (mode !== "silent" && isLatest()) {
-            updateStage("artifacts", "error");
-          }
-          throw error;
-        });
-      const dashboardPromise = fetchTaskDashboard(taskId)
-        .then((value) => {
-          if (mode !== "silent") {
-            updateStage("dashboard", "finish");
-          }
-          return value;
-        })
-        .catch((error) => {
-          if (mode !== "silent" && isLatest()) {
-            updateStage("dashboard", "error");
-          }
-          throw error;
-        });
+      const detailPromise = fetchTaskDetail(taskId, { detailLevel: "summary" }).catch((error) => {
+        if (mode !== "silent" && isLatest()) {
+          updateStage("basic", "error");
+          setStageError((error as Error).message || "任务详情加载失败");
+        }
+        throw error;
+      });
+      const artifactPromise = fetchTaskArtifacts(taskId, { shallow: true }).catch((error) => {
+        if (mode !== "silent" && isLatest()) {
+          updateStage("artifacts", "error");
+        }
+        throw error;
+      });
 
-      const [detailResult, artifactResult, dashboardResult] = await Promise.allSettled([
-        detailPromise,
-        artifactPromise,
-        dashboardPromise,
-      ]);
+      const [detailResult, artifactResult] = await Promise.allSettled([detailPromise, artifactPromise]);
 
       if (!isLatest()) {
         return;
@@ -148,22 +115,60 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
 
       if (detailResult.status === "fulfilled") {
         setDetail(detailResult.value as ExtendedTaskDetail);
+        if (mode !== "silent") {
+          updateStage("basic", "finish");
+        }
       } else {
         throw detailResult.reason;
       }
 
+      void fetchTaskDetail(taskId, { detailLevel: "full" })
+        .then((full) => {
+          if (!isLatest()) {
+            return;
+          }
+          setDetail((prev) => ({ ...(prev ?? {}), ...full }) as ExtendedTaskDetail);
+        })
+        .catch(() => {
+          /* 首屏已可用；全量字段失败时保留 summary，各 Tab 可能缺数据 */
+        });
+
       if (artifactResult.status === "fulfilled") {
         setArtifacts(artifactResult.value);
+        if (mode !== "silent") {
+          updateStage("artifacts", "finish");
+        }
       } else {
         setArtifacts([]);
+        if (mode !== "silent") {
+          updateStage("artifacts", "error");
+        }
       }
 
-      if (dashboardResult.status === "fulfilled") {
-        setTaskDashboard(dashboardResult.value);
-        setDashboardLoadError(null);
-      } else {
-        setDashboardLoadError("任务看板加载失败，可稍后重试");
+      if (mode !== "silent") {
+        updateStage("dashboard", "process");
       }
+
+      void fetchTaskDashboard(taskId)
+        .then((value) => {
+          if (!isLatest()) {
+            return;
+          }
+          setTaskDashboard(value);
+          setDashboardLoadError(null);
+          if (mode !== "silent") {
+            updateStage("dashboard", "finish");
+          }
+        })
+        .catch(() => {
+          if (!isLatest()) {
+            return;
+          }
+          setDashboardLoadError("任务看板加载失败，可稍后重试");
+          if (mode !== "silent") {
+            updateStage("dashboard", "error");
+          }
+        });
     } catch (error) {
       if (isLatest()) {
         message.error((error as Error).message || "任务详情加载失败");

@@ -1,247 +1,236 @@
-# Platform 主链路联调需求说明（当前实现对齐版）
+# 平台 Task Center 主链路开发需求说明
 
-## 1. 背景与目的
+## 1. 文档定位
 
-当前平台已经具备 task-center 主链路的联调能力，研发、测试与前端需要基于统一口径确认以下事项：
+本文档描述 **task-center 主链路** 在当前实现下的 **功能需求、接口基线与数据语义**，供后端实现对照、前端联调与产品对齐使用。
 
-- 平台主流程是否可在同一任务生命周期内闭环完成；
-- 关键中间产物是否可追踪、可复核、可回放；
-- 执行与分析结果是否满足当前阶段演示与验收所需的最小可信度；
-- 文档描述是否与当前项目真实接口输入输出保持一致。
+- **不是**自动化测试用例步骤书；测试场景可另文维护。
+- **不是**完整 OpenAPI 替代物；字段级契约以 `platform/platform-ui/api-contract.ts` 与运行中的 `GET /docs` 为准。
+- 与 `docs/frontend_api_list.md` 接口列表 **对齐**；本文侧重 **功能说明 + Base URL + 分组接口表**。
 
-本文档用于指导当前版本的平台端到端联调与验收。  
-它是开发文档和验收口径说明，不是接口手册，也不是自动化脚本逐步说明书。
+---
 
-## 2. 适用范围
+## 2. 服务地址与配置
 
-### 2.1 本次纳入
+| 项 | 说明 |
+| --- | --- |
+| **默认 Base URL（本地 task-center）** | `http://127.0.0.1:8001` |
+| **OpenAPI / Swagger UI** | `{BASE_URL}/docs` |
+| **健康检查** | `GET {BASE_URL}/health` |
+| **版本信息** | `GET {BASE_URL}/version` |
+| **前端环境变量** | `VITE_PLATFORM_API_BASE`（未配置时前端默认 `http://127.0.0.1:8001`，见 `platform-ui` 请求封装） |
 
-- 任务接入与任务状态流转；
-- 需求解析与检索增强；
-- 场景、DSL、Feature 的产物生成；
-- API 执行、日志、报告与历史查询能力；
-- 任务归档后的可见性与一致性检查。
+所有下文接口路径均为 **相对 Base URL** 的路径（例如 `/api/tasks` 表示 `http://127.0.0.1:8001/api/tasks`）。
 
-### 2.2 本次不纳入
+---
 
-- 压测云平台对接能力；
-- 多租户与权限边界；
-- 生产级高并发与容量基准；
-- 第三方系统稳定性背书；
-- `web-ui` 执行模式的正式验收。
+## 3. 统一响应结构
 
-## 3. 角色与职责
-
-- **产品/项目负责人**：确认验收范围、签收最终结论。
-- **后端研发**：保障主链路可运行，处理阻断性缺陷。
-- **前端研发**：验证页面主路径与真实接口数据一致性。
-- **测试工程师**：执行回归流程并输出问题清单。
-- **运维或环境负责人**：保障测试环境地址、网络和依赖可达。
-
-## 4. 业务过程描述（非接口步骤版）
-
-从业务视角看，一次标准任务应经历以下过程：
-
-1. 用户提交待分析的需求内容并形成任务实体；
-2. 系统完成需求结构化，补充检索上下文，形成后续生成的语义基础；
-3. 系统输出可执行场景及 DSL，并生成可阅读的 Feature 文本用于审阅；
-4. 系统在指定环境中执行任务，输出过程日志与结果状态；
-5. 系统聚合校验与分析报告，支持从任务维度查看历史与产物；
-6. 任务结束后可归档，归档后不再作为活跃任务参与主流程。
-
-> 说明：上述过程强调业务闭环，不要求阅读者记忆具体路径与方法名。
-
-## 5. 接口基线（来源：`docs/frontend_api_list.md`）
-
-为避免联调过程出现“口径不一致”，本需求文档采用 `docs/frontend_api_list.md` 作为接口基线。  
-本次端到端验收默认至少覆盖以下接口组。
-
-### 5.1 任务与解析（必测）
-
-- `POST /api/tasks`
-- `GET /api/tasks/{task_id}`
-- `POST /api/tasks/{task_id}/parse`
-- `GET /api/tasks/{task_id}/parsed-requirement`
-- `GET /api/tasks/{task_id}/retrieved-context`
-
-### 5.2 场景与 DSL（必测）
-
-- `POST /api/tasks/{task_id}/scenarios/generate`
-- `GET /api/tasks/{task_id}/scenarios`
-- `GET /api/tasks/{task_id}/dsl`
-- `GET /api/tasks/{task_id}/feature`
-
-### 5.3 执行与结果（必测）
-
-- `POST /api/tasks/{task_id}/execute`
-- `GET /api/tasks/{task_id}/execution`
-- `GET /api/tasks/{task_id}/execution/logs`
-- `GET /api/tasks/{task_id}/validation-report`
-- `GET /api/tasks/{task_id}/analysis-report`
-
-### 5.4 产物与历史（建议纳入）
-
-- `GET /api/tasks/{task_id}/artifacts`
-- `GET /api/tasks/{task_id}/artifacts/{type}`
-- `GET /api/history/tasks`
-- `GET /api/history/executions`
-- `DELETE /api/tasks/{task_id}`（归档）
-
-### 5.5 环境与扩展能力（按需）
-
-- `GET /api/environments`
-- `POST /api/environments`
-- `PUT /api/environments/{environment_name}`
-- `DELETE /api/environments/{environment_name}`
-- `POST /api/analysis/parse`（独立解析链路）
-- `GET /health`
-- `GET /version`
-
-### 5.6 执行模式说明（与当前项目现状一致）
-
-- `execution_mode=api`：当前主执行路径，联调与验收优先使用。
-- `execution_mode=cloud-load`：当前为本地并发压测模拟，不作为本轮主验收路径。
-- `execution_mode=web-ui`：适配中，默认不纳入本轮通过标准。
-
-## 6. 当前实现口径补充
-
-本节用于明确“当前项目真实输入输出”，避免开发文档与实际实现偏离。
-
-### 6.1 统一响应 envelope
-
-当前 task-center API 统一使用如下响应结构：
+task-center 对外 REST 接口（除部分流式端点外）采用统一 **envelope**。业务数据均在 `data` 内，客户端应通过 `success`、`code`、`message` 判断结果，从 `data` 读取载荷。
 
 ```json
 {
   "success": true,
   "code": "SOME_CODE",
-  "message": "some message",
+  "message": "human readable message",
   "data": {},
   "timestamp": "2026-04-04T15:00:00+00:00"
 }
 ```
 
-联调时应默认按统一 envelope 理解接口输出。  
-涉及业务字段时，优先从 `data.*` 下查找，不应假设所有字段都平铺在顶层。
+**开发约定**：列表类接口的数组字段放在 `data` 的子结构中（如分页的 `items`）；勿假设业务字段平铺在 envelope 顶层。
 
-### 6.2 关键 detail 接口的实际返回语义
+---
 
-当前项目中，任务详情、分析报告详情和执行结果详情这几类“详情查询接口”返回的是“单对象详情”，不是列表；对应接口基线见第 5 节。
+## 4. 功能范围与业务目标
 
-其中任务详情响应当前真实返回位于 `data` 下，包含：
+### 4.1 本阶段应支持的能力
 
-- `data.task_id`
-- `data.task_name`
-- `data.status`
-- `data.task_context`
-- `data.parse_metadata`
-- `data.parsed_requirement`
-- `data.retrieved_context`
-- `data.scenarios`
-- `data.test_case_dsl`
-- `data.validation_report`
-- `data.analysis_report`
-- `data.feature_text`
-- `data.execution_result`
+| 能力域 | 功能目标（产品/研发视角） |
+| --- | --- |
+| **任务生命周期** | 用户可创建任务、查看列表与详情、按状态筛选；任务可归档（删除/归档语义以接口为准），归档后不再出现在活跃列表。 |
+| **需求解析** | 将原始需求转为结构化 `ParsedRequirement`，并可查看检索增强得到的 `retrieved_context`；支持独立「仅解析」链路（不绑定任务）。 |
+| **生成物** | 在解析基础上生成测试场景、可执行 DSL、Gherkin Feature 文本；产物可单独查询，也可在任务详情中聚合展示。 |
+| **环境与执行** | 可配置命名环境（基址、头、鉴权等）；任务可在指定模式下触发执行，产生结构化 `execution_result`、步骤级结果与日志。 |
+| **分析与展示** | 基于校验结果与执行结果生成分析报告；提供任务级 **Dashboard** 聚合数据供前端看板使用。 |
+| **产物与追溯** | 按类型枚举或获取任务产物内容；支持历史任务与历史执行记录查询，便于审计与回放。 |
+| **体验增强（已部分落地）** | 执行前预检、失败解释、回归对比、执行过程流式推送等（详见 `docs/ux_service_api_contract_draft.md`）。 |
 
-因此，联调和断言设计中不应把任务详情查询接口当作列表接口，也不应假设存在 `data.tasks`。
+### 4.2 本阶段明确不纳入
 
-### 6.3 任务创建接口的实际返回语义
+- 云平台正式压测与容量承诺。
+- 多租户隔离与完整权限模型。
+- `web-ui` 执行模式作为默认交付路径（可保留接口，产品上不强制验收）。
+- 生产级高可用与持久化 SLA（当前为 MVP 级持久化策略）。
 
-当前任务创建接口的成功返回重点字段是：
+---
 
-- `data.task_id`
-- `data.task_context`
-- `data.task_context.task_id`
-- `data.task_context.task_name`
+## 5. 核心业务流（实现应对齐的端到端故事）
 
-当前实现中，不应把任务创建接口的返回简单理解为 `data.task_name` 平铺存在。  
-如果需要读取任务名称，应优先以 `data.task_context.task_name` 为准。
+以下顺序描述 **一条任务从创建到可观测结果** 的主路径，便于前后端划分阶段与错误处理，**不**等价于单接口文档。
 
-### 6.4 解析接口的实际返回语义
+1. **创建任务**：提交任务名称、来源类型、需求文本或文件路径等 → 返回 `task_id` 与 `task_context`（含状态，如 `received`）。
+2. **解析（可选显式触发）**：对任务触发解析 → 更新结构化需求与 `parse_metadata`；解析策略可通过请求体控制（如 LLM、RAG、top_k 等）。
+3. **生成场景 / DSL / Feature**：在解析结果之上生成场景列表、DSL 与 Feature；前端可分布拉取或依赖详情接口聚合字段。
+4. **环境选择与预检（可选）**：用户选择环境 → 可调用预检接口验证目标可达性等再执行。
+5. **执行**：触发执行 → 轮询或通过流式接口观察进度；读取 `execution`、`execution/logs`。
+6. **报告与看板**：读取校验报告、分析报告及 `dashboard` 聚合数据，用于结果页与图表。
+7. **归档**：删除/归档任务后，活跃列表不再展示该任务；历史接口可按约定查询已归档记录。
 
-当前解析接口的成功返回重点字段是：
+---
 
-- `data.task_id`
-- `data.status`
-- `data.parsed_requirement`
-- `data.parse_metadata`
+## 6. 接口分组与功能说明
 
-当前默认稳定联调路径推荐：
+下表 **Method + Path** 为当前 task-center 实现中的路由（与代码一致）。**功能说明** 描述该接口在系统中的职责；**主要 data 语义** 为开发常用字段提示，完整字段以契约与 OpenAPI 为准。
 
-- `use_llm=false`
-- `rag_enabled=true`
-- `retrieval_top_k=5`
-- `rerank_enabled=false`
+### 6.1 服务元数据
 
-如果显式启用 `use_llm=true`，允许出现模型增强、fallback 和额外时延，不应把它作为默认稳定基线。
+| Method | Path | 功能说明 |
+| --- | --- | --- |
+| GET | `/health` | 存活探测，供编排与前端简单检查。 |
+| GET | `/version` | 返回服务名、版本号等，便于排障与对齐发布。 |
 
-### 6.5 执行接口的当前验收口径
+### 6.2 任务 CRUD 与详情
 
-当前执行接口能触发真实执行链路并生成结构化执行结果。  
-但在当前项目阶段，端到端验收更关注“是否走通并产出结构化结果”，而不是要求所有自动生成场景都必须通过。
+| Method | Path | 功能说明 | 主要 `data` 语义（摘要） |
+| --- | --- | --- | --- |
+| POST | `/api/tasks` | **创建任务**：持久化任务记录，生成 `task_id`。 | `task_id`、`task_context`（内含 `task_id`、`task_name`、`status`、`created_at` 等）。任务名称优先读 `task_context.task_name`。 |
+| GET | `/api/tasks` | **任务列表**：支持分页与筛选（如 `status`、`keyword`、`environment`、`page`、`page_size`）。 | 分页结构含 `items`（摘要字段）、`total` 等。 |
+| GET | `/api/tasks/{task_id}` | **任务详情**：单任务全量视图；支持 `detail_level=summary` 首包瘦身（大字段为 `null`、执行结果无日志/无步骤明细），前端可与 `detail_level=full` 合并。 | 默认 `full`：`task_context`、`parse_metadata`、`parsed_requirement`、`retrieved_context`、`scenarios`、`test_case_dsl`、`validation_report`、`analysis_report`、`feature_text`、`execution_result`、`artifact_dir` 等。**非列表接口**。 |
+| DELETE | `/api/tasks/{task_id}` | **归档任务**：逻辑删除/归档，活跃列表不再出现。 | 含 `task_id`、`archived` 等确认字段。 |
 
-因此当前验收允许：
+### 6.3 解析（任务绑定）
 
-- 执行完成且进入终态；
-- `GET /execution`、`GET /analysis-report` 可正常读取；
-- 少量场景失败但不阻断主链路闭环。
+| Method | Path | 功能说明 | 主要 `data` 语义（摘要） |
+| --- | --- | --- | --- |
+| POST | `/api/tasks/{task_id}/parse` | **触发/刷新解析**：按可选 body 中的解析选项执行需求分析流水线，更新任务内 pipeline 状态与产物。 | `task_id`、`status`、`parsed_requirement`、`parse_metadata`。 |
+| GET | `/api/tasks/{task_id}/parsed-requirement` | 仅返回结构化需求对象。 | `ParsedRequirement` 形态 JSON。 |
+| GET | `/api/tasks/{task_id}/retrieved-context` | 返回 RAG/检索命中列表。 | 数组或约定结构。 |
 
-## 7. 验收关注点
+### 6.4 独立解析（无任务）
 
-### 7.1 必须满足
+| Method | Path | 功能说明 |
+| --- | --- | --- |
+| POST | `/api/analysis/parse` | **不创建任务** 的解析：传入 `requirement_text` 或 `source_path` 等，返回解析包（结构化需求、检索上下文、校验报告、parse_metadata 等），用于分析页或工具链。 |
 
-- 单任务从“提交到报告”应可完整走通；
-- 关键中间产物（解析结果、场景、DSL、Feature）应可回读；
-- 报告数据与执行数据口径基本一致，不出现明显自相矛盾；
-- 归档动作生效后，任务应从活跃视图中消失；
-- 返回结构保持统一 envelope，便于前端统一处理；
-- 开发文档中描述的关键输入输出与当前实现一致。
+### 6.5 场景、DSL、Feature
 
-### 7.2 可接受但需记录
+| Method | Path | 功能说明 | 主要 `data` 语义（摘要） |
+| --- | --- | --- | --- |
+| POST | `/api/tasks/{task_id}/scenarios/generate` | 基于当前解析结果生成/刷新场景，并更新任务状态（如进入 `generated`）。 | `scenario_count`、`scenarios`。 |
+| GET | `/api/tasks/{task_id}/scenarios` | 返回场景列表。 | 场景数组。 |
+| GET | `/api/tasks/{task_id}/dsl` | 返回可执行 DSL 文档结构。 | `TestCaseDSL` 形态 JSON。 |
+| GET | `/api/tasks/{task_id}/feature` | 返回 Gherkin Feature 文本包装对象。 | 如 `{ "feature_text": "..." }`。 |
 
-- 少量场景执行失败但不阻断整体链路；
-- 检索策略在不同输入下出现回退；
-- 报告存在提示级告警（如步骤表达偏长）；
-- 启用 LLM 增强后耗时明显上升或结果出现回退。
+### 6.6 环境管理
 
-## 8. 非功能与治理要求
+| Method | Path | 功能说明 |
+| --- | --- | --- |
+| GET | `/api/environments` | 列出已配置环境（名称、基址、默认头等）。 |
+| POST | `/api/environments` | 创建或初始化环境配置。 |
+| GET | `/api/environments/{environment_name}` | 查询单个环境。 |
+| PUT | `/api/environments/{environment_name}` | 更新指定环境。 |
+| DELETE | `/api/environments/{environment_name}` | 删除指定环境。 |
 
-- **可追踪性**：同一任务 ID 可串联输入、产物、执行、报告与历史。
-- **可解释性**：解析结果应能说明来自哪些上下文片段。
-- **一致性**：前后端对状态字段、错误消息、时间字段含义保持一致。
-- **可维护性**：配置项通过统一配置管理，不在流程中硬编码环境地址。
+### 6.7 预检与执行
 
-## 9. 风险与已知限制
+| Method | Path | 功能说明 |
+| --- | --- | --- |
+| POST | `/api/tasks/{task_id}/preflight-check` | 执行前检查（目标环境、连通性等），body 可指定 `environment`。 |
+| POST | `/api/tasks/{task_id}/execute` | 触发任务执行；body 含执行模式、环境等（与 `ExecuteTaskRequest` 一致）。 |
+| POST | `/api/tasks/{task_id}/execution/stop` | 请求停止当前执行（若支持）。 |
+| GET | `/api/tasks/{task_id}/execution` | 读取结构化执行结果（状态、步骤结果、指标等）。 |
+| GET | `/api/tasks/{task_id}/execution/logs` | 读取执行日志列表或聚合。 |
+| GET | `/api/tasks/{task_id}/execution/stream` | **SSE/流式**：推送执行过程事件（客户端按流式协议解析，非标准 JSON envelope）。 |
+| GET | `/api/tasks/{task_id}/execution/explanations` | 失败步骤等解释信息（体验增强）。 |
+| GET | `/api/tasks/{task_id}/regression-diff` | 与历史或基线的回归对比数据（体验增强）。 |
 
-- 同步执行模式下，长任务会占用请求时长；
-- 复杂断言与字段映射仍存在误判空间；
-- 当前自动场景/断言生成对“开发文档”类文本的理解仍可能比“精确可执行规格”更宽泛；
-- 当前持久化方案偏向 MVP，尚未达到生产级可靠性；
-- 在外部依赖波动情况下，检索与执行耗时可能明显抖动。
+**执行模式（与实现对齐的产品说明）**
 
-## 10. 环境前置条件
+| 模式 | 说明 |
+| --- | --- |
+| `api` | 当前主执行路径，前后端联调与默认功能演示应优先使用该模式。 |
+| `cloud-load` | 本地并发压测模拟，不作为主功能交付默认路径。 |
+| `web-ui` | 适配中，不纳入本阶段默认通过标准。 |
 
-- 默认联调基地址使用 `http://127.0.0.1:8001`；
-- 执行时应提供明确目标系统来源（任务目标地址或环境配置）；
-- 测试数据需避免依赖不可控的外部实时状态；
-- 若启用模型增强能力，应提前完成密钥与模型配置核验；
-- 联调前应确认当前服务进程已重启，避免沿用旧版本逻辑。
+### 6.8 校验、分析与看板
 
-## 11. 输出物要求
+| Method | Path | 功能说明 |
+| --- | --- | --- |
+| GET | `/api/tasks/{task_id}/validation-report` | DSL/Feature 等校验结果的详细报告。 |
+| GET | `/api/tasks/{task_id}/analysis-report` | 面向可读性与 Dashboard 的分析报告（可能含图表数据、摘要文案等）。 |
+| GET | `/api/tasks/{task_id}/dashboard` | **看板聚合接口**：在一次响应中组合任务摘要、分析报告子集、执行概览、DSL/校验引用等，供任务详情页「总览/图表」减少多次往返。**实现上可能触发报告再计算与持久化，性能优化属实现细节。** |
 
-验收结束后需至少沉淀以下内容：
+### 6.9 产物索引与按类型读取
 
-- 一份执行结论（通过 / 有条件通过 / 不通过）；
-- 一份问题清单（按阻断、主要、次要分级）；
-- 一份回归记录（包含环境、版本、时间窗口、任务样本）；
-- 对未闭环项给出下一迭代处理建议与责任人。
+| Method | Path | 功能说明 |
+| --- | --- | --- |
+| GET | `/api/tasks/{task_id}/artifacts` | 返回任务下标准产物类型的列表；每项含 `type` 与 `content`（当前实现为内嵌完整内容，体量大时注意前端按需加载策略）。 |
+| GET | `/api/tasks/{task_id}/artifacts/{artifact_type}` | 按类型获取单一产物内容；`artifact_type` 取值需与后端 `DEFAULT_ARTIFACT_TYPES` 一致（如 `raw`、`parsed-requirement`、`scenarios`、`dsl`、`feature`、`validation-report`、`analysis-report` 等）。 |
 
-## 12. 文档维护原则
+### 6.10 历史与审计
 
-后续更新本文件时，应遵循以下原则：
+| Method | Path | 功能说明 |
+| --- | --- | --- |
+| GET | `/api/history/tasks` | 历史任务列表，支持时间范围、状态、关键字、分页等查询。 |
+| GET | `/api/history/executions` | 历史执行记录列表，支持按任务、环境、状态等过滤。 |
 
-- 保持“开发文档 / 验收口径说明”定位，不将其改写成纯自动化脚本；
-- 描述当前真实接口行为，而不是未来预期结构；
-- 当接口真实返回字段发生变化时，优先同步本文件的“当前实现口径补充”章节；
-- 如果需要机器可执行的严格版本，应单独维护独立 spec，而不是挤占本文件的开发文档定位。
+---
+
+## 7. 解析选项默认值（稳定联调基线）
+
+以下默认值用于 **降低环境波动** 时的联调成本；产品若启用 LLM 增强，需接受时延与结果波动。
+
+| 选项 | 建议默认（稳定基线） |
+| --- | --- |
+| `use_llm` | `false` |
+| `rag_enabled` | `true` |
+| `retrieval_top_k` | `5` |
+| `rerank_enabled` | `false` |
+
+显式 `use_llm=true` 时，允许模型增强、fallback 与更长耗时，不作为「最小稳定基线」的唯一依据。
+
+---
+
+## 8. 非功能与工程约束
+
+| 类别 | 要求 |
+| --- | --- |
+| **可追踪性** | 同一 `task_id` 应能关联创建参数、解析产物、执行结果、报告与历史记录。 |
+| **一致性** | 状态枚举、错误码、`code` 字段与前端 `normalizeStatus` 等逻辑保持一致；时间字段使用 ISO-8601。 |
+| **可配置性** | 环境基址、鉴权信息禁止硬编码在业务代码路径中，应走环境配置 API 或部署配置。 |
+| **性能意识** | 任务详情 + artifacts + dashboard 并行请求时 payload 较大；已实现 `detail_level=summary`、产物 `shallow`、分析报告缓存与 **GZip**（约 ≥512B 响应）等减负手段；大任务仍建议分 Tab 按需拉取。 |
+
+---
+
+## 9. 质量与验收参考（非测试步骤）
+
+以下用于发布前 **快速对齐是否「主链路可用」**，具体用例可由测试单独维护。
+
+- 单任务从创建 → 解析 → 生成 → 执行 → 可读报告/看板 可端到端走通。
+- 关键产物均可通过详情或 `artifacts`/`artifacts/{type}` 回读。
+- 归档后活跃列表不可见，历史接口行为符合约定。
+- 统一 envelope 未被破坏，前端可统一处理错误与成功分支。
+
+当前阶段允许少量场景执行失败 **不阻断**「链路走通」类验收，但须在报告中可观测。
+
+---
+
+## 10. 相关文档与代码索引
+
+| 用途 | 路径 |
+| --- | --- |
+| 前端接口总表与页面映射 | `docs/frontend_api_list.md` |
+| 体验增强契约（预检、解释、回归、SSE） | `docs/ux_service_api_contract_draft.md` |
+| TypeScript 类型与响应形状 | `platform/platform-ui/api-contract.ts` |
+| 前端请求封装 | `platform/platform-ui/src/api/tasks.ts` |
+| 后端路由实现 | `platform/task-center/src/task_center/api.py` |
+| 本地启动 | `docs/platform_quickstart.md` |
+
+---
+
+## 11. 文档维护
+
+- 接口路径或 `data` 语义变更时，同步更新 **第 6 节** 与 `api-contract.ts` / OpenAPI。
+- Base URL 默认值变更时，同步 **第 2 节** 与前端 `VITE_PLATFORM_API_BASE` 说明。
+- 本文保持 **开发需求 + 接口基线** 定位；若需机器可读 strict spec，建议独立维护，避免与本说明混写为冗长断言列表。

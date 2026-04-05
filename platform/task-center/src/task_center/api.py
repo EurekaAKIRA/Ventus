@@ -4,18 +4,20 @@ from __future__ import annotations
 
 import concurrent.futures
 import asyncio
+import hashlib
 import json
 import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.middleware.gzip import GZipMiddleware
 from pydantic import ValidationError
 
 from execution_engine_core import run_dsl
@@ -66,6 +68,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=512, compresslevel=6)
 
 
 def _utc_now_iso() -> str:
@@ -516,7 +519,6 @@ def _run_async_execution_job(
         task.environment = selected_environment
         task.status = execution_result.get("status", "executed")
         _build_task_analysis_report(task)
-        _persist_task_runtime(task)
         _record_execution_history(task, execution_result)
     except Exception as exc:
         task = registry.get(task_id)
@@ -626,6 +628,10 @@ def _parse_metadata_payload(raw: Any) -> dict[str, Any]:
         return _model_to_dict(raw)
     if not isinstance(raw, dict):
         return _model_to_dict(ParseMetadata())
+    try:
+        return _model_to_dict(ParseMetadata(**raw))
+    except Exception:
+        return dict(raw)
 
 
 def _encode_sse(data: Any, event: str | None = None) -> str:
@@ -639,10 +645,41 @@ def _encode_sse(data: Any, event: str | None = None) -> str:
     for line in payload.splitlines() or [""]:
         lines.append(f"data: {line}")
     return "\n".join(lines) + "\n\n"
-    try:
-        return _model_to_dict(ParseMetadata(**raw))
-    except Exception:
-        return _model_to_dict(ParseMetadata())
+
+
+_ANALYSIS_REPORT_INPUT_FP_KEY = "_analysis_report_input_fp"
+
+
+def _analysis_report_input_fingerprint(task, result: dict[str, Any]) -> str:
+    """Stable hash of inputs that affect build_analysis_report (skip rebuild when unchanged)."""
+    er = task.execution_result or {}
+    vr = result.get("validation_report")
+    if hasattr(vr, "model_dump"):
+        vr_d = vr.model_dump()
+    elif isinstance(vr, dict):
+        vr_d = vr
+    else:
+        vr_d = {}
+    scenarios = result.get("scenarios") or []
+    scenario_n = len(scenarios) if isinstance(scenarios, list) else 0
+    dsl = result.get("test_case_dsl") or {}
+    dsl_n = 0
+    if isinstance(dsl, dict):
+        ds = dsl.get("scenarios")
+        dsl_n = len(ds) if isinstance(ds, list) else 0
+    payload = {
+        "task_id": task.task_id,
+        "exec_status": str(er.get("status", "")),
+        "exec_scenarios": len(er.get("scenario_results") or []),
+        "exec_logs": len(er.get("logs") or []),
+        "vr_passed": bool(vr_d.get("passed")),
+        "vr_err": len(vr_d.get("errors") or []),
+        "vr_warn": len(vr_d.get("warnings") or []),
+        "scenario_n": scenario_n,
+        "dsl_n": dsl_n,
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) -> dict[str, Any]:
@@ -686,8 +723,12 @@ def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) ->
     return result
 
 
-def _build_task_analysis_report(task) -> dict[str, Any]:
+def _build_task_analysis_report(task, *, persist_registry: bool = True) -> dict[str, Any]:
     result = _ensure_pipeline(task)
+    fp = _analysis_report_input_fingerprint(task, result)
+    cached = result.get("analysis_report")
+    if cached is not None and result.get(_ANALYSIS_REPORT_INPUT_FP_KEY) == fp:
+        return cached
     report = build_analysis_report(
         task_context=TaskContext(**result["task_context"]),
         validation_report=ValidationReport(**result["validation_report"]),
@@ -696,13 +737,15 @@ def _build_task_analysis_report(task) -> dict[str, Any]:
         test_case_dsl=result.get("test_case_dsl"),
     )
     result["analysis_report"] = report
-    _persist_task_runtime(task)
+    result[_ANALYSIS_REPORT_INPUT_FP_KEY] = fp
+    _persist_task_runtime(task, persist_registry=persist_registry)
     return report
 
 
-def _persist_task_runtime(task) -> None:
+def _persist_task_runtime(task, *, persist_registry: bool = True) -> None:
     if not task.artifact_dir:
-        registry.save(task)
+        if persist_registry:
+            registry.save(task)
         return
     subdirs = ensure_task_subdirs(task.artifact_dir)
     if task.pipeline_result is not None:
@@ -715,7 +758,8 @@ def _persist_task_runtime(task) -> None:
             str(Path(subdirs["execution"]) / "execution_result.json"),
             task.execution_result,
         )
-    registry.save(task)
+    if persist_registry:
+        registry.save(task)
 
 
 @app.get("/health", response_model=ApiResponse)
@@ -777,24 +821,75 @@ def list_tasks(
     return _success_response(payload, code="TASK_LIST_OK", message="tasks listed")
 
 
+def _shrink_execution_for_summary(er: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Strip heavy logs / per-step payloads for fast first paint (detail_level=summary)."""
+    if not er:
+        return None
+    keys = ("scenario_id", "scenario_name", "status", "duration_ms", "passed_steps", "failed_steps")
+    slim_scenarios: list[dict[str, Any]] = []
+    for raw in er.get("scenario_results") or []:
+        if not isinstance(raw, dict):
+            continue
+        slim_scenarios.append({k: raw.get(k) for k in keys})
+    return {
+        "task_id": str(er.get("task_id", "")),
+        "executor": er.get("executor"),
+        "status": str(er.get("status", "not_started")),
+        "scenario_results": slim_scenarios,
+        "metrics": er.get("metrics") if isinstance(er.get("metrics"), dict) else {},
+        "logs": [],
+    }
+
+
 @app.get("/api/tasks/{task_id}", response_model=ApiResponse)
-def get_task(task_id: str):
+def get_task(
+    task_id: str,
+    detail_level: Literal["full", "summary"] = Query(
+        "full",
+        description="full: complete payload; summary: small first paint (merge with full client-side).",
+    ),
+):
     task = _must_get_task(task_id)
     pipeline = task.pipeline_result or {}
-    return _success_response({
+    base = {
         **task.to_summary(),
         "task_context": task.task_context,
         "artifact_dir": task.artifact_dir,
         "parse_metadata": _parse_metadata_payload(pipeline.get("parse_metadata", {})),
-        "parsed_requirement": pipeline.get("parsed_requirement"),
-        "retrieved_context": pipeline.get("retrieved_context"),
-        "scenarios": pipeline.get("scenarios"),
-        "test_case_dsl": pipeline.get("test_case_dsl"),
-        "validation_report": pipeline.get("validation_report"),
-        "analysis_report": pipeline.get("analysis_report"),
-        "feature_text": pipeline.get("feature_text"),
-        "execution_result": task.execution_result,
-    }, code="TASK_DETAIL_OK", message="task detail")
+    }
+    if detail_level == "summary":
+        return _success_response(
+            {
+                **base,
+                "parsed_requirement": None,
+                "retrieved_context": None,
+                "scenarios": None,
+                "test_case_dsl": None,
+                "validation_report": None,
+                "analysis_report": None,
+                "feature_text": None,
+                "execution_result": _shrink_execution_for_summary(
+                    task.execution_result if isinstance(task.execution_result, dict) else None,
+                ),
+            },
+            code="TASK_DETAIL_OK",
+            message="task detail summary",
+        )
+    return _success_response(
+        {
+            **base,
+            "parsed_requirement": pipeline.get("parsed_requirement"),
+            "retrieved_context": pipeline.get("retrieved_context"),
+            "scenarios": pipeline.get("scenarios"),
+            "test_case_dsl": pipeline.get("test_case_dsl"),
+            "validation_report": pipeline.get("validation_report"),
+            "analysis_report": pipeline.get("analysis_report"),
+            "feature_text": pipeline.get("feature_text"),
+            "execution_result": task.execution_result,
+        },
+        code="TASK_DETAIL_OK",
+        message="task detail",
+    )
 
 
 @app.delete("/api/tasks/{task_id}", response_model=ApiResponse)
@@ -976,7 +1071,6 @@ def execute_task(task_id: str, payload: ExecuteTaskRequest):
     task.environment = selected_environment
     task.status = execution_result.get("status", "executed")
     result["analysis_report"] = _build_task_analysis_report(task)
-    _persist_task_runtime(task)
     _record_execution_history(task, execution_result)
     return _success_response(execution_result, code="TASK_EXECUTED", message="task executed")
 
@@ -1156,7 +1250,7 @@ def get_dashboard(task_id: str):
     task = _must_get_task(task_id)
     result = _ensure_pipeline(task)
     execution = task.execution_result or {"status": "not_started", "metrics": {}, "logs": []}
-    analysis_report = _build_task_analysis_report(task)
+    analysis_report = _build_task_analysis_report(task, persist_registry=False)
     return _success_response({
         "task": task.to_summary(),
         "analysis_report": analysis_report,
@@ -1182,12 +1276,18 @@ def get_dashboard(task_id: str):
 
 
 @app.get("/api/tasks/{task_id}/artifacts", response_model=ApiResponse)
-def get_artifacts(task_id: str):
+def get_artifacts(
+    task_id: str,
+    shallow: bool = Query(False, description="If true, return only artifact types (no embedded content)."),
+):
     task = _must_get_task(task_id)
     result = _ensure_pipeline(task)
-    artifacts = []
+    artifacts: list[dict[str, Any]] = []
     for artifact_type, resolver in DEFAULT_ARTIFACT_TYPES.items():
-        artifacts.append({"type": artifact_type, "content": resolver(result)})
+        if shallow:
+            artifacts.append({"type": artifact_type})
+        else:
+            artifacts.append({"type": artifact_type, "content": resolver(result)})
     return _success_response({"task_id": task_id, "artifacts": artifacts}, code="ARTIFACTS_OK", message="artifacts fetched")
 
 

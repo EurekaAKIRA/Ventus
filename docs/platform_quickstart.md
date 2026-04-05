@@ -4,7 +4,7 @@
 - `docs/frontend_api_list.md`（前端总入口见 §1.1）
 - `docs/ux_service_api_contract_draft.md`（体验增强契约草案）
 - `docs/platform_requirements_status.md`
-- `docs/platform_e2e_requirement.md`
+- `docs/platform_e2e_requirement.md`（task-center Base URL、功能需求与接口表）
 
 ## 前端协作文档入口
 - 统一入口：`docs/frontend_api_list.md` 的 **§1.1 前端参考文档索引**。

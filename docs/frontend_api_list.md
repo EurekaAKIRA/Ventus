@@ -12,7 +12,7 @@
 
 ### 建议看
 - `docs/platform_requirements_status.md`：契约冻结、约束、优先级。
-- `docs/platform_e2e_requirement.md`：端到端验收口径。
+- `docs/platform_e2e_requirement.md`：主链路开发需求、Base URL 与接口分组说明（兼验收参考）。
 - `docs/platform_quickstart.md`：本地启动与联调路径。
 
 ### 可选

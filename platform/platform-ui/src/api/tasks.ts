@@ -165,13 +165,16 @@ export async function fetchTaskList(_params?: {
 
 export async function fetchTaskDetail(
   taskId: string,
+  options?: { detailLevel?: "full" | "summary" },
 ): Promise<TaskDetailPayload> {
   if (USE_MOCK_API) {
     await delay();
     return { ...mockTaskDetail };
   }
   try {
-    return await requestApi<TaskDetailPayload>(`/api/tasks/${taskId}`);
+    const level = options?.detailLevel ?? "full";
+    const qs = level === "summary" ? "?detail_level=summary" : "";
+    return await requestApi<TaskDetailPayload>(`/api/tasks/${taskId}${qs}`);
   } catch (error) {
     throw new Error(`获取任务详情失败: ${(error as Error).message}`);
   }
@@ -405,15 +408,18 @@ export async function fetchAnalysisReport(
   }
 }
 
-export async function fetchTaskArtifacts(taskId: string): Promise<TaskArtifactItem[]> {
+export async function fetchTaskArtifacts(
+  taskId: string,
+  options?: { shallow?: boolean },
+): Promise<TaskArtifactItem[]> {
   if (USE_MOCK_API) {
     await delay();
     return [...mockArtifacts];
   }
   try {
-    const payload = await requestApi<{ task_id: string; artifacts: Array<{ type: string; content: unknown }> }>(
-      `/api/tasks/${taskId}/artifacts`,
-    );
+    const shallow = options?.shallow === true;
+    const path = shallow ? `/api/tasks/${taskId}/artifacts?shallow=true` : `/api/tasks/${taskId}/artifacts`;
+    const payload = await requestApi<{ task_id: string; artifacts: Array<{ type: string; content?: unknown }> }>(path);
     return payload.artifacts.map((item) => ({
       type: item.type,
       label: toArtifactLabel(item.type),
