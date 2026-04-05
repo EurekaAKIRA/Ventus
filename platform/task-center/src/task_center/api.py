@@ -5,6 +5,7 @@ from __future__ import annotations
 import concurrent.futures
 import asyncio
 import hashlib
+from dataclasses import replace
 import json
 import threading
 import time
@@ -608,6 +609,16 @@ def _build_regression_diff(
     }
 
 
+def _task_parse_option_overrides(task) -> dict[str, Any]:
+    """Build parse option overrides from persisted task_context (e.g. rag_enabled at creation)."""
+    tc = task.task_context or {}
+    out: dict[str, Any] = {}
+    for key in ("use_llm", "rag_enabled", "retrieval_top_k", "rerank_enabled", "model_profile"):
+        if key in tc:
+            out[key] = tc[key]
+    return out
+
+
 def _resolve_parse_options(payload: Any = None) -> AnalysisParseOptions:
     if payload is None:
         return AnalysisParseOptions.resolve()
@@ -623,15 +634,37 @@ def _resolve_parse_options(payload: Any = None) -> AnalysisParseOptions:
     )
 
 
+def _normalize_parse_metadata_rag_fields(meta: dict[str, Any]) -> None:
+    """Keep rag_enabled and rag_used in sync (canonical key: rag_enabled)."""
+    has_e = "rag_enabled" in meta
+    has_u = "rag_used" in meta
+    if has_e and not has_u:
+        meta["rag_used"] = bool(meta.get("rag_enabled"))
+    elif has_u and not has_e:
+        meta["rag_enabled"] = bool(meta.get("rag_used"))
+    elif has_e and has_u:
+        meta["rag_used"] = bool(meta.get("rag_enabled"))
+
+
+def _parse_metadata_rag_enabled(meta: dict[str, Any]) -> bool:
+    if meta.get("rag_enabled") is not None:
+        return bool(meta["rag_enabled"])
+    return bool(meta.get("rag_used", False))
+
+
 def _parse_metadata_payload(raw: Any) -> dict[str, Any]:
     if isinstance(raw, ParseMetadata):
         return _model_to_dict(raw)
     if not isinstance(raw, dict):
         return _model_to_dict(ParseMetadata())
     try:
-        return _model_to_dict(ParseMetadata(**raw))
+        normalized = dict(raw)
+        _normalize_parse_metadata_rag_fields(normalized)
+        return _model_to_dict(ParseMetadata(**normalized))
     except Exception:
-        return dict(raw)
+        out = dict(raw)
+        _normalize_parse_metadata_rag_fields(out)
+        return out
 
 
 def _encode_sse(data: Any, event: str | None = None) -> str:
@@ -690,7 +723,7 @@ def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) ->
             return task.pipeline_result
         same_config = (
             parse_metadata.get("llm_attempted", False) == parse_options.use_llm
-            and parse_metadata.get("rag_used", True) == parse_options.rag_enabled
+            and _parse_metadata_rag_enabled(parse_metadata) == parse_options.rag_enabled
             and int(parse_metadata.get("retrieval_top_k", 5)) == parse_options.retrieval_top_k
             and parse_metadata.get("rerank_enabled", False) == parse_options.rerank_enabled
             and str(parse_metadata.get("model_profile", "default")) == parse_options.model_profile
@@ -698,6 +731,13 @@ def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) ->
         if same_config:
             task.pipeline_result["parse_metadata"] = parse_metadata
             return task.pipeline_result
+
+    resolved: AnalysisParseOptions
+    if parse_options is not None:
+        resolved = parse_options
+    else:
+        resolved = AnalysisParseOptions.resolve(_task_parse_option_overrides(task))
+
     result = run_analysis_pipeline(
         task_name=task.task_name,
         requirement_text=task.requirement_text,
@@ -708,11 +748,11 @@ def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) ->
         created_at=(task.task_context or {}).get("created_at") or task.created_at,
         task_status=(task.task_context or {}).get("status") or task.status or "received",
         artifact_dir_name=task.task_id,
-        use_llm=parse_options.use_llm if parse_options else None,
-        rag_enabled=parse_options.rag_enabled if parse_options else None,
-        retrieval_top_k=parse_options.retrieval_top_k if parse_options else None,
-        rerank_enabled=parse_options.rerank_enabled if parse_options else None,
-        model_profile=parse_options.model_profile if parse_options else None,
+        use_llm=resolved.use_llm,
+        rag_enabled=resolved.rag_enabled,
+        retrieval_top_k=resolved.retrieval_top_k,
+        rerank_enabled=resolved.rerank_enabled,
+        model_profile=resolved.model_profile,
     )
     task.pipeline_result = result
     task.pipeline_result["parse_metadata"] = _parse_metadata_payload(result.get("parse_metadata", {}))
@@ -786,7 +826,10 @@ def create_task(payload: CreateTaskRequest):
         source_type=payload.source_type,
         source_path=payload.source_path,
     )
-    context = TaskContext(**normalized["task_context"]).to_dict()
+    base_ctx = TaskContext(**normalized["task_context"])
+    if payload.rag_enabled is not None:
+        base_ctx = replace(base_ctx, rag_enabled=bool(payload.rag_enabled))
+    context = base_ctx.to_dict()
     record = registry.create_task(
         task_id=context["task_id"],
         task_name=payload.task_name,

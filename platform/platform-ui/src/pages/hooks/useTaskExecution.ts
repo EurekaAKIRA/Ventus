@@ -6,6 +6,7 @@ import {
   fetchExecutionExplanations,
   fetchPreflightCheck,
   fetchRegressionDiff,
+  fetchTaskDashboard,
   fetchValidationReport,
   startExecution,
   stopExecution,
@@ -14,6 +15,7 @@ import type {
   ExecutionExplanationPayload,
   PreflightCheckPayload,
   RegressionDiffPayload,
+  TaskDashboardPayload,
 } from "../../types";
 import type { ExtendedTaskDetail } from "./useTaskDetailData";
 
@@ -35,11 +37,22 @@ export function useTaskExecution(params: {
   taskId: string;
   detail: ExtendedTaskDetail | null;
   setDetail: React.Dispatch<React.SetStateAction<ExtendedTaskDetail | null>>;
+  setTaskDashboard?: React.Dispatch<React.SetStateAction<TaskDashboardPayload | null>>;
+  setDashboardLoadError?: React.Dispatch<React.SetStateAction<string | null>>;
   executionStatus: string;
   activeTabKey: string;
   shouldCompareLatest: boolean;
 }) {
-  const { taskId, detail, setDetail, executionStatus, activeTabKey, shouldCompareLatest } = params;
+  const {
+    taskId,
+    detail,
+    setDetail,
+    setTaskDashboard,
+    setDashboardLoadError,
+    executionStatus,
+    activeTabKey,
+    shouldCompareLatest,
+  } = params;
 
   const [executing, setExecuting] = useState(false);
   const [stopping, setStopping] = useState(false);
@@ -237,9 +250,10 @@ export function useTaskExecution(params: {
         );
 
         if (executionResult.status !== "running") {
-          const [validationReport, analysisReport] = await Promise.all([
+          const [validationReport, analysisReport, dashboardResult] = await Promise.all([
             fetchValidationReport(taskId),
             fetchAnalysisReport(taskId),
+            fetchTaskDashboard(taskId).catch(() => null),
           ]);
           setDetail((prev) =>
             prev
@@ -250,6 +264,10 @@ export function useTaskExecution(params: {
                 }
               : prev,
           );
+          if (dashboardResult && setTaskDashboard) {
+            setTaskDashboard(dashboardResult);
+            setDashboardLoadError?.(null);
+          }
         }
       } catch {
         setPollingError("执行状态轮询失败，正在等待下一次自动重试");

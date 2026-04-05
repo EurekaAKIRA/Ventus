@@ -12,6 +12,7 @@ import {
   fetchTaskDetail,
   fetchValidationReport,
   refreshTaskParse,
+  DEFAULT_REQUIREMENT_RAG_ENABLED,
 } from "../../api/tasks";
 import type {
   TaskArtifactContent,
@@ -19,6 +20,13 @@ import type {
   TaskDashboardPayload,
   TaskDetailPayload,
 } from "../../types";
+import {
+  fingerprintFromSummaryPayload,
+  heavyContentSnapshot,
+  mergeTaskDetailFromSummaryPreserveHeavy,
+  normalizeStatus,
+  shallowVisibleTaskDetailEqual,
+} from "../taskDetailUtils";
 
 export type ExtendedTaskDetail = TaskDetailPayload & {
   target_system?: string;
@@ -45,6 +53,10 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
   const { taskId, fromCreateFlow } = params;
   const requestSeqRef = useRef(0);
   const activeRequestRef = useRef(0);
+  const detailRef = useRef<ExtendedTaskDetail | null>(null);
+  const lastSilentSummaryFpRef = useRef("");
+  const lastSilentHeavySnapRef = useRef("");
+  const lastSilentArtifactsFpRef = useRef("");
 
   const [bootLoading, setBootLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,8 +79,21 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
   const [selectedTestPoint, setSelectedTestPoint] = useState("all");
   const [showTopOverview, setShowTopOverview] = useState(false);
 
+  useEffect(() => {
+    detailRef.current = detail;
+  }, [detail]);
+
+  const resetSilentPollRefs = useCallback(() => {
+    lastSilentSummaryFpRef.current = "";
+    lastSilentHeavySnapRef.current = "";
+    lastSilentArtifactsFpRef.current = "";
+  }, []);
+
   const load = useCallback(async (options?: { mode?: LoadMode }) => {
     const mode = options?.mode ?? "initial";
+    if (mode === "initial" || mode === "manual") {
+      resetSilentPollRefs();
+    }
     const requestId = ++requestSeqRef.current;
     activeRequestRef.current = requestId;
     const isLatest = () => activeRequestRef.current === requestId;
@@ -185,6 +210,74 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
         setRefreshStageText("");
       }
     }
+  }, [taskId, resetSilentPollRefs]);
+
+  /**
+   * 分析完成前：仅轮询轻量 summary；指纹未变则不拉 full/产物/看板。
+   * 指纹或流水线阶段需要时拉 full，并在内容快照未变时跳过 setState。
+   */
+  const silentPollBeforeSettled = useCallback(async () => {
+    if (!taskId) {
+      return;
+    }
+    const prev = detailRef.current;
+    if (!prev) {
+      return;
+    }
+
+    let summary: ExtendedTaskDetail;
+    try {
+      summary = await fetchTaskDetail(taskId, { detailLevel: "summary" });
+    } catch {
+      return;
+    }
+
+    const fp = fingerprintFromSummaryPayload(summary);
+    const fpChanged = fp !== lastSilentSummaryFpRef.current;
+    const merged = mergeTaskDetailFromSummaryPreserveHeavy(prev, summary);
+    const normalizedLife = normalizeStatus(merged.task_context?.status);
+    const needsHeavy =
+      fpChanged ||
+      normalizedLife === "parsed" ||
+      (normalizedLife === "generated" && !(merged.scenarios?.length));
+
+    lastSilentSummaryFpRef.current = fp;
+
+    if (!needsHeavy) {
+      if (!shallowVisibleTaskDetailEqual(prev, merged)) {
+        setDetail(merged);
+      }
+      return;
+    }
+
+    let full: ExtendedTaskDetail;
+    try {
+      full = await fetchTaskDetail(taskId, { detailLevel: "full" });
+    } catch {
+      if (!shallowVisibleTaskDetailEqual(prev, merged)) {
+        setDetail(merged);
+      }
+      return;
+    }
+
+    const next = { ...merged, ...full } as ExtendedTaskDetail;
+    const snap = heavyContentSnapshot(next);
+    const redundant = snap === lastSilentHeavySnapRef.current && shallowVisibleTaskDetailEqual(prev, next);
+    if (!redundant) {
+      lastSilentHeavySnapRef.current = snap;
+      setDetail(next);
+    }
+
+    try {
+      const arts = await fetchTaskArtifacts(taskId, { shallow: true });
+      const artsFp = arts.map((a) => a.type).join(",");
+      if (artsFp !== lastSilentArtifactsFpRef.current) {
+        lastSilentArtifactsFpRef.current = artsFp;
+        setArtifacts(arts);
+      }
+    } catch {
+      /* 静默失败，保留旧产物列表 */
+    }
   }, [taskId]);
 
   useEffect(() => {
@@ -198,14 +291,21 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     setBootLoading(fromCreateFlow);
     setRefreshing(false);
     setRefreshStageText("");
+    resetSilentPollRefs();
     void load({ mode: "initial" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId, fromCreateFlow]);
 
   const refreshParsedSection = async () => {
     try {
+      const meta = detail?.parse_metadata;
+      const rag_enabled =
+        meta?.rag_enabled ??
+        meta?.rag_used ??
+        detail?.task_context?.rag_enabled ??
+        DEFAULT_REQUIREMENT_RAG_ENABLED;
       const [{ parsed_requirement, parse_metadata }, retrievedContext] = await Promise.all([
-        refreshTaskParse(taskId),
+        refreshTaskParse(taskId, { rag_enabled }),
         fetchRetrievedContext(taskId),
       ]);
       setDetail((prev) =>
@@ -319,6 +419,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     selectedTestPoint,
     showTopOverview,
     load,
+    silentPollBeforeSettled,
     refreshParsedSection,
     refreshScenarioSection,
     refreshReportSection,

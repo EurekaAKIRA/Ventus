@@ -12,9 +12,10 @@ import {
   Space,
   Row,
   Col,
+  Switch,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { createTask } from "../api/tasks";
+import { createTask, DEFAULT_REQUIREMENT_RAG_ENABLED } from "../api/tasks";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -49,6 +50,7 @@ export default function TaskCreate() {
         requirement_text: values.requirement_text,
         target_system: targetSystem || undefined,
         environment: values.environment || undefined,
+        rag_enabled: Boolean(values.rag_enabled),
       });
       message.success("任务创建成功");
       navigate(`/tasks/${result.task_id}?from=create`, {
@@ -71,7 +73,12 @@ export default function TaskCreate() {
         <Form
           form={form}
           layout="vertical"
-          initialValues={{ requirement_text: "", environment: "test", target_system: DEFAULT_TARGET_SYSTEM }}
+          initialValues={{
+            requirement_text: "",
+            environment: "test",
+            target_system: DEFAULT_TARGET_SYSTEM,
+            rag_enabled: DEFAULT_REQUIREMENT_RAG_ENABLED,
+          }}
           onFinish={handleSubmit}
         >
           <Form.Item
@@ -156,6 +163,15 @@ export default function TaskCreate() {
                 { value: "production", label: "生产环境" },
               ]}
             />
+          </Form.Item>
+
+          <Form.Item
+            name="rag_enabled"
+            label="需求解析 RAG"
+            valuePropName="checked"
+            extra="仅控制是否做向量检索与向量打分；关不影响是否执行 LLM 增强，LLM 仍会收到关键词检索到的片段（与规则解析一致）。"
+          >
+            <Switch checkedChildren="开" unCheckedChildren="关" />
           </Form.Item>
 
           <Form.Item>

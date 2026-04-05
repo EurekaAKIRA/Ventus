@@ -23,6 +23,8 @@ class TaskContext:
     language: str = "zh-CN"
     status: str = "received"
     notes: list[str] = field(default_factory=list)
+    #: Vector RAG preference (embeddings + vector-ranked retrieval). Does not toggle LLM enhancement.
+    rag_enabled: bool | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)

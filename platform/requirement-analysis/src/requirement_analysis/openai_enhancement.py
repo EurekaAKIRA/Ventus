@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from dataclasses import dataclass
 from math import sqrt
 from typing import Any
@@ -119,24 +120,25 @@ def _env_int_bounded(name: str, *, default: int, min_value: int, max_value: int)
 
 
 def _llm_parse_max_requirement_chars() -> int:
-    return _env_int_bounded("LLM_PARSE_MAX_REQUIREMENT_CHARS", default=12_000, min_value=1_500, max_value=100_000)
+    # Keep default prompts compact enough to avoid provider-side latency spikes on long specs.
+    return _env_int_bounded("LLM_PARSE_MAX_REQUIREMENT_CHARS", default=8_000, min_value=1_500, max_value=100_000)
 
 
 def _llm_parse_head_tail_chars() -> tuple[int, int]:
-    head = _env_int_bounded("LLM_PARSE_HEAD_CHARS", default=6_000, min_value=500, max_value=80_000)
-    tail = _env_int_bounded("LLM_PARSE_TAIL_CHARS", default=5_000, min_value=500, max_value=80_000)
+    head = _env_int_bounded("LLM_PARSE_HEAD_CHARS", default=4_500, min_value=500, max_value=80_000)
+    tail = _env_int_bounded("LLM_PARSE_TAIL_CHARS", default=2_500, min_value=500, max_value=80_000)
     return head, tail
 
 
 def _llm_parse_context_limits() -> tuple[int, int]:
-    max_chunks = _env_int_bounded("LLM_PARSE_MAX_CONTEXT_CHUNKS", default=8, min_value=1, max_value=20)
-    max_chunk_chars = _env_int_bounded("LLM_PARSE_MAX_CHUNK_CHARS", default=1_200, min_value=100, max_value=8_000)
+    max_chunks = _env_int_bounded("LLM_PARSE_MAX_CONTEXT_CHUNKS", default=4, min_value=1, max_value=20)
+    max_chunk_chars = _env_int_bounded("LLM_PARSE_MAX_CHUNK_CHARS", default=800, min_value=100, max_value=8_000)
     return max_chunks, max_chunk_chars
 
 
 def _llm_parse_rule_list_limits() -> tuple[int, int]:
-    max_items = _env_int_bounded("LLM_PARSE_MAX_RULE_LIST_ITEMS", default=12, min_value=3, max_value=50)
-    max_item_chars = _env_int_bounded("LLM_PARSE_MAX_RULE_ITEM_CHARS", default=400, min_value=50, max_value=2_000)
+    max_items = _env_int_bounded("LLM_PARSE_MAX_RULE_LIST_ITEMS", default=8, min_value=3, max_value=50)
+    max_item_chars = _env_int_bounded("LLM_PARSE_MAX_RULE_ITEM_CHARS", default=240, min_value=50, max_value=2_000)
     return max_items, max_item_chars
 
 
@@ -171,12 +173,31 @@ def _build_retrieved_context_preview(retrieved_context: list[dict[str, Any]]) ->
     return preview
 
 
+def _fill_llm_enhancement_phase_timings_ms(
+    out: dict[str, float] | None,
+    *,
+    t0: float,
+    t_compose: float,
+    t_after_chat: float,
+    t_end: float,
+) -> None:
+    if out is None:
+        return
+    out["llm_compose_prompt_ms"] = round((t_compose - t0) * 1000, 2)
+    out["llm_gateway_chat_ms"] = round((t_after_chat - t_compose) * 1000, 2)
+    out["llm_normalize_response_ms"] = round((t_end - t_after_chat) * 1000, 2)
+
+
 def enhance_parsed_requirement_with_metadata(
     requirement_text: str,
     retrieved_context: list[dict[str, Any]],
     rule_based_result: dict[str, Any],
     config: OpenAIEnhancementConfig,
+    *,
+    out_phase_timings_ms: dict[str, float] | None = None,
 ) -> tuple[dict[str, Any] | None, str, str]:
+    """Call the model with requirement text, retrieved snippet previews, and rule hints."""
+    t0 = time.perf_counter()
     composed_requirement = _compose_requirement_text_for_llm(requirement_text)
     context_preview = _build_retrieved_context_preview(retrieved_context)
     truncated_rule = _truncate_rule_based_result(rule_based_result)
@@ -225,6 +246,7 @@ def enhance_parsed_requirement_with_metadata(
         ctx_chars,
         sorted(truncated_rule.keys()),
     )
+    t_compose = time.perf_counter()
     try:
         parsed = config.gateway.chat_json(
             system_prompt=(
@@ -236,9 +258,17 @@ def enhance_parsed_requirement_with_metadata(
             temperature=0.1,
         )
     except ModelGatewayResponseError as exc:
+        t_err = time.perf_counter()
+        _fill_llm_enhancement_phase_timings_ms(
+            out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_err, t_end=t_err
+        )
         _LOG.warning("LLM requirement enhancement failed reason=llm_response_invalid error_type=%s %s", exc.__class__.__name__, exc)
         return None, "llm_response_invalid", exc.__class__.__name__
     except ModelGatewayTimeoutError as exc:
+        t_err = time.perf_counter()
+        _fill_llm_enhancement_phase_timings_ms(
+            out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_err, t_end=t_err
+        )
         max_att = (llm_ep.retries + 1) if llm_ep is not None else 0
         _LOG.warning(
             "LLM requirement enhancement failed reason=llm_timeout error_type=%s after_max_attempts=%s %s",
@@ -248,13 +278,25 @@ def enhance_parsed_requirement_with_metadata(
         )
         return None, "llm_timeout", exc.__class__.__name__
     except ModelGatewayError as exc:
+        t_err = time.perf_counter()
+        _fill_llm_enhancement_phase_timings_ms(
+            out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_err, t_end=t_err
+        )
         reason, error_type = _classify_gateway_error(exc)
         _LOG.warning("LLM requirement enhancement failed reason=%s error_type=%s %s", reason, error_type, exc)
         return None, reason, error_type
     except Exception as exc:  # pragma: no cover - defensive fallback
+        t_err = time.perf_counter()
+        _fill_llm_enhancement_phase_timings_ms(
+            out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_err, t_end=t_err
+        )
         _LOG.warning("LLM requirement enhancement failed reason=llm_runtime_error error_type=%s %s", exc.__class__.__name__, exc)
         return None, "llm_runtime_error", exc.__class__.__name__
+    t_after_chat = time.perf_counter()
     if not isinstance(parsed, dict):
+        _fill_llm_enhancement_phase_timings_ms(
+            out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_after_chat, t_end=t_after_chat
+        )
         _LOG.warning("LLM requirement enhancement failed reason=llm_response_invalid error_type=NonDictJSONResponse")
         return None, "llm_response_invalid", "NonDictJSONResponse"
     allowed = {
@@ -313,8 +355,16 @@ def enhance_parsed_requirement_with_metadata(
         else:
             cleaned[key] = str(value).strip()
     if not cleaned:
+        t_end = time.perf_counter()
+        _fill_llm_enhancement_phase_timings_ms(
+            out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_after_chat, t_end=t_end
+        )
         _LOG.warning("LLM requirement enhancement failed reason=llm_response_invalid error_type=EmptyJSONPayload")
         return None, "llm_response_invalid", "EmptyJSONPayload"
+    t_end = time.perf_counter()
+    _fill_llm_enhancement_phase_timings_ms(
+        out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_after_chat, t_end=t_end
+    )
     _LOG.info(
         "LLM requirement enhancement succeeded %s payload_keys=%s api_endpoints=%s",
         llm_label,
@@ -327,6 +377,20 @@ def enhance_parsed_requirement_with_metadata(
 def _classify_gateway_error(exc: ModelGatewayError) -> tuple[str, str]:
     message = str(exc).lower()
     error_type = exc.__class__.__name__
+    if "10035" in message or "wsaewouldblock" in message or "would block" in message:
+        return "llm_network_error", error_type
+    if any(
+        token in message
+        for token in (
+            "connection reset",
+            "connection aborted",
+            "connection refused",
+            "name or service not known",
+            "temporary failure in name resolution",
+            "ssl",
+        )
+    ):
+        return "llm_network_error", error_type
     if "http 401" in message or "unauthorized" in message or "api_key is empty" in message:
         return "llm_auth_error", error_type
     if "http 403" in message or "forbidden" in message:
@@ -391,5 +455,3 @@ def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
     if norm_a == 0 or norm_b == 0:
         return 0.0
     return dot / (norm_a * norm_b)
-
-

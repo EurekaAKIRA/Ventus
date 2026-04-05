@@ -25,6 +25,14 @@ _BATCH_DOC_CHAR_LIMIT = 100_000
 
 @dataclass(slots=True)
 class AnalysisParseOptions:
+    """Parse options from API / runtime defaults.
+
+    ``rag_enabled`` controls **vector** retrieval only (chunk embeddings, vector
+    similarity in ranking). Lexical retrieval always runs; the same retrieved
+    snippets are passed to **both** rule parsing and LLM enhancement—turning RAG
+    off does not strip chunks from the LLM prompt (only removes the vector path).
+    """
+
     use_llm: bool
     rag_enabled: bool
     retrieval_top_k: int
@@ -63,6 +71,7 @@ def parse_requirement_bundle(
 
     raw_text = load_document(source_path=source_path, inline_text=requirement_text)
     document = parse_document(raw_text)
+    t_after_document = time.perf_counter()
     chunks = chunk_text(document.get("cleaned_text", ""), source_file=source_path or "")
     contract_extra = build_contract_chunks(contract_cfg)
     chunks = list(chunks) + contract_extra
@@ -71,11 +80,13 @@ def parse_requirement_bundle(
         cleaned_text=document.get("cleaned_text", ""),
         chunk_count=len(chunks),
     )
+    t_after_chunk = time.perf_counter()
     index = build_index(
         chunks,
         enable_vector_rag=parse_options.rag_enabled,
         embedding_config=enhancement_config,
     )
+    t_after_index = time.perf_counter()
     query = requirement_text.strip() or document.get("cleaned_text", "")
     retrieval_scoring = get_retrieval_scoring_config()
     retrieval_diagnostics: dict[str, Any] = {}
@@ -95,6 +106,7 @@ def parse_requirement_bundle(
     )
     retrieval_items = _dedupe_chunks(retrieval_items)
     retrieved_context = [RetrievedChunk(**item) for item in retrieval_items]
+    t_after_retrieval = time.perf_counter()
 
     fallback_reason = ""
     llm_error_type = ""
@@ -106,41 +118,75 @@ def parse_requirement_bundle(
         use_llm=False,
         out_diagnostics={},
     )
+    t_after_rules = time.perf_counter()
+    pre_llm_enhancement_ms = round((t_after_rules - started) * 1000, 2)
+    document_load_parse_ms = round((t_after_document - started) * 1000, 2)
+    chunk_contract_ms = round((t_after_chunk - t_after_document) * 1000, 2)
+    index_build_ms = round((t_after_index - t_after_chunk) * 1000, 2)
+    retrieval_ms = round((t_after_retrieval - t_after_index) * 1000, 2)
+    rules_parse_ms = round((t_after_rules - t_after_retrieval) * 1000, 2)
+    llm_enhancement_ms = 0.0
+    llm_diagnostics: dict[str, Any] = {}
     if parse_options.use_llm:
         llm_requirement = requirement_text or document.get("cleaned_text", "")
         if enhancement_config is None:
             fallback_reason = "llm_config_missing"
             llm_error_type = "configuration_error"
         else:
-            llm_diagnostics: dict[str, Any] = {}
+            llm_diagnostics = {}
+            t_llm = time.perf_counter()
             try:
-                enhanced_payload = parse_requirement_rules(
-                    requirement_text=llm_requirement,
-                    retrieved_context=[item.to_dict() for item in retrieved_context],
-                    llm_retrieved_context=[] if not parse_options.rag_enabled else None,
-                    use_llm=True,
-                    llm_config=enhancement_config,
-                    out_diagnostics=llm_diagnostics,
-                )
-                if llm_diagnostics.get("llm_applied"):
-                    parsed_payload = enhanced_payload
-                    parse_mode = "llm"
-                else:
-                    fallback_reason = str(llm_diagnostics.get("fallback_reason", "") or "llm_fallback_to_rules")
-                    llm_error_type = str(llm_diagnostics.get("llm_error_type", "") or "llm_unavailable")
-            except Exception as exc:
-                fallback_reason = "llm_runtime_error"
-                llm_error_type = exc.__class__.__name__
+                try:
+                    enhanced_payload = parse_requirement_rules(
+                        requirement_text=llm_requirement,
+                        retrieved_context=[item.to_dict() for item in retrieved_context],
+                        use_llm=True,
+                        llm_config=enhancement_config,
+                        out_diagnostics=llm_diagnostics,
+                    )
+                    if llm_diagnostics.get("llm_applied"):
+                        parsed_payload = enhanced_payload
+                        parse_mode = "llm"
+                    else:
+                        fallback_reason = str(llm_diagnostics.get("fallback_reason", "") or "llm_fallback_to_rules")
+                        llm_error_type = str(llm_diagnostics.get("llm_error_type", "") or "llm_unavailable")
+                except Exception as exc:
+                    fallback_reason = "llm_runtime_error"
+                    llm_error_type = exc.__class__.__name__
+            finally:
+                llm_enhancement_ms = round((time.perf_counter() - t_llm) * 1000, 2)
 
     parsed_requirement = ParsedRequirement(**parsed_payload)
     validation_report = _build_validation_report(parsed_requirement)
     elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
-    performance = _build_performance(elapsed_ms, parse_options.use_llm, parse_options.rag_enabled)
+    phase_timings_ms: dict[str, float] = {
+        "pre_llm_enhancement": pre_llm_enhancement_ms,
+        "llm_enhancement": llm_enhancement_ms,
+        "document_load_parse_ms": document_load_parse_ms,
+        "chunk_contract_ms": chunk_contract_ms,
+        "index_build_ms": index_build_ms,
+        "retrieval_ms": retrieval_ms,
+        "rules_parse_ms": rules_parse_ms,
+    }
+    enh_phases = llm_diagnostics.get("enhancement_phase_timings_ms")
+    if isinstance(enh_phases, dict):
+        for _k, _v in enh_phases.items():
+            try:
+                phase_timings_ms[str(_k)] = float(_v)
+            except (TypeError, ValueError):
+                continue
+    performance = _build_performance(
+        elapsed_ms,
+        parse_options.use_llm,
+        parse_options.rag_enabled,
+        phase_timings_ms=phase_timings_ms,
+    )
 
     parse_metadata = {
         "parse_mode": parse_mode,
         "llm_attempted": llm_attempted,
         "llm_used": parse_mode == "llm",
+        "rag_enabled": parse_options.rag_enabled,
         "rag_used": parse_options.rag_enabled,
         "rag_fallback_reason": _build_rag_fallback_reason(
             rag_enabled=parse_options.rag_enabled,
@@ -253,17 +299,26 @@ def _build_retrieval_metrics(
     }
 
 
-def _build_performance(elapsed_ms: float, use_llm: bool, rag_enabled: bool) -> dict[str, Any]:
+def _build_performance(
+    elapsed_ms: float,
+    use_llm: bool,
+    rag_enabled: bool,
+    *,
+    phase_timings_ms: dict[str, float] | None = None,
+) -> dict[str, Any]:
     target_ms = 20000.0 if (use_llm and rag_enabled) else 8000.0
     reason = ""
     if elapsed_ms > target_ms:
         reason = "network_or_model_latency" if use_llm else "large_input_or_retrieval_cost"
-    return {
+    out: dict[str, Any] = {
         "elapsed_ms": elapsed_ms,
         "target_ms": target_ms,
         "within_target": elapsed_ms <= target_ms,
         "slow_reason": reason,
     }
+    if phase_timings_ms:
+        out["phase_timings_ms"] = phase_timings_ms
+    return out
 
 
 def _build_rag_fallback_reason(

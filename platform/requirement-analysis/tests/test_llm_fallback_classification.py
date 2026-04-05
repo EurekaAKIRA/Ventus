@@ -17,9 +17,9 @@ class _RaisingGateway:
 
 def test_enhancement_classifies_timeout_error() -> None:
     payload, reason, error_type = enhance_parsed_requirement_with_metadata(
-        requirement_text="用户登录后进入个人中心",
+        requirement_text="user logs in and opens the dashboard",
         retrieved_context=[],
-        rule_based_result={"objective": "登录"},
+        rule_based_result={"objective": "login"},
         config=OpenAIEnhancementConfig(gateway=_RaisingGateway(ModelGatewayTimeoutError("timed out"))),  # type: ignore[arg-type]
     )
     assert payload is None
@@ -29,11 +29,27 @@ def test_enhancement_classifies_timeout_error() -> None:
 
 def test_enhancement_classifies_auth_error() -> None:
     payload, reason, error_type = enhance_parsed_requirement_with_metadata(
-        requirement_text="用户登录后进入个人中心",
+        requirement_text="user logs in and opens the dashboard",
         retrieved_context=[],
-        rule_based_result={"objective": "登录"},
+        rule_based_result={"objective": "login"},
         config=OpenAIEnhancementConfig(gateway=_RaisingGateway(ModelGatewayError("http 401: unauthorized"))),  # type: ignore[arg-type]
     )
     assert payload is None
     assert reason == "llm_auth_error"
+    assert error_type == "ModelGatewayError"
+
+
+def test_enhancement_classifies_windows_wouldblock_as_network_error() -> None:
+    payload, reason, error_type = enhance_parsed_requirement_with_metadata(
+        requirement_text="user logs in and opens the dashboard",
+        retrieved_context=[],
+        rule_based_result={"objective": "login"},
+        config=OpenAIEnhancementConfig(
+            gateway=_RaisingGateway(
+                ModelGatewayError("[WinError 10035] A non-blocking socket operation could not be completed immediately")
+            )
+        ),  # type: ignore[arg-type]
+    )
+    assert payload is None
+    assert reason == "llm_network_error"
     assert error_type == "ModelGatewayError"

@@ -29,6 +29,7 @@ import {
   deriveExecutionStatus,
   flattenNumericEntries,
   isAnalyzingStatus,
+  isTaskDetailPollingSettled,
   isValidHttpUrl,
   normalizeStatus,
   resolveTabKey,
@@ -38,8 +39,8 @@ import {
 const FEATURE_PREVIEW_LINES = 18;
 const DSL_PREVIEW_SCENARIOS = 4;
 
-/** Silent full-detail poll: slower while user reads; execution tab uses its own poller when running. */
-const SILENT_DETAIL_POLL_MS = 15000;
+/** 分析完成前：轻量 summary 轮询；完成后停。执行中由 useTaskExecution 轮询。 */
+const PRE_SETTLED_DETAIL_POLL_MS = 12000;
 
 const STAGE_LABELS: Record<StageKey, string> = {
   basic: "任务基础信息",
@@ -76,12 +77,15 @@ export default function TaskDetail() {
     selectedTestPoint,
     showTopOverview,
     load,
+    silentPollBeforeSettled,
     refreshParsedSection,
     refreshScenarioSection,
     refreshReportSection,
     openArtifact,
     openRawData,
     setDetail,
+    setTaskDashboard,
+    setDashboardLoadError,
     setArtifactDrawerOpen,
     setRawDrawerOpen,
     setFeatureExpanded,
@@ -118,6 +122,8 @@ export default function TaskDetail() {
     taskId,
     detail,
     setDetail,
+    setTaskDashboard,
+    setDashboardLoadError,
     executionStatus,
     activeTabKey,
     shouldCompareLatest,
@@ -138,29 +144,27 @@ export default function TaskDetail() {
     setSearchParams(nextParams, { replace: true });
   };
 
-  /** Only poll full detail while pipeline may advance without execution running; execution uses useTaskExecution poller. */
-  const shouldSilentPollFullDetail =
-    detail !== null &&
-    ["received", "parsed", "generated"].includes(taskLifecycleStatus) &&
-    executionStatus !== "running";
+  /** 分析完成前且非执行中：分段轮询（summary 优先，按需 full/产物）。 */
+  const shouldPollDetailBeforeSettled =
+    detail !== null && !isTaskDetailPollingSettled(detail) && executionStatus !== "running";
 
-  const loadRef = useRef(load);
-  loadRef.current = load;
+  const silentPollRef = useRef(silentPollBeforeSettled);
+  silentPollRef.current = silentPollBeforeSettled;
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
 
   useEffect(() => {
-    if (!shouldSilentPollFullDetail || !taskId) {
+    if (!shouldPollDetailBeforeSettled || !taskId) {
       return;
     }
     const timer = window.setInterval(() => {
       if (refreshingRef.current) {
         return;
       }
-      void loadRef.current({ mode: "silent" });
-    }, SILENT_DETAIL_POLL_MS);
+      void silentPollRef.current();
+    }, PRE_SETTLED_DETAIL_POLL_MS);
     return () => window.clearInterval(timer);
-  }, [shouldSilentPollFullDetail, taskId]);
+  }, [shouldPollDetailBeforeSettled, taskId]);
 
   const primaryAnalysisReport = taskDashboard?.analysis_report ?? detail?.analysis_report;
 

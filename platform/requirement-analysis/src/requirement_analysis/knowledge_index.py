@@ -13,7 +13,10 @@ def build_index(
     enable_vector_rag: bool = False,
     embedding_config: OpenAIEnhancementConfig | None = None,
 ) -> dict:
-    """Build a lightweight in-memory index for task-scoped retrieval."""
+    """Build a lightweight in-memory index for task-scoped retrieval.
+
+    ``enable_vector_rag`` is ``AnalysisParseOptions.rag_enabled`` from the parse API / runtime defaults.
+    """
     normalized = [chunk.to_dict() if hasattr(chunk, "to_dict") else chunk for chunk in chunks]
     inverted_index: dict[str, list[str]] = defaultdict(list)
     for chunk in normalized:

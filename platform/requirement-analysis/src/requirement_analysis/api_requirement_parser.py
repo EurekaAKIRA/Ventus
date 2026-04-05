@@ -428,9 +428,9 @@ def parse_requirement(
 ) -> dict:
     """Parse requirement text into a structured, test-oriented representation.
 
-    When ``llm_retrieved_context`` is not None, only the LLM enhancement step uses it
-    (e.g. empty list to skip RAG snippets in the model prompt); rule extraction still
-    uses ``retrieved_context``.
+    When ``llm_retrieved_context`` is not None, only the LLM enhancement step uses it;
+    rule extraction still uses ``retrieved_context``. Default ``None`` means both use the
+    same retrieved list.
     """
     base_text = requirement_text.strip()
     retrieved_context = retrieved_context or []
@@ -493,6 +493,7 @@ def parse_requirement(
             diagnostics["llm_error_type"] = "configuration_error"
         else:
             try:
+                enhancement_phase_ms: dict[str, float] = {}
                 llm_payload, fallback_reason, llm_error_type = enhance_parsed_requirement_with_metadata(
                     requirement_text=base_text or merged_text,
                     retrieved_context=context_for_llm,
@@ -507,7 +508,9 @@ def parse_requirement(
                         "ambiguities": _dedupe(ambiguities),
                     },
                     config=llm_config,
+                    out_phase_timings_ms=enhancement_phase_ms,
                 )
+                diagnostics["enhancement_phase_timings_ms"] = enhancement_phase_ms
                 if llm_payload:
                     llm_merged = llm_payload
                     diagnostics["llm_applied"] = True

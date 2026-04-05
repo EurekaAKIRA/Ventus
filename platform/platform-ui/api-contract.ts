@@ -17,6 +17,8 @@ export interface TaskContext {
   language: string;
   status: TaskStatus | string;
   notes: string[];
+  /** Vector RAG preference at task creation (embeddings + vector ranking). Does not disable LLM enhancement. */
+  rag_enabled?: boolean | null;
 }
 
 export interface RetrievedChunk {
@@ -157,6 +159,12 @@ export interface ParsePerformance {
   target_ms: number;
   within_target: boolean;
   slow_reason: string;
+  /**
+   * Fine-grained parse timings (ms). Includes:
+   * document_load_parse_ms, chunk_contract_ms, index_build_ms, retrieval_ms, rules_parse_ms,
+   * pre_llm_enhancement, llm_enhancement, llm_compose_prompt_ms, llm_gateway_chat_ms, llm_normalize_response_ms.
+   */
+  phase_timings_ms?: Record<string, number>;
 }
 
 export interface ParseRetrievalMetrics {
@@ -185,6 +193,9 @@ export interface ParseMetadata {
   parse_mode: string;
   llm_attempted: boolean;
   llm_used: boolean;
+  /** Vector RAG was on for this parse (embeddings + vector ranking). Mirrors request `rag_enabled`. */
+  rag_enabled: boolean;
+  /** Deprecated alias of `rag_enabled`; kept for older stored tasks. */
   rag_used: boolean;
   rag_fallback_reason: string;
   fallback_reason: string;

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
@@ -75,6 +76,7 @@ def run_analysis_pipeline(
         status=task_status,
     )
     task_context = TaskContext(**payload["task_context"])
+    task_context = replace(task_context, rag_enabled=parse_options.rag_enabled)
 
     parse_bundle = parse_requirement_bundle(
         requirement_text=payload["raw_requirement"],

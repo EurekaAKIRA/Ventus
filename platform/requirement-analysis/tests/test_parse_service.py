@@ -18,6 +18,8 @@ def test_parse_service_baseline() -> None:
     assert "validation_report" in result
     assert result["parse_metadata"]["parse_mode"] in {"rules", "llm"}
     assert result["parse_metadata"]["llm_attempted"] is False
+    assert result["parse_metadata"]["rag_enabled"] is True
+    assert result["parse_metadata"]["rag_used"] is True
     assert result["parse_metadata"]["retrieval_top_k"] == 5
     assert result["parse_metadata"]["retrieval_scoring"]["lexical_weight"] > 0
     assert result["parse_metadata"]["document_char_count"] > 0
@@ -45,6 +47,8 @@ def test_parse_service_llm_fallback_when_missing_config(monkeypatch) -> None:
     metadata = result["parse_metadata"]
     assert metadata["parse_mode"] == "rules"
     assert metadata["llm_attempted"] is True
+    assert metadata["rag_enabled"] is False
+    assert metadata["rag_used"] is False
     assert metadata["fallback_reason"] == "llm_config_missing"
     assert metadata["llm_error_type"] == "configuration_error"
 

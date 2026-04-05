@@ -57,6 +57,7 @@ def main() -> int:
         assert isinstance(metadata.get("llm_used"), bool)
         assert metadata["retrieval_top_k"] == 3
         assert metadata["rerank_enabled"] is False
+        assert metadata["rag_enabled"] is True
         assert metadata["rag_used"] is True
         assert metadata["model_profile"] == "low_cost"
         assert metadata["document_char_count"] > 0

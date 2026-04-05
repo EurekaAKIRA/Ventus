@@ -25,6 +25,7 @@ class CreateTaskRequest(BaseModel):
     source_path: str | None = None
     target_system: str | None = None
     environment: str | None = None
+    rag_enabled: bool | None = None
 
 
 class ExecuteTaskRequest(BaseModel):
@@ -54,6 +55,7 @@ class ParsePerformance(BaseModel):
     target_ms: float = 0.0
     within_target: bool = True
     slow_reason: str = ""
+    phase_timings_ms: dict[str, float] = Field(default_factory=dict)
 
 
 class ParseRetrievalMetrics(BaseModel):
@@ -82,7 +84,8 @@ class ParseMetadata(BaseModel):
     parse_mode: str = "rules"
     llm_attempted: bool = False
     llm_used: bool = False
-    rag_used: bool = True
+    rag_enabled: bool = False
+    rag_used: bool = False
     rag_fallback_reason: str = ""
     fallback_reason: str = ""
     llm_error_type: str = ""

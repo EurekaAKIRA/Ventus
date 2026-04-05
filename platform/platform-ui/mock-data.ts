@@ -25,6 +25,7 @@ export const mockTaskList: TaskListItem[] = [
     language: "zh-CN",
     status: "parsed",
     notes: [],
+    rag_enabled: false,
   },
   {
     task_id: "task_20260329_002",
@@ -35,6 +36,7 @@ export const mockTaskList: TaskListItem[] = [
     language: "zh-CN",
     status: "running",
     notes: ["已进入执行阶段"],
+    rag_enabled: false,
   },
 ];
 
@@ -47,6 +49,7 @@ export const mockTaskContext: TaskContext = {
   language: "zh-CN",
   status: "parsed",
   notes: [],
+  rag_enabled: false,
 };
 
 export const mockParsedRequirement: ParsedRequirement = {
@@ -193,7 +196,8 @@ export const mockParseMetadata: ParseMetadata = {
   parse_mode: "rules",
   llm_attempted: true,
   llm_used: false,
-  rag_used: true,
+  rag_enabled: false,
+  rag_used: false,
   rag_fallback_reason: "",
   fallback_reason: "llm_config_missing",
   llm_error_type: "configuration_error",

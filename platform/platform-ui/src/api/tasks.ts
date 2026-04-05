@@ -36,6 +36,9 @@ import {
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 const API_BASE_URL = (import.meta.env.VITE_PLATFORM_API_BASE as string | undefined)?.trim() || "http://127.0.0.1:8001";
+
+/** Matches `platform/shared/config/runtime_config.json` → `requirement_analysis.defaults.rag_enabled`. */
+export const DEFAULT_REQUIREMENT_RAG_ENABLED = false;
 const USE_MOCK_API = String(import.meta.env.VITE_USE_MOCK_API ?? "").toLowerCase() === "true";
 const HISTORY_PAGE_SIZE_MAX = 200;
 let regressionDiffApiAvailable: boolean | null = null;
@@ -187,6 +190,7 @@ export async function createTask(payload: {
   source_path?: string;
   target_system?: string;
   environment?: string;
+  rag_enabled?: boolean;
 }): Promise<TaskContext> {
   if (USE_MOCK_API) {
     await delay(600);

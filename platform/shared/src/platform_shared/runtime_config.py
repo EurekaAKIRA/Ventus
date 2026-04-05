@@ -44,9 +44,9 @@ class RequirementAnalysisModelProfile:
     llm_model: str = "hunyuan-turbos-latest"
     embedding_model: str = "hunyuan-embedding"
     vision_model: str = "hunyuan-vision"
-    timeout_seconds: float = 30.0
+    timeout_seconds: float = 60.0
     retries: int = 1
-    llm_retries: int = 3
+    llm_retries: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,9 +124,9 @@ def _load_platform_runtime_config() -> PlatformRuntimeConfig:
                 llm_model=str(payload.get("llm_model", "hunyuan-turbos-latest")).strip() or "hunyuan-turbos-latest",
                 embedding_model=str(payload.get("embedding_model", "hunyuan-embedding")).strip() or "hunyuan-embedding",
                 vision_model=str(payload.get("vision_model", "hunyuan-vision")).strip() or "hunyuan-vision",
-                timeout_seconds=_as_float(payload.get("timeout_seconds"), default=30.0, min_value=1.0, max_value=120.0),
+                timeout_seconds=_as_float(payload.get("timeout_seconds"), default=60.0, min_value=1.0, max_value=120.0),
                 retries=_as_int(payload.get("retries"), default=1, min_value=0, max_value=5),
-                llm_retries=_as_int(payload.get("llm_retries"), default=3, min_value=0, max_value=10),
+                llm_retries=_as_int(payload.get("llm_retries"), default=1, min_value=0, max_value=10),
             )
     if not parsed_profiles:
         parsed_profiles = {"default": RequirementAnalysisModelProfile()}

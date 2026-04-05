@@ -1,0 +1,2 @@
+# Optional: model gateway HTTP client on Windows (reduces urllib WinError 10035).
+httpx>=0.24.0
