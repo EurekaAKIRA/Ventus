@@ -61,6 +61,7 @@ RESOURCE_ALIASES = (
 )
 _EXPLICIT_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+(/[\w/\-{}:.]+)", re.IGNORECASE)
 _BARE_PATH_RE = re.compile(r"(/[\w/\-{}:.]+)")
+_PLACEHOLDER_RE = re.compile(r"\{\{?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}?\}")
 _STATUS_CODE_RE = re.compile(r"(?:status\s*code|http|返回|状态码)\s*[:：=]?\s*(\d{3})", re.IGNORECASE)
 _FIELD_TOKEN_RE = re.compile(r"`([a-zA-Z_][a-zA-Z0-9_]*)`|\"([a-zA-Z_][a-zA-Z0-9_]*)\"|'([a-zA-Z_][a-zA-Z0-9_]*)'")
 _FIELD_LIST_RE = re.compile(
@@ -89,6 +90,12 @@ _FIELD_STOPWORDS = {
     "from",
     "token",
     "bearer",
+}
+_IDENTIFIER_ALIASES: dict[str, tuple[str, ...]] = {
+    "task_id": ("task_id", "taskid"),
+    "booking_id": ("booking_id", "bookingid"),
+    "resource_id": ("resource_id", "resourceid", "id"),
+    "session_id": ("session_id", "sessionid"),
 }
 
 # 已知平台接口请求体字段白名单，key=(METHOD, path)，供 _extract_body_fields 失败时兜底使用
@@ -454,14 +461,16 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
                 json_body = {"name": f"{safe_name}-demo"}
     elif intent == "query":
         method = "GET"
-        if "resource_id" in uses_context and _resource_needs_identifier(text):
-            url = f"{resource_path}/{{{{resource_id}}}}"
+        identifier_context = _identifier_context_for_path(resource_path, uses_context)
+        if identifier_context and _resource_needs_identifier(text):
+            url = _apply_identifier_to_path(resource_path, identifier_context)
         elif any(keyword in lowered for keyword in ("list", "search", "query", "查询", "列表")):
             params = {"page": 1, "size": 20}
     elif intent == "update":
         method = "PUT"
-        if "resource_id" in uses_context:
-            url = f"{resource_path}/{{{{resource_id}}}}"
+        identifier_context = _identifier_context_for_path(resource_path, uses_context)
+        if identifier_context:
+            url = _apply_identifier_to_path(resource_path, identifier_context)
         extracted = _extract_body_fields(parsed_requirement, text, resource_path, method, intent)
         merged = _merge_extracted_with_known_body(extracted, method, resource_path)
         if merged:
@@ -475,8 +484,9 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
                 json_body = {"name": f"{safe_name}-updated"}
     elif intent == "delete":
         method = "DELETE"
-        if "resource_id" in uses_context:
-            url = f"{resource_path}/{{{{resource_id}}}}"
+        identifier_context = _identifier_context_for_path(resource_path, uses_context)
+        if identifier_context:
+            url = _apply_identifier_to_path(resource_path, identifier_context)
     else:
         method = "POST"
         json_body = {"input": text[:60]}
@@ -486,7 +496,7 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
         url = resource_path  # explicit endpoint overrides hardcoded intent URL
         url = _normalize_path_placeholders(url, uses_context)
     matched_endpoint = _find_endpoint_spec(parsed_requirement, method, url)
-    if _requires_token_cookie(text, matched_endpoint):
+    if _requires_token_cookie(text, matched_endpoint, parsed_requirement=parsed_requirement, method=method, path=url):
         cookies = {"token": "{{token}}"}
 
     if any(keyword in lowered for keyword in BASIC_AUTH_HINTS):
@@ -634,45 +644,98 @@ def _normalize_endpoint_path(path: str) -> str:
     return normalized
 
 
+def _canonical_placeholder_name(name: str) -> str:
+    lowered = str(name or "").strip().lower()
+    for canonical, aliases in _IDENTIFIER_ALIASES.items():
+        if lowered in aliases:
+            return canonical
+    return lowered
+
+
+def _canonicalize_endpoint_path(path: str) -> str:
+    normalized = _normalize_endpoint_path(path)
+    if not normalized:
+        return normalized
+
+    def repl(match: re.Match[str]) -> str:
+        return "{" + _canonical_placeholder_name(match.group(1)) + "}"
+
+    return _PLACEHOLDER_RE.sub(repl, normalized)
+
+
 def _sentence_matches_endpoint(sentence: str, endpoint_path: str, method: str) -> bool:
-    expected_path = _normalize_endpoint_path(endpoint_path)
+    expected_path = _canonicalize_endpoint_path(endpoint_path)
     expected_method = (method or "").upper().strip()
     if not expected_path:
         return False
 
-    explicit_endpoints = [(m.group(1).upper(), _normalize_endpoint_path(m.group(2))) for m in _EXPLICIT_PATH_RE.finditer(sentence)]
+    explicit_endpoints = [(m.group(1).upper(), _canonicalize_endpoint_path(m.group(2))) for m in _EXPLICIT_PATH_RE.finditer(sentence)]
     if explicit_endpoints:
         return any(m == expected_method and p == expected_path for m, p in explicit_endpoints)
 
-    bare_paths = [_normalize_endpoint_path(m.group(1)) for m in _BARE_PATH_RE.finditer(sentence)]
+    bare_paths = [_canonicalize_endpoint_path(m.group(1)) for m in _BARE_PATH_RE.finditer(sentence)]
     return any(path == expected_path for path in bare_paths)
 
 
 def _find_endpoint_spec(parsed_requirement: dict, method: str, path: str) -> dict | None:
     normalized_method = str(method or "").upper().strip()
-    normalized_path = _normalize_endpoint_path(path)
+    normalized_path = _canonicalize_endpoint_path(path)
     if not normalized_method or not normalized_path:
         return None
     for endpoint in parsed_requirement.get("api_endpoints") or []:
         ep_method = str(endpoint.get("method", "")).upper().strip()
-        ep_path = _normalize_endpoint_path(str(endpoint.get("path", "")))
+        ep_path = _canonicalize_endpoint_path(str(endpoint.get("path", "")))
         if ep_method == normalized_method and ep_path == normalized_path:
             return endpoint
     return None
 
 
-def _requires_token_cookie(step_text: str, endpoint: dict | None) -> bool:
+def _requires_token_cookie(
+    step_text: str,
+    endpoint: dict | None,
+    *,
+    parsed_requirement: dict | None = None,
+    method: str = "",
+    path: str = "",
+) -> bool:
     lowered = str(step_text or "").lower()
     if "cookie" in lowered and "token" in lowered:
         return True
-    if not endpoint:
-        return False
-    for field in endpoint.get("request_body_fields") or []:
-        name = str(field.get("name", "") if isinstance(field, dict) else field).lower()
-        if "cookie" in name:
+    candidates: list[dict] = []
+    if endpoint:
+        candidates.append(endpoint)
+    if parsed_requirement:
+        target_method = str(method or "").upper().strip()
+        target_path = _canonicalize_endpoint_path(path)
+        for item in parsed_requirement.get("api_endpoints") or []:
+            ep_method = str(item.get("method", "")).upper().strip()
+            ep_path = _canonicalize_endpoint_path(str(item.get("path", "")))
+            if ep_method == target_method and ep_path == target_path:
+                candidates.append(item)
+
+    for candidate in candidates:
+        for field in candidate.get("request_body_fields") or []:
+            name = str(field.get("name", "") if isinstance(field, dict) else field).lower()
+            if "cookie" in name:
+                return True
+        description = str(candidate.get("description", "")).lower()
+        if "cookie" in description and "token" in description:
             return True
-    description = str(endpoint.get("description", "")).lower()
-    return "cookie" in description and "token" in description
+
+    if parsed_requirement:
+        target_path = _canonicalize_endpoint_path(path)
+        target_method = str(method or "").upper().strip()
+        corpus = []
+        corpus.extend(parsed_requirement.get("actions", []))
+        corpus.extend(parsed_requirement.get("expected_results", []))
+        corpus.extend(parsed_requirement.get("constraints", []))
+        for sentence in corpus:
+            lowered_sentence = str(sentence).lower()
+            if "cookie" not in lowered_sentence or "token" not in lowered_sentence:
+                continue
+            if _sentence_matches_endpoint(str(sentence), target_path, target_method):
+                return True
+    return False
 
 
 _INTENT_METHOD_MAP: dict[str, str] = {
@@ -693,12 +756,12 @@ def _match_endpoint(text: str, intent: str, endpoints: list[dict]) -> dict | Non
     lowered = text.lower()
     path_segments = lambda ep: [s for s in ep.get("path", "").lower().split("/") if s]
 
-    explicit_in_text = [(m.group(1).upper(), _normalize_endpoint_path(m.group(2))) for m in _EXPLICIT_PATH_RE.finditer(text)]
+    explicit_in_text = [(m.group(1).upper(), _canonicalize_endpoint_path(m.group(2))) for m in _EXPLICIT_PATH_RE.finditer(text)]
     if explicit_in_text:
         for method, path in explicit_in_text:
             for ep in endpoints:
                 ep_method = str(ep.get("method", "")).upper()
-                ep_path = _normalize_endpoint_path(str(ep.get("path", "")))
+                ep_path = _canonicalize_endpoint_path(str(ep.get("path", "")))
                 if ep_method == method and ep_path == path:
                     return ep
 
@@ -777,6 +840,30 @@ def _infer_resource(text: str, parsed_requirement: dict) -> tuple[str, str]:
 def _resource_needs_identifier(text: str) -> bool:
     lowered = text.lower()
     return any(keyword in lowered for keyword in ("detail", "详情", "id", "single", "one", "指定"))
+
+
+def _identifier_context_for_path(path: str, uses_context: list[str]) -> str | None:
+    canonical_path = _canonicalize_endpoint_path(path)
+    placeholders = [match.group(1) for match in _PLACEHOLDER_RE.finditer(canonical_path)]
+    for candidate in ("booking_id", "task_id", "session_id", "resource_id"):
+        if candidate in placeholders and candidate in uses_context:
+            return candidate
+    if "booking_id" in uses_context:
+        return "booking_id"
+    if "task_id" in uses_context:
+        return "task_id"
+    if "resource_id" in uses_context:
+        return "resource_id"
+    return None
+
+
+def _apply_identifier_to_path(path: str, identifier_context: str) -> str:
+    normalized_path = str(path or "").strip()
+    if not normalized_path:
+        return normalized_path
+    if "{" in normalized_path or "}" in normalized_path:
+        return normalized_path
+    return normalized_path.rstrip("/") + f"/{{{{{identifier_context}}}}}"
 
 
 def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]:
@@ -873,16 +960,24 @@ def _build_fallback_assertions(scenario: ScenarioModel, step: dict) -> list[dict
 
 def _normalize_path_placeholders(path: str, uses_context: list[str]) -> str:
     normalized = str(path or "")
-    normalized = normalized.replace("{{task_id}}", "__TASK_ID__")
-    normalized = normalized.replace("{{booking_id}}", "__BOOKING_ID__")
-    normalized = normalized.replace("{{id}}", "__ID__")
-    if "{task_id}" in normalized:
-        normalized = normalized.replace("{task_id}", "{{task_id}}")
-    if "{id}" in normalized and "resource_id" in uses_context:
-        normalized = normalized.replace("{id}", "{{resource_id}}")
-    if "{booking_id}" in normalized:
-        normalized = normalized.replace("{booking_id}", "{{booking_id}}")
-    normalized = normalized.replace("__TASK_ID__", "{{task_id}}")
-    normalized = normalized.replace("__BOOKING_ID__", "{{booking_id}}")
-    normalized = normalized.replace("__ID__", "{{id}}")
-    return normalized
+    if not normalized:
+        return normalized
+
+    def repl(match: re.Match[str]) -> str:
+        canonical = _canonical_placeholder_name(match.group(1))
+        if canonical == "task_id" and "task_id" in uses_context:
+            return "{{task_id}}"
+        if canonical == "booking_id" and "booking_id" in uses_context:
+            return "{{booking_id}}"
+        if canonical == "session_id" and "session_id" in uses_context:
+            return "{{session_id}}"
+        if canonical == "resource_id":
+            if "resource_id" in uses_context:
+                return "{{resource_id}}"
+            if "booking_id" in uses_context:
+                return "{{booking_id}}"
+            if "task_id" in uses_context:
+                return "{{task_id}}"
+        return "{{" + canonical + "}}"
+
+    return _PLACEHOLDER_RE.sub(repl, normalized)

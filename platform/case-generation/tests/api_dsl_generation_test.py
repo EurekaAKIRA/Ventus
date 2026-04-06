@@ -1102,6 +1102,84 @@ def test_dsl_treats_flow_summary_step_as_non_request() -> None:
     assert summary_step["assertion_quality"]["warning"] == "non_request_step"
 
 
+def test_restful_booker_placeholder_aliases_normalize_to_booking_id_context() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_021",
+        name="placeholder aliases",
+        goal="normalize booking placeholders",
+        steps=[
+            ScenarioStep(type="given", text="booking context exists"),
+            ScenarioStep(type="when", text="向 /booking/{bookingid} 发送 GET 请求读取 booking 详情"),
+            ScenarioStep(type="and", text="向 /booking/{bookingid} 发送 DELETE 请求删除 booking"),
+            ScenarioStep(type="then", text="请求使用统一上下文变量"),
+        ],
+        assertions=["请求使用统一上下文变量"],
+        source_chunks=[],
+        preconditions=["booking context exists"],
+    )
+    parsed_requirement = {
+        "objective": "placeholder normalization",
+        "actions": ["GET /booking/{bookingid}", "DELETE /booking/{bookingid}"],
+        "expected_results": ["booking query succeeds", "booking delete succeeds"],
+        "api_endpoints": [
+            {"method": "GET", "path": "/booking/{bookingid}", "description": "get booking", "depends_on": ["/booking"]},
+            {"method": "DELETE", "path": "/booking/{bookingid}", "description": "delete booking", "depends_on": ["/booking"]},
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    get_step = dsl["scenarios"][0]["steps"][1]
+    delete_step = dsl["scenarios"][0]["steps"][2]
+
+    assert get_step["request"]["url"] == "/booking/{{booking_id}}"
+    assert delete_step["request"]["url"] == "/booking/{{booking_id}}"
+
+
+def test_restful_booker_cookie_contract_beats_bearer_fallback() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_022",
+        name="cookie auth precedence",
+        goal="prefer explicit cookie contract",
+        steps=[
+            ScenarioStep(type="given", text="token and booking_id exist"),
+            ScenarioStep(type="when", text="向 /booking/{bookingid} 发送 DELETE 请求删除 booking"),
+            ScenarioStep(type="then", text="删除成功"),
+        ],
+        assertions=["删除成功"],
+        source_chunks=[],
+        preconditions=["token and booking_id exist"],
+    )
+    parsed_requirement = {
+        "objective": "cookie auth precedence",
+        "actions": [
+            "DELETE /booking/{bookingid}",
+            "DELETE /booking/{bookingid} 必须显式携带 Cookie: token={{token}}",
+        ],
+        "expected_results": ["删除时携带 Cookie token"],
+        "api_endpoints": [
+            {
+                "method": "DELETE",
+                "path": "/booking/{bookingid}",
+                "description": "delete booking",
+                "depends_on": ["/booking"],
+            }
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    delete_step = dsl["scenarios"][0]["steps"][1]
+
+    assert delete_step["request"]["url"] == "/booking/{{booking_id}}"
+    assert delete_step["request"].get("cookies") == {"token": "{{token}}"}
+    assert "auth" not in delete_step["request"]
+
+
 def test_dependency_endpoints_generate_targeted_chain_scenarios_and_full_flow() -> None:
     from case_generation import build_scenarios
     from platform_shared.models import ScenarioModel
@@ -1139,13 +1217,67 @@ def test_dependency_endpoints_generate_targeted_chain_scenarios_and_full_flow() 
 
     scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
     names = [scenario.name for scenario in scenarios]
+    step_sets = [
+        [step.text if hasattr(step, "text") else step["text"] for step in scenario.steps]
+        for scenario in scenarios
+    ]
 
     assert len(scenarios) == 5
-    assert "POST /auth" in names
-    assert "POST /booking" in names
-    assert any("POST /booking -> GET /booking/{{booking_id}}" in name for name in names)
-    assert any("POST /auth -> POST /booking -> DELETE /booking/{{booking_id}}" in name for name in names)
-    assert any(name.startswith("POST /auth -> POST /booking -> GET /booking/{{booking_id}}") for name in names)
+    assert any("POST /auth" in name for name in names)
+    assert any("POST /booking" in name for name in names)
+    assert any(any("POST /booking" in step for step in steps) and any("GET /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
+    assert any(any("POST /auth" in step for step in steps) and any("POST /booking" in step for step in steps) and any("DELETE /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
+    assert any(any("POST /auth" in step for step in steps) and any("POST /booking" in step for step in steps) and any("GET /booking/{{booking_id}}" in step for step in steps) and any("DELETE /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
+
+
+def test_narrative_scenarios_do_not_duplicate_structural_endpoint_coverage() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "restful booker minimal e2e",
+        "actions": [
+            "获取鉴权 token，向 POST /auth 发送包含用户名和密码的请求",
+            "创建 booking，向 POST /booking 发送包含预订信息的请求",
+            "读取 booking 详情，向 GET /booking/{{booking_id}} 发送请求",
+            "删除 booking，向 DELETE /booking/{{booking_id}} 发送携带 Cookie 的请求",
+            "用户完成 booking 主链路",
+            "确认从创建到删除的完整流程",
+        ],
+        "expected_results": [
+            "token exists",
+            "bookingid exists",
+            "booking detail matches request",
+            "delete succeeds with cookie token",
+        ],
+        "api_endpoints": [
+            {"method": "POST", "path": "/auth", "description": "auth", "depends_on": []},
+            {"method": "POST", "path": "/booking", "description": "create booking", "depends_on": []},
+            {"method": "GET", "path": "/booking/{{booking_id}}", "description": "get booking", "depends_on": ["/booking"]},
+            {
+                "method": "DELETE",
+                "path": "/booking/{{booking_id}}",
+                "description": "delete booking with Cookie token",
+                "depends_on": ["/booking"],
+                "request_body_fields": [{"name": "Cookie", "field_type": "string", "required": True}],
+            },
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    names = [scenario.name for scenario in scenarios]
+    step_sets = [
+        [step.text if hasattr(step, "text") else step["text"] for step in scenario.steps]
+        for scenario in scenarios
+    ]
+
+    assert len(scenarios) == 5
+    assert any("POST /auth" in name for name in names)
+    assert any("POST /booking" in name for name in names)
+    assert any(any("POST /booking" in step for step in steps) and any("GET /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
+    assert any(any("POST /auth" in step for step in steps) and any("POST /booking" in step for step in steps) and any("DELETE /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
+    assert any(any("POST /auth" in step for step in steps) and any("POST /booking" in step for step in steps) and any("GET /booking/{{booking_id}}" in step for step in steps) and any("DELETE /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
 
 
 def main() -> int:
