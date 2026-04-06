@@ -3,17 +3,100 @@
 from __future__ import annotations
 
 import re
+from typing import Iterable
 
 from platform_shared.models import ScenarioModel, ScenarioStep
 
+DEFAULT_PRECONDITION = "Start from a valid API entrypoint"
+DEFAULT_ASSERTION_TEXT = "系统返回符合需求的可观察结果"
+DEFAULT_RESULT_TEXT = "System returns an observable result"
+MAX_ENDPOINT_SCENARIOS = 25
+MAX_DEPENDENCY_SCENARIOS = 6
+
+_COMMON_ENDPOINT_SEGMENTS = {"api", "task", "tasks", "task_id", "{task_id}", "id", "data", "history"}
+_META_ACTION_PREFIXES = (
+    "scenario:",
+    "scenario ",
+    "scen:",
+    "step ",
+    "request:**",
+    "expected:**",
+    "goal:",
+    "场景:",
+    "场景 ",
+    "步骤 ",
+    "请求:",
+    "预期:",
+    "统一目标:",
+    "统一目标 ",
+)
+_GENERIC_EXPECTATION_HINTS = (
+    "统一使用如下响应结构",
+    "不应把任务详情查询接口当作列表接口",
+    "不应假设存在",
+    "联调和断言设计",
+    "响应结构",
+    "主链路联调需求说明",
+    "当前实现对齐版",
+)
+_NARRATIVE_KEYWORDS = (
+    "main flow",
+    "workflow",
+    "flow",
+    "journey",
+    "scenario",
+    "process",
+    "user",
+    "page",
+    "页面",
+    "用户",
+    "流程",
+    "主链路",
+    "完成",
+    "确认",
+)
+_FLOW_SUMMARY_HINTS = (
+    "闭环",
+    "主链路",
+    "全链路",
+    "端到端",
+    "e2e",
+    "end-to-end",
+    "workflow",
+    "journey",
+)
+_VERIFICATION_PREFIXES = (
+    "验证",
+    "校验",
+    "检查",
+    "确认",
+    "确保",
+    "verify",
+    "validate",
+    "check",
+    "ensure",
+    "confirm",
+)
+_ACTION_CLASS_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("auth", ("auth", "login", "token", "鉴权", "登录", "令牌")),
+    ("create", ("create", "post", "创建", "新增")),
+    ("query", ("query", "fetch", "get", "read", "查询", "读取", "查看")),
+    ("update", ("update", "put", "patch", "更新", "修改")),
+    ("delete", ("delete", "remove", "删除", "取消")),
+)
+_EXPLICIT_HTTP_SURFACE_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+/[\w/\-{}:.]+", re.IGNORECASE)
+
 
 def _normalize_preconditions(parsed_requirement: dict) -> list[str]:
-    return parsed_requirement.get("preconditions") or ["从有效的 API 入口开始执行"]
+    return parsed_requirement.get("preconditions") or [DEFAULT_PRECONDITION]
 
 
 def _priority_from_text(text: str) -> str:
     lowered = text.lower()
-    if any(keyword in lowered for keyword in ("login", "pay", "submit", "create", "delete", "登录", "鉴权", "创建", "删除")):
+    if any(
+        keyword in lowered
+        for keyword in ("login", "auth", "pay", "submit", "create", "delete", "登录", "鉴权", "创建", "删除")
+    ):
         return "P0"
     if any(keyword in lowered for keyword in ("display", "search", "view", "query", "查看", "查询")):
         return "P1"
@@ -22,7 +105,10 @@ def _priority_from_text(text: str) -> str:
 
 def _is_auth_action(text: str) -> bool:
     lowered = text.lower()
-    return any(keyword in lowered for keyword in ("login", "auth", "token", "bearer", "session", "登录", "鉴权", "会话"))
+    return any(
+        keyword in lowered
+        for keyword in ("login", "auth", "token", "bearer", "session", "cookie", "登录", "鉴权", "会话")
+    )
 
 
 def _is_create_action(text: str) -> bool:
@@ -32,7 +118,10 @@ def _is_create_action(text: str) -> bool:
 
 def _depends_on_previous(text: str) -> bool:
     lowered = text.lower()
-    return any(keyword in lowered for keyword in ("previous", "prior", "token", "session", "id", "detail", "profile", "上一步", "返回值", "详情"))
+    return any(
+        keyword in lowered
+        for keyword in ("previous", "prior", "token", "session", "cookie", "id", "detail", "profile", "上一步", "返回值", "详情")
+    )
 
 
 def _build_scenario(
@@ -52,7 +141,7 @@ def _build_scenario(
         for extra_expectation in expected_results[1:3]:
             steps.append(ScenarioStep(type="and", text=extra_expectation))
     else:
-        steps.append(ScenarioStep(type="then", text="系统返回符合需求的可观察结果"))
+        steps.append(ScenarioStep(type="then", text=DEFAULT_ASSERTION_TEXT))
 
     scenario = ScenarioModel(
         scenario_id=f"scenario_{scenario_index:03d}",
@@ -60,7 +149,7 @@ def _build_scenario(
         goal=goal or parsed_requirement.get("objective", primary_action),
         preconditions=preconditions,
         steps=steps,
-        assertions=expected_results or ["系统返回符合需求的可观察结果"],
+        assertions=expected_results or [DEFAULT_ASSERTION_TEXT],
         source_chunks=parsed_requirement.get("source_chunks", []),
         priority=_priority_from_text(" ".join(actions)),
     )
@@ -111,9 +200,6 @@ def _build_action_for_endpoint(endpoint: dict, actions: list[str]) -> str:
     return actions[0] if actions else "执行核心业务动作"
 
 
-_COMMON_ENDPOINT_SEGMENTS = {"api", "task", "tasks", "task_id", "{task_id}", "id", "data", "history"}
-
-
 def _extract_significant_path_segments(path: str) -> list[str]:
     segments: list[str] = []
     for segment in str(path or "").lower().split("/"):
@@ -154,21 +240,12 @@ def _contains_explicit_endpoint_reference(text: str, method: str, path: str) -> 
 
 def _is_generic_expectation_text(text: str) -> bool:
     lowered = text.lower()
-    generic_hints = (
-        "统一使用如下响应结构",
-        "不应把任务详情查询接口当作列表接口",
-        "不应假设存在",
-        "联调和断言设计",
-        "响应结构",
-        "主链路联调需求说明",
-        "当前实现对齐版",
-    )
-    return any(hint in lowered for hint in generic_hints)
+    return any(hint in lowered for hint in _GENERIC_EXPECTATION_HINTS)
 
 
 def _select_expectations_for_endpoint(endpoint: dict, expectations: list[str]) -> list[str]:
     if not expectations:
-        return ["系统返回符合需求的可观察结果"]
+        return [DEFAULT_ASSERTION_TEXT]
     path = str(endpoint.get("path", "")).lower()
     method = str(endpoint.get("method", "")).upper()
     path_segments = _extract_significant_path_segments(path)
@@ -185,6 +262,17 @@ def _select_expectations_for_endpoint(endpoint: dict, expectations: list[str]) -
     return matched[:2]
 
 
+def _select_expectations_for_chain(chain: list[dict], expectations: list[str]) -> list[str]:
+    matched: list[str] = []
+    for endpoint in reversed(chain):
+        for expectation in _select_expectations_for_endpoint(endpoint, expectations):
+            if expectation not in matched:
+                matched.append(expectation)
+            if len(matched) >= 2:
+                return matched
+    return matched or [DEFAULT_ASSERTION_TEXT]
+
+
 def _build_goal_for_endpoint(endpoint: dict, action: str, parsed_requirement: dict) -> str:
     method = str(endpoint.get("method", "")).upper().strip()
     path = str(endpoint.get("path", "")).strip()
@@ -198,17 +286,32 @@ def _build_goal_for_endpoint(endpoint: dict, action: str, parsed_requirement: di
     return parsed_requirement.get("objective", action)
 
 
-def _is_meta_action(text: str) -> bool:
-    lowered = str(text or "").strip().lower()
-    if not lowered:
+def _normalize_meta_text(text: str) -> str:
+    return str(text or "").strip().lower().replace("：", ":")
+
+
+def _looks_like_flow_summary_action(text: str) -> bool:
+    normalized = _normalize_meta_text(text)
+    if not normalized or _EXPLICIT_HTTP_SURFACE_RE.search(text):
+        return False
+    if any(hint in normalized for hint in _FLOW_SUMMARY_HINTS):
         return True
-    return (
-        lowered.startswith("scenario:")
-        or lowered.startswith("step ")
-        or lowered.startswith("request:**")
-        or lowered.startswith("expected:**")
-        or lowered.startswith("统一目标：")
-    )
+    if not any(normalized.startswith(prefix) for prefix in _VERIFICATION_PREFIXES):
+        return False
+    matched_classes = 0
+    for _, keywords in _ACTION_CLASS_HINTS:
+        if any(keyword in normalized for keyword in keywords):
+            matched_classes += 1
+    return matched_classes >= 2
+
+
+def _is_meta_action(text: str) -> bool:
+    normalized = _normalize_meta_text(text)
+    if not normalized:
+        return True
+    if any(normalized.startswith(prefix) for prefix in _META_ACTION_PREFIXES):
+        return True
+    return _looks_like_flow_summary_action(text)
 
 
 def _filter_actions(actions: list[str]) -> list[str]:
@@ -220,10 +323,15 @@ def _endpoint_requires_context(endpoint: dict) -> bool:
     return bool(depends_on)
 
 
-def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expectations: list[str]) -> list[dict]:
+def _ordered_endpoints(parsed_requirement: dict) -> list[dict]:
     endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
+    return sorted(endpoints, key=_endpoint_flow_rank)
+
+
+def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expectations: list[str]) -> list[dict]:
     scenarios: list[dict] = []
-    for index, endpoint in enumerate(endpoints[:25], start=1):
+    listed_endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
+    for index, endpoint in enumerate(listed_endpoints[:MAX_ENDPOINT_SCENARIOS], start=1):
         if _endpoint_requires_context(endpoint):
             continue
         endpoint_action = _build_action_for_endpoint(endpoint, actions)
@@ -233,34 +341,122 @@ def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expe
     return scenarios
 
 
-def _build_dependency_flow_scenarios(
+def _endpoint_key(endpoint: dict) -> tuple[str, str]:
+    return (str(endpoint.get("method", "")).upper().strip(), str(endpoint.get("path", "")).strip())
+
+
+def _dedupe_endpoints(endpoints: Iterable[dict]) -> list[dict]:
+    unique: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for endpoint in endpoints:
+        key = _endpoint_key(endpoint)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(endpoint)
+    return unique
+
+
+def _is_auth_endpoint(endpoint: dict) -> bool:
+    method = str(endpoint.get("method", "")).upper().strip()
+    path = str(endpoint.get("path", "")).lower()
+    description = str(endpoint.get("description", "")).lower()
+    if any(token in path for token in ("/auth", "/login", "/session")):
+        return True
+    return method == "POST" and any(token in description for token in ("auth", "login", "token", "session"))
+
+
+def _endpoint_needs_auth_context(endpoint: dict) -> bool:
+    text = " ".join(
+        [
+            str(endpoint.get("path", "")),
+            str(endpoint.get("description", "")),
+            " ".join(str((field or {}).get("name", "")) for field in (endpoint.get("request_body_fields") or [])),
+        ]
+    ).lower()
+    return any(token in text for token in ("cookie", "token", "bearer", "auth", "session"))
+
+
+def _find_endpoint_by_path(path: str, endpoints: list[dict]) -> dict | None:
+    normalized = str(path or "").strip()
+    for endpoint in endpoints:
+        if str(endpoint.get("path", "")).strip() == normalized:
+            return endpoint
+    return None
+
+
+def _resolve_dependency_chain(target: dict, ordered_endpoints: list[dict]) -> list[dict]:
+    chain: list[dict] = []
+    visiting: set[tuple[str, str]] = set()
+
+    def visit(endpoint: dict) -> None:
+        key = _endpoint_key(endpoint)
+        if key in visiting:
+            return
+        visiting.add(key)
+        for dependency_path in endpoint.get("depends_on") or []:
+            dependency = _find_endpoint_by_path(str(dependency_path), ordered_endpoints)
+            if dependency is not None:
+                visit(dependency)
+        chain.append(endpoint)
+
+    visit(target)
+    if _endpoint_needs_auth_context(target) and not any(_is_auth_endpoint(endpoint) for endpoint in chain):
+        auth_roots = [endpoint for endpoint in ordered_endpoints if _is_auth_endpoint(endpoint) and not _endpoint_requires_context(endpoint)]
+        if auth_roots:
+            chain = auth_roots[:1] + chain
+    return _dedupe_endpoints(chain)
+
+
+def _build_dependency_chain_scenarios(
     parsed_requirement: dict,
     actions: list[str],
     expectations: list[str],
     start_index: int,
 ) -> list[dict]:
-    endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
-    if len(endpoints) < 2 or not any(_endpoint_requires_context(endpoint) for endpoint in endpoints):
+    ordered_endpoints = _ordered_endpoints(parsed_requirement)
+    dependent_endpoints = [endpoint for endpoint in ordered_endpoints if _endpoint_requires_context(endpoint)]
+    scenarios: list[dict] = []
+    seen_chains: set[tuple[tuple[str, str], ...]] = set()
+
+    for endpoint in dependent_endpoints:
+        chain = _resolve_dependency_chain(endpoint, ordered_endpoints)
+        if len(chain) < 2:
+            continue
+        chain_key = tuple(_endpoint_key(item) for item in chain)
+        if chain_key in seen_chains:
+            continue
+        seen_chains.add(chain_key)
+        scenario_index = start_index + len(scenarios)
+        chain_actions = [_build_action_for_endpoint(item, actions) for item in chain]
+        chain_expectations = _select_expectations_for_chain(chain, expectations)
+        endpoint_goal = _build_goal_for_endpoint(endpoint, chain_actions[-1], parsed_requirement)
+        scenarios.append(_build_scenario(scenario_index, chain_actions, chain_expectations, parsed_requirement, goal=endpoint_goal))
+        if len(scenarios) >= MAX_DEPENDENCY_SCENARIOS:
+            break
+    return scenarios
+
+
+def _build_full_flow_scenario(
+    parsed_requirement: dict,
+    actions: list[str],
+    expectations: list[str],
+    start_index: int,
+) -> list[dict]:
+    ordered_endpoints = _ordered_endpoints(parsed_requirement)
+    dependent_count = len([endpoint for endpoint in ordered_endpoints if _endpoint_requires_context(endpoint)])
+    if len(ordered_endpoints) < 3 or dependent_count < 2:
         return []
-    endpoints = sorted(endpoints, key=_endpoint_flow_rank)
-
-    preconditions = _normalize_preconditions(parsed_requirement)
-    steps: list[ScenarioStep] = [ScenarioStep(type="given", text=preconditions[0])]
-    for step_index, endpoint in enumerate(endpoints[:8]):
-        action_text = _build_action_for_endpoint(endpoint, actions)
-        steps.append(ScenarioStep(type="when" if step_index == 0 else "and", text=action_text))
-
-    scenario = ScenarioModel(
-        scenario_id=f"scenario_{start_index:03d}",
-        name=" -> ".join(_build_action_for_endpoint(endpoint, actions) for endpoint in endpoints[:4])[:80],
+    flow_actions = [_build_action_for_endpoint(endpoint, actions) for endpoint in ordered_endpoints[:8]]
+    flow_expectations = _select_expectations_for_chain(ordered_endpoints[:8], expectations)
+    scenario = _build_scenario(
+        start_index,
+        flow_actions,
+        flow_expectations,
+        parsed_requirement,
         goal=parsed_requirement.get("objective", "dependent api flow"),
-        preconditions=preconditions,
-        steps=steps + [ScenarioStep(type="then", text=(expectations[0] if expectations else "System returns an observable result"))],
-        assertions=expectations[:2] or ["System returns an observable result"],
-        source_chunks=parsed_requirement.get("source_chunks", []),
-        priority="P0",
     )
-    return [scenario.to_dict()]
+    return [scenario]
 
 
 def _endpoint_flow_rank(endpoint: dict) -> tuple[int, str]:
@@ -280,24 +476,13 @@ def _endpoint_flow_rank(endpoint: dict) -> tuple[int, str]:
 
 
 def _is_narrative_action(text: str) -> bool:
-    lowered = text.lower()
-    if re.match(r"^调用\s+(get|post|put|patch|delete)\s+/", lowered):
+    normalized = _normalize_meta_text(text)
+    if not normalized or _is_meta_action(text):
         return False
-    narrative_keywords = (
-        "主链路",
-        "流程",
-        "用户",
-        "前端",
-        "页面",
-        "完成",
-        "确认",
-        "workflow",
-        "flow",
-        "journey",
-        "scenario",
-        "process",
-    )
-    return any(keyword in lowered for keyword in narrative_keywords)
+    if re.match(r"^调用\s+(get|post|put|patch|delete)\s+/", text.lower()):
+        return False
+    lowered = text.lower()
+    return any(keyword in lowered for keyword in _NARRATIVE_KEYWORDS)
 
 
 def _build_narrative_scenarios(
@@ -321,14 +506,16 @@ def _build_narrative_scenarios(
 
 def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dict]:
     actions = _filter_actions(parsed_requirement.get("actions") or [parsed_requirement.get("objective", "Execute core action")])
-    expectations = parsed_requirement.get("expected_results") or ["System returns an observable result"]
+    expectations = parsed_requirement.get("expected_results") or [DEFAULT_RESULT_TEXT]
 
     endpoint_scenarios = _build_endpoint_scenarios(parsed_requirement, actions, expectations)
-    dependency_scenarios = _build_dependency_flow_scenarios(parsed_requirement, actions, expectations, len(endpoint_scenarios) + 1)
-    narrative_start = len(endpoint_scenarios) + len(dependency_scenarios) + 1
+    dependency_scenarios = _build_dependency_chain_scenarios(parsed_requirement, actions, expectations, len(endpoint_scenarios) + 1)
+    full_flow_start = len(endpoint_scenarios) + len(dependency_scenarios) + 1
+    full_flow_scenarios = _build_full_flow_scenario(parsed_requirement, actions, expectations, full_flow_start)
+    narrative_start = len(endpoint_scenarios) + len(dependency_scenarios) + len(full_flow_scenarios) + 1
     narrative_scenarios = _build_narrative_scenarios(parsed_requirement, actions, expectations, narrative_start)
 
-    combined = endpoint_scenarios + dependency_scenarios + narrative_scenarios
+    combined = endpoint_scenarios + dependency_scenarios + full_flow_scenarios + narrative_scenarios
     if combined:
         return combined
 
