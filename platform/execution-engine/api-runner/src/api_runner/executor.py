@@ -279,13 +279,23 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector) -> dict:
     encoded_data = None
     if body is not None:
         encoded_data = json.dumps(body).encode("utf-8")
-        headers = {"Content-Type": "application/json", **headers}
+        # Apifox-like behavior: auto add JSON headers unless user already specified.
+        if not _has_header_case_insensitive(headers, "Content-Type"):
+            headers["Content-Type"] = "application/json"
+        if not _has_header_case_insensitive(headers, "Accept"):
+            headers["Accept"] = "application/json"
     elif isinstance(data, (dict, list, tuple)):
         encoded_data = parse.urlencode(data, doseq=True).encode("utf-8")
+        if not _has_header_case_insensitive(headers, "Content-Type"):
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+        if not _has_header_case_insensitive(headers, "Accept"):
+            headers["Accept"] = "application/json"
     elif isinstance(data, str):
         encoded_data = data.encode("utf-8")
     elif isinstance(data, bytes):
         encoded_data = data
+    if not _has_header_case_insensitive(headers, "Accept"):
+        headers["Accept"] = "application/json"
 
     raw = b""
     status_code = 0
@@ -441,7 +451,10 @@ def _read_source(source: str, response_payload: dict, context: ContextBus, defau
     if source == "elapsed_ms":
         return response_payload.get("elapsed_ms", default)
     if source == "error":
-        return response_payload.get("error", default)
+        value = response_payload.get("error", default)
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
     if source == "error_category":
         return response_payload.get("error_category", default)
     if source == "body_text":
@@ -490,6 +503,14 @@ def _read_header(headers: dict[str, Any], name: str, default: Any = None) -> Any
         if str(key).lower() == lowered:
             return value
     return default
+
+
+def _has_header_case_insensitive(headers: dict[str, Any], name: str) -> bool:
+    target = str(name).lower()
+    for key in headers.keys():
+        if str(key).lower() == target:
+            return True
+    return False
 
 
 def _read_dotted_path(payload: Any, path: str, default: Any = None) -> Any:

@@ -129,3 +129,37 @@ def test_executor_failure_details_include_assertion_metadata(assertion_server):
     assert step["assertion_failures"][0]["assertion_id"] == "nickname_check"
     assert step["assertion_failures"][0]["generated_by"] == "llm"
     assert step["assertion_summary"]["failure_details"][0]["category"] == "field_value"
+
+
+def test_executor_treats_empty_error_string_as_absent(assertion_server):
+    from api_runner.executor import execute_test_case_dsl
+
+    dsl = {
+        "dsl_version": "0.2.0",
+        "task_id": "assertion_error_absent_demo",
+        "task_name": "assertion_error_absent_demo",
+        "feature_name": "assertion_error_absent_demo",
+        "execution_mode": "api",
+        "metadata": {"execution": {"base_url": assertion_server}},
+        "scenarios": [
+            {
+                "scenario_id": "scenario_001",
+                "name": "empty error is absent",
+                "steps": [
+                    {
+                        "step_id": "step_01",
+                        "step_type": "when",
+                        "text": "query profile",
+                        "request": {"method": "GET", "url": "/profile"},
+                        "assertions": [
+                            {"assertion_id": "status_ok", "source": "status_code", "op": "eq", "expected": 200, "category": "status", "severity": "critical", "confidence": 0.99, "generated_by": "rules"},
+                            {"assertion_id": "no_runtime_error", "source": "error", "op": "not_exists", "category": "business", "severity": "major", "confidence": 0.75, "generated_by": "rules"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    result = execute_test_case_dsl(dsl)
+    assert result["status"] == "passed"
