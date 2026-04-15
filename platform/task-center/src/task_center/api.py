@@ -170,6 +170,39 @@ def _must_get_task(task_id: str):
     return task
 
 
+def _dedupe_strings(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    output: list[str] = []
+    for item in items:
+        value = str(item or "").strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        output.append(value)
+    return output
+
+
+def _detect_suspicious_inline_requirement(raw_text: str) -> list[str]:
+    text = str(raw_text or "")
+    stripped = text.rstrip()
+    if not stripped:
+        return []
+
+    issues: list[str] = []
+    size_aligned = len(text) >= 512 and len(text) % 1024 == 0
+    unclosed_code_fence = stripped.count("```") % 2 == 1
+    unbalanced_jsonish = stripped.count("{") > stripped.count("}") or stripped.count("[") > stripped.count("]")
+    trailing_incomplete = bool(stripped) and stripped[-1] in {'"', "'", "{", "[", ":", ",", "-", "_"}
+
+    if size_aligned and unclosed_code_fence:
+        issues.append(f"文本长度为 {len(text)}，且 Markdown 代码块未闭合")
+    if size_aligned and unbalanced_jsonish:
+        issues.append(f"文本长度为 {len(text)}，且结构化片段括号未闭合")
+    if size_aligned and trailing_incomplete:
+        issues.append(f"文本长度为 {len(text)}，且末尾停在未完成片段")
+    return _dedupe_strings(issues)
+
+
 def _parse_iso_timestamp(raw: str | None) -> datetime | None:
     if not raw:
         return None
@@ -820,6 +853,18 @@ def version_info():
 
 @app.post("/api/tasks", response_model=ApiResponse)
 def create_task(payload: CreateTaskRequest):
+    inline_requirement = str(payload.requirement_text or "")
+    if not (payload.source_path or "").strip():
+        integrity_issues = _detect_suspicious_inline_requirement(inline_requirement)
+        if integrity_issues:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "inline requirement_text 疑似在上传前被截断："
+                    + "；".join(integrity_issues)
+                    + "。请重新提交完整文本，或改用 source_path / 文件导入。"
+                ),
+            )
     normalized = normalize_input(
         task_name=payload.task_name,
         requirement_text=payload.requirement_text,
