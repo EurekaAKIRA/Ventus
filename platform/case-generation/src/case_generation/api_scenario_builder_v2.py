@@ -84,7 +84,8 @@ _ACTION_CLASS_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("update", ("update", "put", "patch", "更新", "修改")),
     ("delete", ("delete", "remove", "删除", "取消")),
 )
-_EXPLICIT_HTTP_SURFACE_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+/[\w/\-{}:.]+", re.IGNORECASE)
+_EXPLICIT_HTTP_SURFACE_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+/[\w/\-{}:.?=&%]+", re.IGNORECASE)
+_PLACEHOLDER_RE = re.compile(r"\{\{?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}?\}")
 
 
 def _normalize_preconditions(parsed_requirement: dict) -> list[str]:
@@ -320,19 +321,27 @@ def _filter_actions(actions: list[str]) -> list[str]:
 
 def _endpoint_requires_context(endpoint: dict) -> bool:
     depends_on = endpoint.get("depends_on") or []
-    return bool(depends_on)
+    capability = _endpoint_capability(endpoint)
+    path = _canonicalize_endpoint_path(str(endpoint.get("path", "")))
+    has_placeholder = "{" in path and "}" in path
+    return (
+        bool(depends_on)
+        or capability == "detail"
+        or (capability in {"replace", "patch", "delete"} and has_placeholder)
+        or (_endpoint_needs_auth_context(endpoint) and not _is_auth_root_endpoint(endpoint))
+    )
 
 
-def _ordered_endpoints(parsed_requirement: dict) -> list[dict]:
-    endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
+def _ordered_endpoints(parsed_requirement: dict, actions: list[str] | None = None) -> list[dict]:
+    endpoints = _filtered_endpoints(parsed_requirement, actions=actions)
     return sorted(endpoints, key=_endpoint_flow_rank)
 
 
 def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expectations: list[str]) -> list[dict]:
     scenarios: list[dict] = []
-    listed_endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
+    listed_endpoints = _filtered_endpoints(parsed_requirement, actions=actions)
     for index, endpoint in enumerate(listed_endpoints[:MAX_ENDPOINT_SCENARIOS], start=1):
-        if _endpoint_requires_context(endpoint):
+        if _endpoint_effectively_requires_context(endpoint, listed_endpoints):
             continue
         endpoint_action = _build_action_for_endpoint(endpoint, actions)
         endpoint_expectations = _select_expectations_for_endpoint(endpoint, expectations)
@@ -342,47 +351,307 @@ def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expe
 
 
 def _endpoint_key(endpoint: dict) -> tuple[str, str]:
-    return (str(endpoint.get("method", "")).upper().strip(), str(endpoint.get("path", "")).strip())
+    return (str(endpoint.get("method", "")).upper().strip(), _canonicalize_endpoint_path(str(endpoint.get("path", ""))))
+
+
+def _canonical_placeholder_name(name: str) -> str:
+    lowered = str(name or "").strip().lower()
+    if lowered in {"bookingid", "booking_id", "id"}:
+        return "booking_id"
+    if lowered in {"taskid", "task_id"}:
+        return "task_id"
+    return lowered
+
+
+def _canonicalize_endpoint_path(path: str) -> str:
+    normalized = str(path or "").strip()
+    if not normalized:
+        return normalized
+    if "://" in normalized:
+        after = normalized.split("://", 1)[1]
+        slash = after.find("/")
+        normalized = after[slash:] if slash >= 0 else "/"
+    if normalized != "/" and normalized.endswith("/"):
+        normalized = normalized[:-1]
+    query = ""
+    if "?" in normalized:
+        normalized, query = normalized.split("?", 1)
+
+    def repl(match: re.Match[str]) -> str:
+        return "{" + _canonical_placeholder_name(match.group(1)) + "}"
+
+    canonical = _PLACEHOLDER_RE.sub(repl, normalized)
+    return canonical if not query else f"{canonical}?{query}"
 
 
 def _dedupe_endpoints(endpoints: Iterable[dict]) -> list[dict]:
-    unique: list[dict] = []
-    seen: set[tuple[str, str]] = set()
+    best_by_key: dict[tuple[str, str], dict] = {}
     for endpoint in endpoints:
         key = _endpoint_key(endpoint)
-        if key in seen:
-            continue
-        seen.add(key)
-        unique.append(endpoint)
-    return unique
+        current = best_by_key.get(key)
+        if current is None or _endpoint_confidence_rank(endpoint) > _endpoint_confidence_rank(current):
+            best_by_key[key] = endpoint
+    return list(best_by_key.values())
+
+
+def _endpoint_meta_text(endpoint: dict) -> str:
+    return " ".join(
+        [
+            str(endpoint.get("description", "")),
+            str(endpoint.get("group", "")),
+        ]
+    ).strip()
+
+
+def _is_low_confidence_endpoint(endpoint: dict) -> bool:
+    description = str(endpoint.get("description", "")).strip()
+    group = str(endpoint.get("group", "")).strip()
+    meta_text = _normalize_meta_text(_endpoint_meta_text(endpoint))
+    if not str(endpoint.get("path", "")).strip():
+        return True
+    if description == "**Request:**":
+        return True
+    if description.startswith("|") and description.endswith("|"):
+        return True
+    if group.startswith("断言摘要"):
+        return True
+    if any(meta_text.startswith(prefix) for prefix in _META_ACTION_PREFIXES):
+        return True
+    if any(token in meta_text for token in ("**request:**", "scenario:", "断言摘要", "统一目标", "step ")):
+        return True
+    return False
+
+
+def _endpoint_confidence_rank(endpoint: dict) -> tuple[int, int, int]:
+    method = str(endpoint.get("method", "")).upper().strip()
+    description = str(endpoint.get("description", "")).strip()
+    group = str(endpoint.get("group", "")).strip()
+    capability = _endpoint_capability(endpoint)
+    has_dependency = 1 if (endpoint.get("depends_on") or []) else 0
+    group_preference = 0 if group.startswith("断言摘要") else 1
+    return (
+        has_dependency,
+        group_preference,
+        0 if _is_low_confidence_endpoint(endpoint) else 1,
+        1 if capability != "other" else 0,
+        1 if description and description != "**Request:**" else 0,
+    )
+
+
+def _is_querystring_filter_endpoint(endpoint: dict) -> bool:
+    method = str(endpoint.get("method", "")).upper().strip()
+    path = str(endpoint.get("path", "")).strip()
+    return method == "GET" and "?" in path and "=" in path
+
+
+def _is_placeholder_querystring_endpoint(endpoint: dict) -> bool:
+    if not _is_querystring_filter_endpoint(endpoint):
+        return False
+    path = str(endpoint.get("path", "")).strip().lower()
+    return "..." in path or "、" in path
+
+
+def _endpoint_has_action_support(endpoint: dict, actions: list[str]) -> bool:
+    if not actions:
+        return False
+    method = str(endpoint.get("method", "")).upper().strip()
+    path = str(endpoint.get("path", "")).strip()
+    return any(_contains_explicit_endpoint_reference(action, method, path) for action in actions)
+
+
+def _filtered_endpoints(parsed_requirement: dict, actions: list[str] | None = None) -> list[dict]:
+    endpoints = [
+        endpoint
+        for endpoint in (parsed_requirement.get("api_endpoints") or [])
+        if endpoint.get("path") and not _is_placeholder_querystring_endpoint(endpoint)
+    ]
+    if actions:
+        dependency_paths = {
+            str(dependency_path)
+            for endpoint in endpoints
+            for dependency_path in (endpoint.get("depends_on") or [])
+            if str(dependency_path).strip()
+        }
+        auth_needed = any(_endpoint_needs_auth_context(endpoint) for endpoint in endpoints)
+        endpoints = [
+            endpoint
+            for endpoint in endpoints
+            if (
+                not _is_low_confidence_endpoint(endpoint)
+                or _endpoint_has_action_support(endpoint, actions)
+                or _is_querystring_filter_endpoint(endpoint)
+                or _endpoint_requires_context(endpoint)
+                or any(
+                    _canonicalize_endpoint_path(str(endpoint.get("path", ""))) == _canonicalize_endpoint_path(dependency_path)
+                    for dependency_path in dependency_paths
+                )
+                or (_is_auth_endpoint(endpoint) and auth_needed)
+            )
+            and not _is_unlikely_auth_root_variant(endpoint, actions)
+        ]
+    return _dedupe_endpoints(endpoints)
 
 
 def _is_auth_endpoint(endpoint: dict) -> bool:
     method = str(endpoint.get("method", "")).upper().strip()
     path = str(endpoint.get("path", "")).lower()
     description = str(endpoint.get("description", "")).lower()
-    if any(token in path for token in ("/auth", "/login", "/session")):
+    if any(token in path for token in ("/auth", "/login", "/session", "/challenger", "/token")):
         return True
-    return method == "POST" and any(token in description for token in ("auth", "login", "token", "session"))
+    return method == "POST" and any(token in description for token in ("auth", "login", "token", "session", "令牌"))
+
+
+def _is_auth_root_endpoint(endpoint: dict) -> bool:
+    path = str(endpoint.get("path", "")).lower()
+    return any(token in path for token in ("/auth", "/login", "/session", "/challenger"))
+
+
+def _is_unlikely_auth_root_variant(endpoint: dict, actions: list[str]) -> bool:
+    method = str(endpoint.get("method", "")).upper().strip()
+    if method == "POST" or not _is_auth_root_endpoint(endpoint):
+        return False
+    if _endpoint_has_action_support(endpoint, actions):
+        return False
+    return not bool(endpoint.get("response_fields") or endpoint.get("request_body_fields"))
+
+
+def _endpoint_request_field_names(endpoint: dict) -> list[str]:
+    fields = endpoint.get("request_body_fields") or []
+    return [str((field or {}).get("name", "")).strip().lower() for field in fields if str((field or {}).get("name", "")).strip()]
 
 
 def _endpoint_needs_auth_context(endpoint: dict) -> bool:
+    request_fields = _endpoint_request_field_names(endpoint)
     text = " ".join(
         [
             str(endpoint.get("path", "")),
             str(endpoint.get("description", "")),
-            " ".join(str((field or {}).get("name", "")) for field in (endpoint.get("request_body_fields") or [])),
+            " ".join(request_fields),
         ]
     ).lower()
-    return any(token in text for token in ("cookie", "token", "bearer", "auth", "session"))
+    return any(
+        token in text
+        for token in (
+            "cookie",
+            "token",
+            "bearer",
+            "auth",
+            "session",
+            "authorization",
+            "x-auth-token",
+            "x-challenger",
+        )
+    )
+
+
+def _endpoint_requires_token_provider(endpoint: dict) -> bool:
+    request_fields = set(_endpoint_request_field_names(endpoint))
+    return "x-auth-token" in request_fields or "authorization" in request_fields
+
+
+def _find_token_provider_endpoint(target: dict, ordered_endpoints: list[dict]) -> dict | None:
+    target_key = _endpoint_key(target)
+    target_resource = _resource_key(target)
+    candidates: list[dict] = []
+    for endpoint in ordered_endpoints:
+        if _endpoint_key(endpoint) == target_key:
+            continue
+        if not _is_auth_endpoint(endpoint):
+            continue
+        path = str(endpoint.get("path", "")).lower()
+        description = str(endpoint.get("description", "")).lower()
+        if "token" not in path and "token" not in description:
+            continue
+        candidates.append(endpoint)
+    if not candidates:
+        return None
+    for endpoint in candidates:
+        if _resource_key(endpoint) == target_resource:
+            return endpoint
+    return candidates[0]
+
+
+def _find_resource_provider_endpoint(target: dict, ordered_endpoints: list[dict]) -> dict | None:
+    target_key = _endpoint_key(target)
+    target_resource = _resource_key(target)
+    target_capability = _endpoint_capability(target)
+    target_path = _canonicalize_endpoint_path(str(target.get("path", "")))
+    has_placeholder = "{" in target_path and "}" in target_path
+    if target_capability not in {"detail", "replace", "patch", "delete"}:
+        return None
+    if target_capability in {"replace", "patch", "delete"} and not has_placeholder:
+        return None
+    candidates: list[dict] = []
+    for endpoint in ordered_endpoints:
+        if _endpoint_key(endpoint) == target_key:
+            continue
+        if _resource_key(endpoint) != target_resource:
+            continue
+        capability = _endpoint_capability(endpoint)
+        if capability in {"create", "list", "auth"}:
+            candidates.append(endpoint)
+    if not candidates:
+        return None
+    priority = {"create": 0, "list": 1, "auth": 2}
+    candidates.sort(key=lambda item: (priority.get(_endpoint_capability(item), 9), _endpoint_flow_rank(item)))
+    return candidates[0]
+
+
+def _endpoint_effectively_requires_context(endpoint: dict, ordered_endpoints: list[dict]) -> bool:
+    if _endpoint_requires_context(endpoint):
+        return True
+    if _find_resource_provider_endpoint(endpoint, ordered_endpoints) is not None:
+        return True
+    token_provider = _find_token_provider_endpoint(endpoint, ordered_endpoints)
+    if token_provider is not None and not _is_auth_endpoint(endpoint) and _resource_key(token_provider) == _resource_key(endpoint):
+        return True
+    return False
 
 
 def _find_endpoint_by_path(path: str, endpoints: list[dict]) -> dict | None:
-    normalized = str(path or "").strip()
+    dependency = str(path or "").strip()
+    normalized = _canonicalize_endpoint_path(dependency)
+    dependency_method = ""
+    method_match = re.match(r"^(GET|POST|PUT|PATCH|DELETE)\s+(.+)$", dependency, re.IGNORECASE)
+    if method_match:
+        dependency_method = method_match.group(1).upper().strip()
+        normalized = _canonicalize_endpoint_path(method_match.group(2).strip())
     for endpoint in endpoints:
-        if str(endpoint.get("path", "")).strip() == normalized:
+        endpoint_method = str(endpoint.get("method", "")).upper().strip()
+        if dependency_method and endpoint_method != dependency_method:
+            continue
+        if _canonicalize_endpoint_path(str(endpoint.get("path", ""))) == normalized:
             return endpoint
     return None
+
+
+def _resource_key(endpoint: dict) -> str:
+    path = _canonicalize_endpoint_path(str(endpoint.get("path", ""))).lower()
+    segments = _extract_significant_path_segments(path)
+    return segments[0] if segments else path.strip("/") or "root"
+
+
+def _endpoint_capability(endpoint: dict) -> str:
+    method = str(endpoint.get("method", "")).upper().strip()
+    path = _canonicalize_endpoint_path(str(endpoint.get("path", ""))).lower()
+    if any(token in path for token in ("/ping", "/health", "/ready", "/version")):
+        return "health"
+    has_placeholder = bool(_PLACEHOLDER_RE.search(path))
+    if method == "GET" and has_placeholder:
+        return "detail"
+    if _is_auth_endpoint(endpoint):
+        return "auth"
+    if method == "GET" and not has_placeholder:
+        return "list"
+    if method == "POST":
+        return "create"
+    if method == "PUT":
+        return "replace"
+    if method == "PATCH":
+        return "patch"
+    if method == "DELETE":
+        return "delete"
+    return "other"
 
 
 def _resolve_dependency_chain(target: dict, ordered_endpoints: list[dict]) -> list[dict]:
@@ -401,8 +670,26 @@ def _resolve_dependency_chain(target: dict, ordered_endpoints: list[dict]) -> li
         chain.append(endpoint)
 
     visit(target)
-    if _endpoint_needs_auth_context(target) and not any(_is_auth_endpoint(endpoint) for endpoint in chain):
-        auth_roots = [endpoint for endpoint in ordered_endpoints if _is_auth_endpoint(endpoint) and not _endpoint_requires_context(endpoint)]
+    resource_provider = _find_resource_provider_endpoint(target, ordered_endpoints)
+    if resource_provider is not None and resource_provider not in chain:
+        provider_chain = _resolve_dependency_chain(resource_provider, ordered_endpoints)
+        chain = provider_chain + chain
+    if _endpoint_requires_token_provider(target):
+        token_provider = _find_token_provider_endpoint(target, ordered_endpoints)
+        if token_provider is not None and token_provider not in chain:
+            provider_chain = _resolve_dependency_chain(token_provider, ordered_endpoints)
+            chain = provider_chain + chain
+    elif _find_token_provider_endpoint(target, ordered_endpoints) is not None and not _is_auth_endpoint(target):
+        token_provider = _find_token_provider_endpoint(target, ordered_endpoints)
+        if token_provider is not None and token_provider not in chain and _resource_key(token_provider) == _resource_key(target):
+            provider_chain = _resolve_dependency_chain(token_provider, ordered_endpoints)
+            chain = provider_chain + chain
+    if _endpoint_needs_auth_context(target) and not any(_is_auth_root_endpoint(endpoint) for endpoint in chain):
+        auth_roots = [
+            endpoint
+            for endpoint in ordered_endpoints
+            if _is_auth_root_endpoint(endpoint) and not _endpoint_requires_context(endpoint)
+        ]
         if auth_roots:
             chain = auth_roots[:1] + chain
     return _dedupe_endpoints(chain)
@@ -414,8 +701,8 @@ def _build_dependency_chain_scenarios(
     expectations: list[str],
     start_index: int,
 ) -> list[dict]:
-    ordered_endpoints = _ordered_endpoints(parsed_requirement)
-    dependent_endpoints = [endpoint for endpoint in ordered_endpoints if _endpoint_requires_context(endpoint)]
+    ordered_endpoints = _ordered_endpoints(parsed_requirement, actions)
+    dependent_endpoints = [endpoint for endpoint in ordered_endpoints if _endpoint_effectively_requires_context(endpoint, ordered_endpoints)]
     scenarios: list[dict] = []
     seen_chains: set[tuple[tuple[str, str], ...]] = set()
 
@@ -443,12 +730,38 @@ def _build_full_flow_scenario(
     expectations: list[str],
     start_index: int,
 ) -> list[dict]:
-    ordered_endpoints = _ordered_endpoints(parsed_requirement)
-    dependent_count = len([endpoint for endpoint in ordered_endpoints if _endpoint_requires_context(endpoint)])
+    ordered_endpoints = _ordered_endpoints(parsed_requirement, actions)
+    dependent_count = len([endpoint for endpoint in ordered_endpoints if _endpoint_effectively_requires_context(endpoint, ordered_endpoints)])
     if len(ordered_endpoints) < 3 or dependent_count < 2:
         return []
-    flow_actions = [_build_action_for_endpoint(endpoint, actions) for endpoint in ordered_endpoints[:8]]
-    flow_expectations = _select_expectations_for_chain(ordered_endpoints[:8], expectations)
+    primary_resource = next((_resource_key(endpoint) for endpoint in ordered_endpoints if _endpoint_capability(endpoint) == "create"), "")
+    selected: list[dict] = []
+
+    def add_first(capability: str) -> None:
+        for endpoint in ordered_endpoints:
+            if _endpoint_capability(endpoint) != capability:
+                continue
+            if primary_resource and capability not in {"auth", "health"} and _resource_key(endpoint) != primary_resource:
+                continue
+            if endpoint not in selected:
+                selected.append(endpoint)
+            return
+
+    add_first("auth")
+    add_first("create")
+    add_first("detail")
+    add_first("delete")
+    if len(selected) < 3:
+        add_first("replace")
+    if len(selected) < 3:
+        add_first("patch")
+
+    selected = [endpoint for endpoint in selected if _endpoint_capability(endpoint) not in {"health", "list"}]
+    if len(selected) < 3:
+        return []
+
+    flow_actions = [_build_action_for_endpoint(endpoint, actions) for endpoint in selected[:5]]
+    flow_expectations = _select_expectations_for_chain(selected[:5], expectations)
     scenario = _build_scenario(
         start_index,
         flow_actions,
@@ -504,16 +817,170 @@ def _build_narrative_scenarios(
     return scenarios
 
 
+def _scenario_step_texts(scenario: dict) -> list[str]:
+    texts: list[str] = []
+    for step in scenario.get("steps", []):
+        if step.get("type") in {"when", "and"}:
+            text = str(step.get("text", "")).strip()
+            if text:
+                texts.append(text)
+    return texts
+
+
+def _endpoint_matches_text(endpoint: dict, text: str) -> bool:
+    method = str(endpoint.get("method", "")).upper().strip()
+    path = str(endpoint.get("path", "")).strip()
+    lowered = text.lower()
+    if _EXPLICIT_HTTP_SURFACE_RE.search(text):
+        return bool(method and method.lower() in lowered and _contains_explicit_endpoint_reference(text, method, path))
+    path_segments = _extract_significant_path_segments(path)
+    if not path_segments:
+        return False
+    if method and method.lower() not in lowered:
+        return False
+    return any(re.search(rf"\b{re.escape(segment)}\b", lowered) for segment in path_segments)
+
+
+def _scenario_signature(scenario: dict, ordered_endpoints: list[dict]) -> tuple[tuple[str, str], ...]:
+    signature: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for text in _scenario_step_texts(scenario):
+        for endpoint in ordered_endpoints:
+            key = _endpoint_key(endpoint)
+            if key in seen:
+                continue
+            if _endpoint_matches_text(endpoint, text):
+                seen.add(key)
+                signature.append(key)
+    return tuple(signature)
+
+
+def _filter_supplemental_scenarios(
+    *,
+    base_scenarios: list[dict],
+    candidate_scenarios: list[dict],
+    ordered_endpoints: list[dict],
+) -> list[dict]:
+    retained: list[dict] = []
+    covered_signatures = {
+        signature
+        for scenario in base_scenarios
+        if (signature := _scenario_signature(scenario, ordered_endpoints))
+    }
+    covered_endpoint_sets = {frozenset(signature) for signature in covered_signatures}
+
+    for scenario in candidate_scenarios:
+        signature = _scenario_signature(scenario, ordered_endpoints)
+        if not signature:
+            continue
+        endpoint_set = frozenset(signature)
+        if signature in covered_signatures or any(endpoint_set.issubset(covered) for covered in covered_endpoint_sets):
+            continue
+        retained.append(scenario)
+        covered_signatures.add(signature)
+        covered_endpoint_sets.add(endpoint_set)
+    return retained
+
+
+def _scenario_has_explicit_preloaded_resource(scenario: dict, parsed_requirement: dict) -> bool:
+    texts = _scenario_step_texts(scenario)
+    preconditions = [str(item) for item in (scenario.get("preconditions") or parsed_requirement.get("preconditions") or [])]
+    haystack = " ".join(texts + preconditions).lower()
+    preload_markers = (
+        "preloaded",
+        "pre-existing",
+        "preexisting",
+        "existing_",
+        "existing ",
+        "预置",
+        "预先存在",
+        "已有",
+        "已存在",
+        "existing_booking_id",
+        "existing resource id",
+    )
+    return any(marker in haystack for marker in preload_markers)
+
+
+def _scenario_mentions_saved_resource(texts: list[str], resource: str) -> bool:
+    haystack = " ".join(texts).lower()
+    resource_markers = {
+        resource,
+        f"{resource}_id",
+        "bookingid" if resource == "booking" else "",
+        "resource_id",
+        "id",
+    }
+    return (
+        any(marker and marker in haystack for marker in resource_markers)
+        and any(token in haystack for token in ("save", "saved", "保存", "existing_", "existing "))
+    )
+
+
+def _scenario_satisfies_resource_lifecycle(
+    scenario: dict,
+    ordered_endpoints: list[dict],
+    parsed_requirement: dict,
+) -> bool:
+    signature = _scenario_signature(scenario, ordered_endpoints)
+    if not signature:
+        return True
+    endpoints_by_key = {_endpoint_key(endpoint): endpoint for endpoint in ordered_endpoints}
+    capabilities: dict[str, set[str]] = {}
+    texts = _scenario_step_texts(scenario)
+
+    for key in signature:
+        endpoint = endpoints_by_key.get(key)
+        if endpoint is None:
+            continue
+        resource = _resource_key(endpoint)
+        capabilities.setdefault(resource, set()).add(_endpoint_capability(endpoint))
+
+    for resource, caps in capabilities.items():
+        if not caps.intersection({"detail", "replace", "patch", "delete"}):
+            continue
+        if "create" in caps:
+            continue
+        if caps.intersection({"list", "detail"}) and _scenario_mentions_saved_resource(texts, resource):
+            continue
+        if _scenario_has_explicit_preloaded_resource(scenario, parsed_requirement):
+            continue
+        return False
+    return True
+
+
+def _filter_resource_lifecycle_scenarios(
+    scenarios: list[dict],
+    *,
+    ordered_endpoints: list[dict],
+    parsed_requirement: dict,
+) -> list[dict]:
+    return [
+        scenario
+        for scenario in scenarios
+        if _scenario_satisfies_resource_lifecycle(scenario, ordered_endpoints, parsed_requirement)
+    ]
+
+
 def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dict]:
     actions = _filter_actions(parsed_requirement.get("actions") or [parsed_requirement.get("objective", "Execute core action")])
     expectations = parsed_requirement.get("expected_results") or [DEFAULT_RESULT_TEXT]
+    ordered_endpoints = _ordered_endpoints(parsed_requirement, actions)
 
     endpoint_scenarios = _build_endpoint_scenarios(parsed_requirement, actions, expectations)
     dependency_scenarios = _build_dependency_chain_scenarios(parsed_requirement, actions, expectations, len(endpoint_scenarios) + 1)
     full_flow_start = len(endpoint_scenarios) + len(dependency_scenarios) + 1
     full_flow_scenarios = _build_full_flow_scenario(parsed_requirement, actions, expectations, full_flow_start)
     narrative_start = len(endpoint_scenarios) + len(dependency_scenarios) + len(full_flow_scenarios) + 1
-    narrative_scenarios = _build_narrative_scenarios(parsed_requirement, actions, expectations, narrative_start)
+    narrative_scenarios = _filter_resource_lifecycle_scenarios(
+        _filter_supplemental_scenarios(
+        base_scenarios=endpoint_scenarios + dependency_scenarios + full_flow_scenarios,
+        candidate_scenarios=_build_narrative_scenarios(parsed_requirement, actions, expectations, narrative_start),
+        ordered_endpoints=ordered_endpoints,
+        ),
+        ordered_endpoints=ordered_endpoints,
+        parsed_requirement=parsed_requirement,
+    )
 
     combined = endpoint_scenarios + dependency_scenarios + full_flow_scenarios + narrative_scenarios
     if combined:

@@ -6,6 +6,7 @@ import importlib
 import json
 import logging
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -126,6 +127,126 @@ class ModelGatewayResponseError(ModelGatewayError):
     """Unexpected response payload."""
 
 
+_JSON_FENCE_RE = re.compile(r"```(?:json)?\s*([\s\S]*?)\s*```", re.IGNORECASE)
+
+
+def _assistant_message_json_blobs(message: dict[str, Any] | None) -> list[str]:
+    """Build candidate strings to parse (content, reasoning_content, and sensible merges).
+
+    Some OpenAI-compatible gateways leave ``content`` empty and put the assistant text in
+    ``reasoning_content``, or split thinking vs final answer across both fields.
+    """
+    if not message:
+        return []
+    main = _normalize_assistant_message_content(message.get("content")).strip()
+    reason = _normalize_assistant_message_content(message.get("reasoning_content")).strip()
+    ordered: list[str] = []
+    seen: set[str] = set()
+
+    def add(blob: str) -> None:
+        piece = blob.strip()
+        if piece and piece not in seen:
+            seen.add(piece)
+            ordered.append(piece)
+
+    add(main)
+    add(reason)
+    if main and reason:
+        add(main + "\n" + reason)
+        add(reason + "\n" + main)
+    return ordered
+
+
+def _normalize_assistant_message_content(content: Any) -> str:
+    """Turn chat message ``content`` into a single string (OpenAI-compatible + list segments)."""
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                if str(item.get("type", "")).lower() == "text":
+                    parts.append(str(item.get("text", "")))
+                elif "text" in item:
+                    parts.append(str(item.get("text", "")))
+            else:
+                parts.append(str(item))
+        return "".join(parts)
+    return str(content)
+
+
+def _extract_first_json_object_dict(text: str) -> dict[str, Any] | None:
+    """Parse the first JSON object in *text* using incremental decode (ignores trailing junk)."""
+    decoder = json.JSONDecoder()
+    n = len(text)
+    i = 0
+    while i < n:
+        if text[i] != "{":
+            i += 1
+            continue
+        try:
+            obj, end = decoder.raw_decode(text, i)
+        except json.JSONDecodeError:
+            i += 1
+            continue
+        if isinstance(obj, dict):
+            return obj
+        i = end if end > i else i + 1
+    return None
+
+
+def parse_llm_json_object_content(content: str) -> dict[str, Any]:
+    """Parse a JSON object from raw LLM message text.
+
+    Tolerates markdown ```json fences and short prose before/after the object.
+    Some OpenAI-compatible providers still wrap or prefix the payload despite
+    ``response_format: json_object``.
+    """
+    text = (content or "").strip().lstrip("\ufeff")
+    if not text:
+        raise ModelGatewayResponseError("empty content from llm")
+    last_error: json.JSONDecodeError | None = None
+    for candidate in _llm_json_object_string_candidates(text):
+        parsed_dict: dict[str, Any] | None = None
+        try:
+            parsed = json.loads(candidate)
+            if isinstance(parsed, dict):
+                parsed_dict = parsed
+        except json.JSONDecodeError as exc:
+            last_error = exc
+        if parsed_dict is None:
+            parsed_dict = _extract_first_json_object_dict(candidate)
+        if parsed_dict is not None:
+            return parsed_dict
+    if last_error is not None:
+        raise ModelGatewayResponseError("llm returned non-json content") from last_error
+    raise ModelGatewayResponseError("llm returned non-json content")
+
+
+def _llm_json_object_string_candidates(text: str) -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+
+    def add(fragment: str) -> None:
+        piece = fragment.strip()
+        if piece and piece not in seen:
+            seen.add(piece)
+            ordered.append(piece)
+
+    add(text)
+    for match in _JSON_FENCE_RE.finditer(text):
+        add(match.group(1))
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end > start:
+        add(text[start : end + 1])
+    return ordered
+
+
 class ModelGateway:
     """Unified gateway that encapsulates provider-specific HTTP calls."""
 
@@ -173,16 +294,26 @@ class ModelGateway:
         choices = response.get("choices") or []
         if not choices:
             raise ModelGatewayResponseError("empty choices from llm")
-        content = ((choices[0].get("message") or {}).get("content") or "").strip()
-        if not content:
+        message = choices[0].get("message") or {}
+        blobs = _assistant_message_json_blobs(message if isinstance(message, dict) else {})
+        if not blobs:
             raise ModelGatewayResponseError("empty content from llm")
-        try:
-            parsed = json.loads(content)
-        except json.JSONDecodeError as exc:
-            raise ModelGatewayResponseError("llm returned non-json content") from exc
-        if not isinstance(parsed, dict):
-            raise ModelGatewayResponseError("llm response is not a JSON object")
-        return parsed
+        last_exc: BaseException | None = None
+        for blob in blobs:
+            try:
+                return parse_llm_json_object_content(blob)
+            except ModelGatewayResponseError as exc:
+                last_exc = exc
+        preview = max(blobs, key=len)
+        _LOG.warning(
+            "model_gateway chat_json parse failed model=%s attempts=%s preview=%r",
+            endpoint.model,
+            len(blobs),
+            preview[:800],
+        )
+        if last_exc is not None:
+            raise last_exc
+        raise ModelGatewayResponseError("llm returned non-json content")
 
     def _request_json(
         self,

@@ -252,7 +252,9 @@ def enhance_parsed_requirement_with_metadata(
             system_prompt=(
                 "You are a senior QA/requirements analyst. Parse technical product and API specification "
                 "documents into structured JSON for test scenario generation. "
-                "Respect the user's language (e.g. zh-CN). Return strict JSON only, no markdown fences."
+                "Respect the user's language (e.g. zh-CN). "
+                "Reply with one JSON object only (the fields in output_schema). "
+                "Do not wrap it in markdown fences and do not add any prose before or after the object."
             ),
             user_payload=prompt,
             temperature=0.1,

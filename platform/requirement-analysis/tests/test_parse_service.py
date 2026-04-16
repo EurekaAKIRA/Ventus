@@ -145,3 +145,35 @@ def test_parse_service_marks_batch_tier_for_large_text() -> None:
     metadata = result["parse_metadata"]
     assert metadata["cleaned_char_count"] > 20000
     assert metadata["processing_tier"] in {"batch", "large_document"}
+
+
+def test_parse_service_flags_suspiciously_truncated_input() -> None:
+    truncated_requirement = (
+        "# Restful Booker\n\n"
+        "## Step 1\n\n"
+        "**Request:** `POST /booking`\n\n"
+        "**Body:**\n\n"
+        "```json\n"
+        "{\n"
+        '  "firstname": "Jim",\n'
+        '  "bookingdates": {\n'
+        '    "checkin": "2026-0'
+    )
+    padded_requirement = truncated_requirement + ("x" * (1024 - len(truncated_requirement)))
+
+    result = parse_requirement_bundle(
+        requirement_text=padded_requirement,
+        options=AnalysisParseOptions(
+            use_llm=False,
+            rag_enabled=False,
+            retrieval_top_k=3,
+            rerank_enabled=False,
+        ),
+    )
+
+    metadata = result["parse_metadata"]
+    assert metadata["input_truncation_suspected"] is True
+    assert metadata["input_integrity_issues"]
+    assert result["validation_report"]["passed"] is False
+    assert any("疑似被截断" in item for item in result["validation_report"]["errors"])
+    assert any("疑似被截断" in item for item in result["parsed_requirement"]["ambiguities"])

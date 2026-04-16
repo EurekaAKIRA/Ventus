@@ -59,8 +59,8 @@ RESOURCE_ALIASES = (
     ("user", ("/users", "user", "用户")),
     ("item", ("/items", "item", "商品", "条目")),
 )
-_EXPLICIT_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+(/[\w/\-{}:.]+)", re.IGNORECASE)
-_BARE_PATH_RE = re.compile(r"(/[\w/\-{}:.]+)")
+_EXPLICIT_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+(/[\w/\-{}:.?=&%]+)", re.IGNORECASE)
+_BARE_PATH_RE = re.compile(r"(/[\w/\-{}:.?=&%]+)")
 _PLACEHOLDER_RE = re.compile(r"\{\{?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}?\}")
 _STATUS_CODE_RE = re.compile(r"(?:status\s*code|http|返回|状态码)\s*[:：=]?\s*(\d{3})", re.IGNORECASE)
 _FIELD_TOKEN_RE = re.compile(r"`([a-zA-Z_][a-zA-Z0-9_]*)`|\"([a-zA-Z_][a-zA-Z0-9_]*)\"|'([a-zA-Z_][a-zA-Z0-9_]*)'")
@@ -94,12 +94,15 @@ _FIELD_STOPWORDS = {
 _IDENTIFIER_ALIASES: dict[str, tuple[str, ...]] = {
     "task_id": ("task_id", "taskid"),
     "booking_id": ("booking_id", "bookingid"),
+    "todo_id": ("todo_id", "todoid"),
+    "challenger_guid": ("challenger_guid", "challengerguid", "guid"),
     "resource_id": ("resource_id", "resourceid", "id"),
     "session_id": ("session_id", "sessionid"),
 }
 
 # 已知平台接口请求体字段白名单，key=(METHOD, path)，供 _extract_body_fields 失败时兜底使用
 _KNOWN_ENDPOINT_BODY_FIELDS: dict[tuple[str, str], dict[str, object]] = {
+    ("POST", "/challenger"): {},
     ("POST", "/auth"): {
         "username": "admin",
         "password": "password123",
@@ -114,6 +117,40 @@ _KNOWN_ENDPOINT_BODY_FIELDS: dict[tuple[str, str], dict[str, object]] = {
             "checkout": "2026-04-12",
         },
         "additionalneeds": "Breakfast",
+    },
+    ("PUT", "/booking/{booking_id}"): {
+        "firstname": "James",
+        "lastname": "Brown",
+        "totalprice": 222,
+        "depositpaid": False,
+        "bookingdates": {
+            "checkin": "2026-04-11",
+            "checkout": "2026-04-13",
+        },
+        "additionalneeds": "Lunch",
+    },
+    ("PATCH", "/booking/{booking_id}"): {
+        "firstname": "Jamie",
+        "additionalneeds": "Dinner",
+    },
+    ("POST", "/todos"): {
+        "title": "write API test",
+        "doneStatus": False,
+        "description": "created by automated test",
+    },
+    ("POST", "/todos/{todo_id}"): {
+        "title": "write API test updated",
+        "doneStatus": True,
+        "description": "updated by automated test",
+    },
+    ("PUT", "/todos/{todo_id}"): {
+        "title": "write API test updated",
+        "doneStatus": True,
+        "description": "updated by automated test",
+    },
+    ("POST", "/secret/token"): {},
+    ("POST", "/secret/note"): {
+        "note": "updated by automated test",
     },
     ("POST", "/api/tasks"): {
         "task_name": "demo_task_name",
@@ -139,13 +176,25 @@ _KNOWN_ENDPOINT_BODY_FIELDS: dict[tuple[str, str], dict[str, object]] = {
     },
 }
 _PREFER_KNOWN_FULL_BODY_ENDPOINTS: set[tuple[str, str]] = {
+    ("POST", "/challenger"),
     ("POST", "/auth"),
     ("POST", "/booking"),
+    ("POST", "/todos"),
+    ("POST", "/todos/{todo_id}"),
+    ("PUT", "/todos/{todo_id}"),
+    ("PUT", "/booking/{booking_id}"),
+    ("PATCH", "/booking/{booking_id}"),
+    ("POST", "/secret/token"),
+    ("POST", "/secret/note"),
 }
 
 
 def _known_endpoint_body(method: str, endpoint_path: str) -> dict[str, object] | None:
-    known = _KNOWN_ENDPOINT_BODY_FIELDS.get(((method or "").upper().strip(), _normalize_endpoint_path(endpoint_path)))
+    normalized_method = (method or "").upper().strip()
+    normalized_path = _canonicalize_endpoint_path(endpoint_path)
+    known = _KNOWN_ENDPOINT_BODY_FIELDS.get((normalized_method, normalized_path))
+    if known is None:
+        known = _KNOWN_ENDPOINT_BODY_FIELDS.get((normalized_method, _normalize_endpoint_path(endpoint_path)))
     return dict(known) if isinstance(known, dict) else None
 
 
@@ -165,13 +214,14 @@ def _merge_extracted_with_known_body(
     endpoint_path: str,
 ) -> dict[str, object]:
     normalized_key = ((method or "").upper().strip(), _normalize_endpoint_path(endpoint_path))
+    canonical_key = ((method or "").upper().strip(), _canonicalize_endpoint_path(endpoint_path))
     known = _known_endpoint_body(method, endpoint_path)
     if not known:
         return extracted
     if not extracted:
         return known
 
-    if normalized_key in _PREFER_KNOWN_FULL_BODY_ENDPOINTS:
+    if normalized_key in _PREFER_KNOWN_FULL_BODY_ENDPOINTS or canonical_key in _PREFER_KNOWN_FULL_BODY_ENDPOINTS:
         merged = dict(known)
         for key, value in extracted.items():
             if key not in known or not _is_synthetic_body_value(value):
@@ -273,7 +323,16 @@ def _build_step_payload(
     enable_api_enrichment: bool,
     enable_assertion_enhancement: bool | None,
 ) -> tuple[dict, list[dict | str], list[str], dict[str, str], dict]:
-    if not enable_api_enrichment or step.get("type") == "given" or _is_expectation_step(step):
+    scenario_assertions = [str(item) for item in (scenario.assertions or [])]
+    if (
+        not enable_api_enrichment
+        or step.get("type") == "given"
+        or _is_expectation_step(step)
+        or (
+            _is_assertion_phase_step(scenario, index)
+            and str(step.get("text", "")).strip() in scenario_assertions
+        )
+    ):
         fallback_assertions = _build_fallback_assertions(scenario, step)
         return {}, fallback_assertions, [], {}, {
             "llm_attempted": False,
@@ -307,6 +366,18 @@ def _build_step_payload(
         enable_llm=enable_assertion_enhancement,
     ).build()
     return request, planned.assertions, uses_context, save_context, planned.quality
+
+
+def _is_assertion_phase_step(scenario: ScenarioModel, index: int) -> bool:
+    for position, candidate in enumerate(scenario.steps or [], start=1):
+        candidate_type = ""
+        if isinstance(candidate, dict):
+            candidate_type = str(candidate.get("type", ""))
+        else:
+            candidate_type = str(getattr(candidate, "type", ""))
+        if candidate_type.lower() == "then":
+            return index >= position
+    return False
 
 
 def _is_api_scenario(scenario: ScenarioModel, parsed_requirement: dict, execution_mode: str) -> bool:
@@ -348,6 +419,19 @@ def _infer_intent(text: str) -> str:
     lowered = text.lower()
     if _is_flow_summary_step(text):
         return "action"
+    explicit_match = _EXPLICIT_PATH_RE.search(text)
+    if explicit_match:
+        method = explicit_match.group(1).upper()
+        if method == "GET":
+            return "query"
+        if method == "POST":
+            if "/auth" in lowered or "/login" in lowered:
+                return "login"
+            return "create"
+        if method == "PUT" or method == "PATCH":
+            return "update"
+        if method == "DELETE":
+            return "delete"
     if any(keyword in lowered for keyword in LOGIN_HINTS):
         return "login"
     # CREATE_HINTS includes "post", which matches "POST /auth" and mis-classifies token/auth steps as create.
@@ -395,16 +479,30 @@ def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[st
             uses_context.append("resource_id")
         if "booking_id" in saved_context:
             uses_context.append("booking_id")
+        if "todo_id" in saved_context:
+            uses_context.append("todo_id")
+        if "challenger_guid" in saved_context:
+            uses_context.append("challenger_guid")
+        if "auth_token" in saved_context:
+            uses_context.append("auth_token")
         if "session_id" in saved_context:
             uses_context.append("session_id")
     if "task_id" in saved_context and ("task_id" in lowered or "{task_id}" in text):
         uses_context.append("task_id")
     if "booking_id" in saved_context and ("booking_id" in lowered or "{booking_id}" in text):
         uses_context.append("booking_id")
+    if "todo_id" in saved_context and ("todo_id" in lowered or "{todo_id}" in text or "{id}" in text):
+        uses_context.append("todo_id")
+    if "challenger_guid" in saved_context and ("challenger_guid" in lowered or "{guid}" in text or "challenger" in lowered):
+        uses_context.append("challenger_guid")
+    if "challenger_guid" in saved_context and not re.search(r"\bpost\s+/challenger\b", lowered):
+        uses_context.append("challenger_guid")
     if intent == "query" and "token" in saved_context and (
         "profile" in lowered or "鉴权" in text or "protected" in lowered
     ):
         uses_context.append("token")
+    if "auth_token" in saved_context and ("auth_token" in lowered or "secret" in lowered or "token" in lowered):
+        uses_context.append("auth_token")
     if "token" in saved_context and ("token" in lowered or "cookie" in lowered):
         uses_context.append("token")
     if any(keyword in lowered for keyword in SESSION_HINTS) and "session_id" in saved_context:
@@ -427,6 +525,7 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
     url = resource_path
     auth: dict[str, object] | None = None
     cookies: dict[str, str] | None = None
+    matched_endpoint: dict | None = None
 
     if intent == "login":
         method = "POST"
@@ -495,13 +594,25 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
         method = explicit_method
         url = resource_path  # explicit endpoint overrides hardcoded intent URL
         url = _normalize_path_placeholders(url, uses_context)
+        if intent == "update":
+            extracted = _extract_body_fields(parsed_requirement, text, resource_path, method, intent)
+            merged = _merge_extracted_with_known_body(extracted, method, resource_path)
+            if merged:
+                json_body = merged
+            else:
+                known = _known_endpoint_body(method, resource_path)
+                if known is not None:
+                    json_body = known if known else None
     matched_endpoint = _find_endpoint_spec(parsed_requirement, method, url)
+    headers.update(_context_headers_for_request(url, uses_context))
+    if _requires_basic_auth(text, matched_endpoint, parsed_requirement=parsed_requirement, method=method, path=url):
+        auth = {"type": "basic", "username": "admin", "password": "password"}
     if _requires_token_cookie(text, matched_endpoint, parsed_requirement=parsed_requirement, method=method, path=url):
         cookies = {"token": "{{token}}"}
 
     if any(keyword in lowered for keyword in BASIC_AUTH_HINTS):
         auth = {"type": "basic", "username": "demo", "password": "secret"}
-    elif cookies is None and intent != "login" and (
+    elif cookies is None and auth is None and intent != "login" and (
         "token" in uses_context or any(keyword in lowered for keyword in ("bearer", "token", "令牌"))
     ):
         auth = {"type": "bearer", "token_context": "token"}
@@ -639,6 +750,10 @@ def _normalize_endpoint_path(path: str) -> str:
     normalized = (path or "").strip()
     if not normalized:
         return ""
+    if "://" in normalized:
+        after = normalized.split("://", 1)[1]
+        slash = after.find("/")
+        normalized = after[slash:] if slash >= 0 else "/"
     if normalized != "/" and normalized.endswith("/"):
         normalized = normalized[:-1]
     return normalized
@@ -656,11 +771,18 @@ def _canonicalize_endpoint_path(path: str) -> str:
     normalized = _normalize_endpoint_path(path)
     if not normalized:
         return normalized
+    query = ""
+    if "?" in normalized:
+        normalized, query = normalized.split("?", 1)
 
     def repl(match: re.Match[str]) -> str:
         return "{" + _canonical_placeholder_name(match.group(1)) + "}"
 
-    return _PLACEHOLDER_RE.sub(repl, normalized)
+    canonical = _PLACEHOLDER_RE.sub(repl, normalized)
+    canonical = canonical.replace("/booking/{resource_id}", "/booking/{booking_id}")
+    canonical = canonical.replace("/todos/{resource_id}", "/todos/{todo_id}")
+    canonical = canonical.replace("/tasks/{resource_id}", "/tasks/{task_id}")
+    return canonical if not query else f"{canonical}?{query}"
 
 
 def _sentence_matches_endpoint(sentence: str, endpoint_path: str, method: str) -> bool:
@@ -732,6 +854,52 @@ def _requires_token_cookie(
         for sentence in corpus:
             lowered_sentence = str(sentence).lower()
             if "cookie" not in lowered_sentence or "token" not in lowered_sentence:
+                continue
+            if _sentence_matches_endpoint(str(sentence), target_path, target_method):
+                return True
+    return False
+
+
+def _requires_basic_auth(
+    step_text: str,
+    endpoint: dict | None,
+    *,
+    parsed_requirement: dict | None = None,
+    method: str = "",
+    path: str = "",
+) -> bool:
+    lowered = str(step_text or "").lower()
+    if any(keyword in lowered for keyword in BASIC_AUTH_HINTS):
+        return True
+    candidates: list[dict] = []
+    if endpoint:
+        candidates.append(endpoint)
+    if parsed_requirement:
+        target_method = str(method or "").upper().strip()
+        target_path = _canonicalize_endpoint_path(path)
+        for item in parsed_requirement.get("api_endpoints") or []:
+            ep_method = str(item.get("method", "")).upper().strip()
+            ep_path = _canonicalize_endpoint_path(str(item.get("path", "")))
+            if ep_method == target_method and ep_path == target_path:
+                candidates.append(item)
+
+    for candidate in candidates:
+        description = str(candidate.get("description", "")).lower()
+        if "basic auth" in description or "basic authentication" in description:
+            return True
+
+    if _canonicalize_endpoint_path(path) == "/secret/token":
+        return True
+    if parsed_requirement:
+        target_path = _canonicalize_endpoint_path(path)
+        target_method = str(method or "").upper().strip()
+        corpus = []
+        corpus.extend(parsed_requirement.get("actions", []))
+        corpus.extend(parsed_requirement.get("expected_results", []))
+        corpus.extend(parsed_requirement.get("constraints", []))
+        for sentence in corpus:
+            lowered_sentence = str(sentence).lower()
+            if "basic auth" not in lowered_sentence and "admin/password" not in lowered_sentence:
                 continue
             if _sentence_matches_endpoint(str(sentence), target_path, target_method):
                 return True
@@ -845,11 +1013,15 @@ def _resource_needs_identifier(text: str) -> bool:
 def _identifier_context_for_path(path: str, uses_context: list[str]) -> str | None:
     canonical_path = _canonicalize_endpoint_path(path)
     placeholders = [match.group(1) for match in _PLACEHOLDER_RE.finditer(canonical_path)]
-    for candidate in ("booking_id", "task_id", "session_id", "resource_id"):
+    for candidate in ("booking_id", "todo_id", "challenger_guid", "task_id", "session_id", "resource_id"):
         if candidate in placeholders and candidate in uses_context:
             return candidate
     if "booking_id" in uses_context:
         return "booking_id"
+    if "todo_id" in uses_context:
+        return "todo_id"
+    if "challenger_guid" in uses_context:
+        return "challenger_guid"
     if "task_id" in uses_context:
         return "task_id"
     if "resource_id" in uses_context:
@@ -864,6 +1036,16 @@ def _apply_identifier_to_path(path: str, identifier_context: str) -> str:
     if "{" in normalized_path or "}" in normalized_path:
         return normalized_path
     return normalized_path.rstrip("/") + f"/{{{{{identifier_context}}}}}"
+
+
+def _context_headers_for_request(path: str, uses_context: list[str]) -> dict[str, str]:
+    headers: dict[str, str] = {}
+    lowered_path = _canonicalize_endpoint_path(path).lower()
+    if "challenger_guid" in uses_context and lowered_path != "/challenger":
+        headers["X-CHALLENGER"] = "{{challenger_guid}}"
+    if "auth_token" in uses_context and lowered_path.startswith("/secret/") and lowered_path != "/secret/token":
+        headers["X-AUTH-TOKEN"] = "{{auth_token}}"
+    return headers
 
 
 def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]:
@@ -932,6 +1114,10 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
             saved["token"] = "json.token"
         return saved
     if intent == "create":
+        if request_url == "/challenger" and request_method == "POST":
+            return {"challenger_guid": "headers.x-challenger"}
+        if request_url == "/secret/token" and request_method == "POST":
+            return {"auth_token": "headers.x-auth-token"}
         if (
             "/parse" in request_url
             or "/execute" in request_url
@@ -941,6 +1127,8 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
             return {}
         if request_url in {"/api/tasks", "/tasks"}:
             return {"task_id": "json.data.task_id", "resource_id": "json.data.task_id"}
+        if request_url.endswith("/todos") and request_method == "POST":
+            return {"todo_id": "json.id", "resource_id": "json.id"}
         identifier = _best_identifier_source()
         if identifier:
             if request_url.endswith("/booking") and request_method == "POST":
@@ -969,6 +1157,10 @@ def _normalize_path_placeholders(path: str, uses_context: list[str]) -> str:
             return "{{task_id}}"
         if canonical == "booking_id" and "booking_id" in uses_context:
             return "{{booking_id}}"
+        if canonical == "todo_id" and "todo_id" in uses_context:
+            return "{{todo_id}}"
+        if canonical == "challenger_guid" and "challenger_guid" in uses_context:
+            return "{{challenger_guid}}"
         if canonical == "session_id" and "session_id" in uses_context:
             return "{{session_id}}"
         if canonical == "resource_id":
@@ -976,6 +1168,10 @@ def _normalize_path_placeholders(path: str, uses_context: list[str]) -> str:
                 return "{{resource_id}}"
             if "booking_id" in uses_context:
                 return "{{booking_id}}"
+            if "todo_id" in uses_context:
+                return "{{todo_id}}"
+            if "challenger_guid" in uses_context:
+                return "{{challenger_guid}}"
             if "task_id" in uses_context:
                 return "{{task_id}}"
         return "{{" + canonical + "}}"

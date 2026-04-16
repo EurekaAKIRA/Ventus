@@ -14,6 +14,8 @@ from typing import Any
 from urllib import error, parse, request
 from urllib.request import OpenerDirector
 
+import requests
+
 from platform_shared import ContextBus
 from platform_shared.models import ExecutionResult
 
@@ -119,7 +121,7 @@ def execute_test_case_dsl(
             "passed_step_count": passed_steps,
             "failed_step_count": total_steps - passed_steps,
             "context_key_count": len(context.snapshot()),
-            "cookie_count": len(runtime_state["cookie_jar"]),
+            "cookie_count": _count_runtime_cookies(runtime_state),
             "avg_elapsed_ms": round(sum(elapsed_samples) / len(elapsed_samples), 2) if elapsed_samples else 0,
             "max_elapsed_ms": round(max(elapsed_samples), 2) if elapsed_samples else 0,
             "assertion_category_counts": assertion_inventory["category_counts"],
@@ -259,7 +261,7 @@ def _execute_request_step(
     }
 
 
-def _perform_http_request(request_spec: dict, opener: OpenerDirector) -> dict:
+def _perform_http_request(request_spec: dict, opener: OpenerDirector | requests.Session) -> dict:
     method = request_spec.get("method", "GET").upper()
     url = request_spec.get("url", "")
     if not url:
@@ -304,8 +306,27 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector) -> dict:
     error_category = ""
     started = time.time()
     for attempt in range(retries + 1):
-        req = request.Request(url=url, data=encoded_data, headers=headers, method=method)
         try:
+            if isinstance(opener, requests.Session):
+                resp = opener.request(
+                    method=method,
+                    url=url,
+                    params=params or None,
+                    data=encoded_data,
+                    headers=headers,
+                    timeout=_resolve_timeout(timeout),
+                )
+                raw = resp.content or b""
+                status_code = int(resp.status_code)
+                response_headers = dict(resp.headers.items())
+                response_error = ""
+                error_category = ""
+                if status_code >= 400:
+                    response_error = f"HTTP Error {status_code}: {resp.reason or 'Request Failed'}"
+                    error_category = _classify_http_error(status_code)
+                break
+
+            req = request.Request(url=url, data=encoded_data, headers=headers, method=method)
             with opener.open(req, timeout=timeout) as resp:
                 raw = resp.read()
                 status_code = resp.getcode()
@@ -320,6 +341,20 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector) -> dict:
             response_error = str(exc)
             error_category = _classify_http_error(exc.code)
             break
+        except requests.Timeout as exc:
+            response_error = str(exc)
+            status_code = 0
+            error_category = "timeout_error"
+            if attempt >= retries:
+                break
+            time.sleep(0.15 * (attempt + 1))
+        except requests.RequestException as exc:
+            response_error = str(exc)
+            status_code = 0
+            error_category = "network_error"
+            if attempt >= retries:
+                break
+            time.sleep(0.15 * (attempt + 1))
         except error.URLError as exc:
             response_error = str(exc.reason or exc)
             status_code = 0
@@ -362,6 +397,24 @@ def _render_templates(payload: Any, context: ContextBus) -> Any:
     if isinstance(payload, dict):
         return {key: _render_templates(value, context) for key, value in payload.items()}
     return payload
+
+
+def _resolve_timeout(timeout: float) -> tuple[float, float]:
+    timeout = max(float(timeout), 0.1)
+    connect_timeout = min(timeout, 5.0)
+    read_timeout = max(timeout, connect_timeout)
+    return (connect_timeout, read_timeout)
+
+
+def _count_runtime_cookies(runtime_state: dict[str, Any]) -> int:
+    opener = runtime_state.get("opener")
+    if isinstance(opener, requests.Session):
+        return len(opener.cookies)
+    cookie_jar = runtime_state.get("cookie_jar")
+    try:
+        return len(cookie_jar)
+    except TypeError:
+        return 0
 
 
 def _evaluate_assertions(assertions: list[Any], response_payload: dict, context: ContextBus) -> list[dict[str, Any]]:
@@ -616,6 +669,10 @@ def _build_runtime_state(test_case_dsl: dict) -> dict[str, Any]:
     execution = metadata.get("execution") or {}
     cookie_jar = CookieJar()
     opener = request.build_opener(request.HTTPCookieProcessor(cookie_jar))
+    session = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(pool_connections=16, pool_maxsize=16, max_retries=0, pool_block=False)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
     return {
         "base_url": execution.get("base_url", ""),
         "default_headers": execution.get("default_headers") or {},
@@ -623,9 +680,10 @@ def _build_runtime_state(test_case_dsl: dict) -> dict[str, Any]:
         "default_cookies": execution.get("cookies") or {},
         "context_seed": execution.get("context") or {},
         "cookie_jar": cookie_jar,
-        "opener": opener,
-        "default_step_timeout": float(execution.get("step_timeout_seconds", 30)),
-        "default_step_retries": int(execution.get("step_retries", 2)),
+        "opener": session,
+        "legacy_opener": opener,
+        "default_step_timeout": float(execution.get("step_timeout_seconds", 15)),
+        "default_step_retries": int(execution.get("step_retries", 0)),
     }
 
 

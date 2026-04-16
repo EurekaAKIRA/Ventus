@@ -28,6 +28,19 @@
 }
 ```
 
+执行器默认请求头（对标 Apifox，未显式配置时自动补）：
+
+- 任意请求：自动补 `Accept: application/json`
+- `request.json` 存在：自动补 `Content-Type: application/json`
+- `request.data` 为表单对象：自动补 `Content-Type: application/x-www-form-urlencoded`
+- 若步骤中已声明同名 header（大小写不敏感），以步骤声明为准，不覆盖
+
+需要显式声明的 header（不会自动猜测）：
+
+- 认证类：`Authorization`、`Cookie`
+- 自定义媒体类型：如 `application/vnd.xxx+json`
+- 非 JSON 上传：如 `multipart/form-data`
+
 ---
 
 ## Feature: Task Center 主链路烟测
@@ -178,9 +191,3 @@
 
 ---
 
-## 与完整版关系
-
-- 接口全集、分页、产物枚举、Dashboard 等见 **`docs/platform_e2e_requirement.md`**。
-- 回归脚本可使用：  
-  `python platform/task-center/tests/platform_e2e_requirement_regression_test.py --requirement-path docs/platform_e2e2_requirement.md`  
-  （解析参数若与脚本默认 `rag_enabled: true` 不一致时，以脚本为准或按需改脚本。）

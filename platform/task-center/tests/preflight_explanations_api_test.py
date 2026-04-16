@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import sys
 import tempfile
+import threading
 from pathlib import Path
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 from fastapi.testclient import TestClient
@@ -44,6 +46,62 @@ def api_client():
     temp_dir.cleanup()
 
 
+@pytest.fixture()
+def ping_only_server():
+    class _Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            if self.path == "/ping":
+                body = b"pong"
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            self.send_error(404)
+
+        def log_message(self, format: str, *args) -> None:  # noqa: A003
+            return
+
+    server = HTTPServer(("127.0.0.1", 0), _Handler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{port}"
+    finally:
+        server.shutdown()
+        thread.join()
+
+
+@pytest.fixture()
+def root_only_server():
+    class _Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            if self.path == "/":
+                body = b"ok"
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            self.send_error(404)
+
+        def log_message(self, format: str, *args) -> None:  # noqa: A003
+            return
+
+    server = HTTPServer(("127.0.0.1", 0), _Handler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{port}"
+    finally:
+        server.shutdown()
+        thread.join()
+
+
 def test_preflight_unreachable_base(api_client):
     client, _registry = api_client
     r = client.post(
@@ -67,6 +125,52 @@ def test_preflight_unreachable_base(api_client):
     assert data["overall_status"] == "failed"
     assert data["blocking"] is True
     assert data["blocking_issues"]
+
+
+def test_preflight_ping_fallback_marks_base_reachable(api_client, ping_only_server):
+    client, _registry = api_client
+    r = client.post(
+        "/api/tasks",
+        json={
+            "task_name": "preflight_ping_fallback",
+            "source_type": "text",
+            "requirement_text": "demo",
+            "target_system": ping_only_server,
+            "environment": "test",
+        },
+    )
+    assert r.status_code == 201
+    task_id = r.json()["data"]["task_id"]
+    pre = client.post(f"/api/tasks/{task_id}/preflight-check", json={})
+    assert pre.status_code == 200
+    data = pre.json()["data"]
+
+    reachability = next(item for item in data["checks"] if item["name"] == "base_url_reachable")
+    assert reachability["status"] == "passed"
+    assert data["blocking"] is False
+
+
+def test_preflight_root_fallback_avoids_false_blocking(api_client, root_only_server):
+    client, _registry = api_client
+    r = client.post(
+        "/api/tasks",
+        json={
+            "task_name": "preflight_root_fallback",
+            "source_type": "text",
+            "requirement_text": "demo",
+            "target_system": root_only_server,
+            "environment": "test",
+        },
+    )
+    assert r.status_code == 201
+    task_id = r.json()["data"]["task_id"]
+    pre = client.post(f"/api/tasks/{task_id}/preflight-check", json={})
+    assert pre.status_code == 200
+    data = pre.json()["data"]
+
+    reachability = next(item for item in data["checks"] if item["name"] == "base_url_reachable")
+    assert reachability["status"] == "passed"
+    assert data["blocking"] is False
 
 
 def test_explanations_requires_execution(api_client):

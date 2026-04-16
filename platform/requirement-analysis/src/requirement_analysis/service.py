@@ -70,6 +70,7 @@ def parse_requirement_bundle(
     )
 
     raw_text = load_document(source_path=source_path, inline_text=requirement_text)
+    input_integrity_issues = _detect_input_integrity_issues(raw_text)
     document = parse_document(raw_text)
     t_after_document = time.perf_counter()
     chunks = chunk_text(document.get("cleaned_text", ""), source_file=source_path or "")
@@ -118,6 +119,10 @@ def parse_requirement_bundle(
         use_llm=False,
         out_diagnostics={},
     )
+    if input_integrity_issues:
+        ambiguities = list(parsed_payload.get("ambiguities") or [])
+        ambiguities.extend(f"原始需求疑似被截断：{issue}" for issue in input_integrity_issues)
+        parsed_payload["ambiguities"] = _dedupe_strings(ambiguities)
     t_after_rules = time.perf_counter()
     pre_llm_enhancement_ms = round((t_after_rules - started) * 1000, 2)
     document_load_parse_ms = round((t_after_document - started) * 1000, 2)
@@ -157,7 +162,10 @@ def parse_requirement_bundle(
                 llm_enhancement_ms = round((time.perf_counter() - t_llm) * 1000, 2)
 
     parsed_requirement = ParsedRequirement(**parsed_payload)
-    validation_report = _build_validation_report(parsed_requirement)
+    validation_report = _build_validation_report(
+        parsed_requirement,
+        input_integrity_issues=input_integrity_issues,
+    )
     elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
     phase_timings_ms: dict[str, float] = {
         "pre_llm_enhancement": pre_llm_enhancement_ms,
@@ -215,6 +223,8 @@ def parse_requirement_bundle(
         },
         "retrieval_scoring": retrieval_scoring.to_dict(),
         "performance": performance,
+        "input_integrity_issues": input_integrity_issues,
+        "input_truncation_suspected": bool(input_integrity_issues),
         **sizing_metadata,
     }
     return {
@@ -229,9 +239,14 @@ def parse_requirement_bundle(
     }
 
 
-def _build_validation_report(parsed_requirement: ParsedRequirement) -> ValidationReport:
+def _build_validation_report(
+    parsed_requirement: ParsedRequirement,
+    *,
+    input_integrity_issues: list[str] | None = None,
+) -> ValidationReport:
     errors: list[str] = []
     warnings: list[str] = []
+    integrity_issues = input_integrity_issues or []
     if not parsed_requirement.objective.strip():
         errors.append("缺少 objective")
     if not parsed_requirement.actions:
@@ -240,6 +255,8 @@ def _build_validation_report(parsed_requirement: ParsedRequirement) -> Validatio
         warnings.append("expected_results 为空，已按规则补全")
     if len(parsed_requirement.ambiguities) > 3:
         warnings.append("需求存在较多歧义，建议补充业务约束")
+    if integrity_issues:
+        errors.append(f"原始需求疑似被截断或未完整上传：{'；'.join(integrity_issues)}")
     return ValidationReport(
         feature_name=parsed_requirement.objective[:50] or "requirement_parse",
         passed=not errors,
@@ -251,8 +268,42 @@ def _build_validation_report(parsed_requirement: ParsedRequirement) -> Validatio
             "action_count": len(parsed_requirement.actions),
             "expected_count": len(parsed_requirement.expected_results),
             "ambiguity_count": len(parsed_requirement.ambiguities),
+            "input_integrity_issue_count": len(integrity_issues),
         },
     )
+
+
+def _dedupe_strings(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in items:
+        normalized = str(item or "").strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        out.append(normalized)
+    return out
+
+
+def _detect_input_integrity_issues(raw_text: str) -> list[str]:
+    text = str(raw_text or "")
+    stripped = text.rstrip()
+    if not stripped:
+        return []
+
+    issues: list[str] = []
+    size_aligned = len(text) >= 512 and len(text) % 1024 == 0
+    unclosed_code_fence = stripped.count("```") % 2 == 1
+    unbalanced_jsonish = stripped.count("{") > stripped.count("}") or stripped.count("[") > stripped.count("]")
+    trailing_incomplete = bool(stripped) and stripped[-1] in {'"', "'", "{", "[", ":", ",", "-", "_"}
+
+    if size_aligned and unclosed_code_fence:
+        issues.append(f"文本长度为 {len(text)}，且 Markdown 代码块未闭合")
+    if size_aligned and unbalanced_jsonish:
+        issues.append(f"文本长度为 {len(text)}，且结构化片段括号未闭合")
+    if size_aligned and trailing_incomplete:
+        issues.append(f"文本长度为 {len(text)}，且末尾停在未完成片段")
+    return _dedupe_strings(issues)
 
 
 def _dedupe_chunks(items: list[dict[str, Any]]) -> list[dict[str, Any]]:

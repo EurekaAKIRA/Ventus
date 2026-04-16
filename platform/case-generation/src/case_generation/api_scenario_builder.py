@@ -153,10 +153,35 @@ def _extract_significant_path_segments(path: str) -> list[str]:
 
 
 def _contains_explicit_endpoint_reference(text: str, method: str, path: str) -> bool:
+    """True when *text* names this HTTP surface without extending to a longer path.
+
+    Prevents `/api/tasks` from matching expectations about `/api/tasks/{task_id}/parse`.
+    """
     lowered = text.lower()
     method_lower = str(method or "").lower()
-    path_lower = str(path or "").lower()
-    return bool((method_lower and path_lower and f"{method_lower} {path_lower}" in lowered) or (path_lower and path_lower in lowered))
+    path_lower = str(path or "").lower().rstrip("/")
+    if not path_lower:
+        return False
+    if method_lower:
+        needle = f"{method_lower} {path_lower}"
+        search_from = 0
+        while True:
+            pos = lowered.find(needle, search_from)
+            if pos < 0:
+                break
+            end = pos + len(needle)
+            if lowered[end : end + 1] != "/":
+                return True
+            search_from = pos + 1
+    pos = 0
+    while True:
+        hit = lowered.find(path_lower, pos)
+        if hit < 0:
+            return False
+        after = hit + len(path_lower)
+        if lowered[after : after + 1] != "/":
+            return True
+        pos = after + 1
 
 
 def _is_generic_expectation_text(text: str) -> bool:
@@ -228,10 +253,125 @@ def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expe
         return []
     scenarios: list[dict] = []
     for index, endpoint in enumerate(endpoints[:_MAX_ENDPOINT_SCENARIOS], start=1):
+        if _endpoint_requires_context(endpoint):
+            continue
         endpoint_action = _build_action_for_endpoint(endpoint, actions)
         endpoint_expectations = _select_expectations_for_endpoint(endpoint, expectations, index)
         endpoint_goal = _build_goal_for_endpoint(endpoint, endpoint_action, parsed_requirement)
         scenarios.append(_build_scenario(index, [endpoint_action], endpoint_expectations, parsed_requirement, goal=endpoint_goal))
+    return scenarios
+
+
+def _is_meta_action(text: str) -> bool:
+    lowered = str(text or "").strip().lower()
+    if not lowered:
+        return True
+    return (
+        lowered.startswith("scenario:")
+        or lowered.startswith("step ")
+        or lowered.startswith("request:**")
+        or lowered.startswith("expected:**")
+        or lowered.startswith("统一目标：")
+    )
+
+
+def _filter_actions(actions: list[str]) -> list[str]:
+    return [action for action in actions if not _is_meta_action(action)]
+
+
+def _endpoint_requires_context(endpoint: dict) -> bool:
+    path = str(endpoint.get("path", "")).strip()
+    depends_on = endpoint.get("depends_on") or []
+    method = str(endpoint.get("method", "")).upper().strip()
+    has_placeholder = "{" in path or "}" in path
+    return bool(depends_on) or (has_placeholder and method in {"GET", "PUT", "PATCH", "DELETE"})
+
+
+def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expectations: list[str]) -> list[dict]:
+    endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
+    if not endpoints:
+        return []
+    scenarios: list[dict] = []
+    for index, endpoint in enumerate(endpoints[:_MAX_ENDPOINT_SCENARIOS], start=1):
+        if _endpoint_requires_context(endpoint):
+            continue
+        endpoint_action = _build_action_for_endpoint(endpoint, actions)
+        endpoint_expectations = _select_expectations_for_endpoint(endpoint, expectations, index)
+        endpoint_goal = _build_goal_for_endpoint(endpoint, endpoint_action, parsed_requirement)
+        scenarios.append(_build_scenario(index, [endpoint_action], endpoint_expectations, parsed_requirement, goal=endpoint_goal))
+    return scenarios
+
+
+def _build_dependency_flow_scenarios(
+    parsed_requirement: dict,
+    actions: list[str],
+    expectations: list[str],
+    start_index: int,
+) -> list[dict]:
+    endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
+    if len(endpoints) < 2 or not any(_endpoint_requires_context(endpoint) for endpoint in endpoints):
+        return []
+
+    preconditions = _normalize_preconditions(parsed_requirement)
+    steps: list[ScenarioStep] = [ScenarioStep(type="given", text=preconditions[0])]
+    for step_index, endpoint in enumerate(endpoints[:8]):
+        action_text = _build_action_for_endpoint(endpoint, actions)
+        steps.append(ScenarioStep(type="when" if step_index == 0 else "and", text=action_text))
+
+    then_text = expectations[0] if expectations else "System returns an observable result"
+    scenario = ScenarioModel(
+        scenario_id=f"scenario_{start_index:03d}",
+        name=" -> ".join(_build_action_for_endpoint(endpoint, actions) for endpoint in endpoints[:4])[:80],
+        goal=parsed_requirement.get("objective", "dependent api flow"),
+        preconditions=preconditions,
+        steps=steps + [ScenarioStep(type="then", text=then_text)],
+        assertions=expectations[:2] or ["System returns an observable result"],
+        source_chunks=parsed_requirement.get("source_chunks", []),
+        priority="P0",
+    )
+    return [scenario.to_dict()]
+
+
+def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dict]:
+    """Build scenario list from parsed requirement.
+
+    Generates endpoint-level, dependency-flow, and narrative scenarios.
+    """
+    actions = _filter_actions(parsed_requirement.get("actions") or [parsed_requirement.get("objective", "Execute core action")])
+    expectations = parsed_requirement.get("expected_results") or ["System returns an observable result"]
+
+    endpoint_scenarios = _build_endpoint_scenarios(parsed_requirement, actions, expectations)
+    dependency_scenarios = _build_dependency_flow_scenarios(
+        parsed_requirement,
+        actions,
+        expectations,
+        len(endpoint_scenarios) + 1,
+    )
+
+    chained_start = len(endpoint_scenarios) + len(dependency_scenarios) + 1
+    chained_scenarios = _build_chained_scenarios(parsed_requirement, actions, expectations, chained_start)
+    if endpoint_scenarios:
+        chained_scenarios = []
+
+    narrative_start = chained_start + len(chained_scenarios)
+    narrative_scenarios = _build_narrative_scenarios(parsed_requirement, actions, expectations, narrative_start)
+
+    combined = endpoint_scenarios + dependency_scenarios + chained_scenarios + narrative_scenarios
+    if combined:
+        return combined
+
+    scenarios: list[dict] = []
+    grouped_actions = _group_actions(actions[:6])
+    for index, action_group in enumerate(grouped_actions[:5], start=1):
+        if len(grouped_actions) == 1:
+            scenario_expectations = expectations
+        else:
+            scenario_expectations = [expectations[min(index - 1, len(expectations) - 1)]]
+        scenarios.append(_build_scenario(index, action_group, scenario_expectations, parsed_requirement))
+
+    if use_llm:
+        parsed_requirement.setdefault("ambiguities", []).append("LLM scenario enhancement is not wired in yet.")
+
     return scenarios
 
 
@@ -356,7 +496,13 @@ def _build_narrative_scenarios(
     narrative_actions = [a for a in actions if _is_narrative_action(a)]
     if not narrative_actions:
         return []
-    grouped = _group_actions(narrative_actions[:8])
+    # If only some lines are "narrative" (e.g. 登录… + concrete 查询…), keep the full ordered
+    # action list so auth + 上一步 follow-ups are not dropped.
+    if len(narrative_actions) < len(actions):
+        working_actions = list(actions[:8])
+    else:
+        working_actions = narrative_actions[:8]
+    grouped = _group_actions(working_actions)
     scenarios: list[dict] = []
     for offset, action_group in enumerate(grouped[:5], start=0):
         idx = start_index + offset
@@ -366,6 +512,61 @@ def _build_narrative_scenarios(
             scenario_expectations = [expectations[min(offset, len(expectations) - 1)]]
         scenarios.append(_build_scenario(idx, action_group, scenario_expectations, parsed_requirement))
     return scenarios
+
+
+def _is_meta_action(text: str) -> bool:
+    lowered = str(text or "").strip().lower()
+    if not lowered:
+        return True
+    return (
+        lowered.startswith("scenario:")
+        or lowered.startswith("step ")
+        or lowered.startswith("request:**")
+        or lowered.startswith("expected:**")
+        or lowered.startswith("统一目标：")
+    )
+
+
+def _filter_actions(actions: list[str]) -> list[str]:
+    return [action for action in actions if not _is_meta_action(action)]
+
+
+def _endpoint_requires_context(endpoint: dict) -> bool:
+    path = str(endpoint.get("path", "")).strip()
+    depends_on = endpoint.get("depends_on") or []
+    method = str(endpoint.get("method", "")).upper().strip()
+    has_placeholder = "{" in path or "}" in path
+    return bool(depends_on) or (has_placeholder and method in {"GET", "PUT", "PATCH", "DELETE"})
+
+
+def _build_dependency_flow_scenarios(
+    parsed_requirement: dict,
+    actions: list[str],
+    expectations: list[str],
+    start_index: int,
+) -> list[dict]:
+    endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if endpoint.get("path")]
+    if len(endpoints) < 2 or not any(_endpoint_requires_context(endpoint) for endpoint in endpoints):
+        return []
+
+    preconditions = _normalize_preconditions(parsed_requirement)
+    steps: list[ScenarioStep] = [ScenarioStep(type="given", text=preconditions[0])]
+    for step_index, endpoint in enumerate(endpoints[:8]):
+        action_text = _build_action_for_endpoint(endpoint, actions)
+        steps.append(ScenarioStep(type="when" if step_index == 0 else "and", text=action_text))
+
+    then_text = expectations[0] if expectations else "系统返回符合需求的可观察结果"
+    scenario = ScenarioModel(
+        scenario_id=f"scenario_{start_index:03d}",
+        name=" -> ".join(_build_action_for_endpoint(endpoint, actions) for endpoint in endpoints[:4])[:80],
+        goal=parsed_requirement.get("objective", "dependent api flow"),
+        preconditions=preconditions,
+        steps=steps + [ScenarioStep(type="then", text=then_text)],
+        assertions=expectations[:2] or ["系统返回符合需求的可观察结果"],
+        source_chunks=parsed_requirement.get("source_chunks", []),
+        priority="P0",
+    )
+    return [scenario.to_dict()]
 
 
 def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dict]:
@@ -381,6 +582,9 @@ def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dic
 
     chained_start = len(endpoint_scenarios) + 1
     chained_scenarios = _build_chained_scenarios(parsed_requirement, actions, expectations, chained_start)
+    # Per-endpoint scenarios already cover each HTTP surface; omit duplicate e2e chain of the same endpoints.
+    if endpoint_scenarios:
+        chained_scenarios = []
 
     narrative_start = chained_start + len(chained_scenarios)
     narrative_scenarios = _build_narrative_scenarios(parsed_requirement, actions, expectations, narrative_start)

@@ -43,6 +43,7 @@ def envelope_server():
     port = srv.server_address[1]
     thread = threading.Thread(target=srv.serve_forever, daemon=True)
     thread.start()
+    time.sleep(0.05)
     try:
         yield f"http://127.0.0.1:{port}"
     finally:
@@ -120,3 +121,5 @@ def test_save_context_reads_envelope_data(envelope_server):
     assert result["status"] == "passed"
     step2 = result["scenario_results"][0]["steps"][1]
     assert step2["status"] == "passed"
+
+

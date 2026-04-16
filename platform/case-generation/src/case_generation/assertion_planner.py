@@ -7,6 +7,7 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlparse
 
 from platform_shared import TaskContext, get_requirement_analysis_runtime_config
 from platform_shared.endpoint_policy import expects_json_envelope
@@ -193,6 +194,7 @@ SIMPLE_ENDPOINT_SEGMENTS = frozenset({
     "ping", "version", "info", "docs", "openapi.json", "swagger",
     "status", "metrics", "favicon.ico",
 })
+PLACEHOLDER_SEGMENT_RE = re.compile(r"\{\{?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}?\}")
 
 
 def _is_simple_endpoint(url: str) -> bool:
@@ -218,6 +220,12 @@ HIGH_VALUE_ASSERTION_ENDPOINT_SUFFIXES = (
     "/api/tasks/{task_id}/execute",
     "/api/tasks/{task_id}/analysis-report",
     "/api/tasks/{task_id}/validation-report",
+)
+# Hostnames (exact, no port) for external APIs where LLM assertion enhancement is allowed.
+LLM_ASSERTION_ALLOWED_API_HOSTS: frozenset[str] = frozenset(
+    {
+        "restful-booker.herokuapp.com",
+    }
 )
 _ASSERTION_LLM_CACHE: dict[str, tuple[list[dict[str, Any]], str, str]] = {}
 
@@ -389,6 +397,9 @@ class RuleAssertionBuilder:
     def build(self) -> list[dict[str, Any]]:
         assertions: list[dict[str, Any]] = []
         expected_statuses = _resolve_expected_statuses(self.intent, self.request, self.step, self.parsed_requirement)
+        capability = _request_capability(self.request, self.parsed_requirement, self.intent)
+        header_only_save = any(str(source).startswith("headers.") for source in self.save_context.values())
+        non_json_response = _prefers_non_json_response(self.request, self.parsed_requirement)
         if len(expected_statuses) == 1:
             assertions.append(_assertion("status_code", "eq", expected_statuses[0], "critical", "status", 0.98, "request_status_template", "rules"))
         else:
@@ -411,20 +422,28 @@ class RuleAssertionBuilder:
                 assertions.append(_assertion("json.order_id", "exists", None, "critical", "field_presence", 0.91, "order_create_identifier", "rules"))
             elif url.endswith("/tasks"):
                 assertions.append(_assertion("json.data.task_id", "exists", None, "critical", "field_presence", 0.94, "task_create_identifier", "rules"))
-            else:
-                assertions.append(_assertion("json.id", "exists", None, "major", "field_presence", 0.7, "generic_create_identifier", "rules"))
+            elif url.endswith("/booking"):
+                assertions.append(_assertion("json.bookingid", "exists", None, "critical", "field_presence", 0.94, "booking_create_identifier", "rules"))
+            elif not header_only_save and not non_json_response:
+                # Avoid unsafe generic json.id assumptions for external APIs.
+                assertions.append(_assertion("json", "exists", None, "major", "schema", 0.72, "create_response_present", "rules"))
         if self.intent == "query":
-            if expects_json_envelope(url):
+            if not _is_simple_endpoint(url) and expects_json_envelope(url) and not non_json_response:
                 assertions.append(_assertion("json", "exists", None, "major", "schema", 0.82, "query_response_present", "rules"))
-                if _looks_like_collection(self.request, self.step):
+                if capability == "filter":
+                    pass
+                elif capability == "list" or _looks_like_collection(self.request, self.step):
                     assertions.append(_assertion(_infer_collection_source(self.request, self.step), "len_gt", 0, "major", "collection", 0.86, "collection_not_empty", "rules"))
-        if self.intent == "update":
+                    identifier_source = _infer_collection_identifier_source(self.request, self.parsed_requirement)
+                    if identifier_source:
+                        assertions.append(_assertion(identifier_source, "exists", None, "major", "field_presence", 0.81, "collection_identifier_present", "rules"))
+        if self.intent == "update" and not non_json_response:
             assertions.append(_assertion("json", "exists", None, "major", "schema", 0.76, "update_response_present", "rules"))
         if self.intent == "delete":
             assertions.append(_assertion("error", "not_exists", None, "major", "business", 0.68, "delete_no_runtime_error", "rules"))
 
         for field in _extract_known_fields(self.parsed_requirement, self.step, self.request):
-            if field.lower() in {"token", "task_id", "order_id", "session_id"}:
+            if field.lower() in {"token", "task_id", "order_id", "session_id", "booking_id", "bookingid", "resource_id", "id"}:
                 continue
             if self.intent in {"query", "update"}:
                 assertions.append(_assertion(f"json.{field}", "exists", None, "major", "field_presence", 0.72, "expected_field_present", "rules"))
@@ -543,20 +562,37 @@ def _assertion(
 
 def _resolve_expected_statuses(intent: str, request: dict[str, Any], step: dict[str, Any], parsed_requirement: dict[str, Any]) -> list[int]:
     request_url = str(request.get("url", ""))
-    request_text = " ".join(
-        [
-            str(step.get("text", "")),
-            " ".join(parsed_requirement.get("expected_results", [])),
+    request_method = str(request.get("method", "")).upper()
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    endpoint_path = str((endpoint or {}).get("path", "")).strip()
+    canonical_path = _canonicalize_path(endpoint_path or request_url).lower()
+    status_hints: list[str] = [str(step.get("text", ""))]
+    if endpoint_path:
+        matched_constraints = [
+            item
+            for item in (parsed_requirement.get("constraints", []) or [])
+            if request_method.lower() in str(item).lower() and endpoint_path.lower() in str(item).lower()
         ]
-    )
+        explicit = [int(match.group(1)) for item in matched_constraints for match in SUCCESS_STATUS_RE.finditer(str(item))]
+        if explicit:
+            return list(dict.fromkeys(explicit))
+        status_hints.extend(matched_constraints)
+        status_hints.extend(_relevant_expected_results(parsed_requirement, request, step))
+    else:
+        status_hints.extend(parsed_requirement.get("expected_results", []))
+    request_text = " ".join(status_hints)
     explicit = [int(match.group(1)) for match in SUCCESS_STATUS_RE.finditer(request_text)]
     if explicit:
         return list(dict.fromkeys(explicit))
+    if request_method == "GET" and canonical_path == "/heartbeat":
+        return [204]
     if intent == "create":
         if request_url.endswith("/tasks"):
             return [201]
         return [200, 201]
     if intent == "delete":
+        if request_method == "DELETE" and (request_url.endswith("/booking") or "/booking/" in request_url):
+            return [201]
         return [200, 204]
     return [200]
 
@@ -566,11 +602,14 @@ def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, An
         req_url = str(request.get("url", ""))
         if not expects_json_envelope(req_url) or _is_simple_endpoint(req_url):
             return []
+    capability = _request_capability(request or {}, parsed_requirement, "")
+    if capability == "filter":
+        return []
     text = " ".join(
         [
             str(step.get("text", "")),
-            " ".join(parsed_requirement.get("expected_results", [])),
-            " ".join(parsed_requirement.get("constraints", [])),
+            " ".join(_relevant_expected_results(parsed_requirement, request or {}, step)),
+            " ".join(_relevant_constraints(parsed_requirement, request or {}, step)),
         ]
     )
     fields: list[str] = []
@@ -584,6 +623,15 @@ def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, An
             continue
         if token not in fields and any(keyword in lowered for keyword in ("token", "session", "user", "profile", "order", "task", "nick", "name", "id", "items", "roles")):
             fields.append(token)
+    endpoint_fields = _endpoint_response_fields(parsed_requirement, request or {})
+    for field in endpoint_fields:
+        if field not in fields:
+            fields.append(field)
+    placeholder_fields = _endpoint_placeholder_fields(parsed_requirement, request or {})
+    if placeholder_fields:
+        fields = [field for field in fields if field.lower() not in placeholder_fields or field in endpoint_fields]
+    if capability == "list":
+        fields = [field for field in fields if field.lower() in {"id", "bookingid", "booking_id", "order_id", "task_id", "resource_id"}]
     filtered = _filter_known_fields_for_request(fields[:8], request or {})
     return filtered
 
@@ -616,12 +664,14 @@ def _is_allowed_source_for_request(source: str, request: dict[str, Any]) -> bool
     if normalized_source in {"status_code", "elapsed_ms", "error", "body_text"}:
         return True
     if normalized_source.startswith("headers."):
-        return normalized_source in {"headers.content-type", "headers.set-cookie"}
+        return True
 
     if not expects_json_envelope(url):
         return normalized_source in {"status_code", "elapsed_ms", "error", "body_text", "headers.content-type"}
 
     if normalized_source == "json":
+        return True
+    if normalized_source.startswith("json["):
         return True
 
     for suffix, allowed in REQUEST_ASSERTION_SOURCE_ALLOWLIST:
@@ -634,6 +684,26 @@ def _is_allowed_source_for_request(source: str, request: dict[str, Any]) -> bool
     return False
 
 
+def _normalize_request_host(url: str) -> str:
+    try:
+        parsed = urlparse(url)
+    except (TypeError, ValueError):
+        return ""
+    netloc = (parsed.netloc or "").lower().strip()
+    if not netloc:
+        return ""
+    return netloc.split(":", 1)[0]
+
+
+def _is_high_value_assertion_url(url: str) -> bool:
+    if not url:
+        return False
+    url_lower = url.lower()
+    if any(url_lower.endswith(suffix) for suffix in HIGH_VALUE_ASSERTION_ENDPOINT_SUFFIXES):
+        return True
+    return _normalize_request_host(url) in LLM_ASSERTION_ALLOWED_API_HOSTS
+
+
 def _should_attempt_llm_for_step(step: dict[str, Any], request: dict[str, Any]) -> bool:
     text = str(step.get("text", "")).strip()
     lowered = text.lower()
@@ -644,7 +714,7 @@ def _should_attempt_llm_for_step(step: dict[str, Any], request: dict[str, Any]) 
         return False
     if len(text) > 120 and "`/" not in text and "/api/" not in lowered:
         return False
-    if not any(url.endswith(suffix) for suffix in HIGH_VALUE_ASSERTION_ENDPOINT_SUFFIXES):
+    if not _is_high_value_assertion_url(str(request.get("url", ""))):
         return False
     return True
 
@@ -675,7 +745,7 @@ def _generate_assertion_candidates_cached(**kwargs: Any) -> tuple[list[dict[str,
 def _looks_like_collection(request: dict[str, Any], step: dict[str, Any]) -> bool:
     text = str(step.get("text", "")).lower()
     url = str(request.get("url", "")).lower()
-    return any(keyword in text for keyword in ("list", "items", "search", "query")) or url.endswith("/items") or url.endswith("/orders")
+    return any(keyword in text for keyword in ("list", "items", "search", "query", "filter", "firstname", "lastname", "checkin", "checkout")) or url.endswith("/items") or url.endswith("/orders") or ("?" in url and "=" in url)
 
 
 def _infer_collection_source(request: dict[str, Any], step: dict[str, Any]) -> str:
@@ -685,7 +755,199 @@ def _infer_collection_source(request: dict[str, Any], step: dict[str, Any]) -> s
         return "json.items"
     if "orders" in text or url.endswith("/orders"):
         return "json.orders"
-    return "json.data"
+    return "json"
+
+
+def _canonical_placeholder_name(name: str) -> str:
+    lowered = str(name or "").strip().lower()
+    if lowered in {"bookingid", "booking_id", "id"}:
+        return "booking_id"
+    if lowered in {"todoid", "todo_id"}:
+        return "todo_id"
+    if lowered in {"challengerguid", "challenger_guid", "guid"}:
+        return "challenger_guid"
+    if lowered in {"taskid", "task_id"}:
+        return "task_id"
+    return lowered
+
+
+def _canonicalize_path(path: str) -> str:
+    normalized = str(path or "").strip()
+    if not normalized:
+        return normalized
+    if normalized != "/" and normalized.endswith("/"):
+        normalized = normalized[:-1]
+    normalized = re.sub(r"/\d+(?=/|$)", "/{id}", normalized)
+    normalized = PLACEHOLDER_SEGMENT_RE.sub(lambda m: "{" + _canonical_placeholder_name(m.group(1)) + "}", normalized)
+    normalized = normalized.replace("/booking/{resource_id}", "/booking/{booking_id}")
+    normalized = normalized.replace("/todos/{resource_id}", "/todos/{todo_id}")
+    normalized = normalized.replace("/tasks/{resource_id}", "/tasks/{task_id}")
+    return normalized
+
+
+def _paths_match(request_path: str, endpoint_path: str) -> bool:
+    left = _canonicalize_path(request_path)
+    right = _canonicalize_path(endpoint_path)
+    if left == right:
+        return True
+    left_parts = [part for part in left.split("/") if part]
+    right_parts = [part for part in right.split("/") if part]
+    if len(left_parts) != len(right_parts):
+        return False
+    for left_part, right_part in zip(left_parts, right_parts):
+        if left_part == right_part:
+            continue
+        if left_part.startswith("{") and right_part.startswith("{"):
+            continue
+        return False
+    return True
+
+
+def _matched_endpoint(parsed_requirement: dict[str, Any], request: dict[str, Any]) -> dict[str, Any] | None:
+    method = str(request.get("method", "")).upper().strip()
+    path = str(request.get("url", "")).strip()
+    for endpoint in parsed_requirement.get("api_endpoints", []) or []:
+        if str(endpoint.get("method", "")).upper().strip() != method:
+            continue
+        if _paths_match(path, str(endpoint.get("path", ""))):
+            return endpoint
+    return None
+
+
+def _request_capability(request: dict[str, Any], parsed_requirement: dict[str, Any], fallback_intent: str) -> str:
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    path = _canonicalize_path(str((endpoint or {}).get("path") or request.get("url", ""))).lower()
+    method = str((endpoint or {}).get("method") or request.get("method", "")).upper().strip()
+    if any(token in path for token in ("/ping", "/health", "/ready", "/version")):
+        return "health"
+    if any(token in path for token in ("/auth", "/login", "/session")):
+        return "auth"
+    if method == "GET" and "?" in path and "=" in path:
+        return "filter"
+    has_placeholder = "{" in path and "}" in path
+    if method == "GET" and not has_placeholder:
+        return "list"
+    if method == "POST":
+        return "create"
+    if method == "GET" and has_placeholder:
+        return "detail"
+    if method == "PUT":
+        return "replace"
+    if method == "PATCH":
+        return "patch"
+    if method == "DELETE":
+        return "delete"
+    return fallback_intent or "other"
+
+
+def _relevant_expected_results(parsed_requirement: dict[str, Any], request: dict[str, Any], step: dict[str, Any]) -> list[str]:
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    if endpoint is None:
+        return list(parsed_requirement.get("expected_results", []) or [])
+    method = str(endpoint.get("method", "")).upper().strip()
+    path = str(endpoint.get("path", "")).strip()
+    segments = [segment for segment in _canonicalize_path(path).lower().split("/") if segment and not segment.startswith("{")]
+    require_explicit_surface = ("{" in _canonicalize_path(path) and "}" in _canonicalize_path(path)) or len(segments) <= 1
+    matched: list[str] = []
+    for item in parsed_requirement.get("expected_results", []) or []:
+        lowered = str(item).lower()
+        if method and method.lower() in lowered and _canonicalize_path(path).lower() in lowered:
+            matched.append(str(item))
+            continue
+        if not require_explicit_surface and segments and any(segment in lowered for segment in segments):
+            matched.append(str(item))
+    return matched or [str(step.get("text", ""))]
+
+
+def _relevant_constraints(parsed_requirement: dict[str, Any], request: dict[str, Any], step: dict[str, Any]) -> list[str]:
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    if endpoint is None:
+        return list(parsed_requirement.get("constraints", []) or [])
+    method = str(endpoint.get("method", "")).upper().strip()
+    path = _canonicalize_path(str(endpoint.get("path", "")).strip()).lower()
+    matched: list[str] = []
+    for item in parsed_requirement.get("constraints", []) or []:
+        lowered = str(item).lower()
+        if method and method.lower() in lowered and path in lowered:
+            matched.append(str(item))
+    return matched
+
+
+def _endpoint_response_fields(parsed_requirement: dict[str, Any], request: dict[str, Any]) -> list[str]:
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    if endpoint is None:
+        return []
+    fields: list[str] = []
+    for item in endpoint.get("response_fields") or []:
+        name = str((item or {}).get("name", "")).strip()
+        if not name:
+            continue
+        lowered = name.lower()
+        if any(ch.isdigit() for ch in name):
+            continue
+        if lowered in ASSERTION_FIELD_STOPWORDS:
+            continue
+        if lowered in {"jim", "james", "brown", "jamie", "breakfast", "lunch", "dinner", "false", "true"}:
+            continue
+        if "." in name:
+            leaf = name.split(".")[-1]
+            if leaf and leaf not in fields:
+                fields.append(leaf)
+            continue
+        if name not in fields:
+            fields.append(name)
+    return fields
+
+
+def _endpoint_placeholder_fields(parsed_requirement: dict[str, Any], request: dict[str, Any]) -> set[str]:
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    path = str((endpoint or {}).get("path") or request.get("url", "")).strip()
+    names = {
+        _canonical_placeholder_name(match.group(1)).lower()
+        for match in PLACEHOLDER_SEGMENT_RE.finditer(path)
+    }
+    aliases = {
+        "booking_id": {"booking_id", "bookingid", "id"},
+        "todo_id": {"todo_id", "todoid", "id"},
+        "challenger_guid": {"challenger_guid", "challengerguid", "guid"},
+        "task_id": {"task_id", "taskid", "id"},
+    }
+    expanded: set[str] = set()
+    for name in names:
+        expanded.update(aliases.get(name, {name}))
+    return expanded
+
+
+def _infer_collection_identifier_source(request: dict[str, Any], parsed_requirement: dict[str, Any]) -> str:
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    path = str((endpoint or {}).get("path") or request.get("url", "")).lower()
+    if "?" in path and "=" in path:
+        return ""
+    field_names = {field.lower() for field in _endpoint_response_fields(parsed_requirement, request)}
+    if "booking" in path or "bookingid" in field_names or "booking_id" in field_names:
+        return "json[0].bookingid"
+    if "task_id" in field_names or "tasks" in path:
+        return "json[0].task_id"
+    if "order_id" in field_names or "orders" in path:
+        return "json[0].order_id"
+    if "id" in field_names:
+        return "json[0].id"
+    return ""
+
+
+def _prefers_non_json_response(request: dict[str, Any], parsed_requirement: dict[str, Any]) -> bool:
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    path = _canonicalize_path(str((endpoint or {}).get("path") or request.get("url", ""))).lower()
+    method = str((endpoint or {}).get("method") or request.get("method", "")).upper().strip()
+    if (method, path) in {
+        ("POST", "/challenger"),
+        ("POST", "/secret/token"),
+        ("GET", "/secret/note"),
+        ("POST", "/secret/note"),
+        ("GET", "/heartbeat"),
+    }:
+        return True
+    return False
 
 
 def _is_weak_assertion_set(assertions: list[dict[str, Any]]) -> bool:

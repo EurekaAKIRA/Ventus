@@ -727,11 +727,15 @@ def test_task_center_endpoint_scenarios_do_not_reuse_global_explanatory_expectat
     }
 
     scenarios = build_scenarios(parsed_requirement)
+    scenario_goals = [scenario["goal"] for scenario in scenarios]
+    scenario_step_texts = [[step["text"] for step in scenario["steps"]] for scenario in scenarios]
 
-    assert [scenario["goal"] for scenario in scenarios] == ["创建任务", "任务详情", "解析任务"]
+    assert scenario_goals == ["创建任务", "解析任务"]
+    assert not any("当前 task-center API 统一使用如下响应结构" in " ".join(texts) for texts in scenario_step_texts)
+    assert not any("不应假设存在 `data.tasks`" in " ".join(texts) for texts in scenario_step_texts)
     assert scenarios[0]["steps"][2]["text"] not in parsed_requirement["expected_results"][:2]
     assert scenarios[1]["steps"][2]["text"] not in parsed_requirement["expected_results"][:2]
-    assert scenarios[2]["steps"][2]["text"] == "`POST /api/tasks/{task_id}/parse` -> 200"
+    assert scenarios[1]["steps"][2]["text"] == "`POST /api/tasks/{task_id}/parse` -> 200"
 
 
 def test_infer_intent_post_auth_is_login_not_create() -> None:
@@ -1178,6 +1182,833 @@ def test_restful_booker_cookie_contract_beats_bearer_fallback() -> None:
     assert delete_step["request"]["url"] == "/booking/{{booking_id}}"
     assert delete_step["request"].get("cookies") == {"token": "{{token}}"}
     assert "auth" not in delete_step["request"]
+
+
+def test_explicit_put_and_patch_with_token_text_are_not_misclassified_as_login() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_023",
+        name="booking updates",
+        goal="update booking",
+        steps=[
+            ScenarioStep(type="given", text="token and booking_id exist"),
+            ScenarioStep(type="when", text="全量更新 booking，发送 PUT /booking/{{booking_id}} 请求并携带更新信息和鉴权 token"),
+            ScenarioStep(type="and", text="部分更新 booking，发送 PATCH /booking/{{booking_id}} 请求并携带部分更新信息和鉴权 token"),
+            ScenarioStep(type="then", text="更新成功"),
+        ],
+        assertions=["更新成功"],
+        source_chunks=[],
+        preconditions=["token and booking_id exist"],
+    )
+    parsed_requirement = {
+        "objective": "update booking",
+        "actions": [
+            "PUT /booking/{{booking_id}}",
+            "PATCH /booking/{{booking_id}}",
+        ],
+        "expected_results": ["更新成功"],
+        "api_endpoints": [
+            {"method": "PUT", "path": "/booking/{{booking_id}}", "description": "replace booking", "depends_on": ["/booking"]},
+            {"method": "PATCH", "path": "/booking/{{booking_id}}", "description": "patch booking", "depends_on": ["/booking"]},
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    put_step = dsl["scenarios"][0]["steps"][1]
+    patch_step = dsl["scenarios"][0]["steps"][2]
+
+    assert put_step["request"]["method"] == "PUT"
+    assert put_step["request"]["json"]["firstname"] == "James"
+    assert put_step["save_context"] == {}
+    assert patch_step["request"]["method"] == "PATCH"
+    assert patch_step["request"]["json"] == {"firstname": "Jamie", "additionalneeds": "Dinner"}
+    assert patch_step["save_context"] == {}
+
+
+def test_simple_ping_endpoint_only_generates_status_assertion() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_024",
+        name="ping",
+        goal="service health",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="进行健康检查，发送 GET /ping 请求"),
+            ScenarioStep(type="then", text="服务可用"),
+        ],
+        assertions=["服务可用"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    parsed_requirement = {
+        "objective": "health check",
+        "actions": ["GET /ping"],
+        "expected_results": ["HTTP 200"],
+        "api_endpoints": [{"method": "GET", "path": "/ping", "description": "ping", "depends_on": []}],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    ping_step = dsl["scenarios"][0]["steps"][1]
+    assertion_sources = [item.get("source") for item in ping_step["assertions"] if isinstance(item, dict)]
+
+    assert assertion_sources == ["status_code"]
+
+
+def test_booking_list_query_only_asserts_collection_shape_and_identifier() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_025",
+        name="booking list",
+        goal="query booking list",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="查询 booking 列表，发送 GET /booking 请求"),
+            ScenarioStep(type="then", text="查询 booking 列表的 GET /booking 请求返回 HTTP 200 且返回数组，数组首项存在 bookingid"),
+        ],
+        assertions=["列表返回 bookingid"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    parsed_requirement = {
+        "objective": "query booking list",
+        "actions": ["GET /booking"],
+        "expected_results": [
+            "查询 booking 列表的 GET /booking 请求返回 HTTP 200 且返回数组，数组首项存在 bookingid",
+            "读取 booking 详情的 GET /booking/{{booking_id}} 请求返回 HTTP 200 且关键字段与创建信息一致",
+            "创建 booking 的 POST /booking 请求返回 HTTP 200 或 201 且 bookingid 存在，且 firstname 为 Jim，lastname 为 Brown",
+        ],
+        "api_endpoints": [
+            {
+                "method": "GET",
+                "path": "/booking",
+                "description": "list booking",
+                "depends_on": [],
+                "response_fields": [{"name": "bookingid", "field_type": "string", "required": True}],
+            }
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    query_step = dsl["scenarios"][0]["steps"][1]
+    assertion_sources = [item.get("source") for item in query_step["assertions"] if isinstance(item, dict)]
+
+    assert "json" in assertion_sources
+    assert "json[0].bookingid" in assertion_sources
+    assert "json.firstname" not in assertion_sources
+    assert "json.lastname" not in assertion_sources
+    assert "json.depositpaid" not in assertion_sources
+
+
+def test_full_flow_focuses_on_primary_resource_chain_not_auxiliary_endpoints() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Restful Booker E2E2 Plus",
+        "actions": [
+            "进行健康检查，发送 GET /ping 请求",
+            "获取鉴权 token，发送 POST /auth 请求并携带用户名和密码",
+            "查询 booking 列表，发送 GET /booking 请求",
+            "创建 booking，发送 POST /booking 请求并携带相关预订信息",
+            "读取 booking 详情，发送 GET /booking/{{booking_id}} 请求",
+            "全量更新 booking，发送 PUT /booking/{{booking_id}} 请求并携带更新信息和鉴权 token",
+            "部分更新 booking，发送 PATCH /booking/{{booking_id}} 请求并携带部分更新信息和鉴权 token",
+            "删除 booking，发送 DELETE /booking/{{booking_id}} 请求并携带鉴权 token",
+        ],
+        "expected_results": ["success"],
+        "api_endpoints": [
+            {"method": "GET", "path": "/ping", "description": "ping", "depends_on": []},
+            {"method": "POST", "path": "/auth", "description": "auth", "depends_on": []},
+            {"method": "GET", "path": "/booking", "description": "list booking", "depends_on": []},
+            {"method": "POST", "path": "/booking", "description": "create booking", "depends_on": []},
+            {"method": "GET", "path": "/booking/{{booking_id}}", "description": "get booking", "depends_on": ["/booking"]},
+            {"method": "PUT", "path": "/booking/{{booking_id}}", "description": "replace booking", "depends_on": ["/booking", "/auth"]},
+            {"method": "PATCH", "path": "/booking/{{booking_id}}", "description": "patch booking", "depends_on": ["/booking", "/auth"]},
+            {"method": "DELETE", "path": "/booking/{{booking_id}}", "description": "delete booking", "depends_on": ["/booking", "/auth"]},
+            {"method": "PUT", "path": "/booking/{id}", "description": "replace booking alias", "depends_on": ["/booking", "/auth"]},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    full_flow = max(scenarios, key=lambda item: len(item.steps))
+    step_texts = [step.text if hasattr(step, "text") else step["text"] for step in full_flow.steps]
+
+    assert not any("/ping" in step for step in step_texts)
+    assert not any(step == "查询 booking 列表，发送 GET /booking 请求" for step in step_texts)
+    assert sum(1 for step in step_texts if "PUT /booking" in step) <= 1
+    assert sum(1 for step in step_texts if "PATCH /booking" in step) <= 1
+
+
+def test_low_confidence_request_and_summary_endpoints_do_not_expand_scenarios() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Restful Booker E2E2 Plus",
+        "actions": [
+            "进行健康检查，发送 GET /ping 请求",
+            "获取鉴权 token，发送 POST /auth 请求并携带用户名和密码",
+            "查询 booking 列表，发送 GET /booking 请求",
+            "创建 booking，发送 POST /booking 请求并携带预订信息",
+            "读取 booking 详情，发送 GET /booking/{{booking_id}} 请求",
+            "删除 booking，发送 DELETE /booking/{{booking_id}} 请求并携带鉴权 token",
+            "Request:** `GET /booking/{{booking_id}}`",
+            "Scenario: 健康检查 + 创建 + 查询 + 更新 + 删除",
+        ],
+        "expected_results": ["success"],
+        "api_endpoints": [
+            {"method": "GET", "path": "/ping", "description": "健康检查接口", "depends_on": []},
+            {"method": "POST", "path": "/auth", "description": "获取鉴权 token 接口", "depends_on": []},
+            {"method": "GET", "path": "/booking", "description": "查询 booking 列表接口", "depends_on": []},
+            {"method": "POST", "path": "/booking", "description": "创建 booking 接口", "depends_on": []},
+            {"method": "GET", "path": "/booking/{booking_id}", "description": "读取 booking 详情接口", "depends_on": ["/booking"]},
+            {"method": "DELETE", "path": "/booking/{booking_id}", "description": "删除 booking 接口", "depends_on": ["/booking", "/auth"]},
+            {"method": "GET", "path": "/booking/{{booking_id}}", "description": "**Request:**", "group": "Step 4 — 读取 booking 详情", "depends_on": ["/booking"]},
+            {"method": "PUT", "path": "/booking/{id}", "description": "| 全量更新 | 后所有字段按新值覆盖 |", "group": "断言摘要", "depends_on": ["/booking"]},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    names = [scenario.name for scenario in scenarios]
+
+    assert len(scenarios) == 8
+    assert not any("Request:**" in name for name in names)
+    assert not any("断言摘要" in (scenario.goal if hasattr(scenario, "goal") else "") for scenario in scenarios)
+
+
+def test_resource_mutation_scenarios_without_in_scenario_resource_seed_are_filtered() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Restful Booker E2E2 Plus",
+        "actions": [
+            "获取鉴权 token，发送 POST /auth 请求并携带用户名和密码",
+            "创建 booking，发送 POST /booking 请求并携带预订信息",
+            "全量更新 booking，发送 PUT /booking/{{booking_id}} 请求并携带更新信息和鉴权 token",
+            "部分更新 booking，发送 PATCH /booking/{{booking_id}} 请求并携带部分更新信息和鉴权 token",
+            "删除 booking，发送 DELETE /booking/{{booking_id}} 请求并携带鉴权 token",
+        ],
+        "expected_results": [
+            "创建 booking 的 POST /booking 请求返回 HTTP 200 或 201 且 bookingid 存在，保存 booking_id",
+            "全量更新 booking 的 PUT /booking/{{booking_id}} 请求返回 HTTP 200",
+            "部分更新 booking 的 PATCH /booking/{{booking_id}} 请求返回 HTTP 200",
+            "删除 booking 的 DELETE /booking/{{booking_id}} 请求返回 HTTP 201",
+        ],
+        "preconditions": ["`token` 存在且非空"],
+        "api_endpoints": [
+            {"method": "POST", "path": "/auth", "description": "auth", "depends_on": []},
+            {"method": "POST", "path": "/booking", "description": "create booking", "depends_on": []},
+            {"method": "PUT", "path": "/booking/{{booking_id}}", "description": "replace booking", "depends_on": ["/booking", "/auth"]},
+            {"method": "PATCH", "path": "/booking/{{booking_id}}", "description": "patch booking", "depends_on": ["/booking", "/auth"]},
+            {"method": "DELETE", "path": "/booking/{{booking_id}}", "description": "delete booking", "depends_on": ["/booking", "/auth"]},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    step_sets = [
+        [step.text if hasattr(step, "text") else step["text"] for step in scenario.steps]
+        for scenario in scenarios
+    ]
+
+    assert not any(
+        any("PUT /booking/{{booking_id}}" in step for step in steps)
+        and any("PATCH /booking/{{booking_id}}" in step for step in steps)
+        and not any("POST /booking" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /booking" in step for step in steps)
+        and any("PUT /booking/{{booking_id}}" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /booking" in step for step in steps)
+        and any("PATCH /booking/{{booking_id}}" in step for step in steps)
+        for steps in step_sets
+    )
+
+
+def test_restful_booker_put_uses_known_full_body_for_single_brace_path() -> None:
+    from case_generation.dsl_generator import _build_request_template
+
+    parsed_requirement = {
+        "api_endpoints": [
+            {"method": "PUT", "path": "/booking/{booking_id}", "description": "全量更新 booking 接口"},
+        ],
+        "actions": ["全量更新 booking，发送 PUT /booking/{{booking_id}} 请求并携带更新信息和鉴权 token"],
+        "expected_results": [],
+        "constraints": [],
+    }
+
+    request = _build_request_template(
+        "全量更新 booking，发送 PUT /booking/{{booking_id}} 请求并携带更新信息和鉴权 token",
+        "update",
+        parsed_requirement,
+        [],
+    )
+
+    assert request["method"] == "PUT"
+    assert request["url"] == "/booking/{{booking_id}}"
+    assert request["json"] == {
+        "firstname": "James",
+        "lastname": "Brown",
+        "totalprice": 222,
+        "depositpaid": False,
+        "bookingdates": {
+            "checkin": "2026-04-11",
+            "checkout": "2026-04-13",
+        },
+        "additionalneeds": "Lunch",
+    }
+
+
+def test_querystring_endpoints_are_preserved_as_distinct_scenarios() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Booking filter coverage",
+        "actions": [
+            "查询 booking 列表，发送 GET /booking 请求",
+            "按 firstname 过滤查询 booking 列表，发送 GET /booking?firstname=Jamie 请求",
+            "按 lastname 过滤查询 booking 列表，发送 GET /booking?lastname=Brown 请求",
+        ],
+        "expected_results": [
+            "GET /booking 返回 HTTP 200 且返回数组",
+            "GET /booking?firstname=Jamie 返回 HTTP 200 且返回数组",
+            "GET /booking?lastname=Brown 返回 HTTP 200 且返回数组",
+        ],
+        "api_endpoints": [
+            {"method": "GET", "path": "/booking", "description": "查询 booking 列表接口", "depends_on": []},
+            {"method": "GET", "path": "/booking?firstname=Jamie", "description": "按 firstname 过滤查询 booking 列表接口", "depends_on": []},
+            {"method": "GET", "path": "/booking?lastname=Brown", "description": "按 lastname 过滤查询 booking 列表接口", "depends_on": []},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    names = [scenario.name for scenario in scenarios]
+
+    assert any("/booking 请求" in name for name in names)
+    assert any("/booking?firstname=Jamie" in name for name in names)
+    assert any("/booking?lastname=Brown" in name for name in names)
+    assert len(scenarios) == 3
+
+
+def test_placeholder_querystring_endpoints_are_filtered_but_concrete_filters_are_kept() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Booking filter coverage",
+        "actions": [
+            "按 firstname 过滤查询 booking 列表，发送 GET /booking?firstname=Jamie 请求",
+            "按 lastname 过滤查询 booking 列表，发送 GET /booking?lastname=Brown 请求",
+        ],
+        "expected_results": [
+            "过滤查询应返回合法数组结果",
+        ],
+        "api_endpoints": [
+            {"method": "GET", "path": "/booking?firstname=...", "description": "占位过滤", "depends_on": []},
+            {"method": "GET", "path": "/booking?lastname=...", "description": "占位过滤", "depends_on": []},
+            {"method": "GET", "path": "/booking?firstname=Jamie", "description": "按 firstname 过滤查询 booking 列表接口", "depends_on": []},
+            {"method": "GET", "path": "/booking?lastname=Brown", "description": "按 lastname 过滤查询 booking 列表接口", "depends_on": []},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    names = [scenario.name for scenario in scenarios]
+
+    assert len(scenarios) == 2
+    assert any("/booking?firstname=Jamie" in name for name in names)
+    assert any("/booking?lastname=Brown" in name for name in names)
+    assert not any("..." in name for name in names)
+
+
+def test_dependency_backed_endpoint_variant_is_preferred_over_dependencyless_duplicate() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Booking update chain",
+        "actions": [
+            "获取鉴权 token",
+            "创建 booking",
+            "读取 booking 详情",
+            "全量更新 booking",
+            "部分更新 booking",
+            "删除 booking",
+            "Request:** `GET /booking?firstname=Jamie`",
+        ],
+        "expected_results": ["success"],
+        "api_endpoints": [
+            {"method": "POST", "path": "/auth", "description": "获取鉴权 token 接口", "depends_on": []},
+            {"method": "POST", "path": "/booking", "description": "创建 booking 接口", "depends_on": []},
+            {"method": "GET", "path": "/booking/{booking_id}", "description": "读取 booking 详情接口", "depends_on": []},
+            {"method": "GET", "path": "/booking/{{booking_id}}", "description": "读取 booking 详情接口", "depends_on": ["/booking"]},
+            {"method": "PUT", "path": "/booking/{booking_id}", "description": "全量更新 booking 接口", "depends_on": []},
+            {"method": "PUT", "path": "/booking/{{booking_id}}", "description": "全量更新 booking 接口", "depends_on": ["/booking", "/auth"]},
+            {"method": "PATCH", "path": "/booking/{booking_id}", "description": "部分更新 booking 接口", "depends_on": []},
+            {"method": "PATCH", "path": "/booking/{{booking_id}}", "description": "部分更新 booking 接口", "depends_on": ["/booking", "/auth"]},
+            {"method": "DELETE", "path": "/booking/{booking_id}", "description": "删除 booking 接口", "depends_on": []},
+            {"method": "DELETE", "path": "/booking/{{booking_id}}", "description": "删除 booking 接口", "depends_on": ["/booking", "/auth"]},
+            {"method": "GET", "path": "/booking?firstname=Jamie", "description": "**Request:**", "group": "Step 1 — 查询 firstname 过滤", "depends_on": []},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    step_sets = [
+        [step.text if hasattr(step, "text") else step["text"] for step in scenario.steps]
+        for scenario in scenarios
+    ]
+
+    assert any(
+        any("POST /booking" in step for step in steps)
+        and any("GET /booking/{{booking_id}}" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /auth" in step for step in steps)
+        and any("POST /booking" in step for step in steps)
+        and any("PUT /booking/{{booking_id}}" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /auth" in step for step in steps)
+        and any("POST /booking" in step for step in steps)
+        and any("PATCH /booking/{{booking_id}}" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /auth" in step for step in steps)
+        and any("POST /booking" in step for step in steps)
+        and any("DELETE /booking/{{booking_id}}" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(any("/booking?firstname=Jamie" in step for step in steps) for steps in step_sets)
+
+
+def test_method_qualified_dependency_paths_still_pull_create_chain() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Booking update chain",
+        "actions": [
+            "POST /auth",
+            "POST /booking",
+            "PUT /booking/{id}",
+        ],
+        "expected_results": ["PUT /booking/{id} 返回 HTTP 200"],
+        "api_endpoints": [
+            {"method": "POST", "path": "/auth", "description": "auth", "depends_on": []},
+            {"method": "POST", "path": "/booking", "description": "create booking", "depends_on": []},
+            {"method": "PUT", "path": "/booking/{id}", "description": "replace booking", "depends_on": ["POST /booking", "POST /auth"]},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    step_sets = [
+        [step.text if hasattr(step, "text") else step["text"] for step in scenario.steps]
+        for scenario in scenarios
+    ]
+
+    assert any(
+        any("POST /auth" in step for step in steps)
+        and any("POST /booking" in step for step in steps)
+        and any("PUT /booking/{id}" in step for step in steps)
+        for steps in step_sets
+    )
+
+
+def test_filter_query_assertions_do_not_require_non_empty_results() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_026",
+        name="booking firstname filter",
+        goal="query booking filter",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="按 firstname 过滤查询 booking 列表，发送 GET /booking?firstname=Jamie 请求"),
+            ScenarioStep(type="then", text="返回合法数组结果"),
+        ],
+        assertions=["返回合法数组结果"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    parsed_requirement = {
+        "objective": "query booking filter",
+        "actions": ["GET /booking?firstname=Jamie"],
+        "expected_results": ["GET /booking?firstname=Jamie 返回 HTTP 200 且返回合法数组结果"],
+        "constraints": ["列表过滤接口返回结果以“合法数组”为主，不要求固定业务记录数"],
+        "api_endpoints": [
+            {"method": "GET", "path": "/booking?firstname=Jamie", "description": "按 firstname 过滤查询 booking 列表接口", "depends_on": []},
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    query_step = dsl["scenarios"][0]["steps"][1]
+    assertion_sources = [item.get("source") for item in query_step["assertions"] if isinstance(item, dict)]
+
+    assert "status_code" in assertion_sources
+    assert "json" in assertion_sources
+    assert "json[0].bookingid" not in assertion_sources
+    assert not any(item.get("op") == "len_gt" for item in query_step["assertions"] if isinstance(item, dict))
+
+
+def test_restful_booker_ping_constraint_and_booking_id_alias_shape_assertions() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    ping_scenario = ScenarioModel(
+        scenario_id="scenario_027",
+        name="ping",
+        goal="service health",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="调用 GET /ping"),
+            ScenarioStep(type="then", text="服务可用"),
+        ],
+        assertions=["服务可用"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    update_scenario = ScenarioModel(
+        scenario_id="scenario_028",
+        name="booking update",
+        goal="update booking",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="调用 PUT /booking/{id}"),
+            ScenarioStep(type="then", text="更新成功"),
+        ],
+        assertions=["更新成功"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    parsed_requirement = {
+        "objective": "restful booker",
+        "actions": ["GET /ping", "PUT /booking/{id}"],
+        "expected_results": ["success"],
+        "constraints": ["GET /ping 预期返回 HTTP 201"],
+        "api_endpoints": [
+            {"method": "GET", "path": "/ping", "description": "ping", "depends_on": []},
+            {"method": "PUT", "path": "/booking/{id}", "description": "replace booking", "depends_on": ["POST /booking"]},
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [ping_scenario, update_scenario], parsed_requirement=parsed_requirement)
+    ping_assertions = [item for item in dsl["scenarios"][0]["steps"][1]["assertions"] if isinstance(item, dict)]
+    put_request = dsl["scenarios"][1]["steps"][1]["request"]
+
+    assert ping_assertions[0]["expected"] == 201
+    assert put_request["json"] == {
+        "firstname": "James",
+        "lastname": "Brown",
+        "totalprice": 222,
+        "depositpaid": False,
+        "bookingdates": {
+            "checkin": "2026-04-11",
+            "checkout": "2026-04-13",
+        },
+        "additionalneeds": "Lunch",
+    }
+
+
+def test_api_challenges_challenger_header_context_is_saved_and_reused() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_029",
+        name="challenger init",
+        goal="challenger init",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="调用 POST /challenger"),
+            ScenarioStep(type="and", text="调用 GET /challenges"),
+            ScenarioStep(type="then", text="挑战列表可读取"),
+        ],
+        assertions=["挑战列表可读取"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    parsed_requirement = {
+        "objective": "API Challenges",
+        "actions": ["POST /challenger", "GET /challenges"],
+        "expected_results": [
+            "创建 challenger 成功后应返回 201，并可提取 X-CHALLENGER",
+            "挑战列表应在携带 X-CHALLENGER 时返回当前 session 对应进度",
+        ],
+        "constraints": ["POST /challenger 成功返回 201"],
+        "api_endpoints": [
+            {"method": "POST", "path": "/challenger", "description": "创建 challenger 会话", "depends_on": []},
+            {"method": "GET", "path": "/challenges", "description": "获取挑战列表", "depends_on": []},
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    create_step = dsl["scenarios"][0]["steps"][1]
+    query_step = dsl["scenarios"][0]["steps"][2]
+
+    assert create_step["request"] == {"method": "POST", "url": "/challenger"}
+    assert create_step["save_context"] == {"challenger_guid": "headers.x-challenger"}
+    assert any(item.get("source") == "headers.x-challenger" for item in create_step["assertions"] if isinstance(item, dict))
+    assert query_step["request"]["headers"]["X-CHALLENGER"] == "{{challenger_guid}}"
+    assert "json" not in [item.get("source") for item in create_step["assertions"] if isinstance(item, dict)]
+
+
+def test_api_challenges_secret_token_uses_basic_auth_and_header_token() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_030",
+        name="secret token",
+        goal="secret token",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="调用 POST /challenger"),
+            ScenarioStep(type="and", text="调用 POST /secret/token"),
+            ScenarioStep(type="and", text="调用 GET /secret/note"),
+            ScenarioStep(type="then", text="受保护资源可读取"),
+        ],
+        assertions=["受保护资源可读取"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    parsed_requirement = {
+        "objective": "API Challenges",
+        "actions": ["POST /challenger", "POST /secret/token", "GET /secret/note"],
+        "expected_results": [
+            "POST /secret/token 在 admin/password 下返回 201",
+            "secret/note 合法 token 返回 200",
+        ],
+        "constraints": [
+            "POST /secret/token 在 admin/password 下返回 201",
+            "GET /secret/note 合法 token 返回 200",
+        ],
+        "api_endpoints": [
+            {"method": "POST", "path": "/challenger", "description": "创建 challenger 会话", "depends_on": []},
+            {"method": "POST", "path": "/secret/token", "description": "获取 secret token", "depends_on": []},
+            {"method": "GET", "path": "/secret/note", "description": "读取 secret note", "depends_on": []},
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    token_step = dsl["scenarios"][0]["steps"][2]
+    note_step = dsl["scenarios"][0]["steps"][3]
+
+    assert token_step["request"]["method"] == "POST"
+    assert token_step["request"]["url"] == "/secret/token"
+    assert token_step["request"]["auth"] == {"type": "basic", "username": "admin", "password": "password"}
+    assert token_step["request"]["headers"]["X-CHALLENGER"] == "{{challenger_guid}}"
+    assert token_step["save_context"] == {"auth_token": "headers.x-auth-token"}
+    assert any(item.get("source") == "headers.x-auth-token" for item in token_step["assertions"] if isinstance(item, dict))
+    assert note_step["request"]["headers"]["X-CHALLENGER"] == "{{challenger_guid}}"
+    assert note_step["request"]["headers"]["X-AUTH-TOKEN"] == "{{auth_token}}"
+
+
+def test_api_challenges_header_and_token_dependencies_generate_chains() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "API Challenges",
+        "actions": [
+            "POST /challenger",
+            "GET /challenges",
+            "POST /todos",
+            "POST /secret/token",
+            "GET /secret/note",
+        ],
+        "expected_results": [
+            "创建 challenger 后可查询 challenges",
+            "创建 todo 成功",
+            "获取 secret token 后可读取 secret note",
+        ],
+        "api_endpoints": [
+            {"method": "POST", "path": "/challenger", "description": "创建 challenger 会话", "depends_on": []},
+            {
+                "method": "GET",
+                "path": "/challenges",
+                "description": "获取挑战列表",
+                "depends_on": [],
+                "request_body_fields": [{"name": "X-CHALLENGER", "field_type": "string", "required": True}],
+            },
+            {
+                "method": "POST",
+                "path": "/todos",
+                "description": "创建 todo",
+                "depends_on": [],
+                "request_body_fields": [{"name": "X-CHALLENGER", "field_type": "string", "required": True}],
+            },
+            {
+                "method": "POST",
+                "path": "/secret/token",
+                "description": "获取 secret token",
+                "depends_on": [],
+                "request_body_fields": [{"name": "X-CHALLENGER", "field_type": "string", "required": True}],
+            },
+            {
+                "method": "GET",
+                "path": "/secret/note",
+                "description": "读取 secret note",
+                "depends_on": [],
+                "request_body_fields": [
+                    {"name": "X-CHALLENGER", "field_type": "string", "required": True},
+                    {"name": "X-AUTH-TOKEN", "field_type": "string", "required": True},
+                ],
+            },
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    step_sets = [
+        [step.text if hasattr(step, "text") else step["text"] for step in scenario.steps]
+        for scenario in scenarios
+    ]
+
+    assert all(not (len(steps) == 2 and any("GET /challenges" in step for step in steps)) for steps in step_sets)
+    assert all(not (len(steps) == 2 and any("POST /todos" in step for step in steps)) for steps in step_sets)
+    assert all(not (len(steps) == 2 and any("POST /secret/token" in step for step in steps)) for steps in step_sets)
+    assert any(
+        any("POST /challenger" in step for step in steps) and any("GET /challenges" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /challenger" in step for step in steps) and any("POST /todos" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /challenger" in step for step in steps)
+        and any("POST /secret/token" in step for step in steps)
+        and any("GET /secret/note" in step for step in steps)
+        for steps in step_sets
+    )
+
+
+def test_api_challenges_detail_and_protected_endpoints_do_not_run_bare_without_metadata() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "API Challenges",
+        "actions": [
+            "POST /challenger",
+            "POST /todos",
+            "GET /todos/{id}",
+            "POST /secret/token",
+            "GET /secret/note",
+            "GET /challenger/{guid}",
+        ],
+        "expected_results": [
+            "todo 详情可读取",
+            "secret note 可读取",
+            "challenger 导出可读取",
+        ],
+        "api_endpoints": [
+            {"method": "POST", "path": "/challenger", "description": "会话初始化接口", "depends_on": []},
+            {"method": "GET", "path": "/challenger", "description": "相关接口", "group": "API Challenges"},
+            {"method": "POST", "path": "/todos", "description": "Todo 资源相关接口", "depends_on": []},
+            {"method": "GET", "path": "/todos/{id}", "description": "Todo 资源相关接口", "group": "API Challenges"},
+            {"method": "POST", "path": "/secret/token", "description": "受保护资源令牌接口", "depends_on": []},
+            {"method": "GET", "path": "/secret/note", "description": "相关接口", "group": "API Challenges"},
+            {"method": "GET", "path": "/challenger/{guid}", "description": "相关接口", "group": "API Challenges"},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    step_sets = [
+        [step.text if hasattr(step, "text") else step["text"] for step in scenario.steps]
+        for scenario in scenarios
+    ]
+
+    assert all(not (len(steps) == 2 and any("GET /challenger" == step for step in steps)) for steps in step_sets)
+    assert all(not (len(steps) == 2 and any("GET /todos/{id}" in step for step in steps)) for steps in step_sets)
+    assert all(not (len(steps) == 2 and any("GET /secret/note" in step for step in steps)) for steps in step_sets)
+    assert any(
+        any("POST /todos" in step for step in steps) and any("GET /todos/{id}" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /challenger" in step for step in steps) and any("GET /challenger/{guid}" in step for step in steps)
+        for steps in step_sets
+    )
+    assert any(
+        any("POST /challenger" in step for step in steps)
+        and any("POST /secret/token" in step for step in steps)
+        and any("GET /secret/note" in step for step in steps)
+        for steps in step_sets
+    )
+
+
+def test_api_challenges_heartbeat_status_and_guid_placeholder_do_not_pollute_assertions() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    heartbeat = ScenarioModel(
+        scenario_id="scenario_031",
+        name="heartbeat",
+        goal="heartbeat",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="调用 GET /heartbeat"),
+            ScenarioStep(type="then", text="心跳返回成功"),
+        ],
+        assertions=["心跳返回成功"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    challenger_export = ScenarioModel(
+        scenario_id="scenario_032",
+        name="challenger export",
+        goal="challenger export",
+        steps=[
+            ScenarioStep(type="given", text="service is reachable"),
+            ScenarioStep(type="when", text="调用 POST /challenger"),
+            ScenarioStep(type="and", text="调用 GET /challenger/{guid}"),
+            ScenarioStep(type="then", text="导出 challenger 成功"),
+        ],
+        assertions=["导出 challenger 成功"],
+        source_chunks=[],
+        preconditions=["service is reachable"],
+    )
+    parsed_requirement = {
+        "objective": "API Challenges",
+        "actions": ["POST /challenger", "GET /challenger/{guid}", "GET /heartbeat"],
+        "expected_results": ["GET /heartbeat 返回 204", "GET /challenger/{guid} 返回 200"],
+        "constraints": ["GET /heartbeat 返回 204", "GET /challenger/{guid} 返回 200"],
+        "api_endpoints": [
+            {"method": "POST", "path": "/challenger", "description": "会话初始化接口", "depends_on": []},
+            {"method": "GET", "path": "/challenger/{guid}", "description": "相关接口", "group": "API Challenges"},
+            {"method": "GET", "path": "/heartbeat", "description": "相关接口", "group": "API Challenges"},
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [heartbeat, challenger_export], parsed_requirement=parsed_requirement)
+    heartbeat_step = dsl["scenarios"][0]["steps"][1]
+    export_step = dsl["scenarios"][1]["steps"][2]
+
+    assert any(item.get("source") == "status_code" and item.get("expected") == 204 for item in heartbeat_step["assertions"] if isinstance(item, dict))
+    assert not any(item.get("source") == "json.guid" for item in export_step["assertions"] if isinstance(item, dict))
 
 
 def test_dependency_endpoints_generate_targeted_chain_scenarios_and_full_flow() -> None:

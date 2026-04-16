@@ -54,5 +54,10 @@ def filter_executable_api_endpoints(endpoints: list[dict]) -> list[dict]:
         path = str(ep.get("path", ""))
         if method == "GET" and is_documentation_ui_path(path):
             continue
+        lowered = path.lower()
+        if "..." in lowered:
+            continue
+        if "、" in path and "`" in path:
+            continue
         out.append(ep)
     return out

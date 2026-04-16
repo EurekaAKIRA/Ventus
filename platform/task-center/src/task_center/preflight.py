@@ -2,11 +2,40 @@
 
 from __future__ import annotations
 
+import socket
 import time
-import urllib.error
-import urllib.request
 from typing import Any
 from urllib.parse import urlparse
+
+import requests
+
+
+def _resolve_timeout(timeout_s: float) -> tuple[float, float]:
+    timeout_s = max(float(timeout_s), 0.1)
+    connect_timeout = min(timeout_s, 3.0)
+    read_timeout = max(timeout_s, connect_timeout)
+    return (connect_timeout, read_timeout)
+
+
+def _probe_candidates(base_url: str) -> list[tuple[str, str]]:
+    trimmed = base_url.rstrip("/")
+    return [
+        (trimmed + "/health", "/health"),
+        (trimmed + "/ping", "/ping"),
+        (trimmed or base_url, "/"),
+    ]
+
+
+def _classify_request_exception(exc: Exception) -> str:
+    if isinstance(exc, requests.Timeout):
+        return "timeout"
+    if isinstance(exc, requests.exceptions.SSLError):
+        return "ssl_error"
+    if isinstance(exc, requests.ConnectionError):
+        return "network_error"
+    if isinstance(exc, socket.timeout):
+        return "timeout"
+    return "unknown_error"
 
 
 def run_preflight_check(
@@ -55,33 +84,64 @@ def run_preflight_check(
             started = time.perf_counter()
             status = "passed"
             message = "base_url reachable"
+            code = 0
+            timeout_s = 5.0
+            session = requests.Session()
+            adapter = requests.adapters.HTTPAdapter(pool_connections=4, pool_maxsize=4, max_retries=0, pool_block=False)
+            session.mount("http://", adapter)
+            session.mount("https://", adapter)
             try:
-                probe = urllib.request.Request(
-                    url=base_url.rstrip("/") + "/health",
-                    method="GET",
-                    headers={"User-Agent": "platform-preflight/1.0"},
-                )
-                with urllib.request.urlopen(probe, timeout=5.0) as resp:
-                    _ = resp.read(256)
-                code = 200
-            except urllib.error.HTTPError as exc:
-                code = exc.code
-                if code in {404, 405}:
-                    status = "warning"
-                    message = f"/health returned HTTP {code}, base host responded"
+                last_error = ""
+                fallback_warning = ""
+                for probe_url, probe_name in _probe_candidates(base_url):
+                    try:
+                        resp = session.get(
+                            probe_url,
+                            headers={"User-Agent": "platform-preflight/1.0", "Accept": "*/*"},
+                            timeout=_resolve_timeout(timeout_s),
+                            allow_redirects=True,
+                        )
+                        _ = resp.content[:256]
+                        code = int(resp.status_code)
+                        if code < 400:
+                            status = "passed"
+                            message = f"{probe_name} reachable"
+                            if fallback_warning and probe_name != "/health":
+                                message = f"{probe_name} reachable after fallback"
+                            break
+                        if code in {404, 405}:
+                            fallback_warning = f"{probe_name} returned HTTP {code}"
+                            last_error = fallback_warning
+                            continue
+                        last_error = f"{probe_name} HTTP {code}"
+                    except requests.RequestException as exc:
+                        error_kind = _classify_request_exception(exc)
+                        last_error = str(exc)
+                        if probe_name == "/health":
+                            continue
+                        if error_kind == "timeout":
+                            status = "failed"
+                            message = f"connection timed out: {last_error}"
+                            blocking_issues.append(f"无法连接目标地址：{last_error}")
+                            break
+                        status = "failed"
+                        message = f"connection failed: {last_error}"
+                        blocking_issues.append(f"无法连接目标地址：{last_error}")
+                        break
                 else:
-                    status = "failed"
-                    message = f"/health HTTP {code}"
-                    blocking_issues.append(f"目标 /health 返回 HTTP {code}，请确认服务已启动")
-            except urllib.error.URLError as exc:
-                status = "failed"
-                reason = str(exc.reason or exc)
-                message = f"connection failed: {reason}"
-                blocking_issues.append(f"无法连接目标地址：{reason}")
+                    if fallback_warning:
+                        status = "warning"
+                        message = f"{fallback_warning}, base host responded on fallback probe"
+                    else:
+                        status = "failed"
+                        message = last_error or "connection failed"
+                        blocking_issues.append(f"无法连接目标地址：{message}")
             except Exception as exc:  # pragma: no cover - defensive
                 status = "failed"
                 message = str(exc)
                 blocking_issues.append(f"探测异常：{exc}")
+            finally:
+                session.close()
 
             elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
             check_results.append(

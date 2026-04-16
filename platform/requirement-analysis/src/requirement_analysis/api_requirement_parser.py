@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from typing import Any
 
@@ -15,11 +16,14 @@ from .openai_enhancement import (
 )
 
 _EXPLICIT_ENDPOINT_RE = re.compile(
-    r"\b(GET|POST|PUT|PATCH|DELETE)\s+(/[\w/\-{}:.]+)",
+    r"\b(GET|POST|PUT|PATCH|DELETE)\s+(/[\w/\-{}:.?=&%]+)",
     re.IGNORECASE,
 )
 _TABLE_ROW_RE = re.compile(r"^\s*\|.*\|")
 _INLINE_CODE_RE = re.compile(r"`([^`]+)`")
+_STEP_BLOCK_RE = re.compile(r"^####\s*Step[^\n]*\n(?P<body>.*?)(?=^####\s*Step|\Z)", re.MULTILINE | re.DOTALL)
+_JSON_BLOCK_RE = re.compile(r"```json\s*(\{.*?\})\s*```", re.IGNORECASE | re.DOTALL)
+_SAVE_CONTEXT_RE = re.compile(r"-\s*`?[a-zA-Z_][a-zA-Z0-9_]*`?\s*(?:<-|←)\s*`?(json\.[a-zA-Z0-9_.]+)`?")
 _NON_EXECUTABLE_ACTION_PATTERNS = (
     "签收最终结论",
     "确认验收范围",
@@ -62,6 +66,11 @@ def _extract_api_endpoints(text: str) -> list[dict]:
     description_map = _extract_endpoint_descriptions(text)
     seen: set[str] = set()
     endpoints: list[dict] = []
+    for method, path, description in _extract_endpoint_pairs_from_interface_blocks(text):
+        key = f"{method} {path}"
+        if key not in seen:
+            seen.add(key)
+            endpoints.append({"method": method, "path": path, "description": description or description_map.get(key, "")})
     for method, path in _extract_endpoint_pairs_from_tables(text):
         key = f"{method} {path}"
         if key not in seen:
@@ -75,6 +84,54 @@ def _extract_api_endpoints(text: str) -> list[dict]:
             seen.add(key)
             endpoints.append({"method": method, "path": path, "description": description_map.get(key, "")})
     return _enrich_endpoints(endpoints, text)
+
+
+def _extract_endpoint_pairs_from_interface_blocks(text: str) -> list[tuple[str, str, str]]:
+    pairs: list[tuple[str, str, str]] = []
+    in_interface_section = False
+    current_name = ""
+    current_method = ""
+    current_path = ""
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        heading_match = _LINE_HEADING_RE.match(stripped)
+        if heading_match:
+            title = heading_match.group(2).strip()
+            level = len(heading_match.group(1))
+            if level == 2:
+                if in_interface_section and current_method and current_path:
+                    pairs.append((current_method.upper(), current_path, current_name))
+                in_interface_section = title == "接口清单"
+                current_name = ""
+                current_method = ""
+                current_path = ""
+                continue
+            if not in_interface_section:
+                continue
+            if level == 3 and title.startswith("接口："):
+                if current_method and current_path:
+                    pairs.append((current_method.upper(), current_path, current_name))
+                current_name = title.split("：", 1)[1].strip()
+                current_method = ""
+                current_path = ""
+                continue
+            if in_interface_section and level <= 3:
+                if current_method and current_path:
+                    pairs.append((current_method.upper(), current_path, current_name))
+                current_name = ""
+                current_method = ""
+                current_path = ""
+            continue
+        if not in_interface_section:
+            continue
+        line = stripped.strip("-* ").strip()
+        if line.startswith("方法："):
+            current_method = line.split("：", 1)[1].strip().strip("`").upper()
+        elif line.startswith("路径："):
+            current_path = line.split("：", 1)[1].strip().strip("`")
+    if in_interface_section and current_method and current_path:
+        pairs.append((current_method.upper(), current_path, current_name))
+    return pairs
 
 
 def _infer_endpoint_group(path: str) -> str:
@@ -104,18 +161,147 @@ def _enrich_endpoints(endpoints: list[dict], text: str) -> list[dict]:
     """Add group, depends_on, and field placeholders to raw endpoint dicts."""
     all_paths = [str(ep.get("path", "")) for ep in endpoints]
     section_map = _map_paths_to_sections(text)
+    field_hints = _extract_endpoint_field_hints(text)
+    interface_hints = _extract_interface_contract_hints(text)
     for ep in endpoints:
         path = str(ep.get("path", ""))
+        method = str(ep.get("method", "")).upper()
         if not ep.get("group"):
             ep["group"] = section_map.get(path) or _infer_endpoint_group(path)
         if not ep.get("depends_on"):
             ep["depends_on"] = _infer_depends_on(path, all_paths)
-        ep.setdefault("request_body_fields", [])
-        ep.setdefault("response_fields", [])
+        key = f"{method} {path}"
+        hinted = field_hints.get(key, {})
+        contract = interface_hints.get(key, {})
+        ep["request_body_fields"] = _merge_field_specs(ep.get("request_body_fields"), hinted.get("request_body_fields"))
+        ep["response_fields"] = _merge_field_specs(ep.get("response_fields"), hinted.get("response_fields"))
+        ep["request_body_fields"] = _merge_field_specs(ep.get("request_body_fields"), contract.get("request_body_fields"))
+        if contract.get("description_suffix"):
+            desc = str(ep.get("description", "")).strip()
+            suffix = str(contract.get("description_suffix", "")).strip()
+            if suffix and suffix.lower() not in desc.lower():
+                ep["description"] = f"{desc}；{suffix}".strip("；")
     return endpoints
 
 
+def _merge_field_specs(existing: Any, hinted: Any) -> list[dict[str, Any]]:
+    def _names(value: Any) -> list[str]:
+        output: list[str] = []
+        for item in value or []:
+            if isinstance(item, dict):
+                name = str(item.get("name", "")).strip()
+            else:
+                name = str(item).strip()
+            if name:
+                output.append(name)
+        return output
+
+    merged: list[str] = []
+    for name in _names(existing) + _names(hinted):
+        if name not in merged:
+            merged.append(name)
+    return [{"name": name, "field_type": "string", "required": True, "description": ""} for name in merged]
+
+
+def _extract_endpoint_field_hints(text: str) -> dict[str, dict[str, list[dict[str, Any]]]]:
+    hints: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for block_match in _STEP_BLOCK_RE.finditer(text):
+        block = block_match.group("body")
+        endpoint_match = _EXPLICIT_ENDPOINT_RE.search(block)
+        if not endpoint_match:
+            continue
+        method = endpoint_match.group(1).upper()
+        path = endpoint_match.group(2)
+        key = f"{method} {path}"
+        request_fields: list[str] = []
+        response_fields: list[str] = []
+
+        json_match = _JSON_BLOCK_RE.search(block)
+        if json_match:
+            try:
+                payload = json.loads(json_match.group(1))
+                request_fields.extend(_flatten_json_field_names(payload))
+            except Exception:
+                pass
+
+        lowered_block = block.lower()
+        expected_idx = lowered_block.find("**expected:**")
+        if expected_idx >= 0:
+            expected_part = block[expected_idx:]
+            for token in _INLINE_CODE_RE.findall(expected_part):
+                candidate = str(token).strip()
+                if not candidate:
+                    continue
+                lowered = candidate.lower()
+                if lowered.startswith("http ") or lowered in {"http", "json"}:
+                    continue
+                if candidate.isdigit() or "/" in candidate or "{{" in candidate:
+                    continue
+                if lowered.startswith("json."):
+                    candidate = candidate[5:]
+                response_fields.append(candidate)
+            for save_match in _SAVE_CONTEXT_RE.finditer(expected_part):
+                path_expr = save_match.group(1).strip()
+                if path_expr.lower().startswith("json."):
+                    response_fields.append(path_expr[5:])
+
+        hints[key] = {
+            "request_body_fields": [{"name": name, "field_type": "string", "required": True, "description": ""} for name in _dedupe(request_fields)],
+            "response_fields": [{"name": name, "field_type": "string", "required": True, "description": ""} for name in _dedupe(response_fields)],
+        }
+    return hints
+
+
+def _flatten_json_field_names(payload: Any, prefix: str = "") -> list[str]:
+    if not isinstance(payload, dict):
+        return []
+    names: list[str] = []
+    for key, value in payload.items():
+        token = str(key).strip()
+        if not token:
+            continue
+        full = f"{prefix}.{token}" if prefix else token
+        names.append(full)
+        if isinstance(value, dict):
+            names.extend(_flatten_json_field_names(value, full))
+    return names
+
+
 _SECTION_HEADING_RE = re.compile(r"^#{1,4}\s+(.+)", re.MULTILINE)
+_LINE_HEADING_RE = re.compile(r"^(#{1,4})\s+(.+)$")
+_SCENARIO_HEADING_RE = re.compile(r"^scenario\s*:", re.IGNORECASE)
+
+_METADATA_SECTION_TITLES = (
+    "文档定位",
+    "环境信息",
+    "鉴权与全局约束",
+    "资源依赖说明",
+    "接口清单",
+    "预期效果",
+    "成功标准",
+    "可选增强信息",
+)
+_STRUCTURED_META_PREFIXES = (
+    "涉及接口",
+    "关键依赖",
+    "资源来源",
+    "接口：",
+    "方法：",
+    "路径：",
+    "功能：",
+    "鉴权：",
+    "请求语义：",
+    "结果语义：",
+    "资源前置条件：",
+    "鉴权接口：",
+    "令牌字段：",
+    "注入方式：",
+    "默认请求头：",
+    "全局 query 参数：",
+    "全局响应 envelope：",
+    "特殊状态码规则：",
+    "轮询或异步规则：",
+)
 
 
 def _map_paths_to_sections(text: str) -> dict[str, str]:
@@ -138,6 +324,192 @@ def _map_paths_to_sections(text: str) -> dict[str, str]:
                 if path.startswith("/"):
                     mapping.setdefault(path, current_heading)
     return mapping
+
+
+def _normalize_heading_title(title: str) -> str:
+    lowered = str(title or "").strip().lower()
+    lowered = re.sub(r"^[#\s]+", "", lowered)
+    return lowered
+
+
+def _extract_markdown_sections(text: str) -> list[dict[str, Any]]:
+    sections: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+    for raw_line in text.splitlines():
+        heading_match = _LINE_HEADING_RE.match(raw_line.strip())
+        if heading_match:
+            if current is not None:
+                current["body"] = "\n".join(current["lines"]).strip()
+                current.pop("lines", None)
+                sections.append(current)
+            current = {
+                "level": len(heading_match.group(1)),
+                "title": heading_match.group(2).strip(),
+                "lines": [],
+            }
+            continue
+        if current is None:
+            continue
+        current["lines"].append(raw_line)
+    if current is not None:
+        current["body"] = "\n".join(current["lines"]).strip()
+        current.pop("lines", None)
+        sections.append(current)
+    return sections
+
+
+def _extract_scenario_text(text: str) -> str:
+    scenario_bodies: list[str] = []
+    for section in _extract_markdown_sections(text):
+        title = str(section.get("title", "")).strip()
+        if _SCENARIO_HEADING_RE.match(title):
+            body = str(section.get("body", "")).strip()
+            summary_lines: list[str] = []
+            for raw_line in body.splitlines():
+                line = raw_line.strip()
+                if not line:
+                    continue
+                if any(line.startswith(prefix) or line.startswith(f"**{prefix}") for prefix in _STRUCTURED_META_PREFIXES):
+                    continue
+                summary_lines.append(line)
+            parts = [title]
+            if summary_lines:
+                parts.append("\n".join(summary_lines))
+            scenario_bodies.append("\n".join(parts))
+    return "\n\n".join(part for part in scenario_bodies if part)
+
+
+def _extract_scenario_titles(text: str) -> list[str]:
+    titles: list[str] = []
+    for section in _extract_markdown_sections(text):
+        title = str(section.get("title", "")).strip()
+        if _SCENARIO_HEADING_RE.match(title):
+            titles.append(title)
+    return titles
+
+
+def _extract_expectation_text(text: str) -> str:
+    blocks: list[str] = []
+    for section in _extract_markdown_sections(text):
+        title = _normalize_heading_title(section.get("title", ""))
+        if title in {"预期效果", "成功标准"}:
+            body = str(section.get("body", "")).strip()
+            if body:
+                blocks.append(body)
+    return "\n".join(blocks)
+
+
+def _extract_global_auth_injection(text: str) -> str:
+    in_auth_section = False
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        heading_match = _LINE_HEADING_RE.match(stripped)
+        if heading_match:
+            level = len(heading_match.group(1))
+            title = heading_match.group(2).strip()
+            if level == 2:
+                in_auth_section = title == "鉴权与全局约束"
+                continue
+        if not in_auth_section:
+            continue
+        line = stripped.strip("-* ").strip()
+        if line.startswith("注入方式："):
+            return line.split("：", 1)[1].strip()
+    return ""
+
+
+def _extract_auth_header_hints(text: str) -> list[str]:
+    headers: list[str] = []
+    in_auth_section = False
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        heading_match = _LINE_HEADING_RE.match(stripped)
+        if heading_match:
+            level = len(heading_match.group(1))
+            title = heading_match.group(2).strip()
+            if level == 2:
+                in_auth_section = title == "鉴权与全局约束"
+                continue
+        if not in_auth_section:
+            continue
+        line = stripped.strip("-* ").strip().strip("`")
+        header_match = re.search(r"\b([A-Za-z][A-Za-z0-9-]*)\s*:\s*\{\{", line)
+        if header_match:
+            header_name = header_match.group(1).strip()
+            if header_name and header_name not in headers:
+                headers.append(header_name)
+    return headers
+
+
+def _extract_interface_contract_hints(text: str) -> dict[str, dict[str, Any]]:
+    hints: dict[str, dict[str, Any]] = {}
+    global_injection = _extract_global_auth_injection(text).lower()
+    auth_header_hints = _extract_auth_header_hints(text)
+    in_interface_section = False
+    current: dict[str, str] = {}
+
+    def flush_current() -> None:
+        if not current:
+            return
+        method = current.get("method", "").upper().strip()
+        path = current.get("path", "").strip()
+        auth_value = current.get("auth", "").strip()
+        if not method or not path:
+            current.clear()
+            return
+        key = f"{method} {path}"
+        request_fields: list[str] = []
+        desc_parts: list[str] = []
+        auth_required = auth_value.lower().startswith(("是", "yes", "true"))
+        if auth_required and "cookie" in global_injection and "token" in global_injection:
+            request_fields.append("Cookie")
+            desc_parts.append("需要显式携带 Cookie token")
+        if auth_required:
+            for header_name in auth_header_hints:
+                lowered_header = header_name.lower()
+                if lowered_header == "x-auth-token" and "/secret/note" not in path.lower():
+                    continue
+                if lowered_header == "authorization" and "/secret/note" not in path.lower():
+                    continue
+                if header_name not in request_fields:
+                    request_fields.append(header_name)
+        if request_fields or desc_parts:
+            hints[key] = {
+                "request_body_fields": [{"name": name, "field_type": "string", "required": True, "description": ""} for name in request_fields],
+                "description_suffix": "；".join(desc_parts),
+            }
+        current.clear()
+
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        heading_match = _LINE_HEADING_RE.match(stripped)
+        if heading_match:
+            title = heading_match.group(2).strip()
+            level = len(heading_match.group(1))
+            if level == 2:
+                flush_current()
+                in_interface_section = title == "接口清单"
+                continue
+            if not in_interface_section:
+                continue
+            if level == 3 and title.startswith("接口："):
+                flush_current()
+                current = {}
+                continue
+            if in_interface_section and level <= 3:
+                flush_current()
+            continue
+        if not in_interface_section or not current and not stripped.startswith("-"):
+            continue
+        line = stripped.strip("-* ").strip()
+        if line.startswith("方法："):
+            current["method"] = line.split("：", 1)[1].strip().strip("`")
+        elif line.startswith("路径："):
+            current["path"] = line.split("：", 1)[1].strip().strip("`")
+        elif line.startswith("鉴权："):
+            current["auth"] = line.split("：", 1)[1].strip()
+    flush_current()
+    return hints
 
 
 def _extract_endpoint_descriptions(text: str) -> dict[str, str]:
@@ -218,7 +590,7 @@ def _extract_explicit_endpoint_actions(text: str) -> list[str]:
             continue
         if _EXPLICIT_ENDPOINT_RE.search(sentence):
             normalized = _normalize_statement(sentence)
-            if normalized:
+            if normalized and not _is_non_executable_action(normalized):
                 action_sentences.append(normalized)
     return action_sentences
 
@@ -243,6 +615,19 @@ def _is_non_executable_action(text: str) -> bool:
         return True
     if normalized.startswith("**") and "：" in normalized:
         return True
+    if any(normalized.startswith(prefix) for prefix in _STRUCTURED_META_PREFIXES):
+        return True
+    if normalized.startswith("**") and any(prefix in normalized for prefix in _STRUCTURED_META_PREFIXES):
+        return True
+    if normalized.startswith("## "):
+        return True
+    if normalized.startswith("### "):
+        return True
+    if normalized.startswith("#### "):
+        return True
+    if title := normalized.lstrip("#").strip():
+        if title in _METADATA_SECTION_TITLES:
+            return True
     if any(pattern in normalized for pattern in _NON_EXECUTABLE_ACTION_PATTERNS):
         return True
     if any(hint in normalized for hint in _NON_EXECUTABLE_ACTION_HINTS):
@@ -322,7 +707,7 @@ EXPECTATION_CUES = (
     "成功",
     "失败",
 )
-CONSTRAINT_CUES = ("must", "cannot", "only", "require", "必须", "只能", "不可", "不能", "限制")
+CONSTRAINT_CUES = ("must", "cannot", "only", "require", "必须", "只能", "不可", "不能", "限制", "预期返回", "expected", "应返回", "可能返回")
 PRECONDITION_CUES = ("precondition", "before", "authenticated", "existing", "前提", "已登录", "登录后", "准备好", "存在")
 ACTOR_HINTS = ("admin", "reviewer", "guest", "user", "operator", "service", "管理员", "审核员", "访客", "用户", "运营")
 
@@ -433,21 +818,32 @@ def parse_requirement(
     same retrieved list.
     """
     base_text = requirement_text.strip()
+    scenario_text = _extract_scenario_text(base_text)
+    scenario_titles = _extract_scenario_titles(base_text)
+    expectation_text = _extract_expectation_text(base_text)
+    action_source_text = scenario_text or base_text
     retrieved_context = retrieved_context or []
     merged_text = _merge_context(base_text, retrieved_context)
-    candidate_points = extract_candidate_test_points(base_text or merged_text)
+    candidate_points = extract_candidate_test_points(action_source_text or merged_text)
     objective = _derive_objective(base_text or merged_text, candidate_points)
     rule_endpoints = _extract_api_endpoints(base_text)
-    explicit_endpoint_actions = _extract_explicit_endpoint_actions(base_text)
+    explicit_endpoint_actions = _extract_explicit_endpoint_actions(action_source_text)
 
     actions = [item["text"] for item in candidate_points if item["type"] == "action" and not _TABLE_ROW_RE.match(item["text"])]
+    actions.extend(scenario_titles)
     actions.extend(explicit_endpoint_actions)
     expectations = [item["text"] for item in candidate_points if item["type"] == "expectation"]
     preconditions = [item["text"] for item in candidate_points if item["type"] == "precondition"]
+    if expectation_text:
+        expectations.extend(
+            line.strip("-* ").strip()
+            for line in expectation_text.splitlines()
+            if line.strip().startswith(("-", "*"))
+        )
     constraints = [sentence for sentence in re.split(r"[\n。；;]+", base_text) if any(cue in sentence.lower() for cue in CONSTRAINT_CUES)]
 
     if not actions:
-        for sentence in re.split(r"[\n。；;]+", base_text):
+        for sentence in re.split(r"[\n。；;]+", action_source_text):
             sentence = sentence.strip()
             if _TABLE_ROW_RE.match(sentence):
                 continue
@@ -456,13 +852,13 @@ def parse_requirement(
     actions = _filter_actions(actions, explicit_endpoint_actions=explicit_endpoint_actions, api_endpoints=rule_endpoints)
 
     if not expectations:
-        for sentence in re.split(r"[\n。；;]+", base_text):
+        for sentence in re.split(r"[\n。；;]+", expectation_text or base_text):
             sentence = sentence.strip()
             if sentence and any(cue in sentence.lower() or cue in sentence for cue in EXPECTATION_CUES):
                 expectations.append(sentence)
 
     if not preconditions:
-        for sentence in re.split(r"[\n。；;]+", base_text):
+        for sentence in re.split(r"[\n。；;]+", scenario_text or base_text):
             sentence = sentence.strip()
             if sentence and any(cue in sentence.lower() or cue in sentence for cue in PRECONDITION_CUES):
                 preconditions.append(sentence)
