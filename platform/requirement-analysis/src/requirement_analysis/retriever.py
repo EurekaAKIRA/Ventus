@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -10,6 +11,10 @@ from platform_shared.models import RetrievedChunk
 
 from .document_parser import extract_keywords, tokenize_text
 from .openai_enhancement import OpenAIEnhancementConfig, cosine_similarity, request_embeddings
+
+_API_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+/", re.IGNORECASE)
+_API_SECTION_HINTS = ("接口", "scenario", "鉴权", "依赖", "资源", "请求", "路由")
+_API_CONTENT_HINTS = ("路径：", "**涉及接口:**", "资源来源：", "资源前置条件：")
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +67,32 @@ def _score_chunk(chunk: dict, query_terms: set[str], query_keywords: list[str]) 
     return overlap_score + keyword_score + title_bonus
 
 
+def _query_is_api_focused(query: str) -> bool:
+    lowered = str(query or "").lower()
+    if _API_PATH_RE.search(query):
+        return True
+    return any(token in lowered for token in ("接口", "api", "scenario", "鉴权", "依赖", "resource", "endpoint"))
+
+
+def _api_chunk_boost(chunk: dict, *, api_focused: bool) -> float:
+    if not api_focused:
+        return 0.0
+    title = str(chunk.get("section_title", "") or "")
+    content = str(chunk.get("content", "") or "")
+    doc_type = str(chunk.get("doc_type", "") or "")
+    lowered_title = title.lower()
+    boost = 0.0
+    if not doc_type:
+        boost += 0.15
+    if any(hint in title or hint in lowered_title for hint in _API_SECTION_HINTS):
+        boost += 0.25
+    if _API_PATH_RE.search(content) or any(hint in content for hint in _API_CONTENT_HINTS):
+        boost += 0.25
+    if title in {"文档定位", "预期效果"}:
+        boost -= 0.1
+    return boost
+
+
 def retrieve_relevant_chunks(
     index: dict,
     query: str,
@@ -80,6 +111,7 @@ def retrieve_relevant_chunks(
     scoring = scoring_config or get_retrieval_scoring_config()
     query_terms = set(tokenize_text(query))
     query_keywords = extract_keywords(query, limit=8)
+    api_focused = _query_is_api_focused(query)
     query_embedding: list[float] = []
     if use_vector_rag and embedding_config is not None:
         try:
@@ -109,6 +141,7 @@ def retrieve_relevant_chunks(
         chunk_payload=chunk_payload,
         scoring=scoring,
         official_doc_boost=official_doc_boost,
+        api_focused=api_focused,
     )
     window = max(top_k, rerank_window) if rerank else top_k
     ranked = scored[:window]
@@ -120,6 +153,7 @@ def retrieve_relevant_chunks(
             query_keywords=query_keywords,
             scoring=scoring,
             official_doc_boost=official_doc_boost,
+            api_focused=api_focused,
         )
     before_threshold = len(ranked)
     if min_final_score > 0:
@@ -140,6 +174,7 @@ def _merge_scores(
     chunk_payload: dict[str, dict],
     scoring: RetrievalScoringConfig,
     official_doc_boost: float = 0.0,
+    api_focused: bool = False,
 ) -> list[dict]:
     max_lexical = max(lexical_scores.values(), default=0.0) or 1.0
     scored: list[dict] = []
@@ -151,6 +186,7 @@ def _merge_scores(
         normalized_lexical = lexical_score / max_lexical
         score = (normalized_lexical * scoring.lexical_weight) + (vector_score * scoring.vector_weight)
         score += _official_doc_boost_amount(chunk, official_doc_boost)
+        score += _api_chunk_boost(chunk, api_focused=api_focused)
         payload = RetrievedChunk(
             chunk_id=chunk_id,
             content=chunk.get("content", ""),
@@ -172,6 +208,7 @@ def _rerank_candidates(
     query_keywords: list[str],
     scoring: RetrievalScoringConfig,
     official_doc_boost: float = 0.0,
+    api_focused: bool = False,
 ) -> list[dict]:
     if not ranked:
         return ranked
@@ -188,8 +225,8 @@ def _rerank_candidates(
         final_score = (vector_score * scoring.rerank_vector_weight) + (lexical_score * scoring.rerank_lexical_weight) + title_boost + content_boost
         chunk_stub = {"doc_type": item.get("doc_type", "")}
         final_score += _official_doc_boost_amount(chunk_stub, official_doc_boost)
+        final_score += _api_chunk_boost(item, api_focused=api_focused)
         reranked.append({**item, "score": round(final_score, 3)})
     reranked.sort(key=lambda item: item["score"], reverse=True)
     return reranked
-
 

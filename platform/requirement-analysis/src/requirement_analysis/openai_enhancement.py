@@ -5,8 +5,10 @@ Default provider profile is Tencent Hunyuan (OpenAI-compatible API).
 
 from __future__ import annotations
 
+import json
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass
 from math import sqrt
@@ -24,6 +26,10 @@ from platform_shared import (
 )
 
 _LOG = logging.getLogger(__name__)
+_API_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+/", re.IGNORECASE)
+_CONTEXT_PRIORITY_TITLES = ("接口", "scenario", "鉴权", "资源", "依赖", "约束")
+_CONTEXT_PRIORITY_CONTENT = ("路径：", "**涉及接口:**", "资源来源：", "资源前置条件：")
+_WRAPPED_PAYLOAD_KEYS = ("result", "data", "output", "response", "payload")
 
 
 @dataclass(slots=True)
@@ -162,8 +168,9 @@ def _compose_requirement_text_for_llm(full_text: str) -> str:
 
 def _build_retrieved_context_preview(retrieved_context: list[dict[str, Any]]) -> list[dict[str, Any]]:
     max_chunks, max_chunk_chars = _llm_parse_context_limits()
+    selected = _select_context_items(retrieved_context, max_chunks=max_chunks)
     preview: list[dict[str, Any]] = []
-    for item in retrieved_context[:max_chunks]:
+    for item in selected:
         preview.append({
             "chunk_id": item.get("chunk_id", ""),
             "section_title": item.get("section_title", ""),
@@ -171,6 +178,64 @@ def _build_retrieved_context_preview(retrieved_context: list[dict[str, Any]]) ->
             "score": item.get("score", 0),
         })
     return preview
+
+
+def _select_context_items(retrieved_context: list[dict[str, Any]], *, max_chunks: int) -> list[dict[str, Any]]:
+    if max_chunks <= 0 or not retrieved_context:
+        return []
+
+    def _priority(item: dict[str, Any], index: int) -> tuple[float, float, int]:
+        title = str(item.get("section_title", "") or "")
+        lowered_title = title.lower()
+        content = str(item.get("content", "") or "")
+        doc_type = str(item.get("doc_type", "") or "")
+        score = 0.0
+        if not doc_type:
+            score += 2.0
+        if any(hint in title or hint in lowered_title for hint in _CONTEXT_PRIORITY_TITLES):
+            score += 2.0
+        if _API_PATH_RE.search(content) or any(hint in content for hint in _CONTEXT_PRIORITY_CONTENT):
+            score += 1.5
+        if title in {"文档定位", "预期效果"}:
+            score -= 1.0
+        raw_score = float(item.get("score", 0.0) or 0.0)
+        return (score, raw_score, -index)
+
+    ranked = sorted(
+        enumerate(retrieved_context),
+        key=lambda pair: _priority(pair[1], pair[0]),
+        reverse=True,
+    )
+
+    selected: list[dict[str, Any]] = []
+    seen_titles: set[str] = set()
+    seen_ids: set[str] = set()
+    for _, item in ranked:
+        chunk_id = str(item.get("chunk_id", "") or "")
+        title = str(item.get("section_title", "") or "")
+        if chunk_id and chunk_id in seen_ids:
+            continue
+        if title and title in seen_titles and len(selected) < max_chunks - 1:
+            continue
+        selected.append(item)
+        if chunk_id:
+            seen_ids.add(chunk_id)
+        if title:
+            seen_titles.add(title)
+        if len(selected) >= max_chunks:
+            break
+
+    if len(selected) < max_chunks:
+        for item in retrieved_context:
+            chunk_id = str(item.get("chunk_id", "") or "")
+            if chunk_id and chunk_id in seen_ids:
+                continue
+            selected.append(item)
+            if chunk_id:
+                seen_ids.add(chunk_id)
+            if len(selected) >= max_chunks:
+                break
+    return selected[:max_chunks]
 
 
 def _fill_llm_enhancement_phase_timings_ms(
@@ -195,6 +260,7 @@ def enhance_parsed_requirement_with_metadata(
     config: OpenAIEnhancementConfig,
     *,
     out_phase_timings_ms: dict[str, float] | None = None,
+    out_response_diagnostics: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any] | None, str, str]:
     """Call the model with requirement text, retrieved snippet previews, and rule hints."""
     t0 = time.perf_counter()
@@ -312,6 +378,7 @@ def enhance_parsed_requirement_with_metadata(
         "ambiguities",
         "api_endpoints",
     }
+    parsed = _unwrap_supported_payload(parsed, allowed)
     list_string_fields = {
         "actors",
         "entities",
@@ -357,12 +424,27 @@ def enhance_parsed_requirement_with_metadata(
         else:
             cleaned[key] = str(value).strip()
     if not cleaned:
+        raw_keys = sorted(str(key) for key in parsed.keys())
+        invalid_reason = _classify_empty_payload_reason(parsed, allowed)
+        if out_response_diagnostics is not None:
+            out_response_diagnostics.update(
+                {
+                    "raw_top_level_keys": raw_keys,
+                    "empty_payload_reason": invalid_reason,
+                    "raw_preview": json.dumps(parsed, ensure_ascii=False)[:1000],
+                }
+            )
         t_end = time.perf_counter()
         _fill_llm_enhancement_phase_timings_ms(
             out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_after_chat, t_end=t_end
         )
-        _LOG.warning("LLM requirement enhancement failed reason=llm_response_invalid error_type=EmptyJSONPayload")
-        return None, "llm_response_invalid", "EmptyJSONPayload"
+        _LOG.warning(
+            "LLM requirement enhancement failed reason=llm_response_invalid error_type=EmptyJSONPayload detail=%s raw_keys=%s preview=%r",
+            invalid_reason,
+            raw_keys,
+            json.dumps(parsed, ensure_ascii=False)[:500],
+        )
+        return None, "llm_response_invalid", f"EmptyJSONPayload:{invalid_reason}"
     t_end = time.perf_counter()
     _fill_llm_enhancement_phase_timings_ms(
         out_phase_timings_ms, t0=t0, t_compose=t_compose, t_after_chat=t_after_chat, t_end=t_end
@@ -374,6 +456,47 @@ def enhance_parsed_requirement_with_metadata(
         len(cleaned.get("api_endpoints", [])) if isinstance(cleaned.get("api_endpoints"), list) else 0,
     )
     return cleaned, "", ""
+
+
+def _classify_empty_payload_reason(parsed: dict[str, Any], allowed: set[str]) -> str:
+    raw_keys = {str(key) for key in parsed.keys()}
+    if not raw_keys:
+        return "empty_object"
+    if not any(key in allowed for key in raw_keys):
+        if len(raw_keys) == 1 and next(iter(raw_keys)) in _WRAPPED_PAYLOAD_KEYS:
+            return "nested_payload_wrapper"
+        return "no_allowed_top_level_keys"
+
+    non_empty_allowed = False
+    for key in raw_keys & allowed:
+        value = parsed.get(key)
+        if value is None:
+            continue
+        if isinstance(value, str) and not value.strip():
+            continue
+        if isinstance(value, list) and not value:
+            continue
+        if isinstance(value, dict) and not value:
+            continue
+        non_empty_allowed = True
+        break
+    if not non_empty_allowed:
+        return "allowed_keys_but_empty_values"
+    return "filtered_out_by_shape"
+
+
+def _unwrap_supported_payload(parsed: dict[str, Any], allowed: set[str]) -> dict[str, Any]:
+    if any(key in allowed for key in parsed.keys()):
+        return parsed
+    if len(parsed) != 1:
+        return parsed
+    wrapper_key = next(iter(parsed.keys()))
+    if str(wrapper_key) not in _WRAPPED_PAYLOAD_KEYS:
+        return parsed
+    wrapped = parsed.get(wrapper_key)
+    if not isinstance(wrapped, dict):
+        return parsed
+    return wrapped
 
 
 def _classify_gateway_error(exc: ModelGatewayError) -> tuple[str, str]:

@@ -203,7 +203,9 @@ def test_chinese_actions_keep_priority_and_dependency_grouping() -> None:
 
     assert steps[1]["save_context"] == {"token": "json.token"}
     assert steps[2]["uses_context"] == ["token"]
-    assert steps[2]["request"]["auth"] == {"type": "bearer", "token_context": "token"}
+    assert steps[2]["request"]["method"] == "GET"
+    assert steps[2]["request"]["url"] == "/orders"
+    assert steps[2]["request"]["params"] == {"page": 1, "size": 20}
 
 
 def test_api_endpoints_generate_independent_scenarios() -> None:
@@ -311,6 +313,48 @@ def test_login_body_fields_are_extracted_from_requirement_text() -> None:
     dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
     login_step = dsl["scenarios"][0]["steps"][1]
     assert login_step["request"]["json"] == {"username": "demo_user", "password": "demo_pass"}
+
+
+def test_httpbin_cookies_set_infers_default_query_params() -> None:
+    from case_generation import build_scenarios, build_test_case_dsl
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "httpbin cookies",
+        "actors": ["user"],
+        "entities": ["cookie"],
+        "preconditions": [],
+        "actions": [
+            "Scenario: Cookie 链路",
+            "调用 GET /cookies/set",
+            "调用 GET /cookies",
+        ],
+        "expected_results": [
+            "/cookies/set 后再调用 /cookies 应能读到设置的 cookie",
+        ],
+        "constraints": [
+            "请求语义：通过 query 传入 cookie 键值",
+        ],
+        "ambiguities": [],
+        "source_chunks": [],
+        "api_endpoints": [
+            {"method": "GET", "path": "/cookies/set", "description": "设置 cookie"},
+            {"method": "GET", "path": "/cookies", "description": "读取当前请求携带的 cookie"},
+            {"method": "GET", "path": "/cookies/set?name=value", "description": "示例 query 写法"},
+        ],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement, use_llm=False)]
+    dsl = build_test_case_dsl(_build_task_context(), scenarios, parsed_requirement=parsed_requirement)
+    cookie_steps = [
+        step
+        for scenario in dsl["scenarios"]
+        for step in scenario["steps"]
+        if step.get("request", {}).get("url") == "/cookies/set"
+    ]
+
+    assert cookie_steps
+    assert all(step["request"].get("params") == {"name": "value"} for step in cookie_steps)
 
 
 def test_create_task_request_uses_task_id_instead_of_generic_id() -> None:
@@ -1816,7 +1860,7 @@ def test_api_challenges_secret_token_uses_basic_auth_and_header_token() -> None:
 
     assert token_step["request"]["method"] == "POST"
     assert token_step["request"]["url"] == "/secret/token"
-    assert token_step["request"]["auth"] == {"type": "basic", "username": "admin", "password": "password"}
+    assert token_step["request"]["auth"] == {"type": "basic", "username": "admin", "password": "password123"}
     assert token_step["request"]["headers"]["X-CHALLENGER"] == "{{challenger_guid}}"
     assert token_step["save_context"] == {"auth_token": "headers.x-auth-token"}
     assert any(item.get("source") == "headers.x-auth-token" for item in token_step["assertions"] if isinstance(item, dict))
@@ -2109,6 +2153,250 @@ def test_narrative_scenarios_do_not_duplicate_structural_endpoint_coverage() -> 
     assert any(any("POST /booking" in step for step in steps) and any("GET /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
     assert any(any("POST /auth" in step for step in steps) and any("POST /booking" in step for step in steps) and any("DELETE /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
     assert any(any("POST /auth" in step for step in steps) and any("POST /booking" in step for step in steps) and any("GET /booking/{{booking_id}}" in step for step in steps) and any("DELETE /booking/{{booking_id}}" in step for step in steps) for steps in step_sets)
+
+
+def test_jsonplaceholder_fake_rest_scenarios_keep_unique_ids_and_targeted_expectations() -> None:
+    from case_generation import build_scenarios
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "JSONPlaceholder",
+        "actions": [
+            "GET /posts",
+            "GET /posts/{id}",
+            "POST /posts",
+            "PUT /posts/{id}",
+            "PATCH /posts/{id}",
+            "DELETE /posts/{id}",
+            "GET /posts/{id}/comments",
+            "GET /comments?postId={id}",
+        ],
+        "expected_results": [
+            "`GET /posts/{id}` 应返回预置 post 详情",
+            "`POST /posts` 应返回新对象与新 id，但不应作为真实持久化断言依据",
+            "`PUT /posts/{id}` 与 `PATCH /posts/{id}` 应返回更新结果，但不应期望服务器真实改变",
+            "`DELETE /posts/{id}` 应返回删除成功语义，但不应期望真实删除",
+            "`/posts/{id}/comments` 与 `/comments?postId={id}` 应返回等价关联结果",
+        ],
+        "constraints": [
+            "POST /posts 返回创建结果，但不会真正写入服务器",
+            "PUT /posts/{id}、PATCH /posts/{id}、DELETE /posts/{id} 也都是 fake success",
+            "GET /posts/{id} 应返回预置 post 详情，建议使用 post_id=1",
+        ],
+        "api_endpoints": [
+            {"method": "GET", "path": "/posts", "description": "查询 posts 集合", "depends_on": []},
+            {"method": "GET", "path": "/posts/{id}", "description": "读取指定 post", "depends_on": ["/posts"]},
+            {"method": "POST", "path": "/posts", "description": "模拟创建 post", "depends_on": []},
+            {"method": "PUT", "path": "/posts/{id}", "description": "模拟全量更新 post", "depends_on": ["/posts"]},
+            {"method": "PATCH", "path": "/posts/{id}", "description": "模拟部分更新 post", "depends_on": ["/posts"]},
+            {"method": "DELETE", "path": "/posts/{id}", "description": "模拟删除 post", "depends_on": ["/posts"]},
+            {"method": "GET", "path": "/posts/{id}/comments", "description": "读取 comments", "depends_on": ["/posts/{id}"]},
+            {"method": "GET", "path": "/comments?postId={id}", "description": "过滤 comments", "depends_on": []},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    scenario_ids = [scenario.scenario_id for scenario in scenarios]
+    scenario_map = {scenario.name: scenario for scenario in scenarios}
+
+    assert len(scenario_ids) == len(set(scenario_ids))
+    assert "GET /posts" in scenario_map
+    assert "GET /posts/{id}" in scenario_map
+    assert "POST /posts" in scenario_map
+    assert "PUT /posts/{id}" in scenario_map
+    assert "PATCH /posts/{id}" in scenario_map
+    assert "DELETE /posts/{id}" in scenario_map
+    assert "GET /comments?postId={id}" in scenario_map
+    assert scenario_map["GET /posts"].assertions == ["系统返回符合需求的可观察结果"]
+    assert scenario_map["GET /posts/{id}"].assertions == ["`GET /posts/{id}` 应返回预置 post 详情"]
+    assert scenario_map["POST /posts"].assertions == ["`POST /posts` 应返回新对象与新 id，但不应作为真实持久化断言依据"]
+
+
+def test_jsonplaceholder_dsl_uses_known_post_body_and_preloaded_identifier() -> None:
+    from case_generation import build_scenarios, build_test_case_dsl
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "JSONPlaceholder",
+        "actions": [
+            "POST /posts",
+            "PUT /posts/{id}",
+            "PATCH /posts/{id}",
+            "GET /comments?postId={id}",
+        ],
+        "expected_results": [
+            "POST /posts 返回新对象",
+            "PUT /posts/{id} 返回更新结果",
+            "PATCH /posts/{id} 返回部分更新结果",
+            "GET /comments?postId={id} 返回过滤结果",
+        ],
+        "constraints": [
+            "POST /posts 不会真正写入服务器",
+            "PUT /posts/{id} 与 PATCH /posts/{id} 使用官方预置资源，建议使用 post_id=1",
+        ],
+        "api_endpoints": [
+            {"method": "POST", "path": "/posts", "description": "模拟创建 post", "depends_on": []},
+            {"method": "PUT", "path": "/posts/{id}", "description": "模拟全量更新 post", "depends_on": []},
+            {"method": "PATCH", "path": "/posts/{id}", "description": "模拟部分更新 post", "depends_on": []},
+            {"method": "GET", "path": "/comments?postId={id}", "description": "按 postId 过滤 comments", "depends_on": []},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    dsl = build_test_case_dsl(_build_task_context(), scenarios, parsed_requirement=parsed_requirement)
+    steps = {
+        step["text"]: step
+        for scenario in dsl["scenarios"]
+        for step in scenario["steps"]
+        if step["request"]
+    }
+
+    assert steps["POST /posts"]["request"]["json"] == {
+        "title": "write API test",
+        "body": "created by automated test",
+        "userId": 1,
+    }
+    assert steps["PUT /posts/{id}"]["request"]["url"] == "/posts/1"
+    assert steps["PUT /posts/{id}"]["request"]["json"] == {
+        "id": 1,
+        "title": "write API test updated",
+        "body": "updated by automated test",
+        "userId": 1,
+    }
+    assert steps["PATCH /posts/{id}"]["request"]["url"] == "/posts/1"
+    assert steps["PATCH /posts/{id}"]["request"]["json"] == {
+        "title": "write API test updated",
+    }
+    assert steps["GET /comments?postId={id}"]["request"]["url"] == "/comments?postId=1"
+
+
+def test_petstore_dsl_uses_openapi_style_fields_headers_and_context() -> None:
+    from case_generation import build_scenarios, build_test_case_dsl
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Swagger Petstore",
+        "actions": [
+            "POST /user",
+            "GET /user/login",
+            "GET /user/{username}",
+            "POST /store/order",
+            "GET /store/order/{orderId}",
+            "POST /pet",
+            "GET /pet/findByStatus",
+            "GET /pet/{petId}",
+            "DELETE /pet/{petId}",
+        ],
+        "expected_results": [
+            "GET /user/login 应返回登录成功消息",
+            "POST /user 后应能通过 GET /user/{username} 读取到用户",
+            "POST /store/order 后应返回 order 数据，并可被读取",
+            "GET /pet/findByStatus 应按状态返回 pet 列表",
+            "带 api_key: special-key 的 pet 组请求应可作为 header 注入验证样例",
+        ],
+        "constraints": [
+            "GET /user/login query 传 username、password",
+            "User 常用字段包括 id、username、firstName、lastName、email、password",
+            "Order 常用字段包括 id、petId、quantity、shipDate、status、complete",
+            "Pet 至少需要 name、photoUrls",
+            "固定 API Key：api_key: special-key",
+        ],
+        "api_endpoints": [
+            {"method": "POST", "path": "/user", "description": "创建单个用户", "depends_on": []},
+            {"method": "GET", "path": "/user/login", "description": "用户登录", "depends_on": ["/user"]},
+            {"method": "GET", "path": "/user/{username}", "description": "读取指定用户", "depends_on": ["POST /user"]},
+            {"method": "POST", "path": "/store/order", "description": "创建宠物订单", "depends_on": []},
+            {"method": "GET", "path": "/store/order/{orderId}", "description": "读取指定订单", "depends_on": ["POST /store/order"]},
+            {"method": "POST", "path": "/pet", "description": "新增 pet", "depends_on": []},
+            {"method": "GET", "path": "/pet/findByStatus", "description": "按状态筛选 pet", "depends_on": ["/pet"]},
+            {"method": "GET", "path": "/pet/{petId}", "description": "读取指定 pet", "depends_on": ["POST /pet"]},
+            {"method": "DELETE", "path": "/pet/{petId}", "description": "删除指定 pet", "depends_on": ["POST /pet"]},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    dsl = build_test_case_dsl(_build_task_context(), scenarios, parsed_requirement=parsed_requirement)
+    steps = {
+        step["text"]: step
+        for scenario in dsl["scenarios"]
+        for step in scenario["steps"]
+        if step["request"]
+    }
+
+    assert steps["POST /user"]["request"]["json"]["username"] == "demo_user"
+    assert steps["POST /user"]["request"]["json"]["email"] == "demo@example.com"
+    assert steps["POST /user"]["save_context"] == {"username": "request.json.username"}
+    assert steps["GET /user/login"]["request"]["params"] == {"username": "demo_user", "password": "demo_pass"}
+    assert steps["POST /store/order"]["save_context"] == {"order_id": "request.json.id", "resource_id": "request.json.id"}
+    assert steps["GET /store/order/{orderId}"]["request"]["url"] == "/store/order/{{order_id}}"
+    assert steps["POST /pet"]["save_context"] == {"pet_id": "request.json.id", "resource_id": "request.json.id"}
+    assert steps["GET /pet/{petId}"]["request"]["url"] == "/pet/{{pet_id}}"
+    assert steps["DELETE /pet/{petId}"]["request"]["url"] == "/pet/{{pet_id}}"
+    assert steps["POST /pet"]["request"]["headers"]["api_key"] == "special-key"
+    assert steps["GET /pet/findByStatus"]["request"]["headers"]["api_key"] == "special-key"
+    assert steps["GET /pet/findByStatus"]["request"]["params"]["status"] == "available"
+
+
+def test_dummyjson_dsl_uses_known_auth_and_todo_defaults() -> None:
+    from case_generation import build_scenarios, build_test_case_dsl
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "DummyJSON",
+        "actions": [
+            "POST /auth/login",
+            "GET /auth/me",
+            "POST /auth/refresh",
+            "POST /todos/add",
+            "GET /todos/{id}",
+            "GET /todos/user/{id}",
+            "PUT /todos/{id}",
+            "PATCH /todos/{id}",
+        ],
+        "expected_results": [
+            "POST /auth/login 成功后应返回非空 accessToken 与 refreshToken",
+            "GET /auth/me 携带合法 Bearer token 时应返回当前用户信息",
+            "POST /auth/refresh 应返回新的 token 对",
+            "POST /todos/add 应返回新 todo",
+        ],
+        "constraints": [
+            "Authorization: Bearer {{access_token}}",
+            "POST /todos/add 请求语义提交 todo、completed、userId",
+        ],
+        "api_endpoints": [
+            {"method": "POST", "path": "/auth/login", "description": "登录", "depends_on": []},
+            {"method": "GET", "path": "/auth/me", "description": "当前用户", "depends_on": ["accessToken"]},
+            {"method": "POST", "path": "/auth/refresh", "description": "刷新 token", "depends_on": ["refreshToken"]},
+            {"method": "POST", "path": "/todos/add", "description": "模拟创建 todo", "depends_on": []},
+            {"method": "GET", "path": "/todos/{id}", "description": "读取 todo", "depends_on": []},
+            {"method": "GET", "path": "/todos/user/{id}", "description": "按用户查询 todos", "depends_on": []},
+            {"method": "PUT", "path": "/todos/{id}", "description": "更新 todo", "depends_on": []},
+            {"method": "PATCH", "path": "/todos/{id}", "description": "部分更新 todo", "depends_on": []},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    dsl = build_test_case_dsl(_build_task_context(), scenarios, parsed_requirement=parsed_requirement)
+    steps = {
+        step["text"]: step
+        for scenario in dsl["scenarios"]
+        for step in scenario["steps"]
+        if step["request"]
+    }
+
+    assert steps["POST /auth/login"]["request"]["json"] == {"username": "emilys", "password": "emilyspass", "expiresInMins": 30}
+    assert steps["POST /auth/login"]["save_context"] == {"access_token": "json.accessToken", "refresh_token": "json.refreshToken"}
+    assert steps["GET /auth/me"]["request"]["auth"] == {"type": "bearer", "token_context": "access_token"}
+    assert steps["POST /auth/refresh"]["request"]["json"]["refreshToken"] == "{{refresh_token}}"
+    assert steps["POST /todos/add"]["request"]["json"] == {"todo": "write API test", "completed": False, "userId": 5}
+    assert steps["GET /todos/{id}"]["request"]["url"] == "/todos/1"
+    assert steps["GET /todos/user/{id}"]["request"]["url"] == "/todos/user/5"
+    assert steps["PUT /todos/{id}"]["request"]["json"] == {"todo": "write API test updated", "completed": True, "userId": 5}
+    assert steps["PATCH /todos/{id}"]["request"]["json"] == {"completed": True}
 
 
 def main() -> int:

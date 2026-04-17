@@ -95,6 +95,12 @@ _IDENTIFIER_ALIASES: dict[str, tuple[str, ...]] = {
     "task_id": ("task_id", "taskid"),
     "booking_id": ("booking_id", "bookingid"),
     "todo_id": ("todo_id", "todoid"),
+    "user_id": ("user_id", "userid"),
+    "order_id": ("order_id", "orderid"),
+    "pet_id": ("pet_id", "petid"),
+    "username": ("username", "user_name"),
+    "access_token": ("access_token", "accesstoken"),
+    "refresh_token": ("refresh_token", "refreshtoken"),
     "challenger_guid": ("challenger_guid", "challengerguid", "guid"),
     "resource_id": ("resource_id", "resourceid", "id"),
     "session_id": ("session_id", "sessionid"),
@@ -106,6 +112,15 @@ _KNOWN_ENDPOINT_BODY_FIELDS: dict[tuple[str, str], dict[str, object]] = {
     ("POST", "/auth"): {
         "username": "admin",
         "password": "password123",
+    },
+    ("POST", "/auth/login"): {
+        "username": "emilys",
+        "password": "emilyspass",
+        "expiresInMins": 30,
+    },
+    ("POST", "/auth/refresh"): {
+        "refreshToken": "{{refresh_token}}",
+        "expiresInMins": 30,
     },
     ("POST", "/booking"): {
         "firstname": "Jim",
@@ -138,15 +153,68 @@ _KNOWN_ENDPOINT_BODY_FIELDS: dict[tuple[str, str], dict[str, object]] = {
         "doneStatus": False,
         "description": "created by automated test",
     },
+    ("POST", "/todos/add"): {
+        "todo": "write API test",
+        "completed": False,
+        "userId": 5,
+    },
+    ("PUT", "/todos/{todo_id}"): {
+        "todo": "write API test updated",
+        "completed": True,
+        "userId": 5,
+    },
+    ("PATCH", "/todos/{todo_id}"): {
+        "completed": True,
+    },
+    ("POST", "/posts"): {
+        "title": "write API test",
+        "body": "created by automated test",
+        "userId": 1,
+    },
+    ("POST", "/user"): {
+        "id": 10001,
+        "username": "demo_user",
+        "firstName": "Demo",
+        "lastName": "User",
+        "email": "demo@example.com",
+        "password": "demo_pass",
+        "phone": "13800000000",
+        "userStatus": 0,
+    },
+    ("POST", "/store/order"): {
+        "id": 10001,
+        "petId": 20001,
+        "quantity": 1,
+        "shipDate": "2026-04-17T10:00:00.000Z",
+        "status": "placed",
+        "complete": False,
+    },
+    ("POST", "/pet"): {
+        "id": 20001,
+        "category": {"id": 1, "name": "demo-category"},
+        "name": "demo_pet",
+        "photoUrls": ["https://example.com/pet.png"],
+        "tags": [{"id": 1, "name": "demo-tag"}],
+        "status": "available",
+    },
+    ("PUT", "/posts/{resource_id}"): {
+        "id": 1,
+        "title": "write API test updated",
+        "body": "updated by automated test",
+        "userId": 1,
+    },
+    ("PATCH", "/posts/{resource_id}"): {
+        "title": "write API test updated",
+    },
     ("POST", "/todos/{todo_id}"): {
         "title": "write API test updated",
         "doneStatus": True,
         "description": "updated by automated test",
     },
     ("PUT", "/todos/{todo_id}"): {
-        "title": "write API test updated",
-        "doneStatus": True,
-        "description": "updated by automated test",
+        "todo": "write API test updated",
+        "completed": True,
+        "userId": 5,
     },
     ("POST", "/secret/token"): {},
     ("POST", "/secret/note"): {
@@ -178,8 +246,19 @@ _KNOWN_ENDPOINT_BODY_FIELDS: dict[tuple[str, str], dict[str, object]] = {
 _PREFER_KNOWN_FULL_BODY_ENDPOINTS: set[tuple[str, str]] = {
     ("POST", "/challenger"),
     ("POST", "/auth"),
+    ("POST", "/auth/login"),
+    ("POST", "/auth/refresh"),
     ("POST", "/booking"),
     ("POST", "/todos"),
+    ("POST", "/todos/add"),
+    ("POST", "/posts"),
+    ("POST", "/user"),
+    ("POST", "/store/order"),
+    ("POST", "/pet"),
+    ("PUT", "/todos/{todo_id}"),
+    ("PATCH", "/todos/{todo_id}"),
+    ("PUT", "/posts/{resource_id}"),
+    ("PATCH", "/posts/{resource_id}"),
     ("POST", "/todos/{todo_id}"),
     ("PUT", "/todos/{todo_id}"),
     ("PUT", "/booking/{booking_id}"),
@@ -473,10 +552,20 @@ def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[st
     if any(keyword in lowered for keyword in PREVIOUS_CONTEXT_HINTS):
         if "task_id" in saved_context:
             uses_context.append("task_id")
+        if "access_token" in saved_context:
+            uses_context.append("access_token")
+        if "refresh_token" in saved_context:
+            uses_context.append("refresh_token")
         if "token" in saved_context:
             uses_context.append("token")
         if "resource_id" in saved_context:
             uses_context.append("resource_id")
+        if "order_id" in saved_context:
+            uses_context.append("order_id")
+        if "pet_id" in saved_context:
+            uses_context.append("pet_id")
+        if "username" in saved_context:
+            uses_context.append("username")
         if "booking_id" in saved_context:
             uses_context.append("booking_id")
         if "todo_id" in saved_context:
@@ -489,6 +578,16 @@ def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[st
             uses_context.append("session_id")
     if "task_id" in saved_context and ("task_id" in lowered or "{task_id}" in text):
         uses_context.append("task_id")
+    if "access_token" in saved_context and ("access_token" in lowered or "bearer" in lowered or "auth/me" in lowered):
+        uses_context.append("access_token")
+    if "refresh_token" in saved_context and ("refresh_token" in lowered or "refresh" in lowered):
+        uses_context.append("refresh_token")
+    if "order_id" in saved_context and ("order_id" in lowered or "{orderid}" in lowered or "{order_id}" in text):
+        uses_context.append("order_id")
+    if "pet_id" in saved_context and ("pet_id" in lowered or "{petid}" in lowered or "{pet_id}" in text):
+        uses_context.append("pet_id")
+    if "username" in saved_context and ("username" in lowered or "{username}" in text):
+        uses_context.append("username")
     if "booking_id" in saved_context and ("booking_id" in lowered or "{booking_id}" in text):
         uses_context.append("booking_id")
     if "todo_id" in saved_context and ("todo_id" in lowered or "{todo_id}" in text or "{id}" in text):
@@ -503,6 +602,8 @@ def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[st
         uses_context.append("token")
     if "auth_token" in saved_context and ("auth_token" in lowered or "secret" in lowered or "token" in lowered):
         uses_context.append("auth_token")
+    if "access_token" in saved_context and ("token" in lowered or "bearer" in lowered):
+        uses_context.append("access_token")
     if "token" in saved_context and ("token" in lowered or "cookie" in lowered):
         uses_context.append("token")
     if any(keyword in lowered for keyword in SESSION_HINTS) and "session_id" in saved_context:
@@ -603,19 +704,28 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
                 known = _known_endpoint_body(method, resource_path)
                 if known is not None:
                     json_body = known if known else None
+    url = _apply_preloaded_identifier_defaults(url, parsed_requirement, uses_context)
     matched_endpoint = _find_endpoint_spec(parsed_requirement, method, url)
     headers.update(_context_headers_for_request(url, uses_context))
+    headers.update(_infer_fixed_headers(parsed_requirement, url, method, text))
+    params.update(_infer_request_params(parsed_requirement, url, method, text))
     if _requires_basic_auth(text, matched_endpoint, parsed_requirement=parsed_requirement, method=method, path=url):
-        auth = {"type": "basic", "username": "admin", "password": "password"}
+        auth = {"type": "basic", "username": "admin", "password": "password123"}
     if _requires_token_cookie(text, matched_endpoint, parsed_requirement=parsed_requirement, method=method, path=url):
         cookies = {"token": "{{token}}"}
+    if cookies is None and "token" in uses_context and _canonicalize_endpoint_path(url).startswith("/booking/") and method in {"PUT", "PATCH", "DELETE"}:
+        cookies = {"token": "{{token}}"}
+    if cookies is not None:
+        auth = None
 
     if any(keyword in lowered for keyword in BASIC_AUTH_HINTS):
         auth = {"type": "basic", "username": "demo", "password": "secret"}
     elif cookies is None and auth is None and intent != "login" and (
-        "token" in uses_context or any(keyword in lowered for keyword in ("bearer", "token", "令牌"))
+        "access_token" in uses_context
+        or any(keyword in lowered for keyword in ("bearer", "token", "令牌"))
+        or any(str(dep).lower() in {"accesstoken", "access_token"} for dep in ((matched_endpoint or {}).get("depends_on") or []))
     ):
-        auth = {"type": "bearer", "token_context": "token"}
+        auth = {"type": "bearer", "token_context": "access_token" if "access_token" in uses_context else "token"}
     if "session_id" in uses_context:
         cookies = {"session_id": "{{session_id}}"}
 
@@ -690,18 +800,10 @@ def _extract_body_fields(
     values: dict[str, object] = {}
     for field in ordered_fields[:8]:
         lowered = field.lower()
-        if lowered in {"username", "user_name"}:
-            values[field] = "demo_user"
-        elif lowered in {"password", "passwd", "pwd"}:
-            values[field] = "demo_pass"
-        elif lowered in {"nickname", "nick_name"}:
+        if lowered in {"nickname", "nick_name"}:
             values[field] = "demo_nickname"
         elif lowered in {"avatar", "avatar_url"}:
             values[field] = "https://example.com/avatar.png"
-        elif lowered in {"email"}:
-            values[field] = "demo@example.com"
-        elif lowered in {"quantity", "count"}:
-            values[field] = 1
         elif lowered in {"use_llm", "rag_enabled", "rerank_enabled"}:
             values[field] = False
         elif lowered in {"retrieval_top_k"}:
@@ -717,7 +819,13 @@ def _extract_body_fields(
         elif lowered in {"execution_mode"}:
             values[field] = "api"
         else:
-            values[field] = f"demo_{lowered}"
+            values[field] = _default_value_for_field(field)
+    if not values:
+        return values
+    endpoint_hints = _extract_endpoint_field_hints(parsed_requirement, endpoint_path, method)
+    for field in endpoint_hints:
+        if field not in values and len(values) < 10:
+            values[field] = _default_value_for_field(field)
     return values
 
 
@@ -744,6 +852,62 @@ def _extract_field_names_from_sentence(sentence: str) -> list[str]:
             if normalized not in names:
                 names.append(normalized)
     return names
+
+
+def _extract_endpoint_field_hints(parsed_requirement: dict, endpoint_path: str, method: str) -> list[str]:
+    hints: list[str] = []
+    corpus = []
+    corpus.extend(parsed_requirement.get("actions", []))
+    corpus.extend(parsed_requirement.get("expected_results", []))
+    corpus.extend(parsed_requirement.get("constraints", []))
+    for sentence in corpus:
+        if not _sentence_matches_endpoint(str(sentence), endpoint_path, method):
+            continue
+        for field in _extract_field_names_from_sentence(str(sentence)):
+            if field not in hints:
+                hints.append(field)
+    return hints
+
+
+def _default_value_for_field(field: str) -> object:
+    lowered = str(field or "").strip().lower()
+    if lowered in {"username", "user_name"}:
+        return "demo_user"
+    if lowered in {"password", "passwd", "pwd"}:
+        return "demo_pass"
+    if lowered in {"first_name", "firstname"}:
+        return "Demo"
+    if lowered in {"last_name", "lastname"}:
+        return "User"
+    if lowered == "email":
+        return "demo@example.com"
+    if lowered in {"phone", "mobile"}:
+        return "13800000000"
+    if lowered in {"name", "pet_name"}:
+        return "demo_name"
+    if lowered == "title":
+        return "write API test"
+    if lowered == "body":
+        return "created by automated test"
+    if lowered in {"quantity", "count"}:
+        return 1
+    if lowered in {"id", "order_id", "pet_id", "userid", "user_id", "petid"}:
+        return 10001
+    if lowered == "photourls":
+        return ["https://example.com/pet.png"]
+    if lowered == "status":
+        return "available"
+    if lowered == "complete":
+        return False
+    if lowered == "shipdate":
+        return "2026-04-17T10:00:00.000Z"
+    if lowered == "userstatus":
+        return 0
+    if lowered in {"category", "tag", "tags"}:
+        return [{"id": 1, "name": "demo-tag"}] if lowered == "tags" else {"id": 1, "name": "demo-category"}
+    if lowered in {"api_key", "apikey"}:
+        return "special-key"
+    return f"demo_{lowered}"
 
 
 def _normalize_endpoint_path(path: str) -> str:
@@ -890,6 +1054,8 @@ def _requires_basic_auth(
 
     if _canonicalize_endpoint_path(path) == "/secret/token":
         return True
+    if _canonicalize_endpoint_path(path).startswith("/booking/") and str(method or "").upper().strip() in {"PUT", "PATCH", "DELETE"}:
+        return True
     if parsed_requirement:
         target_path = _canonicalize_endpoint_path(path)
         target_method = str(method or "").upper().strip()
@@ -1013,9 +1179,15 @@ def _resource_needs_identifier(text: str) -> bool:
 def _identifier_context_for_path(path: str, uses_context: list[str]) -> str | None:
     canonical_path = _canonicalize_endpoint_path(path)
     placeholders = [match.group(1) for match in _PLACEHOLDER_RE.finditer(canonical_path)]
-    for candidate in ("booking_id", "todo_id", "challenger_guid", "task_id", "session_id", "resource_id"):
+    for candidate in ("username", "order_id", "pet_id", "booking_id", "todo_id", "challenger_guid", "task_id", "session_id", "resource_id"):
         if candidate in placeholders and candidate in uses_context:
             return candidate
+    if "username" in uses_context:
+        return "username"
+    if "order_id" in uses_context:
+        return "order_id"
+    if "pet_id" in uses_context:
+        return "pet_id"
     if "booking_id" in uses_context:
         return "booking_id"
     if "todo_id" in uses_context:
@@ -1046,6 +1218,109 @@ def _context_headers_for_request(path: str, uses_context: list[str]) -> dict[str
     if "auth_token" in uses_context and lowered_path.startswith("/secret/") and lowered_path != "/secret/token":
         headers["X-AUTH-TOKEN"] = "{{auth_token}}"
     return headers
+
+
+def _infer_fixed_headers(parsed_requirement: dict, path: str, method: str, text: str) -> dict[str, str]:
+    headers: dict[str, str] = {}
+    target_path = _canonicalize_endpoint_path(path)
+    target_method = str(method or "").upper().strip()
+    corpus = [str(text or "")]
+    corpus.extend(str(item or "") for item in (parsed_requirement.get("constraints") or []))
+    corpus.extend(str(item or "") for item in (parsed_requirement.get("expected_results") or []))
+    corpus.extend(str(item or "") for item in (parsed_requirement.get("actions") or []))
+    haystack = "\n".join(corpus).lower()
+    if (
+        target_path.startswith("/pet")
+        and "api_key" in haystack
+        and "special-key" in haystack
+        and target_method in {"POST", "GET", "DELETE", "PUT"}
+    ):
+        headers["api_key"] = "special-key"
+    return headers
+
+
+def _infer_request_params(parsed_requirement: dict, path: str, method: str, text: str) -> dict[str, object]:
+    params: dict[str, object] = {}
+    target_path = _canonicalize_endpoint_path(path)
+    target_method = str(method or "").upper().strip()
+    endpoint = _find_endpoint_spec(parsed_requirement, target_method, target_path)
+    corpus = [str(text or "")]
+    corpus.extend(str(item or "") for item in (parsed_requirement.get("constraints") or []))
+    corpus.extend(str(item or "") for item in (parsed_requirement.get("expected_results") or []))
+    corpus.extend(str(item or "") for item in (parsed_requirement.get("actions") or []))
+    for endpoint_item in parsed_requirement.get("api_endpoints") or []:
+        if not isinstance(endpoint_item, dict):
+            continue
+        corpus.extend(
+            str(endpoint_item.get(field) or "")
+            for field in ("path", "description", "group")
+        )
+    joined = "\n".join(corpus).lower()
+    if target_path == "/user/login":
+        params["username"] = "demo_user"
+        params["password"] = "demo_pass"
+    elif target_path == "/cookies/set":
+        if any(token in joined for token in ("query", "cookie 键值", "cookie键值", "name=value", "/cookies/set?name=value")):
+            params["name"] = "value"
+    elif target_method == "GET" and "?" in target_path and not params:
+        query = target_path.split("?", 1)[1]
+        for part in query.split("&"):
+            key, _, value = part.partition("=")
+            canonical = _canonical_placeholder_name(value.strip("{}")) if value else ""
+            if key and canonical:
+                if canonical in {"resource_id", "booking_id", "todo_id", "task_id", "order_id", "pet_id"}:
+                    params[key] = 1
+                elif canonical == "username":
+                    params[key] = "demo_user"
+    if target_path == "/pet/findByStatus" and ("status" in joined or "available" in joined):
+        params["status"] = "available"
+    if endpoint is not None:
+        for field in endpoint.get("request_body_fields") or []:
+            name = str(field.get("name", "") if isinstance(field, dict) else field).strip()
+            if not name:
+                continue
+            lowered = name.lower()
+            if lowered in {"username", "password", "status"} and name not in params:
+                params[name] = _default_value_for_field(name)
+    return params
+
+
+def _requirement_has_preloaded_resource_signal(parsed_requirement: dict, resource_path: str) -> bool:
+    normalized_path = _canonicalize_endpoint_path(resource_path).lower()
+    resource_tokens = [segment for segment in normalized_path.split("/") if segment and "{" not in segment and "}" not in segment]
+    haystack_parts: list[str] = []
+    for key in ("expected_results", "constraints", "preconditions", "actions"):
+        haystack_parts.extend(str(item or "") for item in (parsed_requirement.get(key) or []))
+    for endpoint in parsed_requirement.get("api_endpoints") or []:
+        haystack_parts.extend(str((endpoint or {}).get(field, "")) for field in ("path", "description", "group"))
+    haystack = " ".join(part for part in haystack_parts if part).lower()
+    preload_hints = ("preloaded", "pre-existing", "preexisting", "preset", "预置", "官方预置", "已存在", "建议使用", "默认使用")
+    return any(token and token in haystack for token in resource_tokens) and any(hint in haystack for hint in preload_hints)
+
+
+def _apply_preloaded_identifier_defaults(path: str, parsed_requirement: dict, uses_context: list[str]) -> str:
+    normalized = _normalize_path_placeholders(path, uses_context)
+    if "{{" not in normalized or _identifier_context_for_path(path, uses_context):
+        return normalized
+    canonical_path = _canonicalize_endpoint_path(normalized)
+    explicit_defaults = {
+        "/todos/{todo_id}": "1",
+        "/todos/{resource_id}": "1",
+        "/todos/user/{user_id}": "5",
+        "/todos/user/{resource_id}": "5",
+    }
+    if canonical_path in explicit_defaults:
+        return _PLACEHOLDER_RE.sub(explicit_defaults[canonical_path], normalized)
+    if "?" not in normalized and not _requirement_has_preloaded_resource_signal(parsed_requirement, path):
+        return normalized
+
+    def repl(match: re.Match[str]) -> str:
+        canonical = _canonical_placeholder_name(match.group(1))
+        if canonical in {"resource_id", "booking_id", "todo_id", "task_id"}:
+            return "1"
+        return "{{" + canonical + "}}"
+
+    return _PLACEHOLDER_RE.sub(repl, normalized)
 
 
 def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]:
@@ -1085,6 +1360,11 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
     def _best_identifier_source() -> str:
         endpoint = _candidate_endpoint()
         preferred = (
+            "username",
+            "orderid",
+            "order_id",
+            "petid",
+            "pet_id",
             "bookingid",
             "booking_id",
             "token",
@@ -1102,12 +1382,22 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
             return "json.bookingid"
         if request_url.endswith("/auth"):
             return "json.token"
+        if request_url.endswith("/user"):
+            return "request.json.username"
+        if request_url.endswith("/store/order"):
+            return "request.json.id"
+        if request_url.endswith("/pet"):
+            return "request.json.id"
         if "order" in lowered or request_url == "/orders":
             return "json.order_id"
         return ""
 
     if intent == "login":
         saved: dict[str, str] = {}
+        if request_url.endswith("/auth/login"):
+            saved["access_token"] = "json.accessToken"
+            saved["refresh_token"] = "json.refreshToken"
+            return saved
         if request_url == "/session" or any(keyword in lowered for keyword in SESSION_HINTS):
             saved["session_id"] = "json.session_id"
         if request_url != "/session":
@@ -1118,6 +1408,8 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
             return {"challenger_guid": "headers.x-challenger"}
         if request_url == "/secret/token" and request_method == "POST":
             return {"auth_token": "headers.x-auth-token"}
+        if request_url.endswith("/auth/refresh") and request_method == "POST":
+            return {"access_token": "json.accessToken", "refresh_token": "json.refreshToken"}
         if (
             "/parse" in request_url
             or "/execute" in request_url
@@ -1131,6 +1423,12 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
             return {"todo_id": "json.id", "resource_id": "json.id"}
         identifier = _best_identifier_source()
         if identifier:
+            if request_url.endswith("/user") and request_method == "POST":
+                return {"username": identifier}
+            if request_url.endswith("/store/order") and request_method == "POST":
+                return {"order_id": identifier, "resource_id": identifier}
+            if request_url.endswith("/pet") and request_method == "POST":
+                return {"pet_id": identifier, "resource_id": identifier}
             if request_url.endswith("/booking") and request_method == "POST":
                 return {"booking_id": identifier, "resource_id": identifier}
             return {"resource_id": identifier}
@@ -1153,6 +1451,12 @@ def _normalize_path_placeholders(path: str, uses_context: list[str]) -> str:
 
     def repl(match: re.Match[str]) -> str:
         canonical = _canonical_placeholder_name(match.group(1))
+        if canonical == "username" and "username" in uses_context:
+            return "{{username}}"
+        if canonical == "order_id" and "order_id" in uses_context:
+            return "{{order_id}}"
+        if canonical == "pet_id" and "pet_id" in uses_context:
+            return "{{pet_id}}"
         if canonical == "task_id" and "task_id" in uses_context:
             return "{{task_id}}"
         if canonical == "booking_id" and "booking_id" in uses_context:
@@ -1174,6 +1478,12 @@ def _normalize_path_placeholders(path: str, uses_context: list[str]) -> str:
                 return "{{challenger_guid}}"
             if "task_id" in uses_context:
                 return "{{task_id}}"
+            if "order_id" in uses_context:
+                return "{{order_id}}"
+            if "pet_id" in uses_context:
+                return "{{pet_id}}"
+            if "username" in uses_context:
+                return "{{username}}"
         return "{{" + canonical + "}}"
 
     return _PLACEHOLDER_RE.sub(repl, normalized)

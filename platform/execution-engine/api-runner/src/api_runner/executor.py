@@ -201,6 +201,7 @@ def _execute_request_step(
     context.set("last_response", response_payload)
     context.set("last_status_code", response_payload.get("status_code"))
     context.set("last_request", _summarize_request(request_spec))
+    context.set("last_request_payload", request_spec)
 
     save_context = step.get("save_context") or {}
     saved_context: dict[str, Any] = {}
@@ -324,6 +325,9 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector | requests.
                 if status_code >= 400:
                     response_error = f"HTTP Error {status_code}: {resp.reason or 'Request Failed'}"
                     error_category = _classify_http_error(status_code)
+                if _should_retry_http_status(status_code) and attempt < retries:
+                    time.sleep(_retry_backoff_seconds(attempt))
+                    continue
                 break
 
             req = request.Request(url=url, data=encoded_data, headers=headers, method=method)
@@ -340,6 +344,9 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector | requests.
             response_headers = dict(exc.headers.items())
             response_error = str(exc)
             error_category = _classify_http_error(exc.code)
+            if _should_retry_http_status(exc.code) and attempt < retries:
+                time.sleep(_retry_backoff_seconds(attempt))
+                continue
             break
         except requests.Timeout as exc:
             response_error = str(exc)
@@ -347,21 +354,21 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector | requests.
             error_category = "timeout_error"
             if attempt >= retries:
                 break
-            time.sleep(0.15 * (attempt + 1))
+            time.sleep(_retry_backoff_seconds(attempt))
         except requests.RequestException as exc:
             response_error = str(exc)
             status_code = 0
-            error_category = "network_error"
+            error_category = _classify_requests_error(exc)
             if attempt >= retries:
                 break
-            time.sleep(0.15 * (attempt + 1))
+            time.sleep(_retry_backoff_seconds(attempt))
         except error.URLError as exc:
             response_error = str(exc.reason or exc)
             status_code = 0
             error_category = _classify_url_error(exc)
             if attempt >= retries:
                 break
-            time.sleep(0.15 * (attempt + 1))
+            time.sleep(_retry_backoff_seconds(attempt))
     elapsed_ms = round((time.time() - started) * 1000, 2)
 
     body_text = raw.decode("utf-8", errors="replace")
@@ -524,6 +531,18 @@ def _read_source(source: str, response_payload: dict, context: ContextBus, defau
         return _read_header(response_payload.get("headers", {}), source[7:].strip("[]'\""), default)
     if source.startswith("context."):
         return context.get(source[8:], default)
+    if source == "request":
+        return context.get("last_request_payload", default)
+    if source.startswith("request."):
+        request_payload = context.get("last_request_payload")
+        if request_payload is None:
+            return default
+        return _read_json_path(request_payload, source[8:], default)
+    if source.startswith("request["):
+        request_payload = context.get("last_request_payload")
+        if request_payload is None:
+            return default
+        return _read_json_path(request_payload, source[7:].strip("[]'\""), default)
     return default
 
 
@@ -946,8 +965,12 @@ def _collect_assertion_inventory(test_case_dsl: dict[str, Any]) -> dict[str, Any
 
 
 def _classify_http_error(status_code: int) -> str:
+    if status_code == 429:
+        return "rate_limit_error"
     if status_code in {401, 403}:
         return "auth_error"
+    if status_code in {502, 503, 504}:
+        return "upstream_error"
     if 400 <= status_code < 500:
         return "http_client_error"
     if 500 <= status_code < 600:
@@ -960,6 +983,24 @@ def _classify_url_error(exc: error.URLError) -> str:
     if isinstance(reason, TimeoutError) or isinstance(reason, socket.timeout):
         return "timeout_error"
     return "network_error"
+
+
+def _classify_requests_error(exc: requests.RequestException) -> str:
+    if isinstance(exc, requests.Timeout):
+        return "timeout_error"
+    if isinstance(exc, requests.SSLError):
+        return "tls_error"
+    if isinstance(exc, requests.ConnectionError):
+        return "network_error"
+    return "request_error"
+
+
+def _should_retry_http_status(status_code: int) -> bool:
+    return status_code in {408, 409, 425, 429, 500, 502, 503, 504}
+
+
+def _retry_backoff_seconds(attempt: int) -> float:
+    return 0.15 * (attempt + 1)
 
 
 def _classify_exception(exc: Exception) -> str:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass
 from math import ceil
@@ -14,6 +15,7 @@ from .chunker import chunk_text
 from .contract_knowledge import build_contract_chunks
 from .document_loader import load_document
 from .document_parser import parse_document
+from .knowledge_library import load_curated_knowledge_chunks
 from .knowledge_index import build_index
 from .openai_enhancement import OpenAIEnhancementConfig
 from .api_requirement_parser import parse_requirement as parse_requirement_rules
@@ -21,6 +23,25 @@ from .retriever import get_retrieval_scoring_config, retrieve_relevant_chunks
 
 _REALTIME_DOC_CHAR_LIMIT = 20_000
 _BATCH_DOC_CHAR_LIMIT = 100_000
+_RETRIEVAL_QUERY_MAX_CHARS = 2_400
+_RETRIEVAL_ENDPOINT_RE = re.compile(
+    r"\b(GET|POST|PUT|PATCH|DELETE)\s+(/[\w/\-{}:.?=&%]+)",
+    re.IGNORECASE,
+)
+_PLATFORM_CONTRACT_HINT_RE = re.compile(r"/api/tasks(?:/[^{\s`]+|\b)|/api/tasks/\{task_id\}|task-center|任务中心", re.IGNORECASE)
+_RETRIEVAL_HINTS = (
+    "Scenario:",
+    "接口：",
+    "**涉及接口:**",
+    "**关键依赖:**",
+    "**资源来源:**",
+    "鉴权接口：",
+    "会话初始化接口：",
+    "受保护资源令牌接口：",
+    "注入方式：",
+    "资源来源：",
+    "资源前置条件：",
+)
 
 
 @dataclass(slots=True)
@@ -74,8 +95,9 @@ def parse_requirement_bundle(
     document = parse_document(raw_text)
     t_after_document = time.perf_counter()
     chunks = chunk_text(document.get("cleaned_text", ""), source_file=source_path or "")
-    contract_extra = build_contract_chunks(contract_cfg)
-    chunks = list(chunks) + contract_extra
+    contract_extra = build_contract_chunks(contract_cfg) if _should_include_contract_knowledge(raw_text, document.get("cleaned_text", "")) else []
+    curated_knowledge = load_curated_knowledge_chunks(raw_text=raw_text, cleaned_text=document.get("cleaned_text", ""))
+    chunks = list(chunks) + contract_extra + curated_knowledge
     sizing_metadata = _build_document_sizing_metadata(
         raw_text=raw_text,
         cleaned_text=document.get("cleaned_text", ""),
@@ -88,7 +110,7 @@ def parse_requirement_bundle(
         embedding_config=enhancement_config,
     )
     t_after_index = time.perf_counter()
-    query = requirement_text.strip() or document.get("cleaned_text", "")
+    query = _build_retrieval_query(requirement_text, document.get("cleaned_text", ""))
     retrieval_scoring = get_retrieval_scoring_config()
     retrieval_diagnostics: dict[str, Any] = {}
     boost = contract_cfg.official_score_boost if contract_cfg.enabled else 0.0
@@ -205,8 +227,11 @@ def parse_requirement_bundle(
         "llm_error_type": llm_error_type or "",
         "llm_provider_profile": "tencent_hunyuan_openai_compat",
         "model_profile": parse_options.model_profile,
+        "llm_response_diagnostics": llm_diagnostics.get("llm_response_diagnostics") or {},
         "retrieval_mode": index.get("retrieval_mode", "keyword"),
         "retrieval_top_k": parse_options.retrieval_top_k,
+        "retrieval_query_preview": query[:600],
+        "retrieval_query_char_count": len(query),
         "rerank_enabled": parse_options.rerank_enabled,
         "retrieval_metrics": _build_retrieval_metrics(
             retrieval_items,
@@ -217,9 +242,17 @@ def parse_requirement_bundle(
         ),
         "contract_knowledge": {
             "enabled": contract_cfg.enabled,
+            "applied": bool(contract_extra),
             "merged_snippet_count": len(contract_extra),
             "official_score_boost": boost,
             "min_retrieval_score": min_score,
+        },
+        "knowledge_base": {
+            "enabled": True,
+            "applied": bool(curated_knowledge),
+            "merged_snippet_count": len(curated_knowledge),
+            "doc_types": sorted({chunk.doc_type for chunk in curated_knowledge if getattr(chunk, "doc_type", "")}),
+            "source_files": sorted({chunk.source_file for chunk in curated_knowledge if getattr(chunk, "source_file", "")}),
         },
         "retrieval_scoring": retrieval_scoring.to_dict(),
         "performance": performance,
@@ -317,6 +350,49 @@ def _dedupe_chunks(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
             seen.add(key)
         deduped.append(item)
     return deduped
+
+
+def _build_retrieval_query(requirement_text: str, cleaned_text: str) -> str:
+    text = (cleaned_text or requirement_text or "").strip()
+    if not text:
+        return ""
+
+    parts: list[str] = []
+    heading_match = re.search(r"^\s*#\s+(.+)$", text, re.MULTILINE)
+    if heading_match:
+        parts.append(heading_match.group(1).strip())
+
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("###") and ("Scenario:" in stripped or "接口：" in stripped):
+            parts.append(stripped.lstrip("#").strip())
+            continue
+        if any(hint in stripped for hint in _RETRIEVAL_HINTS):
+            parts.append(stripped)
+
+    endpoint_tokens: list[str] = []
+    for match in _RETRIEVAL_ENDPOINT_RE.finditer(text):
+        endpoint = f"{match.group(1).upper()} {match.group(2)}"
+        if endpoint not in endpoint_tokens:
+            endpoint_tokens.append(endpoint)
+        if len(endpoint_tokens) >= 16:
+            break
+    if endpoint_tokens:
+        parts.append("显式接口: " + " | ".join(endpoint_tokens))
+
+    query = "\n".join(_dedupe_strings(parts))
+    if not query:
+        query = text
+    if len(query) < 400:
+        query = f"{query}\n{text[:800]}".strip()
+    return query[:_RETRIEVAL_QUERY_MAX_CHARS]
+
+
+def _should_include_contract_knowledge(raw_text: str, cleaned_text: str) -> bool:
+    text = f"{raw_text or ''}\n{cleaned_text or ''}"
+    return bool(_PLATFORM_CONTRACT_HINT_RE.search(text))
 
 
 def _build_retrieval_metrics(

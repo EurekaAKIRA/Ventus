@@ -736,7 +736,25 @@ def _derive_objective(requirement_text: str, candidate_points: list[dict]) -> st
 
 def _merge_context(requirement_text: str, retrieved_context: list[dict]) -> str:
     parts = [requirement_text.strip()]
-    for item in retrieved_context[:3]:
+
+    def _priority(item: dict[str, Any], index: int) -> tuple[float, float, int]:
+        title = str(item.get("section_title", "") or "")
+        lowered_title = title.lower()
+        content = str(item.get("content", "") or "")
+        doc_type = str(item.get("doc_type", "") or "")
+        score = 0.0
+        if not doc_type:
+            score += 2.0
+        if "接口" in title or "scenario" in lowered_title or "鉴权" in title or "资源" in title:
+            score += 2.0
+        if _EXPLICIT_ENDPOINT_RE.search(content) or "路径：" in content or "**涉及接口:**" in content:
+            score += 1.5
+        if title in {"文档定位", "预期效果"}:
+            score -= 1.0
+        return (score, float(item.get("score", 0.0) or 0.0), -index)
+
+    ranked = sorted(enumerate(retrieved_context), key=lambda pair: _priority(pair[1], pair[0]), reverse=True)
+    for _, item in ranked[:4]:
         content = item.get("content", "").strip()
         if content and content not in parts:
             parts.append(content)
@@ -890,6 +908,7 @@ def parse_requirement(
         else:
             try:
                 enhancement_phase_ms: dict[str, float] = {}
+                llm_response_diagnostics: dict[str, Any] = {}
                 llm_payload, fallback_reason, llm_error_type = enhance_parsed_requirement_with_metadata(
                     requirement_text=base_text or merged_text,
                     retrieved_context=context_for_llm,
@@ -905,8 +924,11 @@ def parse_requirement(
                     },
                     config=llm_config,
                     out_phase_timings_ms=enhancement_phase_ms,
+                    out_response_diagnostics=llm_response_diagnostics,
                 )
                 diagnostics["enhancement_phase_timings_ms"] = enhancement_phase_ms
+                if llm_response_diagnostics:
+                    diagnostics["llm_response_diagnostics"] = llm_response_diagnostics
                 if llm_payload:
                     llm_merged = llm_payload
                     diagnostics["llm_applied"] = True

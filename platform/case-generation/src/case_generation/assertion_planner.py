@@ -412,15 +412,19 @@ class RuleAssertionBuilder:
         url = str(self.request.get("url", ""))
         lowered_text = str(self.step.get("text", "")).lower()
         if self.intent == "login":
-            assertions.append(_assertion("json.token", "exists", None, "critical", "field_presence", 0.95, "login_token_expected", "rules"))
+            login_sources = [str(source) for source in self.save_context.values()]
+            if any(source.endswith(".token") for source in login_sources) or any(token in lowered_text for token in ("token", "bearer", "jwt")):
+                assertions.append(_assertion("json.token", "exists", None, "critical", "field_presence", 0.95, "login_token_expected", "rules"))
+            elif not non_json_response:
+                assertions.append(_assertion("json", "exists", None, "major", "schema", 0.76, "login_response_present", "rules"))
+            else:
+                assertions.append(_assertion("body_text", "exists", None, "major", "text", 0.7, "login_body_present", "rules"))
             if "session" in lowered_text or "session" in url:
                 assertions.append(_assertion("headers.set-cookie", "exists", None, "major", "field_presence", 0.85, "login_session_expected", "rules"))
         if self.intent == "create":
             if any(token in url for token in ("/parse", "/execute", "/execution/stop", "/scenarios/generate")):
                 return assertions
-            if "order" in lowered_text or "/orders" in url:
-                assertions.append(_assertion("json.order_id", "exists", None, "critical", "field_presence", 0.91, "order_create_identifier", "rules"))
-            elif url.endswith("/tasks"):
+            if url.endswith("/tasks"):
                 assertions.append(_assertion("json.data.task_id", "exists", None, "critical", "field_presence", 0.94, "task_create_identifier", "rules"))
             elif url.endswith("/booking"):
                 assertions.append(_assertion("json.bookingid", "exists", None, "critical", "field_presence", 0.94, "booking_create_identifier", "rules"))
@@ -443,7 +447,7 @@ class RuleAssertionBuilder:
             assertions.append(_assertion("error", "not_exists", None, "major", "business", 0.68, "delete_no_runtime_error", "rules"))
 
         for field in _extract_known_fields(self.parsed_requirement, self.step, self.request):
-            if field.lower() in {"token", "task_id", "order_id", "session_id", "booking_id", "bookingid", "resource_id", "id"}:
+            if field.lower() in {"token", "task_id", "order_id", "pet_id", "username", "session_id", "booking_id", "bookingid", "resource_id", "id", "user"}:
                 continue
             if self.intent in {"query", "update"}:
                 assertions.append(_assertion(f"json.{field}", "exists", None, "major", "field_presence", 0.72, "expected_field_present", "rules"))
@@ -603,6 +607,9 @@ def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, An
         if not expects_json_envelope(req_url) or _is_simple_endpoint(req_url):
             return []
     capability = _request_capability(request or {}, parsed_requirement, "")
+    endpoint_fields = _endpoint_response_fields(parsed_requirement, request or {})
+    if capability == "auth":
+        return endpoint_fields[:8]
     if capability == "filter":
         return []
     text = " ".join(
@@ -615,15 +622,16 @@ def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, An
     fields: list[str] = []
     for groups in FIELD_TOKEN_RE.findall(text):
         token = next((item for item in groups if item), "").strip()
-        if token and token.lower() not in ASSERTION_FIELD_STOPWORDS and token not in fields:
+        if token and token.lower() not in ASSERTION_FIELD_STOPWORDS and token.lower() != "user" and token not in fields:
             fields.append(token)
     for token in FIELD_NAME_RE.findall(text):
         lowered = token.lower()
         if lowered in ASSERTION_FIELD_STOPWORDS or lowered in {"get", "post", "put", "patch", "delete", "http"}:
             continue
+        if lowered == "user":
+            continue
         if token not in fields and any(keyword in lowered for keyword in ("token", "session", "user", "profile", "order", "task", "nick", "name", "id", "items", "roles")):
             fields.append(token)
-    endpoint_fields = _endpoint_response_fields(parsed_requirement, request or {})
     for field in endpoint_fields:
         if field not in fields:
             fields.append(field)
@@ -631,7 +639,7 @@ def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, An
     if placeholder_fields:
         fields = [field for field in fields if field.lower() not in placeholder_fields or field in endpoint_fields]
     if capability == "list":
-        fields = [field for field in fields if field.lower() in {"id", "bookingid", "booking_id", "order_id", "task_id", "resource_id"}]
+        fields = [field for field in fields if field.lower() in {"id", "bookingid", "booking_id", "order_id", "pet_id", "username", "task_id", "resource_id"}]
     filtered = _filter_known_fields_for_request(fields[:8], request or {})
     return filtered
 
@@ -653,6 +661,10 @@ def _is_allowed_source_for_request(source: str, request: dict[str, Any]) -> bool
     normalized_source = source.strip().lower()
     if not normalized_source:
         return False
+    if normalized_source == "request":
+        return True
+    if normalized_source.startswith("request.") or normalized_source.startswith("request["):
+        return True
     if normalized_source.startswith("context."):
         return True
     if normalized_source.startswith("response."):
@@ -760,6 +772,12 @@ def _infer_collection_source(request: dict[str, Any], step: dict[str, Any]) -> s
 
 def _canonical_placeholder_name(name: str) -> str:
     lowered = str(name or "").strip().lower()
+    if lowered in {"username", "user_name"}:
+        return "username"
+    if lowered in {"orderid", "order_id"}:
+        return "order_id"
+    if lowered in {"petid", "pet_id"}:
+        return "pet_id"
     if lowered in {"bookingid", "booking_id", "id"}:
         return "booking_id"
     if lowered in {"todoid", "todo_id"}:
@@ -825,6 +843,15 @@ def _request_capability(request: dict[str, Any], parsed_requirement: dict[str, A
     if method == "GET" and "?" in path and "=" in path:
         return "filter"
     has_placeholder = "{" in path and "}" in path
+    path_parts = [part for part in path.split("/") if part]
+    if (
+        method == "GET"
+        and has_placeholder
+        and path_parts
+        and path_parts[-1].startswith("{")
+        and len([part for part in path_parts if not part.startswith("{")]) >= 2
+    ):
+        return "filter"
     if method == "GET" and not has_placeholder:
         return "list"
     if method == "POST":
@@ -907,6 +934,9 @@ def _endpoint_placeholder_fields(parsed_requirement: dict[str, Any], request: di
         for match in PLACEHOLDER_SEGMENT_RE.finditer(path)
     }
     aliases = {
+        "username": {"username", "user_name"},
+        "order_id": {"order_id", "orderid", "id"},
+        "pet_id": {"pet_id", "petid", "id"},
         "booking_id": {"booking_id", "bookingid", "id"},
         "todo_id": {"todo_id", "todoid", "id"},
         "challenger_guid": {"challenger_guid", "challengerguid", "guid"},

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
@@ -28,6 +29,15 @@ def envelope_server():
 
     class H(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
+            body = {"success": True, "code": "OK", "data": {"task_id": "t-env-1"}}
+            raw = json.dumps(body).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
+        def do_POST(self) -> None:  # noqa: N802
             body = {"success": True, "code": "OK", "data": {"task_id": "t-env-1"}}
             raw = json.dumps(body).encode()
             self.send_response(200)
@@ -123,3 +133,41 @@ def test_save_context_reads_envelope_data(envelope_server):
     assert step2["status"] == "passed"
 
 
+def test_save_context_reads_request_payload(envelope_server):
+    from api_runner.executor import execute_test_case_dsl
+
+    dsl = {
+        "dsl_version": "0.2.0",
+        "task_id": "t3",
+        "task_name": "t3",
+        "feature_name": "t3",
+        "execution_mode": "api",
+        "metadata": {"execution": {"base_url": envelope_server}},
+        "scenarios": [
+            {
+                "scenario_id": "s1",
+                "name": "post and reuse request field",
+                "steps": [
+                    {
+                        "step_id": "s1_1",
+                        "step_type": "when",
+                        "text": "create user",
+                        "request": {"method": "POST", "url": "/x", "json": {"username": "demo_user"}, "retries": 0},
+                        "save_context": {"username": "request.json.username"},
+                        "assertions": [{"source": "status_code", "op": "eq", "expected": 200}],
+                    },
+                    {
+                        "step_id": "s1_2",
+                        "step_type": "then",
+                        "text": "ctx",
+                        "uses_context": ["username"],
+                        "assertions": [],
+                    },
+                ],
+            }
+        ],
+    }
+    result = execute_test_case_dsl(dsl)
+    assert result["status"] == "passed"
+    step1 = result["scenario_results"][0]["steps"][0]
+    assert step1["saved_context"]["username"] == "demo_user"

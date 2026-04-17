@@ -1,0 +1,114 @@
+{
+  "entries": [
+    {
+      "knowledge_id": "api_requirement_spec_v1",
+      "path": "standards/api_requirement_spec_v1.md",
+      "title": "API Requirement Spec v1",
+      "knowledge_type": "standard",
+      "domain": "generic",
+      "source_scope": "global",
+      "priority": "high",
+      "activation_conditions": ["api_document"],
+      "tags": ["spec", "structure", "scenario", "api_document"]
+    },
+    {
+      "knowledge_id": "dependency_lifecycle",
+      "path": "generation_rules/dependency_lifecycle.md",
+      "title": "Dependency Lifecycle Rules",
+      "knowledge_type": "generation_rule",
+      "domain": "generic",
+      "source_scope": "global",
+      "priority": "high",
+      "activation_conditions": ["api_document", "resource_lifecycle_present", "placeholder_path_present"],
+      "tags": ["dependency", "lifecycle", "resource"]
+    },
+    {
+      "knowledge_id": "auth_propagation",
+      "path": "generation_rules/auth_propagation.md",
+      "title": "Auth Propagation Rules",
+      "knowledge_type": "generation_rule",
+      "domain": "generic",
+      "source_scope": "global",
+      "priority": "high",
+      "activation_conditions": ["auth_present"],
+      "tags": ["auth", "token", "header", "cookie"]
+    },
+    {
+      "knowledge_id": "assertion_guardrails",
+      "path": "generation_rules/assertion_guardrails.md",
+      "title": "Assertion Guardrails",
+      "knowledge_type": "generation_rule",
+      "domain": "generic",
+      "source_scope": "global",
+      "priority": "medium",
+      "activation_conditions": ["api_document"],
+      "tags": ["assertion", "response", "quality"]
+    },
+    {
+      "knowledge_id": "missing_resource_source",
+      "path": "failure_patterns/missing_resource_source.md",
+      "title": "Missing Resource Source Pattern",
+      "knowledge_type": "failure_pattern",
+      "domain": "generic",
+      "source_scope": "global",
+      "priority": "high",
+      "activation_conditions": ["placeholder_path_present", "resource_lifecycle_present"],
+      "tags": ["resource", "dependency", "failure"]
+    },
+    {
+      "knowledge_id": "placeholder_field_pollution",
+      "path": "failure_patterns/placeholder_field_pollution.md",
+      "title": "Placeholder Field Pollution Pattern",
+      "knowledge_type": "failure_pattern",
+      "domain": "generic",
+      "source_scope": "global",
+      "priority": "medium",
+      "activation_conditions": ["placeholder_path_present"],
+      "tags": ["placeholder", "assertion", "path_param"]
+    },
+    {
+      "knowledge_id": "truncated_input_detection",
+      "path": "failure_patterns/truncated_input_detection.md",
+      "title": "Truncated Input Pattern",
+      "knowledge_type": "failure_pattern",
+      "domain": "generic",
+      "source_scope": "global",
+      "priority": "medium",
+      "activation_conditions": ["api_document"],
+      "tags": ["truncation", "input_quality", "parser"]
+    },
+    {
+      "knowledge_id": "task_center_platform",
+      "path": "domain/platform/task_center_api.md",
+      "title": "Task Center API Knowledge",
+      "knowledge_type": "domain_fact",
+      "domain": "platform",
+      "source_scope": "platform_only",
+      "priority": "high",
+      "activation_conditions": ["platform_doc"],
+      "tags": ["task_center", "platform", "api_tasks"]
+    },
+    {
+      "knowledge_id": "restful_booker",
+      "path": "domain/external/restful_booker.md",
+      "title": "Restful Booker Domain Knowledge",
+      "knowledge_type": "domain_fact",
+      "domain": "external_api",
+      "source_scope": "task_only",
+      "priority": "medium",
+      "activation_conditions": ["restful_booker_doc"],
+      "tags": ["restful_booker", "booking", "auth"]
+    },
+    {
+      "knowledge_id": "api_challenges",
+      "path": "domain/external/api_challenges.md",
+      "title": "API Challenges Domain Knowledge",
+      "knowledge_type": "domain_fact",
+      "domain": "external_api",
+      "source_scope": "task_only",
+      "priority": "medium",
+      "activation_conditions": ["api_challenges_doc"],
+      "tags": ["api_challenges", "challenger", "todos", "token"]
+    }
+  ]
+}

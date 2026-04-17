@@ -21,6 +21,8 @@ def test_parse_service_baseline() -> None:
     assert result["parse_metadata"]["rag_enabled"] is True
     assert result["parse_metadata"]["rag_used"] is True
     assert result["parse_metadata"]["retrieval_top_k"] == 5
+    assert result["parse_metadata"]["retrieval_query_char_count"] > 0
+    assert "retrieval_query_preview" in result["parse_metadata"]
     assert result["parse_metadata"]["retrieval_scoring"]["lexical_weight"] > 0
     assert result["parse_metadata"]["document_char_count"] > 0
     assert result["parse_metadata"]["chunk_count"] > 0
@@ -28,7 +30,12 @@ def test_parse_service_baseline() -> None:
     assert "embedding_error_detail" in result["parse_metadata"]["retrieval_metrics"]
     ck = result["parse_metadata"]["contract_knowledge"]
     assert ck["enabled"] is True
-    assert ck["merged_snippet_count"] >= 1
+    assert ck["applied"] is False
+    assert ck["merged_snippet_count"] == 0
+    kb = result["parse_metadata"]["knowledge_base"]
+    assert kb["enabled"] is True
+    assert kb["applied"] is False
+    assert kb["merged_snippet_count"] == 0
     assert result["parse_metadata"]["retrieval_metrics"]["retrieval_low_score_rejection"] is False
 
 
@@ -57,7 +64,11 @@ def test_parse_service_llm_response_invalid_fallback(monkeypatch) -> None:
     monkeypatch.setenv("HUNYUAN_API_KEY", "test-key")
     monkeypatch.setattr(
         "requirement_analysis.api_requirement_parser.enhance_parsed_requirement_with_metadata",
-        lambda **_: (None, "llm_response_invalid", "ModelGatewayResponseError"),
+        lambda **kwargs: (
+            kwargs.get("out_response_diagnostics", {}).update({"empty_payload_reason": "nested_payload_wrapper"}) or None,
+            "llm_response_invalid",
+            "ModelGatewayResponseError",
+        ),
     )
     result = parse_requirement_bundle(
         requirement_text="用户提交订单后应返回订单号",
@@ -72,6 +83,32 @@ def test_parse_service_llm_response_invalid_fallback(monkeypatch) -> None:
     assert metadata["parse_mode"] == "rules"
     assert metadata["fallback_reason"] == "llm_response_invalid"
     assert metadata["llm_error_type"] == "ModelGatewayResponseError"
+    assert metadata["llm_response_diagnostics"]["empty_payload_reason"] == "nested_payload_wrapper"
+
+
+def test_parse_service_llm_wrapped_payload_can_be_applied(monkeypatch) -> None:
+    monkeypatch.setenv("HUNYUAN_API_KEY", "test-key")
+    monkeypatch.setattr(
+        "requirement_analysis.api_requirement_parser.enhance_parsed_requirement_with_metadata",
+        lambda **kwargs: (
+            {"objective": "包装结果", "actions": ["创建任务"]},
+            "",
+            "",
+        ),
+    )
+    result = parse_requirement_bundle(
+        requirement_text="用户提交订单后应返回订单号",
+        options=AnalysisParseOptions(
+            use_llm=True,
+            rag_enabled=False,
+            retrieval_top_k=3,
+            rerank_enabled=False,
+        ),
+    )
+    metadata = result["parse_metadata"]
+    assert metadata["parse_mode"] == "llm"
+    assert metadata["llm_used"] is True
+    assert result["parsed_requirement"]["objective"] == "包装结果"
 
 
 def test_parse_service_llm_timeout_fallback(monkeypatch) -> None:
@@ -177,3 +214,61 @@ def test_parse_service_flags_suspiciously_truncated_input() -> None:
     assert result["validation_report"]["passed"] is False
     assert any("疑似被截断" in item for item in result["validation_report"]["errors"])
     assert any("疑似被截断" in item for item in result["parsed_requirement"]["ambiguities"])
+
+
+def test_parse_service_retrieval_query_prefers_structured_api_signals() -> None:
+    result = parse_requirement_bundle(
+        requirement_text="""
+        # Restful Booker E2E2 Plus
+
+        ## 鉴权与全局约束
+        - 鉴权接口：`POST /auth`
+
+        ## 接口清单
+        ### 接口：创建 booking
+        - 方法：`POST`
+        - 路径：`/booking`
+
+        ### Scenario: Booking 生命周期管理
+        **涉及接口:** `POST /auth`、`POST /booking`、`DELETE /booking/{id}`
+        """,
+        options=AnalysisParseOptions(
+            use_llm=False,
+            rag_enabled=False,
+            retrieval_top_k=3,
+            rerank_enabled=False,
+        ),
+    )
+
+    preview = result["parse_metadata"]["retrieval_query_preview"]
+    assert "Restful Booker E2E2 Plus" in preview
+    assert "Scenario: Booking 生命周期管理" in preview
+    assert "POST /auth" in preview
+    assert "POST /booking" in preview
+
+
+def test_parse_service_applies_contract_knowledge_only_for_platform_docs() -> None:
+    result = parse_requirement_bundle(
+        requirement_text="""
+        # Task Center 主链路
+
+        ## 接口基线
+        - `POST /api/tasks`
+        - `GET /api/tasks/{task_id}`
+        - `POST /api/tasks/{task_id}/execute`
+        """,
+        options=AnalysisParseOptions(
+            use_llm=False,
+            rag_enabled=False,
+            retrieval_top_k=3,
+            rerank_enabled=False,
+        ),
+    )
+
+    ck = result["parse_metadata"]["contract_knowledge"]
+    assert ck["enabled"] is True
+    assert ck["applied"] is True
+    assert ck["merged_snippet_count"] >= 1
+    kb = result["parse_metadata"]["knowledge_base"]
+    assert kb["applied"] is True
+    assert any(path.endswith("domain/platform/task_center_api.md") for path in kb["source_files"])

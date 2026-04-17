@@ -39,6 +39,35 @@ _GENERIC_EXPECTATION_HINTS = (
     "主链路联调需求说明",
     "当前实现对齐版",
 )
+_NON_PERSISTENT_HINTS = (
+    "fake rest api",
+    "fake success",
+    "not persistent",
+    "non-persistent",
+    "不会真正写入服务器",
+    "不会真正写入",
+    "不真正写入服务器",
+    "不真正写入",
+    "不真正改写服务器状态",
+    "不应作为真实持久化断言依据",
+    "不应期望真实改变",
+    "不应期望真实删除",
+)
+_PRELOADED_RESOURCE_HINTS = (
+    "preloaded",
+    "pre-existing",
+    "preexisting",
+    "preset resource",
+    "official preset",
+    "existing resource",
+    "资源来源",
+    "官方预置",
+    "预置",
+    "预先存在",
+    "已存在",
+    "默认使用",
+    "建议使用",
+)
 _NARRATIVE_KEYWORDS = (
     "main flow",
     "workflow",
@@ -157,6 +186,55 @@ def _build_scenario(
     return scenario.to_dict()
 
 
+def _iter_requirement_texts(parsed_requirement: dict) -> list[str]:
+    texts: list[str] = []
+    objective = str(parsed_requirement.get("objective", "")).strip()
+    if objective:
+        texts.append(objective)
+    for key in ("preconditions", "actions", "expected_results", "constraints"):
+        for item in parsed_requirement.get(key) or []:
+            text = str(item or "").strip()
+            if text:
+                texts.append(text)
+    for endpoint in parsed_requirement.get("api_endpoints") or []:
+        for key in ("path", "description", "group"):
+            text = str((endpoint or {}).get(key, "")).strip()
+            if text:
+                texts.append(text)
+    return texts
+
+
+def _resource_related_texts(parsed_requirement: dict, resource: str) -> list[str]:
+    normalized_resource = str(resource or "").strip().lower()
+    if not normalized_resource:
+        return []
+    aliases = {
+        normalized_resource,
+        normalized_resource.rstrip("s"),
+        f"{normalized_resource}_id",
+        f"/{normalized_resource}",
+    }
+    return [text for text in _iter_requirement_texts(parsed_requirement) if any(alias and alias in text.lower() for alias in aliases)]
+
+
+def _resource_is_non_persistent(parsed_requirement: dict, resource: str) -> bool:
+    haystack = " ".join(_resource_related_texts(parsed_requirement, resource)).lower()
+    return bool(haystack) and any(hint in haystack for hint in _NON_PERSISTENT_HINTS)
+
+
+def _endpoint_has_preloaded_resource_source(endpoint: dict, parsed_requirement: dict) -> bool:
+    capability = _endpoint_capability(endpoint)
+    path = _canonicalize_endpoint_path(str(endpoint.get("path", "")))
+    if capability not in {"detail", "replace", "patch", "delete"} and not _is_querystring_filter_endpoint(endpoint):
+        return False
+    if "{" not in path or "}" not in path:
+        return False
+    if _is_querystring_filter_endpoint(endpoint):
+        return True
+    haystack = " ".join(_resource_related_texts(parsed_requirement, _resource_key(endpoint))).lower()
+    return bool(haystack) and any(hint in haystack for hint in _PRELOADED_RESOURCE_HINTS)
+
+
 def _group_actions(actions: list[str]) -> list[list[str]]:
     grouped_actions: list[list[str]] = []
     index = 0
@@ -186,12 +264,12 @@ def _build_action_for_endpoint(endpoint: dict, actions: list[str]) -> str:
 
     for action in actions:
         lowered_action = action.lower()
-        if lowered_method and lowered_method in lowered_action and lowered_path and lowered_path in lowered_action:
+        if lowered_method and re.search(rf"\b{re.escape(lowered_method)}\b", lowered_action) and lowered_path and lowered_path in lowered_action:
             return action
 
     for action in actions:
         lowered_action = action.lower()
-        if lowered_method and lowered_method in lowered_action and any(segment in lowered_action for segment in path_segments):
+        if lowered_method and re.search(rf"\b{re.escape(lowered_method)}\b", lowered_action) and any(segment in lowered_action for segment in path_segments):
             return action
 
     if method and path:
@@ -249,11 +327,25 @@ def _select_expectations_for_endpoint(endpoint: dict, expectations: list[str]) -
         return [DEFAULT_ASSERTION_TEXT]
     path = str(endpoint.get("path", "")).lower()
     method = str(endpoint.get("method", "")).upper()
+    endpoint_key = _endpoint_key(endpoint)
     path_segments = _extract_significant_path_segments(path)
     matched = []
     for expectation in expectations:
         lowered_expectation = expectation.lower()
         if _is_generic_expectation_text(expectation):
+            continue
+        explicit_refs = []
+        for match in _EXPLICIT_HTTP_SURFACE_RE.finditer(expectation):
+            token = match.group(0).strip()
+            method_part, _, path_part = token.partition(" ")
+            if method_part and path_part:
+                explicit_refs.append((method_part.upper(), _canonicalize_endpoint_path(path_part)))
+        if explicit_refs:
+            if endpoint_key in explicit_refs:
+                matched.append(expectation)
+            continue
+        bare_refs = [_canonicalize_endpoint_path(match.group(0)) for match in re.finditer(r"/[\w/\-{}:.?=&%]+", expectation)]
+        if bare_refs and _canonicalize_endpoint_path(path) not in bare_refs:
             continue
         if _contains_explicit_endpoint_reference(expectation, method, path):
             matched.append(expectation)
@@ -341,7 +433,7 @@ def _build_endpoint_scenarios(parsed_requirement: dict, actions: list[str], expe
     scenarios: list[dict] = []
     listed_endpoints = _filtered_endpoints(parsed_requirement, actions=actions)
     for index, endpoint in enumerate(listed_endpoints[:MAX_ENDPOINT_SCENARIOS], start=1):
-        if _endpoint_effectively_requires_context(endpoint, listed_endpoints):
+        if _endpoint_effectively_requires_context(endpoint, listed_endpoints, parsed_requirement):
             continue
         endpoint_action = _build_action_for_endpoint(endpoint, actions)
         endpoint_expectations = _select_expectations_for_endpoint(endpoint, expectations)
@@ -571,7 +663,11 @@ def _find_token_provider_endpoint(target: dict, ordered_endpoints: list[dict]) -
     return candidates[0]
 
 
-def _find_resource_provider_endpoint(target: dict, ordered_endpoints: list[dict]) -> dict | None:
+def _find_resource_provider_endpoint(
+    target: dict,
+    ordered_endpoints: list[dict],
+    parsed_requirement: dict | None = None,
+) -> dict | None:
     target_key = _endpoint_key(target)
     target_resource = _resource_key(target)
     target_capability = _endpoint_capability(target)
@@ -588,6 +684,8 @@ def _find_resource_provider_endpoint(target: dict, ordered_endpoints: list[dict]
         if _resource_key(endpoint) != target_resource:
             continue
         capability = _endpoint_capability(endpoint)
+        if parsed_requirement and capability == "create" and _resource_is_non_persistent(parsed_requirement, target_resource):
+            continue
         if capability in {"create", "list", "auth"}:
             candidates.append(endpoint)
     if not candidates:
@@ -597,10 +695,18 @@ def _find_resource_provider_endpoint(target: dict, ordered_endpoints: list[dict]
     return candidates[0]
 
 
-def _endpoint_effectively_requires_context(endpoint: dict, ordered_endpoints: list[dict]) -> bool:
+def _endpoint_effectively_requires_context(
+    endpoint: dict,
+    ordered_endpoints: list[dict],
+    parsed_requirement: dict | None = None,
+) -> bool:
+    if _endpoint_needs_auth_context(endpoint) and not _is_auth_root_endpoint(endpoint):
+        return True
+    if parsed_requirement and _endpoint_has_preloaded_resource_source(endpoint, parsed_requirement):
+        return False
     if _endpoint_requires_context(endpoint):
         return True
-    if _find_resource_provider_endpoint(endpoint, ordered_endpoints) is not None:
+    if _find_resource_provider_endpoint(endpoint, ordered_endpoints, parsed_requirement) is not None:
         return True
     token_provider = _find_token_provider_endpoint(endpoint, ordered_endpoints)
     if token_provider is not None and not _is_auth_endpoint(endpoint) and _resource_key(token_provider) == _resource_key(endpoint):
@@ -654,7 +760,11 @@ def _endpoint_capability(endpoint: dict) -> str:
     return "other"
 
 
-def _resolve_dependency_chain(target: dict, ordered_endpoints: list[dict]) -> list[dict]:
+def _resolve_dependency_chain(
+    target: dict,
+    ordered_endpoints: list[dict],
+    parsed_requirement: dict | None = None,
+) -> list[dict]:
     chain: list[dict] = []
     visiting: set[tuple[str, str]] = set()
 
@@ -670,19 +780,19 @@ def _resolve_dependency_chain(target: dict, ordered_endpoints: list[dict]) -> li
         chain.append(endpoint)
 
     visit(target)
-    resource_provider = _find_resource_provider_endpoint(target, ordered_endpoints)
+    resource_provider = _find_resource_provider_endpoint(target, ordered_endpoints, parsed_requirement)
     if resource_provider is not None and resource_provider not in chain:
-        provider_chain = _resolve_dependency_chain(resource_provider, ordered_endpoints)
+        provider_chain = _resolve_dependency_chain(resource_provider, ordered_endpoints, parsed_requirement)
         chain = provider_chain + chain
     if _endpoint_requires_token_provider(target):
         token_provider = _find_token_provider_endpoint(target, ordered_endpoints)
         if token_provider is not None and token_provider not in chain:
-            provider_chain = _resolve_dependency_chain(token_provider, ordered_endpoints)
+            provider_chain = _resolve_dependency_chain(token_provider, ordered_endpoints, parsed_requirement)
             chain = provider_chain + chain
     elif _find_token_provider_endpoint(target, ordered_endpoints) is not None and not _is_auth_endpoint(target):
         token_provider = _find_token_provider_endpoint(target, ordered_endpoints)
         if token_provider is not None and token_provider not in chain and _resource_key(token_provider) == _resource_key(target):
-            provider_chain = _resolve_dependency_chain(token_provider, ordered_endpoints)
+            provider_chain = _resolve_dependency_chain(token_provider, ordered_endpoints, parsed_requirement)
             chain = provider_chain + chain
     if _endpoint_needs_auth_context(target) and not any(_is_auth_root_endpoint(endpoint) for endpoint in chain):
         auth_roots = [
@@ -702,12 +812,16 @@ def _build_dependency_chain_scenarios(
     start_index: int,
 ) -> list[dict]:
     ordered_endpoints = _ordered_endpoints(parsed_requirement, actions)
-    dependent_endpoints = [endpoint for endpoint in ordered_endpoints if _endpoint_effectively_requires_context(endpoint, ordered_endpoints)]
+    dependent_endpoints = [
+        endpoint
+        for endpoint in ordered_endpoints
+        if _endpoint_effectively_requires_context(endpoint, ordered_endpoints, parsed_requirement)
+    ]
     scenarios: list[dict] = []
     seen_chains: set[tuple[tuple[str, str], ...]] = set()
 
     for endpoint in dependent_endpoints:
-        chain = _resolve_dependency_chain(endpoint, ordered_endpoints)
+        chain = _resolve_dependency_chain(endpoint, ordered_endpoints, parsed_requirement)
         if len(chain) < 2:
             continue
         chain_key = tuple(_endpoint_key(item) for item in chain)
@@ -731,10 +845,18 @@ def _build_full_flow_scenario(
     start_index: int,
 ) -> list[dict]:
     ordered_endpoints = _ordered_endpoints(parsed_requirement, actions)
-    dependent_count = len([endpoint for endpoint in ordered_endpoints if _endpoint_effectively_requires_context(endpoint, ordered_endpoints)])
+    dependent_count = len(
+        [
+            endpoint
+            for endpoint in ordered_endpoints
+            if _endpoint_effectively_requires_context(endpoint, ordered_endpoints, parsed_requirement)
+        ]
+    )
     if len(ordered_endpoints) < 3 or dependent_count < 2:
         return []
     primary_resource = next((_resource_key(endpoint) for endpoint in ordered_endpoints if _endpoint_capability(endpoint) == "create"), "")
+    if primary_resource and _resource_is_non_persistent(parsed_requirement, primary_resource):
+        return []
     selected: list[dict] = []
 
     def add_first(capability: str) -> None:
@@ -962,6 +1084,12 @@ def _filter_resource_lifecycle_scenarios(
     ]
 
 
+def _renumber_scenarios(scenarios: list[dict]) -> list[dict]:
+    for index, scenario in enumerate(scenarios, start=1):
+        scenario["scenario_id"] = f"scenario_{index:03d}"
+    return scenarios
+
+
 def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dict]:
     actions = _filter_actions(parsed_requirement.get("actions") or [parsed_requirement.get("objective", "Execute core action")])
     expectations = parsed_requirement.get("expected_results") or [DEFAULT_RESULT_TEXT]
@@ -984,7 +1112,7 @@ def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dic
 
     combined = endpoint_scenarios + dependency_scenarios + full_flow_scenarios + narrative_scenarios
     if combined:
-        return combined
+        return _renumber_scenarios(combined)
 
     scenarios: list[dict] = []
     grouped_actions = _group_actions(actions[:6])
@@ -995,4 +1123,4 @@ def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dic
     if use_llm:
         parsed_requirement.setdefault("ambiguities", []).append("LLM scenario enhancement is not wired in yet.")
 
-    return scenarios
+    return _renumber_scenarios(scenarios)
