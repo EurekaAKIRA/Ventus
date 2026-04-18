@@ -19,7 +19,7 @@ class TaskStatus(str, Enum):
 
 
 class CreateTaskRequest(BaseModel):
-    task_name: str
+    task_name: str = ""
     source_type: str = "text"
     requirement_text: str = ""
     source_path: str | None = None
@@ -94,6 +94,7 @@ class ParseMetadata(BaseModel):
     retrieval_mode: str = "keyword"
     retrieval_top_k: int = 5
     rerank_enabled: bool = False
+    detected_base_url: str = ""
     document_char_count: int = 0
     cleaned_char_count: int = 0
     chunk_count: int = 0
@@ -111,7 +112,7 @@ class TaskParseRequest(AnalysisEnhancementOptions):
 
 
 class AnalysisParseRequest(AnalysisEnhancementOptions):
-    task_name: str = "analysis_parse_demo"
+    task_name: str = ""
     source_type: str = "text"
     requirement_text: str = ""
     source_path: str | None = None

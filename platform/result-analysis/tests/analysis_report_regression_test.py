@@ -104,6 +104,8 @@ def main() -> int:
     assert passed_report["dashboard"]["context_summary"]["defined_key_names"] == ["token"]
     assert passed_report["dashboard"]["context_summary"]["extracted_key_names"] == ["token"]
     assert "assertion_quality_summary" in passed_report["summary"]
+    assert "scenario_quality_summary" in passed_report["summary"]
+    assert passed_report["dashboard"]["scenario_quality_summary"]["scenario_count"] == 1
     assert isinstance(passed_report["step_assertion_quality"], list)
     assert "平均耗时" in passed_report["task_summary_text"]
 
@@ -171,8 +173,8 @@ def main() -> int:
     assert pending_report["summary"]["total_steps"] == 2
     assert pending_report["summary"]["failed_steps"] == 0
     assert pending_report["summary"]["success_rate"] == 0.0
-    assert pending_report["report_sections"][2]["key"] == "assertions"
-    assert "quality_summary" in pending_report["report_sections"][2]["items"]
+    assert pending_report["report_sections"][3]["key"] == "assertions"
+    assert "quality_summary" in pending_report["report_sections"][3]["items"]
     assert "尚未开始执行" in pending_report["task_summary_text"]
 
     load_report = build_analysis_report(
@@ -235,7 +237,7 @@ def main() -> int:
     assert load_report["dashboard_summary"]["total_requests"] == 24
     assert load_report["dashboard"]["performance_summary"]["throughput"] == 120.5
     assert load_report["dashboard"]["totals"]["requests"] == 24
-    assert load_report["report_sections"][4]["key"] == "performance"
+    assert load_report["report_sections"][5]["key"] == "performance"
 
     print("analysis report regression test passed")
     return 0

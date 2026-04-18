@@ -59,7 +59,7 @@ RESOURCE_ALIASES = (
     ("user", ("/users", "user", "用户")),
     ("item", ("/items", "item", "商品", "条目")),
 )
-_EXPLICIT_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+(/[\w/\-{}:.?=&%]+)", re.IGNORECASE)
+_EXPLICIT_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE|ANY)\s+(/[\w/\-{}:.?=&%]+)", re.IGNORECASE)
 _BARE_PATH_RE = re.compile(r"(/[\w/\-{}:.?=&%]+)")
 _PLACEHOLDER_RE = re.compile(r"\{\{?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}?\}")
 _STATUS_CODE_RE = re.compile(r"(?:status\s*code|http|返回|状态码)\s*[:：=]?\s*(\d{3})", re.IGNORECASE)
@@ -102,7 +102,7 @@ _IDENTIFIER_ALIASES: dict[str, tuple[str, ...]] = {
     "access_token": ("access_token", "accesstoken"),
     "refresh_token": ("refresh_token", "refreshtoken"),
     "challenger_guid": ("challenger_guid", "challengerguid", "guid"),
-    "resource_id": ("resource_id", "resourceid", "id"),
+    "resource_id": ("resource_id", "resourceid"),
     "session_id": ("session_id", "sessionid"),
 }
 
@@ -692,7 +692,8 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
         json_body = {"input": text[:60]}
 
     if explicit_method:
-        method = explicit_method
+        if explicit_method != "ANY":
+            method = explicit_method
         url = resource_path  # explicit endpoint overrides hardcoded intent URL
         url = _normalize_path_placeholders(url, uses_context)
         if intent == "update":
@@ -705,6 +706,7 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
                 if known is not None:
                     json_body = known if known else None
     url = _apply_preloaded_identifier_defaults(url, parsed_requirement, uses_context)
+    url = _apply_parameterized_path_defaults(url)
     matched_endpoint = _find_endpoint_spec(parsed_requirement, method, url)
     headers.update(_context_headers_for_request(url, uses_context))
     headers.update(_infer_fixed_headers(parsed_requirement, url, method, text))
@@ -925,6 +927,8 @@ def _normalize_endpoint_path(path: str) -> str:
 
 def _canonical_placeholder_name(name: str) -> str:
     lowered = str(name or "").strip().lower()
+    if lowered == "id":
+        return "resource_id"
     for canonical, aliases in _IDENTIFIER_ALIASES.items():
         if lowered in aliases:
             return canonical
@@ -1052,6 +1056,8 @@ def _requires_basic_auth(
         if "basic auth" in description or "basic authentication" in description:
             return True
 
+    if _canonicalize_endpoint_path(path).startswith("/basic-auth/"):
+        return True
     if _canonicalize_endpoint_path(path) == "/secret/token":
         return True
     if _canonicalize_endpoint_path(path).startswith("/booking/") and str(method or "").upper().strip() in {"PUT", "PATCH", "DELETE"}:
@@ -1096,7 +1102,9 @@ def _match_endpoint(text: str, intent: str, endpoints: list[dict]) -> dict | Non
             for ep in endpoints:
                 ep_method = str(ep.get("method", "")).upper()
                 ep_path = _canonicalize_endpoint_path(str(ep.get("path", "")))
-                if ep_method == method and ep_path == path:
+                if ep_path != path:
+                    continue
+                if ep_method == method or method == "ANY" or ep_method == "ANY":
                     return ep
 
     # Pass 1: method match + any path segment appears in step text
@@ -1182,6 +1190,17 @@ def _identifier_context_for_path(path: str, uses_context: list[str]) -> str | No
     for candidate in ("username", "order_id", "pet_id", "booking_id", "todo_id", "challenger_guid", "task_id", "session_id", "resource_id"):
         if candidate in placeholders and candidate in uses_context:
             return candidate
+    lowered_path = canonical_path.lower()
+    if lowered_path.startswith("/booking/") and "booking_id" in uses_context:
+        return "booking_id"
+    if lowered_path.startswith("/todos/") and "todo_id" in uses_context:
+        return "todo_id"
+    if lowered_path.startswith("/tasks/") and "task_id" in uses_context:
+        return "task_id"
+    if lowered_path.startswith("/store/order/") and "order_id" in uses_context:
+        return "order_id"
+    if lowered_path.startswith("/pet/") and "pet_id" in uses_context:
+        return "pet_id"
     if "username" in uses_context:
         return "username"
     if "order_id" in uses_context:
@@ -1323,6 +1342,40 @@ def _apply_preloaded_identifier_defaults(path: str, parsed_requirement: dict, us
     return _PLACEHOLDER_RE.sub(repl, normalized)
 
 
+def _apply_parameterized_path_defaults(path: str) -> str:
+    normalized = str(path or "")
+    if not normalized:
+        return normalized
+    canonical_path = _canonicalize_endpoint_path(normalized).lower()
+    explicit_defaults = {
+        "/status/{code}": {"code": "200"},
+        "/delay/{n}": {"n": "1"},
+        "/redirect/{n}": {"n": "1"},
+        "/basic-auth/{user}/{passwd}": {"user": "admin", "passwd": "password123"},
+    }
+    defaults = explicit_defaults.get(canonical_path)
+
+    def repl(match: re.Match[str]) -> str:
+        raw_name = match.group(1)
+        lowered = raw_name.lower()
+        if defaults and lowered in defaults:
+            return defaults[lowered]
+        generic_defaults = {
+            "code": "200",
+            "status": "200",
+            "n": "1",
+            "count": "1",
+            "page": "1",
+            "user": "admin",
+            "username": "demo_user",
+            "passwd": "password123",
+            "password": "password123",
+        }
+        return generic_defaults.get(lowered, match.group(0))
+
+    return _PLACEHOLDER_RE.sub(repl, normalized)
+
+
 def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]:
     lowered = text.lower()
     request_url = str(request.get("url", ""))
@@ -1448,6 +1501,7 @@ def _normalize_path_placeholders(path: str, uses_context: list[str]) -> str:
     normalized = str(path or "")
     if not normalized:
         return normalized
+    canonical_path = _canonicalize_endpoint_path(normalized).lower()
 
     def repl(match: re.Match[str]) -> str:
         canonical = _canonical_placeholder_name(match.group(1))
@@ -1468,6 +1522,16 @@ def _normalize_path_placeholders(path: str, uses_context: list[str]) -> str:
         if canonical == "session_id" and "session_id" in uses_context:
             return "{{session_id}}"
         if canonical == "resource_id":
+            if canonical_path.startswith("/booking/") and "booking_id" in uses_context:
+                return "{{booking_id}}"
+            if canonical_path.startswith("/todos/") and "todo_id" in uses_context:
+                return "{{todo_id}}"
+            if canonical_path.startswith("/tasks/") and "task_id" in uses_context:
+                return "{{task_id}}"
+            if canonical_path.startswith("/store/order/") and "order_id" in uses_context:
+                return "{{order_id}}"
+            if canonical_path.startswith("/pet/") and "pet_id" in uses_context:
+                return "{{pet_id}}"
             if "resource_id" in uses_context:
                 return "{{resource_id}}"
             if "booking_id" in uses_context:

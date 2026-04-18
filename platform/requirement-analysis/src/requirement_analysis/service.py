@@ -28,6 +28,13 @@ _RETRIEVAL_ENDPOINT_RE = re.compile(
     r"\b(GET|POST|PUT|PATCH|DELETE)\s+(/[\w/\-{}:.?=&%]+)",
     re.IGNORECASE,
 )
+_BASE_URL_LABEL_RE = re.compile(
+    r"(?im)(?:base\s*url|baseurl|服务地址|服务域名|接口地址|接口域名|请求地址|环境地址)\s*[:：|]\s*`?(https?://[^\s)`>\"']+)`?"
+)
+_BASE_URL_INLINE_RE = re.compile(
+    r"(?im)^\s*[-*]?\s*(?:默认\s*)?(?:base\s*url|baseurl|服务地址|服务域名|接口地址|接口域名|请求地址|环境地址)\s+`?(https?://[^\s)`>\"']+)`?\s*$"
+)
+_ABSOLUTE_URL_RE = re.compile(r"https?://[^\s)`>\"']+")
 _PLATFORM_CONTRACT_HINT_RE = re.compile(r"/api/tasks(?:/[^{\s`]+|\b)|/api/tasks/\{task_id\}|task-center|任务中心", re.IGNORECASE)
 _RETRIEVAL_HINTS = (
     "Scenario:",
@@ -187,6 +194,7 @@ def parse_requirement_bundle(
     validation_report = _build_validation_report(
         parsed_requirement,
         input_integrity_issues=input_integrity_issues,
+        raw_text=raw_text,
     )
     elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
     phase_timings_ms: dict[str, float] = {
@@ -240,6 +248,7 @@ def parse_requirement_bundle(
             rerank_enabled=parse_options.rerank_enabled,
             diagnostics=retrieval_diagnostics,
         ),
+        "detected_base_url": _extract_base_url(raw_text, document.get("cleaned_text", "")),
         "contract_knowledge": {
             "enabled": contract_cfg.enabled,
             "applied": bool(contract_extra),
@@ -276,6 +285,7 @@ def _build_validation_report(
     parsed_requirement: ParsedRequirement,
     *,
     input_integrity_issues: list[str] | None = None,
+    raw_text: str = "",
 ) -> ValidationReport:
     errors: list[str] = []
     warnings: list[str] = []
@@ -288,6 +298,7 @@ def _build_validation_report(
         warnings.append("expected_results 为空，已按规则补全")
     if len(parsed_requirement.ambiguities) > 3:
         warnings.append("需求存在较多歧义，建议补充业务约束")
+    warnings.extend(_collect_document_quality_warnings(parsed_requirement, raw_text))
     if integrity_issues:
         errors.append(f"原始需求疑似被截断或未完整上传：{'；'.join(integrity_issues)}")
     return ValidationReport(
@@ -302,8 +313,49 @@ def _build_validation_report(
             "expected_count": len(parsed_requirement.expected_results),
             "ambiguity_count": len(parsed_requirement.ambiguities),
             "input_integrity_issue_count": len(integrity_issues),
+            "quality_warning_count": len(warnings),
         },
     )
+
+
+def _collect_document_quality_warnings(parsed_requirement: ParsedRequirement, raw_text: str) -> list[str]:
+    warnings: list[str] = []
+    lowered = str(raw_text or "").lower()
+    endpoints = list(parsed_requirement.api_endpoints or [])
+
+    dependent_live_resource = False
+    explicit_resource_source = any(
+        token in lowered
+        for token in ("资源来源", "关键依赖", "预置资源", "preloaded", "pre-existing", "preexisting", "preset")
+    )
+    for endpoint in endpoints:
+        if isinstance(endpoint, dict):
+            method = str(endpoint.get("method") or "").upper().strip()
+            path = str(endpoint.get("path") or "")
+            depends_on = list(endpoint.get("depends_on") or [])
+        else:
+            method = str(getattr(endpoint, "method", "") or "").upper().strip()
+            path = str(getattr(endpoint, "path", "") or "")
+            depends_on = list(getattr(endpoint, "depends_on", []) or [])
+        has_identifier = "{" in path and "}" in path
+        if method in {"PUT", "PATCH", "DELETE"} and has_identifier and not depends_on:
+            dependent_live_resource = True
+        if method == "GET" and has_identifier and path.count("/") >= 2 and not depends_on:
+            dependent_live_resource = True
+    if dependent_live_resource and not explicit_resource_source:
+        warnings.append("存在依赖活资源的接口，但文档未明确资源来源/关键依赖，可能影响场景稳定性")
+
+    cross_step_phrases = ("上一步", "前一步", "继续调用", "复用", "previous response", "reuse", "from previous")
+    explicit_context_markers = ("save_context", "uses_context", "资源来源", "关键依赖")
+    if any(token in lowered for token in cross_step_phrases) and not any(token in lowered for token in explicit_context_markers):
+        warnings.append("文档描述了跨步骤依赖，但未显式标注上下文保存/使用方式，建议补充 save_context / uses_context")
+
+    query_phrases = ("通过 query", "query 传入", "query参数", "query 参数", "url 参数", "查询参数")
+    has_query_example = "?" in lowered or "params" in lowered
+    if any(token in lowered for token in query_phrases) and not has_query_example:
+        warnings.append("文档提到 query 参数语义，但缺少明确参数示例，建议补充 `?key=value` 或参数名")
+
+    return _dedupe_strings(warnings)
 
 
 def _dedupe_strings(items: list[str]) -> list[str]:
@@ -523,3 +575,20 @@ def _build_document_sizing_metadata(
         "processing_tier": processing_tier,
         "large_document_warning": large_document_warning,
     }
+
+
+def _extract_base_url(raw_text: str, cleaned_text: str) -> str:
+    text = "\n".join(part for part in (raw_text, cleaned_text) if part).strip()
+    if not text:
+        return ""
+
+    for pattern in (_BASE_URL_LABEL_RE, _BASE_URL_INLINE_RE):
+        match = pattern.search(text)
+        if match:
+            return match.group(1).rstrip("/")
+
+    absolute_urls = [item.rstrip("/") for item in _ABSOLUTE_URL_RE.findall(text)]
+    if len(absolute_urls) == 1:
+        return absolute_urls[0]
+
+    return ""

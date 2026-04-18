@@ -95,12 +95,20 @@ def run_analysis_pipeline(
         _build_scenario_model(scenario)
         for scenario in build_scenarios(parsed_requirement.to_dict(), use_llm=parse_options.use_llm)
     ]
+    dsl_payload = build_test_case_dsl(
+        task_context,
+        scenarios,
+        parsed_requirement=parsed_requirement.to_dict(),
+    )
+    detected_base_url = str(parse_bundle.get("parse_metadata", {}).get("detected_base_url", "") or "").strip()
+    if detected_base_url:
+        metadata = dict(dsl_payload.get("metadata") or {})
+        execution = dict(metadata.get("execution") or {})
+        execution.setdefault("base_url", detected_base_url)
+        metadata["execution"] = execution
+        dsl_payload["metadata"] = metadata
     test_case_dsl = TestCaseDSL(
-        **build_test_case_dsl(
-            task_context,
-            scenarios,
-            parsed_requirement=parsed_requirement.to_dict(),
-        )
+        **dsl_payload
     )
     feature_text = generate_feature(task_context.task_name, [scenario.to_dict() for scenario in scenarios])
     feature_validation_report = ValidationReport(**validate_feature_text(feature_text))

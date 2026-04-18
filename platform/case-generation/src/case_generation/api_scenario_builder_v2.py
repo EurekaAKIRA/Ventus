@@ -52,6 +52,10 @@ _NON_PERSISTENT_HINTS = (
     "不应作为真实持久化断言依据",
     "不应期望真实改变",
     "不应期望真实删除",
+    "后续不应期待服务器真实持久化",
+    "不应期待服务器真实持久化",
+    "模拟成功结果",
+    "不应拿它做真实数据库闭环断言",
 )
 _PRELOADED_RESOURCE_HINTS = (
     "preloaded",
@@ -113,8 +117,14 @@ _ACTION_CLASS_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("update", ("update", "put", "patch", "更新", "修改")),
     ("delete", ("delete", "remove", "删除", "取消")),
 )
-_EXPLICIT_HTTP_SURFACE_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+/[\w/\-{}:.?=&%]+", re.IGNORECASE)
+_EXPLICIT_HTTP_SURFACE_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE|ANY)\s+/[\w/\-{}:.?=&%]+", re.IGNORECASE)
 _PLACEHOLDER_RE = re.compile(r"\{\{?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}?\}")
+_STATELESS_PARAMETERIZED_PATH_PREFIXES = (
+    "/status/",
+    "/delay/",
+    "/redirect/",
+    "/basic-auth/",
+)
 
 
 def _normalize_preconditions(parsed_requirement: dict) -> list[str]:
@@ -222,14 +232,25 @@ def _resource_is_non_persistent(parsed_requirement: dict, resource: str) -> bool
     return bool(haystack) and any(hint in haystack for hint in _NON_PERSISTENT_HINTS)
 
 
+def _endpoint_can_use_preloaded_identifier(endpoint: dict) -> bool:
+    path = _canonicalize_endpoint_path(str(endpoint.get("path", "")))
+    method = str(endpoint.get("method", "")).upper().strip()
+    return method in {"GET", "PUT", "PATCH", "DELETE"} and "{" in path and "}" in path
+
+
 def _endpoint_has_preloaded_resource_source(endpoint: dict, parsed_requirement: dict) -> bool:
     capability = _endpoint_capability(endpoint)
     path = _canonicalize_endpoint_path(str(endpoint.get("path", "")))
-    if capability not in {"detail", "replace", "patch", "delete"} and not _is_querystring_filter_endpoint(endpoint):
+    if capability not in {"detail", "replace", "patch", "delete", "list"} and not _is_querystring_filter_endpoint(endpoint):
         return False
     if "{" not in path or "}" not in path:
         return False
     if _is_querystring_filter_endpoint(endpoint):
+        return True
+    if _resource_is_non_persistent(parsed_requirement, _resource_key(endpoint)) and _endpoint_can_use_preloaded_identifier(endpoint):
+        return True
+    depends_on_text = " ".join(str(item or "") for item in (endpoint.get("depends_on") or [])).lower()
+    if depends_on_text and any(hint in depends_on_text for hint in _PRELOADED_RESOURCE_HINTS):
         return True
     haystack = " ".join(_resource_related_texts(parsed_requirement, _resource_key(endpoint))).lower()
     return bool(haystack) and any(hint in haystack for hint in _PRELOADED_RESOURCE_HINTS)
@@ -415,6 +436,10 @@ def _endpoint_requires_context(endpoint: dict) -> bool:
     depends_on = endpoint.get("depends_on") or []
     capability = _endpoint_capability(endpoint)
     path = _canonicalize_endpoint_path(str(endpoint.get("path", "")))
+    if _is_stateless_parameterized_endpoint(endpoint):
+        return False
+    if _has_only_same_resource_collection_dependencies(endpoint):
+        return capability in {"detail", "replace", "patch", "delete"}
     has_placeholder = "{" in path and "}" in path
     return (
         bool(depends_on)
@@ -448,10 +473,12 @@ def _endpoint_key(endpoint: dict) -> tuple[str, str]:
 
 def _canonical_placeholder_name(name: str) -> str:
     lowered = str(name or "").strip().lower()
-    if lowered in {"bookingid", "booking_id", "id"}:
+    if lowered in {"bookingid", "booking_id"}:
         return "booking_id"
     if lowered in {"taskid", "task_id"}:
         return "task_id"
+    if lowered == "id":
+        return "resource_id"
     return lowered
 
 
@@ -588,6 +615,8 @@ def _is_auth_endpoint(endpoint: dict) -> bool:
     method = str(endpoint.get("method", "")).upper().strip()
     path = str(endpoint.get("path", "")).lower()
     description = str(endpoint.get("description", "")).lower()
+    if _is_stateless_parameterized_endpoint(endpoint):
+        return False
     if any(token in path for token in ("/auth", "/login", "/session", "/challenger", "/token")):
         return True
     return method == "POST" and any(token in description for token in ("auth", "login", "token", "session", "令牌"))
@@ -613,6 +642,8 @@ def _endpoint_request_field_names(endpoint: dict) -> list[str]:
 
 
 def _endpoint_needs_auth_context(endpoint: dict) -> bool:
+    if _is_stateless_parameterized_endpoint(endpoint):
+        return False
     request_fields = _endpoint_request_field_names(endpoint)
     text = " ".join(
         [
@@ -675,6 +706,11 @@ def _find_resource_provider_endpoint(
     has_placeholder = "{" in target_path and "}" in target_path
     if target_capability not in {"detail", "replace", "patch", "delete"}:
         return None
+    if parsed_requirement and (
+        _endpoint_has_preloaded_resource_source(target, parsed_requirement)
+        or _resource_is_non_persistent(parsed_requirement, target_resource)
+    ):
+        return None
     if target_capability in {"replace", "patch", "delete"} and not has_placeholder:
         return None
     candidates: list[dict] = []
@@ -703,6 +739,8 @@ def _endpoint_effectively_requires_context(
     if _endpoint_needs_auth_context(endpoint) and not _is_auth_root_endpoint(endpoint):
         return True
     if parsed_requirement and _endpoint_has_preloaded_resource_source(endpoint, parsed_requirement):
+        return False
+    if parsed_requirement and _resource_is_non_persistent(parsed_requirement, _resource_key(endpoint)) and _endpoint_can_use_preloaded_identifier(endpoint):
         return False
     if _endpoint_requires_context(endpoint):
         return True
@@ -740,10 +778,12 @@ def _resource_key(endpoint: dict) -> str:
 def _endpoint_capability(endpoint: dict) -> str:
     method = str(endpoint.get("method", "")).upper().strip()
     path = _canonicalize_endpoint_path(str(endpoint.get("path", ""))).lower()
-    if any(token in path for token in ("/ping", "/health", "/ready", "/version")):
+    if any(token in path for token in ("/ping", "/health", "/ready", "/version")) or _is_stateless_parameterized_endpoint(endpoint):
         return "health"
     has_placeholder = bool(_PLACEHOLDER_RE.search(path))
-    if method == "GET" and has_placeholder:
+    if method == "GET" and has_placeholder and _is_collection_scoped_endpoint(path):
+        return "list"
+    if method == "GET" and has_placeholder and not _is_collection_scoped_endpoint(path):
         return "detail"
     if _is_auth_endpoint(endpoint):
         return "auth"
@@ -758,6 +798,31 @@ def _endpoint_capability(endpoint: dict) -> str:
     if method == "DELETE":
         return "delete"
     return "other"
+
+
+def _is_stateless_parameterized_endpoint(endpoint: dict) -> bool:
+    path = _canonicalize_endpoint_path(str(endpoint.get("path", ""))).lower()
+    if path in {"/cookies/set", "/cookies/set?name=value"}:
+        return True
+    return any(path.startswith(prefix) for prefix in _STATELESS_PARAMETERIZED_PATH_PREFIXES)
+
+
+def _is_collection_scoped_endpoint(path: str) -> bool:
+    normalized = _canonicalize_endpoint_path(path).lower()
+    return any(token in normalized for token in ("/user/{", "/users/{", "/by-user/{", "/by/{"))
+
+
+def _has_only_same_resource_collection_dependencies(endpoint: dict) -> bool:
+    depends_on = [str(item or "").strip() for item in (endpoint.get("depends_on") or []) if str(item or "").strip()]
+    if not depends_on:
+        return False
+    resource = _resource_key(endpoint)
+    for dependency in depends_on:
+        normalized = _canonicalize_endpoint_path(dependency).lower()
+        segments = [part for part in normalized.split("/") if part and "{" not in part and "}" not in part]
+        if len(segments) != 1 or segments[0] != resource:
+            return False
+    return True
 
 
 def _resolve_dependency_chain(
@@ -1059,6 +1124,8 @@ def _scenario_satisfies_resource_lifecycle(
         capabilities.setdefault(resource, set()).add(_endpoint_capability(endpoint))
 
     for resource, caps in capabilities.items():
+        if parsed_requirement and _resource_is_non_persistent(parsed_requirement, resource) and "create" in caps and caps.intersection({"detail", "replace", "patch", "delete"}):
+            return False
         if not caps.intersection({"detail", "replace", "patch", "delete"}):
             continue
         if "create" in caps:

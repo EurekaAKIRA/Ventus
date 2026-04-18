@@ -877,7 +877,7 @@ def create_task(payload: CreateTaskRequest):
     context = base_ctx.to_dict()
     record = registry.create_task(
         task_id=context["task_id"],
-        task_name=payload.task_name,
+        task_name=context["task_name"],
         source_type=payload.source_type,
         requirement_text=payload.requirement_text,
         source_path=payload.source_path,
@@ -1005,6 +1005,13 @@ def parse_analysis(payload: AnalysisParseRequest):
     if not (payload.requirement_text or "").strip() and not (payload.source_path or "").strip():
         raise HTTPException(status_code=400, detail="requirement_text or source_path is required")
     parse_options = _resolve_parse_options(payload)
+    normalized = normalize_input(
+        task_name=payload.task_name,
+        requirement_text=payload.requirement_text,
+        source_type=payload.source_type,
+        source_path=payload.source_path,
+    )
+    normalized_task_name = str(normalized["task_context"]["task_name"])
     result = parse_requirement_bundle(
         requirement_text=payload.requirement_text,
         source_path=payload.source_path,
@@ -1012,7 +1019,7 @@ def parse_analysis(payload: AnalysisParseRequest):
     )
     return _success_response(
         {
-            "task_name": payload.task_name,
+            "task_name": normalized_task_name,
             "source_type": payload.source_type,
             "parsed_requirement": result.get("parsed_requirement", {}),
             "retrieved_context": result.get("retrieved_context", []),

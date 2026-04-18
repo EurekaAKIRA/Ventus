@@ -60,6 +60,24 @@ def main() -> int:
         assert saved.requirement_text == long_requirement
         assert len(saved.requirement_text) > 1024
 
+        file_create_resp = client.post(
+            "/api/tasks",
+            json={
+                "task_name": "",
+                "source_type": "file",
+                "source_path": r"D:\docs\restful_booker_e2e2_plus.md",
+                "requirement_text": "",
+                "environment": "test",
+            },
+        )
+        assert file_create_resp.status_code == 201
+        file_payload = file_create_resp.json()["data"]
+        assert file_payload["task_context"]["task_name"] == "restful_booker_e2e2_plus"
+        file_task_id = file_payload["task_id"]
+        file_saved = api_module.registry.get(file_task_id)
+        assert file_saved is not None
+        assert file_saved.task_name == "restful_booker_e2e2_plus"
+
         truncated_requirement = (
             "# Restful Booker\n\n"
             "## Step 1\n\n"

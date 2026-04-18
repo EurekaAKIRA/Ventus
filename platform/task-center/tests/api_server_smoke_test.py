@@ -144,6 +144,42 @@ def main() -> int:
     execute_no_base_payload = execute_no_base.json()
     assert "Missing execution base_url" in execute_no_base_payload["message"]
     assert "Missing execution base_url" in execute_no_base_payload["data"]["detail"]
+    create_doc_base = client.post(
+        "/api/tasks",
+        json={
+            "task_name": "",
+            "source_type": "file",
+            "source_path": r"D:\docs\restful_booker_e2e2_plus.md",
+            "requirement_text": (
+                "# Restful Booker\n\n"
+                "## 环境信息\n"
+                "- Base URL: `http://127.0.0.1:8010`\n\n"
+                "## 场景\n"
+                "**涉及接口:** `GET /ping`\n"
+            ),
+            "environment": "test",
+        },
+    )
+    assert create_doc_base.status_code == 201
+    doc_base_payload = create_doc_base.json()["data"]
+    assert doc_base_payload["task_context"]["task_name"] == "restful_booker_e2e2_plus"
+    task_id_doc_base = doc_base_payload["task_id"]
+    parse_doc_base = client.post(
+        f"/api/tasks/{task_id_doc_base}/parse",
+        json={"use_llm": False, "rag_enabled": False, "retrieval_top_k": 3, "rerank_enabled": False},
+    )
+    assert parse_doc_base.status_code == 200
+    doc_parse_meta = parse_doc_base.json()["data"]["parse_metadata"]
+    assert doc_parse_meta["detected_base_url"] == "http://127.0.0.1:8010"
+    dsl_doc_base = client.get(f"/api/tasks/{task_id_doc_base}/dsl")
+    assert dsl_doc_base.status_code == 200
+    assert dsl_doc_base.json()["data"]["metadata"]["execution"]["base_url"] == "http://127.0.0.1:8010"
+    execute_doc_base = client.post(
+        f"/api/tasks/{task_id_doc_base}/execute",
+        json={"execution_mode": "api", "environment": "test"},
+    )
+    assert execute_doc_base.status_code == 200
+    assert execute_doc_base.json()["data"]["metadata"]["execution"]["base_url"] == "http://127.0.0.1:8010"
     assert client.get(f"/api/tasks/{task_id}/validation-report").status_code == 200
     analysis_report_resp = client.get(f"/api/tasks/{task_id}/analysis-report")
     assert analysis_report_resp.status_code == 200
@@ -185,6 +221,7 @@ def main() -> int:
     assert delete_resp.status_code == 200
     assert delete_resp.json()["data"]["archived"] is True
     assert client.delete(f"/api/tasks/{task_id_no_base}").status_code == 200
+    assert client.delete(f"/api/tasks/{task_id_doc_base}").status_code == 200
     missing_resp = client.get("/api/tasks/not-found")
     assert missing_resp.status_code == 404
     assert missing_resp.json()["success"] is False

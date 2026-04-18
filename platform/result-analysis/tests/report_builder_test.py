@@ -106,9 +106,12 @@ def main() -> int:
     assert passed_report["dashboard"]["totals"]["assertions"] == 2
     assert passed_report["dashboard_summary"]["assertion_passed"] == 2
     assert passed_report["dashboard_summary"]["context_extracted_keys"] == 1
+    assert "scenario_quality_summary" in passed_report["summary"]
+    assert passed_report["dashboard"]["scenario_quality_summary"]["scenario_count"] == 1
     assert passed_report["task_summary"]["next_action"] == "可进入联调或演示环节"
-    assert len(passed_report["report_sections"]) == 5
+    assert len(passed_report["report_sections"]) == 6
     assert passed_report["report_sections"][0]["key"] == "overview"
+    assert passed_report["report_sections"][2]["key"] == "scenario_quality"
     assert passed_report["dashboard"]["status_breakdown"]["passed_scenarios"] == 1
     assert passed_report["dashboard"]["summary"]["scenario_count"] == 1
     assert passed_report["dashboard"]["summary"]["passed_scenarios"] == 1

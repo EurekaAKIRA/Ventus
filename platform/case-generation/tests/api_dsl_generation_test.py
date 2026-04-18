@@ -357,6 +357,255 @@ def test_httpbin_cookies_set_infers_default_query_params() -> None:
     assert all(step["request"].get("params") == {"name": "value"} for step in cookie_steps)
 
 
+def test_httpbin_post_generates_echo_assertion_for_json_body() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_httpbin_post",
+        name="httpbin post echo",
+        goal="post echo",
+        steps=[
+            ScenarioStep(type="given", text="httpbin is available"),
+            ScenarioStep(type="when", text="调用 POST /post"),
+            ScenarioStep(type="then", text="应回显请求体"),
+        ],
+        assertions=["应回显请求体"],
+        source_chunks=[],
+        preconditions=[],
+    )
+    parsed_requirement = {
+        "objective": "httpbin",
+        "actors": ["user"],
+        "entities": ["echo"],
+        "preconditions": [],
+        "actions": ["调用 POST /post"],
+        "expected_results": ["/get、/post、/anything 应准确回显请求内容"],
+        "constraints": [],
+        "ambiguities": [],
+        "source_chunks": [],
+        "api_endpoints": [{"method": "POST", "path": "/post", "description": "回显 body、json、headers 等信息"}],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    request_step = dsl["scenarios"][0]["steps"][1]
+    assert any(
+        item.get("source") == "json.json.name" and item.get("op") == "eq" and item.get("expected") == "post-demo"
+        for item in request_step["assertions"]
+        if isinstance(item, dict)
+    )
+
+
+def test_httpbin_any_endpoint_keeps_anything_path_in_request_template() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_httpbin_any",
+        name="httpbin anything echo",
+        goal="anything echo",
+        steps=[
+            ScenarioStep(type="given", text="httpbin is available"),
+            ScenarioStep(type="when", text="调用 ANY /anything"),
+            ScenarioStep(type="then", text="应回显任意请求内容"),
+        ],
+        assertions=["应回显任意请求内容"],
+        source_chunks=[],
+        preconditions=[],
+    )
+    parsed_requirement = {
+        "objective": "httpbin anything",
+        "actors": ["user"],
+        "entities": ["echo"],
+        "preconditions": [],
+        "actions": ["调用 ANY /anything"],
+        "expected_results": ["/anything 应准确回显请求内容"],
+        "constraints": [],
+        "ambiguities": [],
+        "source_chunks": [],
+        "api_endpoints": [
+            {"method": "ANY", "path": "/anything", "description": "回显任意 method 与请求内容"},
+            {"method": "POST", "path": "/post", "description": "回显 body、json、headers 等信息"},
+        ],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    request_step = dsl["scenarios"][0]["steps"][1]
+    assert request_step["request"]["url"] == "/anything"
+    assert request_step["request"]["method"] == "POST"
+
+
+def test_httpbin_parameterized_utility_endpoints_stay_independent() -> None:
+    from case_generation import build_scenarios
+
+    parsed_requirement = {
+        "objective": "httpbin utility endpoints",
+        "actions": [
+            "调用 GET /status/{code}",
+            "调用 GET /delay/{n}",
+            "调用 GET /redirect/{n}",
+            "调用 GET /basic-auth/{user}/{passwd}",
+        ],
+        "expected_results": [
+            "/status/{code} 应返回对应状态码",
+            "/delay/{n} 应体现延迟行为",
+            "/redirect/{n} 应体现重定向链",
+            "/basic-auth/{user}/{passwd} 在正确 Basic Auth 下应成功",
+        ],
+        "api_endpoints": [
+            {"method": "GET", "path": "/status/{code}", "description": "返回指定 HTTP 状态码", "depends_on": []},
+            {"method": "GET", "path": "/delay/{n}", "description": "模拟延迟响应", "depends_on": []},
+            {"method": "GET", "path": "/redirect/{n}", "description": "模拟重定向链", "depends_on": []},
+            {"method": "GET", "path": "/basic-auth/{user}/{passwd}", "description": "验证 Basic Auth 处理", "depends_on": []},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = build_scenarios(parsed_requirement)
+    step_sets = [
+        [step["text"] if isinstance(step, dict) else step.text for step in scenario["steps"]]
+        for scenario in scenarios
+    ]
+
+    assert any(any("GET /status/{code}" in step for step in steps) and len(steps) == 3 for steps in step_sets)
+    assert any(any("GET /delay/{n}" in step for step in steps) and len(steps) == 3 for steps in step_sets)
+    assert any(any("GET /redirect/{n}" in step for step in steps) and len(steps) == 3 for steps in step_sets)
+    assert any(any("GET /basic-auth/{user}/{passwd}" in step for step in steps) and len(steps) == 3 for steps in step_sets)
+
+
+def test_httpbin_parameterized_utility_endpoints_get_default_path_values() -> None:
+    from case_generation.dsl_generator import _build_request_template
+
+    parsed_requirement = {
+        "api_endpoints": [
+            {"method": "GET", "path": "/status/{code}", "description": "返回指定 HTTP 状态码", "depends_on": []},
+            {"method": "GET", "path": "/delay/{n}", "description": "模拟延迟响应", "depends_on": []},
+            {"method": "GET", "path": "/redirect/{n}", "description": "模拟重定向链", "depends_on": []},
+            {"method": "GET", "path": "/basic-auth/{user}/{passwd}", "description": "验证 Basic Auth 处理", "depends_on": []},
+        ],
+    }
+
+    status_req = _build_request_template("调用 GET /status/{code}", "query", parsed_requirement, [])
+    delay_req = _build_request_template("调用 GET /delay/{n}", "query", parsed_requirement, [])
+    redirect_req = _build_request_template("调用 GET /redirect/{n}", "query", parsed_requirement, [])
+    basic_auth_req = _build_request_template("调用 GET /basic-auth/{user}/{passwd}", "query", parsed_requirement, [])
+
+    assert status_req["url"] == "/status/200"
+    assert delay_req["url"] == "/delay/1"
+    assert redirect_req["url"] == "/redirect/1"
+    assert basic_auth_req["url"] == "/basic-auth/admin/password123"
+    assert basic_auth_req["auth"] == {"type": "basic", "username": "admin", "password": "password123"}
+
+
+def test_httpbin_status_endpoint_does_not_require_json_body_assertion() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_httpbin_status",
+        name="httpbin status endpoint",
+        goal="status endpoint returns requested code",
+        steps=[
+            ScenarioStep(type="given", text="httpbin is available"),
+            ScenarioStep(type="when", text="调用 GET /status/{code}"),
+            ScenarioStep(type="then", text="应返回对应状态码"),
+        ],
+        assertions=["应返回对应状态码"],
+        source_chunks=[],
+        preconditions=[],
+    )
+    parsed_requirement = {
+        "objective": "httpbin status",
+        "actions": ["调用 GET /status/{code}"],
+        "expected_results": ["/status/{code} 应返回对应状态码"],
+        "api_endpoints": [
+            {"method": "GET", "path": "/status/{code}", "description": "返回指定 HTTP 状态码", "depends_on": []},
+        ],
+        "source_chunks": [],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    request_assertions = [item for item in dsl["scenarios"][0]["steps"][1]["assertions"] if isinstance(item, dict)]
+
+    assert any(item["source"] == "status_code" for item in request_assertions)
+    assert not any(item["source"] == "json" and item["op"] == "exists" for item in request_assertions)
+
+
+def test_bare_id_placeholder_prefers_resource_context_for_todo_paths() -> None:
+    from case_generation.dsl_generator import _build_request_template
+
+    parsed_requirement = {
+        "api_endpoints": [
+            {"method": "GET", "path": "/todos/{id}", "description": "读取 todo 详情", "depends_on": ["/todos/add"]},
+        ],
+    }
+
+    request = _build_request_template(
+        "调用 GET /todos/{id}",
+        "query",
+        parsed_requirement,
+        ["todo_id", "resource_id"],
+    )
+
+    assert request["url"] == "/todos/{{todo_id}}"
+
+
+def test_dummyjson_non_persistent_resource_endpoints_stay_independent() -> None:
+    from case_generation import build_scenarios
+
+    parsed_requirement = {
+        "objective": "DummyJSON todos",
+        "actions": [
+            "调用 POST /auth/login",
+            "调用 GET /todos",
+            "调用 GET /todos/user/{id}",
+            "调用 GET /todos/{id}",
+            "调用 POST /todos/add",
+            "调用 PUT /todos/{id}",
+            "调用 PATCH /todos/{id}",
+            "调用 DELETE /todos/{id}",
+        ],
+        "expected_results": [
+            "`POST /auth/login` 成功后应返回非空 `accessToken` 与 `refreshToken`",
+            "`GET /todos` 应返回分页结构与 todo 列表",
+            "`POST /todos/add` 应返回新 todo，但后续不应期待服务器真实持久化",
+            "`PUT/PATCH/DELETE /todos/{id}` 应返回模拟成功结果，但不应拿它做真实数据库闭环断言",
+        ],
+        "constraints": [
+            "`POST /todos/add` 应返回新 todo，但后续不应期待服务器真实持久化",
+            "`PUT/PATCH/DELETE /todos/{id}` 应返回模拟成功结果，但不应拿它做真实数据库闭环断言",
+        ],
+        "api_endpoints": [
+            {"method": "POST", "path": "/auth/login", "description": "登录", "depends_on": []},
+            {"method": "GET", "path": "/todos", "description": "分页查询 todos", "depends_on": []},
+            {"method": "GET", "path": "/todos/user/{id}", "description": "查询某个用户的 todos", "depends_on": ["/todos"]},
+            {"method": "GET", "path": "/todos/{id}", "description": "读取指定 todo", "depends_on": ["/todos"]},
+            {"method": "POST", "path": "/todos/add", "description": "模拟创建 todo", "depends_on": ["/todos"]},
+            {"method": "PUT", "path": "/todos/{id}", "description": "模拟更新 todo", "depends_on": ["/todos"]},
+            {"method": "PATCH", "path": "/todos/{id}", "description": "模拟更新 todo", "depends_on": ["/todos"]},
+            {"method": "DELETE", "path": "/todos/{id}", "description": "模拟删除 todo", "depends_on": ["/todos"]},
+        ],
+        "source_chunks": [],
+    }
+
+    scenarios = build_scenarios(parsed_requirement)
+    signatures = []
+    for scenario in scenarios:
+        requests = [step["text"] if isinstance(step, dict) else step.text for step in scenario["steps"] if (step["type"] if isinstance(step, dict) else step.type) in {"when", "and"}]
+        signatures.append(tuple(requests))
+
+    assert ("调用 GET /todos/user/{id}",) in signatures
+    assert ("调用 GET /todos/{id}",) in signatures
+    assert ("调用 POST /todos/add",) in signatures
+    assert ("调用 PUT /todos/{id}",) in signatures
+    assert ("调用 PATCH /todos/{id}",) in signatures
+    assert ("调用 DELETE /todos/{id}",) in signatures
+    assert not any("调用 POST /todos/add" in sig and "调用 GET /todos/{id}" in sig for sig in signatures)
+    assert not any("调用 POST /todos/add" in sig and "调用 PUT /todos/{id}" in sig for sig in signatures)
+    assert not any("调用 POST /todos/add" in sig and "调用 PATCH /todos/{id}" in sig for sig in signatures)
+    assert not any("调用 POST /todos/add" in sig and "调用 DELETE /todos/{id}" in sig for sig in signatures)
+
+
 def test_create_task_request_uses_task_id_instead_of_generic_id() -> None:
     from case_generation import build_test_case_dsl
     from platform_shared.models import ScenarioModel, ScenarioStep

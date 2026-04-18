@@ -209,13 +209,19 @@ export default function TaskDetail() {
     return <Empty description="任务不存在或响应为空" />;
   }
 
+  const detectedBaseUrl = detail.parse_metadata?.detected_base_url?.trim() || "";
+  const effectiveDslBaseUrl =
+    (((detail.test_case_dsl?.metadata as Record<string, unknown> | undefined)?.execution as Record<string, unknown> | undefined)
+      ?.base_url as string | undefined)?.trim() || "";
+  const resolvedBaseUrl = detectedBaseUrl || effectiveDslBaseUrl || detail.target_system || "";
+
   const taskStatus = taskLifecycleStatus;
   const displayTaskStatus = executionStatus === "not_started" ? taskStatus : executionStatus;
   const hasParsedResult = Boolean(detail.parsed_requirement);
   const hasScenarios = Boolean(detail.scenarios?.length);
   const hasReport = Boolean(primaryAnalysisReport);
   const preflightBlocking = Boolean(preflightResult?.blocking);
-  const canExecute = isValidHttpUrl(detail.target_system) && !preflightBlocking;
+  const canExecute = isValidHttpUrl(resolvedBaseUrl) && !preflightBlocking;
 
   const steps = [
     {
@@ -350,7 +356,7 @@ export default function TaskDetail() {
         stopping={stopping}
         preflightLoading={preflightLoading}
         canExecute={canExecute}
-        isTargetSystemValid={isValidHttpUrl(detail.target_system)}
+        isTargetSystemValid={isValidHttpUrl(resolvedBaseUrl)}
         onToggleOverview={() => setShowTopOverview((prev) => !prev)}
         onRefresh={() => void load({ mode: "manual" })}
         onRunExecution={() => void runExecution()}
@@ -427,4 +433,3 @@ export default function TaskDetail() {
     </Space>
   );
 }
-

@@ -14,6 +14,8 @@ __all__ = [
     "filter_executable_api_endpoints",
 ]
 
+_ALLOWED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "ANY"}
+
 
 def normalize_api_path(path: str) -> str:
     """Strip query/fragment, optional absolute URL host, trailing slashes."""
@@ -49,9 +51,14 @@ def expects_json_envelope(path: str) -> bool:
 def filter_executable_api_endpoints(endpoints: list[dict]) -> list[dict]:
     """Remove doc UI GETs from endpoint lists used for scenario/DSL generation."""
     out: list[dict] = []
+    seen: set[tuple[str, str]] = set()
     for ep in endpoints:
-        method = str(ep.get("method", "")).upper().strip()
-        path = str(ep.get("path", ""))
+        method = str(ep.get("method", "")).replace("`", "").strip().upper()
+        path = str(ep.get("path", "")).replace("`", "").strip()
+        if method not in _ALLOWED_METHODS:
+            continue
+        if not path.startswith("/"):
+            continue
         if method == "GET" and is_documentation_ui_path(path):
             continue
         lowered = path.lower()
@@ -59,5 +66,14 @@ def filter_executable_api_endpoints(endpoints: list[dict]) -> list[dict]:
             continue
         if "、" in path and "`" in path:
             continue
-        out.append(ep)
+        key = (method, path)
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized = dict(ep)
+        normalized["method"] = method
+        normalized["path"] = path
+        if isinstance(normalized.get("depends_on"), list):
+            normalized["depends_on"] = [str(item).replace("`", "").strip() for item in normalized["depends_on"] if str(item).strip()]
+        out.append(normalized)
     return out

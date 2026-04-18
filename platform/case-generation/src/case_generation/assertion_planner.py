@@ -452,6 +452,7 @@ class RuleAssertionBuilder:
             if self.intent in {"query", "update"}:
                 assertions.append(_assertion(f"json.{field}", "exists", None, "major", "field_presence", 0.72, "expected_field_present", "rules"))
 
+        assertions.extend(_infer_echo_assertions(self.request))
         return assertions
 
 
@@ -778,7 +779,7 @@ def _canonical_placeholder_name(name: str) -> str:
         return "order_id"
     if lowered in {"petid", "pet_id"}:
         return "pet_id"
-    if lowered in {"bookingid", "booking_id", "id"}:
+    if lowered in {"bookingid", "booking_id"}:
         return "booking_id"
     if lowered in {"todoid", "todo_id"}:
         return "todo_id"
@@ -786,6 +787,8 @@ def _canonical_placeholder_name(name: str) -> str:
         return "challenger_guid"
     if lowered in {"taskid", "task_id"}:
         return "task_id"
+    if lowered == "id":
+        return "resource_id"
     return lowered
 
 
@@ -937,7 +940,7 @@ def _endpoint_placeholder_fields(parsed_requirement: dict[str, Any], request: di
         "username": {"username", "user_name"},
         "order_id": {"order_id", "orderid", "id"},
         "pet_id": {"pet_id", "petid", "id"},
-        "booking_id": {"booking_id", "bookingid", "id"},
+        "booking_id": {"booking_id", "bookingid"},
         "todo_id": {"todo_id", "todoid", "id"},
         "challenger_guid": {"challenger_guid", "challengerguid", "guid"},
         "task_id": {"task_id", "taskid", "id"},
@@ -969,6 +972,8 @@ def _prefers_non_json_response(request: dict[str, Any], parsed_requirement: dict
     endpoint = _matched_endpoint(parsed_requirement, request)
     path = _canonicalize_path(str((endpoint or {}).get("path") or request.get("url", ""))).lower()
     method = str((endpoint or {}).get("method") or request.get("method", "")).upper().strip()
+    if path.startswith("/status/"):
+        return True
     if (method, path) in {
         ("POST", "/challenger"),
         ("POST", "/secret/token"),
@@ -1006,3 +1011,45 @@ def _dedupe_preserve(items: list[str]) -> list[str]:
         seen.add(value)
         output.append(value)
     return output
+
+
+def _infer_echo_assertions(request: dict[str, Any]) -> list[dict[str, Any]]:
+    assertions: list[dict[str, Any]] = []
+    url = str(request.get("url", "")).lower()
+    method = str(request.get("method", "")).upper().strip()
+    json_body = request.get("json")
+    params = request.get("params")
+
+    if any(url.endswith(suffix) for suffix in ("/post", "/anything")) and isinstance(json_body, dict):
+        for key, value in list(json_body.items())[:2]:
+            if not isinstance(value, (str, int, float, bool)) or str(key).lower() in {"password", "token", "secret"}:
+                continue
+            assertions.append(
+                _assertion(
+                    f"json.json.{key}",
+                    "eq",
+                    value,
+                    "major",
+                    "business",
+                    0.84,
+                    "echo_json_body_value",
+                    "rules",
+                )
+            )
+    if method == "GET" and url.endswith("/get") and isinstance(params, dict):
+        for key, value in list(params.items())[:2]:
+            if not isinstance(value, (str, int, float, bool)):
+                continue
+            assertions.append(
+                _assertion(
+                    f"json.args.{key}",
+                    "eq",
+                    value,
+                    "major",
+                    "business",
+                    0.84,
+                    "echo_query_value",
+                    "rules",
+                )
+            )
+    return assertions

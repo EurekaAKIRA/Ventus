@@ -204,6 +204,7 @@ export interface ParseMetadata {
   retrieval_mode: string;
   retrieval_top_k: number;
   rerank_enabled: boolean;
+  detected_base_url?: string;
   document_char_count: number;
   cleaned_char_count: number;
   chunk_count: number;

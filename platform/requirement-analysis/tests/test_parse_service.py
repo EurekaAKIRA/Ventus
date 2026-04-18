@@ -272,3 +272,50 @@ def test_parse_service_applies_contract_knowledge_only_for_platform_docs() -> No
     kb = result["parse_metadata"]["knowledge_base"]
     assert kb["applied"] is True
     assert any(path.endswith("domain/platform/task_center_api.md") for path in kb["source_files"])
+
+
+def test_parse_service_warns_on_implicit_resource_dependency_and_context() -> None:
+    result = parse_requirement_bundle(
+        requirement_text="""
+        # API 文档
+
+        Scenario: update profile
+        使用上一步返回值继续调用接口
+
+        GET /users/{id}
+        PUT /users/{id}
+        DELETE /users/{id}
+        """,
+        options=AnalysisParseOptions(
+            use_llm=False,
+            rag_enabled=False,
+            retrieval_top_k=3,
+            rerank_enabled=False,
+        ),
+    )
+
+    warnings = result["validation_report"]["warnings"]
+    assert any("资源来源/关键依赖" in item for item in warnings)
+    assert any("save_context / uses_context" in item for item in warnings)
+
+
+def test_parse_service_detects_base_url_from_document() -> None:
+    result = parse_requirement_bundle(
+        requirement_text="""
+        # Restful Booker API
+
+        ## 环境信息
+        - Base URL: `https://restful-booker.herokuapp.com`
+
+        ## 场景
+        **涉及接口:** `POST /auth`、`POST /booking`
+        """,
+        options=AnalysisParseOptions(
+            use_llm=False,
+            rag_enabled=False,
+            retrieval_top_k=3,
+            rerank_enabled=False,
+        ),
+    )
+
+    assert result["parse_metadata"]["detected_base_url"] == "https://restful-booker.herokuapp.com"

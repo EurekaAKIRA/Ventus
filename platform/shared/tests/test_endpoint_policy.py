@@ -36,3 +36,16 @@ def test_filter_executable_api_endpoints_drops_get_docs() -> None:
     out = filter_executable_api_endpoints(eps)
     assert len(out) == 2
     assert {e["path"] for e in out} == {"/health", "/api/tasks"}
+
+
+def test_filter_executable_api_endpoints_drops_malformed_composite_methods() -> None:
+    eps = [
+        {"method": "PUT` / `PATCH", "path": "/todos/{id}"},
+        {"method": "`GET`", "path": "`/todos`"},
+        {"method": "ANY", "path": "/anything"},
+    ]
+    out = filter_executable_api_endpoints(eps)
+    assert {(e["method"], e["path"]) for e in out} == {
+        ("GET", "/todos"),
+        ("ANY", "/anything"),
+    }

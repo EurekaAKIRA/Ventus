@@ -59,6 +59,7 @@ def build_analysis_report(
         "failure_count": step_stats["performance_stats"]["failure_count"],
         "throughput": step_stats["performance_stats"]["throughput"],
         "assertion_quality_summary": step_stats["assertion_quality_summary"],
+        "scenario_quality_summary": step_stats["scenario_quality_summary"],
     }
     task_summary_text = _build_task_summary_text(task_context.task_name, quality_status, summary)
     dashboard_summary = _build_dashboard_summary(summary, step_stats["assertion_stats"], step_stats["context_stats"])
@@ -136,6 +137,7 @@ def build_analysis_report(
                 "pass_rate": step_stats["assertion_stats"]["pass_rate"],
             },
             "assertion_quality": step_stats["assertion_quality_summary"],
+            "scenario_quality": step_stats["scenario_quality_summary"],
             "context": {
                 "defined": step_stats["context_stats"]["defined_key_count"],
                 "used": step_stats["context_stats"]["used_key_count"],
@@ -261,6 +263,7 @@ def _collect_step_stats(
     failure_count = int(metrics.get("failure_count", 0) or 0)
     throughput = round(float(metrics.get("throughput", 0.0) or 0.0), 2)
     assertion_quality_summary = _collect_assertion_quality_summary(dsl_steps)
+    scenario_quality_summary = _collect_scenario_quality_summary(test_case_dsl)
 
     return {
         "total_steps": total_steps,
@@ -296,6 +299,7 @@ def _collect_step_stats(
             "validation_warnings": len(validation_report.warnings),
         },
         "assertion_quality_summary": assertion_quality_summary,
+        "scenario_quality_summary": scenario_quality_summary,
         "step_assertion_quality": assertion_quality_summary["steps"],
         "context_stats": {
             "defined_keys": sorted(save_context_map.keys()),
@@ -315,7 +319,8 @@ def _collect_step_stats(
             "throughput": throughput,
             "is_load_test": total_requests > 0 or throughput > 0,
         },
-        "quality_warnings": _build_assertion_quality_warnings(assertion_quality_summary),
+        "quality_warnings": _build_assertion_quality_warnings(assertion_quality_summary)
+        + _build_scenario_quality_warnings(scenario_quality_summary),
     }
 
 
@@ -519,6 +524,70 @@ def _collect_assertion_quality_summary(dsl_steps: list[dict[str, Any]]) -> dict[
     }
 
 
+def _collect_scenario_quality_summary(test_case_dsl: dict[str, Any]) -> dict[str, Any]:
+    scenarios = list(test_case_dsl.get("scenarios") or [])
+    signature_counts: Counter[str] = Counter()
+    unique_endpoints: set[str] = set()
+    multi_request_scenario_count = 0
+    empty_request_scenario_count = 0
+    dependency_chain_scenario_count = 0
+    steps: list[dict[str, Any]] = []
+
+    for scenario in scenarios:
+        request_steps = [step for step in (scenario.get("steps") or []) if step.get("request")]
+        request_signatures: list[str] = []
+        uses_context = False
+        for step in request_steps:
+            request = step.get("request") or {}
+            method = str(request.get("method", "")).upper().strip() or "GET"
+            url = str(request.get("url", "")).strip()
+            request_signatures.append(f"{method} {_canonicalize_url_path(url)}")
+            unique_endpoints.add(f"{method} {_canonicalize_url_path(url)}")
+            if step.get("uses_context"):
+                uses_context = True
+        signature = " -> ".join(request_signatures)
+        if signature:
+            signature_counts[signature] += 1
+        if len(request_steps) > 1:
+            multi_request_scenario_count += 1
+        if not request_steps:
+            empty_request_scenario_count += 1
+        if uses_context or len(request_steps) > 1:
+            dependency_chain_scenario_count += 1
+        steps.append(
+            {
+                "scenario_id": scenario.get("scenario_id"),
+                "name": scenario.get("name"),
+                "request_step_count": len(request_steps),
+                "signature": signature,
+                "uses_dependency_chain": bool(uses_context or len(request_steps) > 1),
+            }
+        )
+
+    duplicate_signature_count = sum(count - 1 for count in signature_counts.values() if count > 1)
+    single_request_scenario_count = max(len(scenarios) - multi_request_scenario_count - empty_request_scenario_count, 0)
+    return {
+        "scenario_count": len(scenarios),
+        "unique_endpoint_count": len(unique_endpoints),
+        "single_request_scenario_count": single_request_scenario_count,
+        "multi_request_scenario_count": multi_request_scenario_count,
+        "dependency_chain_scenario_count": dependency_chain_scenario_count,
+        "empty_request_scenario_count": empty_request_scenario_count,
+        "duplicate_signature_count": duplicate_signature_count,
+        "steps": steps,
+    }
+
+
+def _canonicalize_url_path(url: str) -> str:
+    text = str(url or "").strip()
+    if not text:
+        return ""
+    if "://" in text:
+        text = text.split("://", 1)[1]
+        text = "/" + text.split("/", 1)[1] if "/" in text else "/"
+    return text.split("?", 1)[0]
+
+
 def _build_assertion_quality_warnings(assertion_quality_summary: dict[str, Any]) -> list[str]:
     warnings: list[str] = []
     weak_count = int(assertion_quality_summary.get("weak_assertion_step_count", 0) or 0)
@@ -527,6 +596,17 @@ def _build_assertion_quality_warnings(assertion_quality_summary: dict[str, Any])
     fallback_count = int(assertion_quality_summary.get("fallback_count", 0) or 0)
     if fallback_count:
         warnings.append(f"有 {fallback_count} 条断言使用了规则兜底")
+    return warnings
+
+
+def _build_scenario_quality_warnings(scenario_quality_summary: dict[str, Any]) -> list[str]:
+    warnings: list[str] = []
+    duplicate_signature_count = int(scenario_quality_summary.get("duplicate_signature_count", 0) or 0)
+    if duplicate_signature_count:
+        warnings.append(f"存在 {duplicate_signature_count} 个近重复场景签名，建议做覆盖去重")
+    empty_request_scenario_count = int(scenario_quality_summary.get("empty_request_scenario_count", 0) or 0)
+    if empty_request_scenario_count:
+        warnings.append(f"存在 {empty_request_scenario_count} 个无请求步骤场景，建议检查输入描述或生成策略")
     return warnings
 
 
@@ -642,6 +722,7 @@ def _build_dashboard(
             "pass_rate": assertion_stats["pass_rate"],
         },
         "assertion_quality_summary": assertion_quality_summary,
+        "scenario_quality_summary": summary["scenario_quality_summary"],
         "performance_summary": performance_stats,
         "context_summary": {
             "defined_keys": context_stats["defined_key_count"],
@@ -702,6 +783,10 @@ def _build_dashboard_summary(
         "context_defined_keys": context_stats["defined_key_count"],
         "context_used_keys": context_stats["used_key_count"],
         "context_extracted_keys": context_stats["extracted_key_count"],
+        "unique_endpoint_count": summary["scenario_quality_summary"]["unique_endpoint_count"],
+        "duplicate_signature_count": summary["scenario_quality_summary"]["duplicate_signature_count"],
+        "assertion_quality_summary": summary["assertion_quality_summary"],
+        "scenario_quality_summary": summary["scenario_quality_summary"],
         "total_requests": summary["total_requests"],
         "success_count": summary["success_count"],
         "failure_count": summary["failure_count"],
@@ -766,6 +851,11 @@ def _build_report_sections(
                 "failure_reason_count": len(failure_reasons),
                 "failure_reasons": failure_reasons,
             },
+        },
+        {
+            "key": "scenario_quality",
+            "title": "场景质量",
+            "items": summary["scenario_quality_summary"],
         },
         {
             "key": "assertions",

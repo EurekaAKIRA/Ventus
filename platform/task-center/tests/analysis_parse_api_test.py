@@ -69,6 +69,32 @@ def main() -> int:
         # request-level options should override module defaults
         assert metadata["parse_mode"] == "rules"
 
+        requirement_file = Path(temp_dir) / "restful_booker_e2e2_plus.md"
+        requirement_file.write_text(
+            "# Restful Booker\n\n"
+            "## 环境信息\n"
+            "- Base URL: `https://restful-booker.herokuapp.com`\n\n"
+            "## 场景\n"
+            "**涉及接口:** `POST /auth`、`POST /booking`\n",
+            encoding="utf-8",
+        )
+        file_response = client.post(
+            "/api/analysis/parse",
+            json={
+                "task_name": "",
+                "source_type": "file",
+                "source_path": str(requirement_file),
+                "use_llm": False,
+                "rag_enabled": False,
+                "retrieval_top_k": 3,
+                "rerank_enabled": False,
+            },
+        )
+        assert file_response.status_code == 200
+        file_payload = file_response.json()["data"]
+        assert file_payload["task_name"] == "restful_booker_e2e2_plus"
+        assert file_payload["parse_metadata"]["detected_base_url"] == "https://restful-booker.herokuapp.com"
+
     print("analysis parse api test passed")
     return 0
 

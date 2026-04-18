@@ -48,6 +48,10 @@ export function TaskDetailTopSection(props: {
     onRunExecution,
     onStopExecution,
   } = props;
+  const parsedBaseUrl = detail.parse_metadata?.detected_base_url || "-";
+  const effectiveDslBaseUrl =
+    ((detail.test_case_dsl?.metadata as Record<string, any> | undefined)?.execution as Record<string, any> | undefined)?.base_url ||
+    "-";
 
   return (
     <>
@@ -80,7 +84,8 @@ export function TaskDetailTopSection(props: {
           <StatusTag status={uiExecutionStatus === "running" ? "running" : displayTaskStatus} />
           <Text type="secondary">场景数</Text>
           <Tag color="processing">{detail.scenarios?.length ?? 0}</Tag>
-          {!isTargetSystemValid ? <Tag color="warning">target_system 待配置</Tag> : null}
+          {detail.parse_metadata?.detected_base_url ? <Tag color="success">已解析 Base URL</Tag> : null}
+          {!isTargetSystemValid && !detail.parse_metadata?.detected_base_url ? <Tag color="warning">Base URL 待补充</Tag> : null}
           {preflightBlocking ? <Tag color="error">前置检查阻断</Tag> : null}
         </Space>
       </Card>
@@ -95,7 +100,11 @@ export function TaskDetailTopSection(props: {
                   type="warning"
                   showIcon
                   message="执行受阻"
-                  description="target_system 缺失或不合法，请先配置有效的 http(s) 地址"
+                  description={
+                    detail.parse_metadata?.detected_base_url
+                      ? "前端未检测到显式 target_system，但文档已解析出 Base URL，可直接查看解析结果并执行。"
+                      : "target_system 缺失或不合法，且文档中也未解析出 Base URL，请先补充有效的 http(s) 地址。"
+                  }
                 />
               ) : null}
               {preflightBlocking ? (
@@ -127,7 +136,10 @@ export function TaskDetailTopSection(props: {
               <Descriptions.Item label="创建时间">{formatDateTime(detail.task_context.created_at)}</Descriptions.Item>
               <Descriptions.Item label="语言">{detail.task_context.language}</Descriptions.Item>
               <Descriptions.Item label="target_system">{detail.target_system || "-"}</Descriptions.Item>
+              <Descriptions.Item label="文档路径">{detail.task_context.source_path || "-"}</Descriptions.Item>
               <Descriptions.Item label="environment">{detail.environment || "-"}</Descriptions.Item>
+              <Descriptions.Item label="解析 Base URL">{parsedBaseUrl}</Descriptions.Item>
+              <Descriptions.Item label="执行 Base URL">{effectiveDslBaseUrl}</Descriptions.Item>
             </Descriptions>
           </Card>
         </>
