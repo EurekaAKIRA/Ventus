@@ -1,5 +1,6 @@
 import { Button, Card, Col, Empty, List, Row, Space, Tag, Typography } from "antd";
 import type { ExtendedTaskDetail } from "../hooks/useTaskDetailData";
+import { TaskDetailParseDiagnosticsCard } from "./TaskDetailParseDiagnosticsCard";
 
 const { Text } = Typography;
 
@@ -21,6 +22,9 @@ export function TaskDetailParsedTab(props: {
 
   return (
     <Row gutter={[16, 16]}>
+      <Col span={24}>
+        <TaskDetailParseDiagnosticsCard detail={detail} onOpenRawData={onOpenRawData} />
+      </Col>
       <Col span={24}>
         <Card
           bordered={false}
@@ -96,4 +100,3 @@ export function TaskDetailParsedTab(props: {
     </Row>
   );
 }
-

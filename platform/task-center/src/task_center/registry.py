@@ -1,15 +1,17 @@
-"""Task registry with JSON-backed persistence and recovery."""
+"""Task registry with DB-backed persistence and JSON compatibility mirror."""
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .artifact_manager import load_pipeline_artifacts
 from platform_shared.models import EnvironmentConfig
 
+from .artifact_manager import load_pipeline_artifacts
+from .db_store import DatabaseTaskStore
 from .repository import EnvironmentRepository, ExecutionHistoryRepository, ExecutionRepository, TaskRepository
 
 
@@ -26,6 +28,8 @@ class TaskRecord:
     source_path: str | None = None
     target_system: str | None = None
     environment: str | None = None
+    project_id: str | None = None
+    created_by: str | None = None
     created_at: str = field(default_factory=_utc_now_iso)
     status: str = "received"
     task_context: dict[str, Any] = field(default_factory=dict)
@@ -47,6 +51,8 @@ class TaskRecord:
             "source_path": self.source_path,
             "target_system": self.target_system,
             "environment": self.environment,
+            "project_id": self.project_id,
+            "created_by": self.created_by,
             "created_at": self.created_at,
             "status": self.status,
             "task_context": self.task_context,
@@ -63,6 +69,8 @@ class TaskRecord:
             "source_type": self.source_type,
             "target_system": self.target_system,
             "environment": self.environment,
+            "project_id": self.project_id,
+            "created_by": self.created_by,
             "created_at": self.created_at,
             "status": self.status,
             "archived": self.archived,
@@ -89,21 +97,79 @@ class TaskRegistry:
         self.environment_repository = EnvironmentRepository(str(Path(self.artifacts_root) / "environments.json"))
         self._execution_history: list[dict[str, Any]] = []
         self._environments: dict[str, EnvironmentConfig] = {}
-        self._load_from_disk()
+        self._backend_name = str(os.getenv("TASK_CENTER_PERSISTENCE_BACKEND", "db") or "db").strip().lower()
+        self._json_mirror_enabled = (
+            str(
+                os.getenv(
+                    "TASK_CENTER_JSON_MIRROR_ENABLED",
+                    "false" if self._backend_name == "db" else "true",
+                )
+            )
+            .strip()
+            .lower()
+            in {"1", "true", "yes", "on"}
+        )
+        self._db_store: DatabaseTaskStore | None = None
+        if self._backend_name == "db":
+            self._db_store = DatabaseTaskStore(database_url=os.getenv("TASK_CENTER_DATABASE_URL"))
+        self._load_state()
 
-    def _load_from_disk(self) -> None:
-        tasks = [TaskRecord.from_dict(item) for item in self.task_repository.load_tasks()]
-        executions = self.execution_repository.load_executions()
-        self._load_environments()
-        self._execution_history = self.execution_history_repository.load_history()
+    @property
+    def db_store(self) -> DatabaseTaskStore | None:
+        return self._db_store
+
+    def _load_state(self) -> None:
+        tasks: list[TaskRecord]
+        if self._db_store is not None:
+            tasks = [TaskRecord.from_dict(item) for item in self._db_store.load_tasks()]
+            environments = self._db_store.load_environments()
+            execution_history = self._db_store.list_execution_history()
+            if not tasks and not environments and not execution_history:
+                self._import_json_mirror_into_db()
+                tasks = [TaskRecord.from_dict(item) for item in self._db_store.load_tasks()]
+                environments = self._db_store.load_environments()
+                execution_history = self._db_store.list_execution_history()
+            self._environments = {item.name: item for item in environments} or dict(DEFAULT_ENVIRONMENTS)
+            if not environments:
+                self._persist_environments()
+            self._execution_history = execution_history
+        else:
+            tasks = [TaskRecord.from_dict(item) for item in self.task_repository.load_tasks()]
+            self._load_environments_from_json()
+            self._execution_history = self.execution_history_repository.load_history()
+
         if not tasks:
             tasks = self._recover_tasks_from_artifacts()
+            if tasks:
+                for record in tasks:
+                    self._save_record(record)
+
+        executions = self.execution_repository.load_executions()
         for record in tasks:
             record.execution_result = executions.get(record.task_id, record.execution_result)
             self._hydrate_task(record)
             self._tasks[record.task_id] = record
-        if tasks:
-            self._persist_tasks()
+        if tasks and self._json_mirror_enabled:
+            self._persist_json_mirror()
+
+    def _import_json_mirror_into_db(self) -> None:
+        if self._db_store is None:
+            return
+        json_tasks = [TaskRecord.from_dict(item) for item in self.task_repository.load_tasks()]
+        json_executions = self.execution_repository.load_executions()
+        json_environments = self.environment_repository.load_environments()
+        json_history = self.execution_history_repository.load_history()
+        if not json_tasks:
+            json_tasks = self._recover_tasks_from_artifacts()
+        for record in json_tasks:
+            record.execution_result = json_executions.get(record.task_id, record.execution_result)
+            self._db_store.save_task(record.to_dict())
+        for item in json_environments:
+            if item.get("name"):
+                self._db_store.save_environment(EnvironmentConfig(**item))
+        for item in json_history:
+            if item.get("task_id"):
+                self._db_store.append_execution_history(item)
 
     def _recover_tasks_from_artifacts(self) -> list[TaskRecord]:
         recovered: list[TaskRecord] = []
@@ -139,7 +205,7 @@ class TaskRegistry:
             recovered.append(record)
         return recovered
 
-    def _load_environments(self) -> None:
+    def _load_environments_from_json(self) -> None:
         loaded = self.environment_repository.load_environments()
         if loaded:
             self._environments = {
@@ -164,11 +230,11 @@ class TaskRegistry:
         if pipeline_result.get("execution_result"):
             record.execution_result = pipeline_result["execution_result"]
 
-    def _persist_tasks(self) -> None:
+    def _persist_tasks_json(self) -> None:
         items = [record.to_dict() for record in self._tasks.values()]
         self.task_repository.save_tasks(items)
 
-    def _persist_executions(self) -> None:
+    def _persist_executions_json(self) -> None:
         executions = {
             task_id: record.execution_result
             for task_id, record in self._tasks.items()
@@ -176,12 +242,33 @@ class TaskRegistry:
         }
         self.execution_repository.save_executions(executions)
 
-    def _persist_execution_history(self) -> None:
+    def _persist_execution_history_json(self) -> None:
         self.execution_history_repository.save_history(self._execution_history)
 
-    def _persist_environments(self) -> None:
+    def _persist_environments_json(self) -> None:
         items = [config.to_dict() for _, config in sorted(self._environments.items())]
         self.environment_repository.save_environments(items)
+
+    def _persist_json_mirror(self) -> None:
+        self._persist_tasks_json()
+        self._persist_executions_json()
+        self._persist_execution_history_json()
+        self._persist_environments_json()
+
+    def _save_record(self, record: TaskRecord) -> None:
+        self._tasks[record.task_id] = record
+        if self._db_store is not None:
+            self._db_store.save_task(record.to_dict())
+        if self._json_mirror_enabled:
+            self._persist_tasks_json()
+            self._persist_executions_json()
+
+    def _persist_environments(self) -> None:
+        if self._db_store is not None:
+            for _, config in sorted(self._environments.items()):
+                self._db_store.save_environment(config)
+        if self._json_mirror_enabled:
+            self._persist_environments_json()
 
     def create_task(
         self,
@@ -192,6 +279,8 @@ class TaskRegistry:
         source_path: str | None = None,
         target_system: str | None = None,
         environment: str | None = None,
+        project_id: str | None = None,
+        created_by: str | None = None,
         task_context: dict[str, Any] | None = None,
     ) -> TaskRecord:
         record = TaskRecord(
@@ -202,16 +291,15 @@ class TaskRegistry:
             source_path=source_path,
             target_system=target_system,
             environment=environment,
+            project_id=project_id,
+            created_by=created_by,
             task_context=task_context or {},
         )
-        self._tasks[task_id] = record
-        self._persist_tasks()
+        self._save_record(record)
         return record
 
     def save(self, record: TaskRecord) -> TaskRecord:
-        self._tasks[record.task_id] = record
-        self._persist_tasks()
-        self._persist_executions()
+        self._save_record(record)
         return record
 
     def get(self, task_id: str) -> TaskRecord | None:
@@ -249,30 +337,67 @@ class TaskRegistry:
         self.save(record)
         return True
 
-    def list_environments(self) -> list[EnvironmentConfig]:
+    def list_environments(
+        self,
+        *,
+        project_id: str | None = None,
+        include_global: bool = False,
+    ) -> list[EnvironmentConfig]:
+        if self._db_store is not None and project_id is not None:
+            merged: dict[str, EnvironmentConfig] = {}
+            if include_global:
+                for item in self._db_store.load_environments(project_id=None):
+                    merged[item.name] = item
+            for item in self._db_store.load_environments(project_id=project_id):
+                merged[item.name] = item
+            if include_global:
+                for name, config in self._environments.items():
+                    merged.setdefault(name, config)
+            return [merged[name] for name in sorted(merged)]
         return [self._environments[name] for name in sorted(self._environments)]
 
-    def get_environment(self, name: str | None) -> EnvironmentConfig | None:
+    def get_environment(self, name: str | None, *, project_id: str | None = None) -> EnvironmentConfig | None:
         if not name:
             return None
+        if self._db_store is not None:
+            db_env = self._db_store.get_environment(name=name, project_id=project_id, allow_global_fallback=True)
+            if db_env is not None:
+                return db_env
         return self._environments.get(name)
 
-    def save_environment(self, config: EnvironmentConfig) -> EnvironmentConfig:
-        self._environments[config.name] = config
-        self._persist_environments()
+    def save_environment(
+        self,
+        config: EnvironmentConfig,
+        *,
+        project_id: str | None = None,
+        created_by: str | None = None,
+    ) -> EnvironmentConfig:
+        if project_id is None:
+            self._environments[config.name] = config
+        if self._db_store is not None:
+            self._db_store.save_environment(config, project_id=project_id, created_by=created_by)
+        if project_id is None and self._json_mirror_enabled:
+            self._persist_environments_json()
         return config
 
-    def delete_environment(self, name: str) -> bool:
-        if name not in self._environments:
-            return False
-        del self._environments[name]
-        self._persist_environments()
-        return True
+    def delete_environment(self, name: str, *, project_id: str | None = None) -> bool:
+        deleted = False
+        if project_id is None and name in self._environments:
+            del self._environments[name]
+            deleted = True
+        if self._db_store is not None:
+            deleted = self._db_store.delete_environment(name, project_id=project_id) or deleted
+        if deleted and project_id is None and self._json_mirror_enabled:
+            self._persist_environments_json()
+        return deleted
 
     def append_execution_history(self, record: dict[str, Any]) -> dict[str, Any]:
         self._execution_history.append(record)
         self._execution_history.sort(key=lambda item: item.get("executed_at", ""), reverse=True)
-        self._persist_execution_history()
+        if self._db_store is not None and record.get("task_id"):
+            self._db_store.append_execution_history(record)
+        if self._json_mirror_enabled:
+            self._persist_execution_history_json()
         return record
 
     def list_execution_history(
@@ -293,7 +418,8 @@ class TaskRegistry:
         if keyword:
             keyword_lower = keyword.lower()
             items = [
-                item for item in items
+                item
+                for item in items
                 if keyword_lower in str(item.get("task_name", "")).lower()
                 or keyword_lower in str(item.get("task_id", "")).lower()
                 or keyword_lower in str(item.get("environment", "")).lower()

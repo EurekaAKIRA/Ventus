@@ -48,6 +48,12 @@ const STAGE_LABELS: Record<StageKey, string> = {
   dashboard: "单任务看板数据",
 };
 
+const CREATE_FLOW_STAGE_LABELS: Record<StageKey, string> = {
+  basic: "任务已创建",
+  artifacts: "需求解析与场景生成",
+  dashboard: "报告与详情装载",
+};
+
 export default function TaskDetail() {
   const { taskId = "" } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,6 +67,7 @@ export default function TaskDetail() {
     stageState,
     stageError,
     refreshStageText,
+    analysisProgress,
     detail,
     taskDashboard,
     dashboardLoadError,
@@ -196,7 +203,8 @@ export default function TaskDetail() {
         fromCreateFlow={fromCreateFlow}
         stageState={stageState}
         stageError={stageError}
-        stageLabels={STAGE_LABELS}
+        stageLabels={fromCreateFlow ? CREATE_FLOW_STAGE_LABELS : STAGE_LABELS}
+        analysisProgress={analysisProgress}
       />
     );
   }

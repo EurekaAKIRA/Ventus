@@ -1,0 +1,41 @@
+%% 架构说明依据：docs/architecture_replan.md、platform/README.md；代码与目录对应 platform/ 下各子模块。
+%% 相关源路径备注：run_platform.py（仓库根目录）、platform/task-center、platform/requirement-analysis、platform/case-generation、platform/execution-engine、platform/result-analysis、platform/platform-ui、platform/shared。
+%% 绘制约定：流向参考 GB/T 1526—1989（等同 ISO 5807：1985）系统流程图习惯——主流程自上而下、同层自左至右；线长与间距均匀，减少交叉。
+%%{init: {'flowchart': {'nodeSpacing': 52, 'rankSpacing': 72, 'padding': 34, 'useMaxWidth': false}}}%%
+flowchart TB
+  subgraph Access["接入与编排（task-center）"]
+    direction LR
+    CLI["命令行入口\nrun_platform.py"]
+    TC["任务接入\n编排 API"]
+  end
+
+  subgraph Core["主处理链（左→右）"]
+    direction LR
+    RA["需求理解\nrequirement-analysis"]
+    CG["测试设计\ncase-generation"]
+    RES["结果分析\nresult-analysis"]
+  end
+
+  subgraph Exec["可选：执行引擎（execution-engine）"]
+    EE["调度执行\nTestCaseDSL"]
+  end
+
+  subgraph Pres["展示层（platform-ui）"]
+    UI["Web 前端"]
+  end
+
+  subgraph Fund["基础（platform/shared）"]
+    SH["统一数据模型\n与协议"]
+  end
+
+  CLI --> TC
+  TC --> RA
+  RA --> CG --> RES
+  RES --> UI
+  CG -.-> EE
+  UI <-.->|接口| TC
+  TC -.-> SH
+  RA -.-> SH
+  CG -.-> SH
+  EE -.-> SH
+  RES -.-> SH

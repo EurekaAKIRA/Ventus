@@ -1,55 +1,48 @@
 import type {
-  TaskListItem,
-  TaskDetailPayload,
-  ParsedRequirement,
-  ScenarioModel,
-  TestCaseDSL,
-  ExecutionResult,
-  ValidationReport,
   AnalysisReport,
-  TaskContext,
-  RetrievedChunk,
-  TaskArtifactItem,
-  TaskArtifactContent,
-  HistoryTaskItem,
-  ExecutionHistoryItem,
-  TaskDashboardPayload,
-  PreflightCheckPayload,
+  AnalysisProgressPayload,
   ExecutionExplanationPayload,
+  ExecutionHistoryItem,
+  ExecutionResult,
+  HistoryTaskItem,
+  ParsedRequirement,
+  PreflightCheckPayload,
   RegressionDiffPayload,
+  RetrievedChunk,
+  ScenarioModel,
+  TaskArtifactContent,
+  TaskArtifactItem,
+  TaskContext,
+  TaskDashboardPayload,
+  TaskDetailPayload,
+  TaskListItem,
+  TestCaseDSL,
+  ValidationReport,
 } from "../types";
 import {
-  mockTaskList,
-  mockTaskDetail,
+  mockAnalysisReport,
+  mockArtifactContentByType,
+  mockArtifacts,
+  mockExecutionResult,
+  mockHistoryTaskList,
   mockParseMetadata,
   mockParsedRequirement,
   mockRetrievedContext,
   mockScenarios,
+  mockTaskDetail,
+  mockTaskList,
   mockTestCaseDSL,
-  mockExecutionResult,
   mockValidationReport,
-  mockAnalysisReport,
-  mockArtifacts,
-  mockArtifactContentByType,
-  mockHistoryTaskList,
 } from "../mocks";
+import { getStoredCurrentProjectId, requestApi } from "./client";
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
-const API_BASE_URL = (import.meta.env.VITE_PLATFORM_API_BASE as string | undefined)?.trim() || "http://127.0.0.1:8001";
 
 /** Matches `platform/shared/config/runtime_config.json` → `requirement_analysis.defaults.rag_enabled`. */
 export const DEFAULT_REQUIREMENT_RAG_ENABLED = false;
 const USE_MOCK_API = String(import.meta.env.VITE_USE_MOCK_API ?? "").toLowerCase() === "true";
 const HISTORY_PAGE_SIZE_MAX = 200;
 let regressionDiffApiAvailable: boolean | null = null;
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  code: string;
-  message: string;
-  data: T;
-  timestamp: string;
-};
 
 function normalizeStatus(status: string): string {
   return status === "scenario_generated" ? "generated" : status;
@@ -67,6 +60,8 @@ function normalizeTaskItem(input: Partial<TaskListItem> & Record<string, unknown
     language: String(input.language ?? "zh-CN"),
     status: normalizedStatus,
     notes: Array.isArray(input.notes) ? (input.notes as string[]) : [],
+    project_id: typeof input.project_id === "string" ? input.project_id : undefined,
+    created_by: typeof input.created_by === "string" ? input.created_by : undefined,
   };
 }
 
@@ -85,31 +80,11 @@ function toArtifactLabel(artifactType: string): string {
   return mapping[artifactType] ?? artifactType;
 }
 
-async function requestApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const method = String(init?.method ?? "GET").toUpperCase();
-  const hasBody = init?.body !== undefined && init?.body !== null;
-  const mergedHeaders = new Headers(init?.headers ?? {});
-  // Avoid preflight for simple GET requests in browser.
-  if (hasBody && !mergedHeaders.has("Content-Type")) {
-    mergedHeaders.set("Content-Type", "application/json");
+function appendProjectId(qp: URLSearchParams, projectId?: string) {
+  const resolved = String(projectId ?? getStoredCurrentProjectId()).trim();
+  if (resolved) {
+    qp.set("project_id", resolved);
   }
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    method,
-    headers: mergedHeaders,
-  });
-  if (!response.ok) {
-    let detail = "";
-    try {
-      const errorPayload = (await response.json()) as Partial<ApiEnvelope<unknown>>;
-      detail = String(errorPayload.message ?? "");
-    } catch {
-      detail = "";
-    }
-    throw new Error(detail ? `HTTP ${response.status}: ${detail}` : `HTTP ${response.status}`);
-  }
-  const payload = (await response.json()) as ApiEnvelope<T>;
-  return payload.data;
 }
 
 export async function fetchTaskList(_params?: {
@@ -117,10 +92,9 @@ export async function fetchTaskList(_params?: {
   keyword?: string;
   page?: number;
   page_size?: number;
+  project_id?: string;
 }): Promise<{ items: TaskListItem[]; total: number }> {
   const requestedStatus = _params?.status?.trim() ?? "";
-  // Backend `/api/tasks` currently validates status against TaskStatus enum
-  // and does not accept `running`. Keep `running` filter client-side.
   const useClientSideRunningFilter = requestedStatus === "running";
 
   if (USE_MOCK_API) {
@@ -131,11 +105,7 @@ export async function fetchTaskList(_params?: {
     }
     if (_params?.keyword) {
       const kw = _params.keyword.toLowerCase();
-      items = items.filter(
-        (t) =>
-          t.task_name.toLowerCase().includes(kw) ||
-          t.task_id.toLowerCase().includes(kw),
-      );
+      items = items.filter((t) => t.task_name.toLowerCase().includes(kw) || t.task_id.toLowerCase().includes(kw));
     }
     return { items, total: items.length };
   }
@@ -147,12 +117,11 @@ export async function fetchTaskList(_params?: {
     const pageSize = _params?.page_size ?? 20;
     if (status) qp.set("status", status);
     if (keyword) qp.set("keyword", keyword);
+    appendProjectId(qp, _params?.project_id);
     qp.set("page", String(page));
     qp.set("page_size", String(pageSize));
 
-    const payload = await requestApi<{ items: Array<Record<string, unknown>>; total: number }>(
-      `/api/tasks?${qp.toString()}`,
-    );
+    const payload = await requestApi<{ items: Array<Record<string, unknown>>; total: number }>(`/api/tasks?${qp.toString()}`);
     let items = payload.items.map((item) => normalizeTaskItem(item));
     if (useClientSideRunningFilter) {
       items = items.filter((item) => normalizeStatus(item.status) === "running");
@@ -166,10 +135,7 @@ export async function fetchTaskList(_params?: {
   }
 }
 
-export async function fetchTaskDetail(
-  taskId: string,
-  options?: { detailLevel?: "full" | "summary" },
-): Promise<TaskDetailPayload> {
+export async function fetchTaskDetail(taskId: string, options?: { detailLevel?: "full" | "summary" }): Promise<TaskDetailPayload> {
   if (USE_MOCK_API) {
     await delay();
     return { ...mockTaskDetail };
@@ -191,7 +157,8 @@ export async function createTask(payload: {
   target_system?: string;
   environment?: string;
   rag_enabled?: boolean;
-}): Promise<TaskContext> {
+  project_id?: string;
+}): Promise<TaskContext & { project_id?: string; created_by?: string }> {
   if (USE_MOCK_API) {
     await delay(600);
     return {
@@ -203,14 +170,27 @@ export async function createTask(payload: {
       language: "zh-CN",
       status: "received",
       notes: [],
+      project_id: payload.project_id,
     };
   }
   try {
-    const data = await requestApi<{ task_id: string; task_context: TaskContext }>("/api/tasks", {
+    const data = await requestApi<{
+      task_id: string;
+      task_context: TaskContext;
+      project_id?: string;
+      created_by?: string;
+    }>("/api/tasks", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        project_id: payload.project_id ?? (getStoredCurrentProjectId() || undefined),
+      }),
     });
-    return data.task_context;
+    return {
+      ...data.task_context,
+      project_id: data.project_id,
+      created_by: data.created_by,
+    };
   } catch (error) {
     throw new Error(`创建任务失败: ${(error as Error).message}`);
   }
@@ -228,9 +208,7 @@ export async function deleteTask(taskId: string): Promise<void> {
   }
 }
 
-export async function fetchParsedRequirement(
-  taskId: string,
-): Promise<ParsedRequirement> {
+export async function fetchParsedRequirement(taskId: string): Promise<ParsedRequirement> {
   if (USE_MOCK_API) {
     await delay();
     return { ...mockParsedRequirement };
@@ -242,9 +220,7 @@ export async function fetchParsedRequirement(
   }
 }
 
-export async function fetchRetrievedContext(
-  taskId: string,
-): Promise<RetrievedChunk[]> {
+export async function fetchRetrievedContext(taskId: string): Promise<RetrievedChunk[]> {
   if (USE_MOCK_API) {
     await delay();
     return [...mockRetrievedContext];
@@ -285,9 +261,55 @@ export async function refreshTaskParse(
   }
 }
 
-export async function fetchScenarios(
-  taskId: string,
-): Promise<ScenarioModel[]> {
+export async function startTaskAnalysis(taskId: string): Promise<AnalysisProgressPayload> {
+  if (USE_MOCK_API) {
+    await delay(400);
+    return {
+      task_id: taskId,
+      kind: "analysis",
+      stage: "requirement_parsed",
+      percent: 45,
+      status: "running",
+      message: "需求解析完成，开始生成测试场景",
+      updated_at: new Date().toISOString(),
+      detail: {
+        chunk_count: 2,
+      },
+    };
+  }
+  try {
+    return await requestApi<AnalysisProgressPayload>(`/api/tasks/${taskId}/analysis/start`, {
+      method: "POST",
+    });
+  } catch (error) {
+    throw new Error(`启动解析失败: ${(error as Error).message}`);
+  }
+}
+
+export async function fetchTaskAnalysisProgress(taskId: string): Promise<AnalysisProgressPayload> {
+  if (USE_MOCK_API) {
+    await delay(300);
+    return {
+      task_id: taskId,
+      kind: "analysis",
+      stage: "ready",
+      percent: 100,
+      status: "completed",
+      message: "任务解析完成，可进入详情页查看",
+      updated_at: new Date().toISOString(),
+      detail: {
+        scenario_count: mockScenarios.length,
+      },
+    };
+  }
+  try {
+    return await requestApi<AnalysisProgressPayload>(`/api/tasks/${taskId}/analysis/progress`);
+  } catch (error) {
+    throw new Error(`获取解析进度失败: ${(error as Error).message}`);
+  }
+}
+
+export async function fetchScenarios(taskId: string): Promise<ScenarioModel[]> {
   if (USE_MOCK_API) {
     await delay();
     return [...mockScenarios];
@@ -357,9 +379,7 @@ export async function stopExecution(taskId: string): Promise<void> {
   }
 }
 
-export async function fetchExecution(
-  taskId: string,
-): Promise<ExecutionResult> {
+export async function fetchExecution(taskId: string): Promise<ExecutionResult> {
   if (USE_MOCK_API) {
     await delay();
     const statuses = ["running", "running", "passed"];
@@ -384,9 +404,7 @@ export async function fetchExecution(
   }
 }
 
-export async function fetchValidationReport(
-  taskId: string,
-): Promise<ValidationReport> {
+export async function fetchValidationReport(taskId: string): Promise<ValidationReport> {
   if (USE_MOCK_API) {
     await delay();
     return { ...mockValidationReport };
@@ -398,9 +416,7 @@ export async function fetchValidationReport(
   }
 }
 
-export async function fetchAnalysisReport(
-  taskId: string,
-): Promise<AnalysisReport> {
+export async function fetchAnalysisReport(taskId: string): Promise<AnalysisReport> {
   if (USE_MOCK_API) {
     await delay();
     return { ...mockAnalysisReport };
@@ -412,10 +428,7 @@ export async function fetchAnalysisReport(
   }
 }
 
-export async function fetchTaskArtifacts(
-  taskId: string,
-  options?: { shallow?: boolean },
-): Promise<TaskArtifactItem[]> {
+export async function fetchTaskArtifacts(taskId: string, options?: { shallow?: boolean }): Promise<TaskArtifactItem[]> {
   if (USE_MOCK_API) {
     await delay();
     return [...mockArtifacts];
@@ -434,18 +447,10 @@ export async function fetchTaskArtifacts(
   }
 }
 
-export async function fetchTaskArtifactContent(
-  taskId: string,
-  artifactType: string,
-): Promise<TaskArtifactContent> {
+export async function fetchTaskArtifactContent(taskId: string, artifactType: string): Promise<TaskArtifactContent> {
   if (USE_MOCK_API) {
     await delay();
-    return (
-      mockArtifactContentByType[artifactType] ?? {
-        type: artifactType,
-        content: "暂无该类型产物内容",
-      }
-    );
+    return mockArtifactContentByType[artifactType] ?? { type: artifactType, content: "暂无该类型产物内容" };
   }
   try {
     const payload = await requestApi<{ task_id: string; type: string; content: unknown }>(
@@ -464,6 +469,7 @@ export async function fetchHistoryTasks(_params?: {
   status?: string;
   keyword?: string;
   environment?: string;
+  project_id?: string;
   start_time?: string;
   end_time?: string;
   page?: number;
@@ -477,11 +483,7 @@ export async function fetchHistoryTasks(_params?: {
     }
     if (_params?.keyword) {
       const kw = _params.keyword.toLowerCase();
-      items = items.filter(
-        (t) =>
-          t.task_name.toLowerCase().includes(kw) ||
-          t.task_id.toLowerCase().includes(kw),
-      );
+      items = items.filter((t) => t.task_name.toLowerCase().includes(kw) || t.task_id.toLowerCase().includes(kw));
     }
     return { items, total: items.length };
   }
@@ -497,6 +499,7 @@ export async function fetchHistoryTasks(_params?: {
     if (status) qp.set("status", status);
     if (keyword) qp.set("keyword", keyword);
     if (environment) qp.set("environment", environment);
+    appendProjectId(qp, _params?.project_id);
     if (startTime) qp.set("start_time", startTime);
     if (endTime) qp.set("end_time", endTime);
     qp.set("page", String(page));
@@ -520,6 +523,7 @@ export async function fetchExecutionHistory(_params?: {
   status?: string;
   keyword?: string;
   environment?: string;
+  project_id?: string;
   start_time?: string;
   end_time?: string;
   page?: number;
@@ -562,6 +566,7 @@ export async function fetchExecutionHistory(_params?: {
     if (status) qp.set("status", status);
     if (keyword) qp.set("keyword", keyword);
     if (environment) qp.set("environment", environment);
+    appendProjectId(qp, _params?.project_id);
     if (startTime) qp.set("start_time", startTime);
     if (endTime) qp.set("end_time", endTime);
     qp.set("page", String(page));
@@ -774,4 +779,3 @@ export async function fetchRegressionDiff(
     throw error;
   }
 }
-

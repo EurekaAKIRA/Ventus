@@ -44,6 +44,7 @@ def run_preflight_check(
     base_url: str,
     default_headers: dict[str, Any],
     auth: dict[str, Any],
+    cookies: dict[str, Any] | None = None,
     latency_threshold_ms: float = 1500.0,
     checks: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -165,6 +166,7 @@ def run_preflight_check(
             and auth.get("username") is not None
             and auth.get("password") is not None
         )
+        has_cookies = bool(cookies)
         has_auth_header = any(
             str(k).lower() == "authorization" for k in (default_headers or {}).keys()
         )
@@ -178,7 +180,7 @@ def run_preflight_check(
                 }
             )
             suggestions.append("环境 auth 配置不完整，受保护接口可能返回 401/403")
-        elif not auth_type and not has_auth_header:
+        elif not auth_type and not has_auth_header and not has_cookies:
             check_results.append(
                 {
                     "name": "auth_config_valid",
@@ -187,7 +189,7 @@ def run_preflight_check(
                     "message": "no auth configured",
                 }
             )
-            suggestions.append("未配置鉴权：若目标接口需要 Token，请在环境或 default_headers 中配置")
+            suggestions.append("未配置鉴权：若目标接口需要 Token 或 Cookie，请在环境配置中补充")
         else:
             check_results.append(
                 {

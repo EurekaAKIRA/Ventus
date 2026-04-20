@@ -26,6 +26,7 @@ class CreateTaskRequest(BaseModel):
     target_system: str | None = None
     environment: str | None = None
     rag_enabled: bool | None = None
+    project_id: str | None = None
 
 
 class ExecuteTaskRequest(BaseModel):
@@ -125,6 +126,40 @@ class UpsertEnvironmentRequest(BaseModel):
     auth: dict[str, Any] = Field(default_factory=dict)
     cookies: dict[str, Any] = Field(default_factory=dict)
     description: str = ""
+    project_id: str | None = None
+
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str = Field(min_length=6)
+    email: str | None = None
+    display_name: str | None = None
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+    client_type: str | None = "web"
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class UpdateProfileRequest(BaseModel):
+    display_name: str | None = None
+    email: str | None = None
+    avatar_url: str | None = None
+
+
+class CreateProjectRequest(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class AddProjectMemberRequest(BaseModel):
+    username: str
+    role: str = "viewer"
 
 
 class ApiResponse(BaseModel):

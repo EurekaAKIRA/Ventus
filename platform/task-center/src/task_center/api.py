@@ -5,16 +5,18 @@ from __future__ import annotations
 import concurrent.futures
 import asyncio
 import hashlib
+import inspect
+import os
 from dataclasses import replace
 import json
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -24,20 +26,36 @@ from pydantic import ValidationError
 from execution_engine_core import run_dsl
 from platform_shared.models import EnvironmentConfig, TaskContext, ValidationReport
 
+from .auth_service import (
+    build_access_token,
+    build_refresh_token,
+    decode_access_token,
+    hash_password,
+    hash_refresh_token,
+    load_auth_config,
+    verify_password,
+    verify_refresh_token,
+)
 from .api_models import (
+    AddProjectMemberRequest,
     AnalysisParseRequest,
     ApiResponse,
+    CreateProjectRequest,
     CreateTaskRequest,
     ErrorResponse,
     ExecuteTaskRequest,
     HealthInfo,
+    LoginRequest,
     ParseMetadata,
     PreflightCheckRequest,
+    RefreshTokenRequest,
+    RegisterRequest,
     TaskParseRequest,
     StopExecutionResponse,
     TaskListResponse,
     TaskStatus,
     UpsertEnvironmentRequest,
+    UpdateProfileRequest,
     VersionInfo,
 )
 from .artifact_manager import ensure_task_subdirs, write_json_artifact
@@ -46,19 +64,30 @@ from .input_handler import normalize_input
 from .preflight import run_preflight_check
 from .pipeline import run_analysis_pipeline
 from .registry import DEFAULT_ARTIFACT_TYPES, TaskRegistry
+from .runtime_store import build_runtime_state_store
+from .secure_config import mask_environment_config, merge_masked_environment_config
+from .session_store import build_session_state_store
 from requirement_analysis import AnalysisParseOptions, parse_requirement_bundle
 from result_analysis import build_analysis_report
 
 
 APP_ROOT = Path(__file__).resolve().parents[2]
-ARTIFACTS_ROOT = str(APP_ROOT / "api_artifacts")
+ARTIFACTS_ROOT = str(Path(os.getenv("TASK_CENTER_ARTIFACTS_ROOT", str(APP_ROOT / "api_artifacts"))))
 APP_VERSION = "0.2.0"
 EXECUTION_TIMEOUT_SECONDS = 300  # 5 分钟执行上限，防止慢接口挂起
+_EXECUTION_MAX_WORKERS = max(1, int(str(os.getenv("TASK_CENTER_EXECUTION_WORKERS", "4")).strip() or "4"))
+_ANALYSIS_MAX_WORKERS = max(1, int(str(os.getenv("TASK_CENTER_ANALYSIS_WORKERS", "4")).strip() or "4"))
 registry = TaskRegistry(ARTIFACTS_ROOT)
+runtime_state_store = build_runtime_state_store()
+session_state_store = build_session_state_store()
+auth_config = load_auth_config()
 app = FastAPI(title="Platform Task Center API", version=APP_VERSION)
-_ASYNC_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+_EXECUTION_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=_EXECUTION_MAX_WORKERS)
+_ANALYSIS_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=_ANALYSIS_MAX_WORKERS)
 _RUNNING_EXECUTION_FUTURES: dict[str, concurrent.futures.Future] = {}
 _RUNNING_EXECUTION_LOCK = threading.Lock()
+_RUNNING_ANALYSIS_FUTURES: dict[str, concurrent.futures.Future] = {}
+_RUNNING_ANALYSIS_LOCK = threading.Lock()
 
 # Frontend (Vite) runs on a different origin (port), so browser requests may trigger
 # CORS preflight (`OPTIONS`). Without this middleware, preflight can fail with 405.
@@ -70,6 +99,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=512, compresslevel=6)
+
+
+def _ensure_default_admin_account() -> None:
+    store = registry.db_store
+    if store is None:
+        return
+    enabled = str(os.getenv("TASK_CENTER_BOOTSTRAP_ADMIN_ENABLED", "true")).strip().lower()
+    if enabled in {"0", "false", "off", "no"}:
+        return
+
+    username = str(os.getenv("TASK_CENTER_DEFAULT_ADMIN_USERNAME", "admin")).strip() or "admin"
+    password = str(os.getenv("TASK_CENTER_DEFAULT_ADMIN_PASSWORD", "123456"))
+    email = str(os.getenv("TASK_CENTER_DEFAULT_ADMIN_EMAIL", "admin@local.test")).strip() or None
+    display_name = str(os.getenv("TASK_CENTER_DEFAULT_ADMIN_DISPLAY_NAME", "Administrator")).strip() or username
+
+    existing = store.get_user_by_username(username)
+    if existing is not None:
+        store.ensure_default_workspace_and_project(user_id=str(existing["id"]), username=str(existing["username"]))
+        return
+
+    created = store.create_user(
+        username=username,
+        email=email,
+        display_name=display_name,
+        password_hash=hash_password(password),
+    )
+    store.ensure_default_workspace_and_project(user_id=str(created["id"]), username=str(created["username"]))
+
+
+_ensure_default_admin_account()
 
 
 def _utc_now_iso() -> str:
@@ -170,6 +229,131 @@ def _must_get_task(task_id: str):
     return task
 
 
+def _must_get_visible_task(task_id: str, current_user: dict[str, Any] | None):
+    task = _must_get_task(task_id)
+    _ensure_task_visible_to_user(task, current_user)
+    return task
+
+
+def _db_store_or_503():
+    store = registry.db_store
+    if store is None:
+        raise HTTPException(status_code=503, detail="DB persistence backend is required for user APIs")
+    return store
+
+
+def _extract_bearer_token(authorization: str | None) -> str | None:
+    raw = str(authorization or "").strip()
+    if not raw:
+        return None
+    prefix = "bearer "
+    if raw.lower().startswith(prefix):
+        return raw[len(prefix):].strip()
+    return None
+
+
+def _request_ip(request: Request) -> str | None:
+    client = request.client
+    return client.host if client else None
+
+
+def _append_audit_log_safe(
+    *,
+    user_id: str | None,
+    action: str,
+    resource_type: str,
+    resource_id: str | None,
+    detail_json: dict[str, Any] | list[Any] | None = None,
+    ip_address: str | None = None,
+) -> None:
+    store = registry.db_store
+    if store is None:
+        return
+    try:
+        store.append_audit_log(
+            user_id=user_id,
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            detail_json=detail_json,
+            ip_address=ip_address,
+        )
+    except Exception:
+        return
+
+
+def _current_user_project_ids(user_id: str) -> list[str]:
+    store = _db_store_or_503()
+    return [item["id"] for item in store.list_projects_for_user(user_id)]
+
+
+def _ensure_task_visible_to_user(task, current_user: dict[str, Any] | None) -> None:
+    if current_user is None:
+        return
+    current_user_id = str(current_user["user"]["id"])
+    if task.created_by and str(task.created_by) == current_user_id:
+        return
+    if task.project_id:
+        if task.project_id in _current_user_project_ids(current_user_id):
+            return
+    raise HTTPException(status_code=403, detail="You do not have access to this task")
+
+
+def _require_current_user(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    token = _extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Bearer access token")
+    try:
+        claims = decode_access_token(token, auth_config)
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"Invalid access token: {exc}") from exc
+    jti = str(claims.get("jti") or "")
+    if jti and session_state_store.is_token_jti_revoked(jti):
+        raise HTTPException(status_code=401, detail="Access token has been revoked")
+    store = _db_store_or_503()
+    user = store.get_user_by_id(str(claims.get("sub") or ""))
+    if user is None or user.get("status") != "active":
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+    session_id = str(claims.get("session_id") or "")
+    if session_id:
+        cached_session = session_state_store.get_session(session_id)
+        if cached_session is None:
+            db_session = store.get_user_session_by_id(session_id)
+            if db_session is None or db_session.get("revoked_at"):
+                raise HTTPException(status_code=401, detail="Session expired or not found")
+            expires_at = _parse_iso_timestamp(str(db_session["expires_at"]))
+            if expires_at is None:
+                raise HTTPException(status_code=401, detail="Session expired or not found")
+            ttl_seconds = int((expires_at - datetime.now(timezone.utc)).total_seconds())
+            if ttl_seconds <= 0:
+                raise HTTPException(status_code=401, detail="Session expired or not found")
+            session_state_store.set_session(
+                session_id,
+                {
+                    "user_id": str(user["id"]),
+                    "username": str(user["username"]),
+                    "expires_at": db_session["expires_at"],
+                },
+                ttl_seconds=ttl_seconds,
+            )
+    return {"user": user, "claims": claims, "access_token": token}
+
+
+def _optional_current_user(authorization: str | None = Header(default=None)) -> dict[str, Any] | None:
+    token = _extract_bearer_token(authorization)
+    if not token:
+        return None
+    return _require_current_user(authorization)
+
+
+def _ensure_project_access(project_id: str, current_user: dict[str, Any]) -> dict[str, Any]:
+    store = _db_store_or_503()
+    project = store.get_project_for_user(project_id=project_id, user_id=str(current_user["user"]["id"]))
+    if project is None:
+        raise HTTPException(status_code=403, detail="You do not have access to this project")
+    return project
+
+
 def _dedupe_strings(items: list[str]) -> list[str]:
     seen: set[str] = set()
     output: list[str] = []
@@ -211,7 +395,10 @@ def _parse_iso_timestamp(raw: str | None) -> datetime | None:
         return None
     if value.endswith("Z"):
         value = value[:-1] + "+00:00"
-    return datetime.fromisoformat(value)
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 def _filter_tasks_by_time(items: list, start_time: str | None, end_time: str | None) -> list:
@@ -270,7 +457,7 @@ def _paginate(items: list[dict[str, Any]], page: int, page_size: int) -> dict[st
 
 def _resolve_environment_config(task, environment_name: str | None) -> EnvironmentConfig | None:
     selected_name = environment_name or task.environment
-    environment_config = registry.get_environment(selected_name)
+    environment_config = registry.get_environment(selected_name, project_id=getattr(task, "project_id", None))
     if environment_name and environment_config is None:
         raise HTTPException(status_code=404, detail=f"Environment not found: {environment_name}")
     return environment_config
@@ -315,7 +502,9 @@ def _record_execution_history(task, execution_result: dict[str, Any]) -> None:
     metadata = execution_result.get("metadata") or {}
     execution_meta = metadata.get("execution") or {}
     analysis_report = (task.pipeline_result or {}).get("analysis_report") or {}
+    parse_metadata = _parse_metadata_payload((task.pipeline_result or {}).get("parse_metadata", {}))
     summary = analysis_report.get("summary") or {}
+    artifact_root = Path(task.artifact_dir) if task.artifact_dir else None
     registry.append_execution_history(
         {
             "task_id": task.task_id,
@@ -326,6 +515,21 @@ def _record_execution_history(task, execution_result: dict[str, Any]) -> None:
             "executor": execution_result.get("executor"),
             "executed_at": metadata.get("executed_at", _utc_now_iso()),
             "metrics": execution_result.get("metrics") or {},
+            "parse_mode": parse_metadata.get("parse_mode"),
+            "llm_used": bool(parse_metadata.get("llm_used", False)),
+            "rag_enabled": bool(parse_metadata.get("rag_enabled", False)),
+            "rag_used": bool(parse_metadata.get("rag_used", False)),
+            "duration_ms": (execution_result.get("metrics") or {}).get("duration_ms"),
+            "progress_snapshot": _build_runtime_progress_payload(task),
+            "runtime_context_snapshot_path": (
+                str(artifact_root / "execution" / "runtime_context_snapshot.json") if artifact_root else None
+            ),
+            "analysis_report_path": (
+                str(artifact_root / "validation" / "analysis_report.json") if artifact_root else None
+            ),
+            "execution_result_path": (
+                str(artifact_root / "execution" / "execution_result.json") if artifact_root else None
+            ),
             "analysis_summary": {
                 "success_rate": summary.get("success_rate", 0.0),
                 "failed_steps": summary.get("failed_steps", 0),
@@ -345,6 +549,21 @@ def _run_dsl_with_timeout(dsl: dict[str, Any], execution_mode: str) -> dict[str,
                 status_code=408,
                 detail=f"execution timed out after {EXECUTION_TIMEOUT_SECONDS}s",
             ) from exc
+
+
+def _run_dsl_with_optional_progress(
+    dsl: dict[str, Any],
+    *,
+    execution_mode: str,
+    progress_callback,
+):
+    try:
+        signature = inspect.signature(run_dsl)
+    except (TypeError, ValueError):
+        signature = None
+    if signature is not None and "progress_callback" in signature.parameters:
+        return run_dsl(dsl, execution_mode=execution_mode, progress_callback=progress_callback)
+    return run_dsl(dsl, execution_mode=execution_mode)
 
 
 def _apply_execution_metadata(
@@ -394,6 +613,150 @@ def _build_running_execution_result(task_id: str, execution_mode: str, selected_
             },
             "executed_at": _utc_now_iso(),
         },
+    }
+
+
+def _build_runtime_progress_payload(task) -> dict[str, Any]:
+    execution = task.execution_result or {}
+    scenario_results = execution.get("scenario_results")
+    scenarios = scenario_results if isinstance(scenario_results, list) else []
+    done_count = 0
+    for item in scenarios:
+        if not isinstance(item, dict):
+            continue
+        status = str(item.get("status") or "").lower()
+        if status in {"passed", "failed", "stopped"}:
+            done_count += 1
+    return {
+        "task_id": task.task_id,
+        "status": str(execution.get("status") or task.status or "received"),
+        "scenario_total": len(scenarios),
+        "scenario_done": done_count,
+        "log_count": len(execution.get("logs") or []),
+        "updated_at": _utc_now_iso(),
+    }
+
+
+def _build_analysis_progress_payload(
+    task_id: str,
+    *,
+    stage: str,
+    percent: int,
+    status: str,
+    message: str,
+    detail: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload = {
+        "task_id": task_id,
+        "kind": "analysis",
+        "stage": stage,
+        "percent": max(0, min(100, int(percent))),
+        "status": status,
+        "message": message,
+        "updated_at": _utc_now_iso(),
+    }
+    if detail:
+        payload["detail"] = detail
+    return payload
+
+
+def _save_analysis_progress(
+    task_id: str,
+    *,
+    stage: str,
+    percent: int,
+    status: str,
+    message: str,
+    detail: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload = _build_analysis_progress_payload(
+        task_id,
+        stage=stage,
+        percent=percent,
+        status=status,
+        message=message,
+        detail=detail,
+    )
+    runtime_state_store.save_progress(task_id, payload)
+    return payload
+
+
+def _resolve_analysis_progress(task) -> dict[str, Any]:
+    if task.pipeline_result is not None:
+        return _build_analysis_progress_payload(
+            task.task_id,
+            stage="ready",
+            percent=100,
+            status="completed",
+            message="任务解析完成，可进入详情页查看",
+            detail={"scenario_count": len((task.pipeline_result or {}).get("scenarios") or [])},
+        )
+    cached = runtime_state_store.load_progress(task.task_id) or {}
+    if cached.get("kind") == "analysis":
+        return cached
+    with _RUNNING_ANALYSIS_LOCK:
+        future = _RUNNING_ANALYSIS_FUTURES.get(task.task_id)
+    if future is not None and not future.done():
+        return _build_analysis_progress_payload(
+            task.task_id,
+            stage="queued",
+            percent=5,
+            status="running",
+            message="解析任务已入队，等待执行",
+        )
+    return _build_analysis_progress_payload(
+        task.task_id,
+        stage="idle",
+        percent=0,
+        status="idle",
+        message="尚未启动解析",
+    )
+
+
+def _submit_analysis_job_if_needed(task_id: str) -> dict[str, Any]:
+    task = _must_get_task(task_id)
+    progress = _resolve_analysis_progress(task)
+    if progress.get("status") == "completed":
+        return progress
+
+    with _RUNNING_ANALYSIS_LOCK:
+        future = _RUNNING_ANALYSIS_FUTURES.get(task_id)
+        if future is not None and future.done():
+            _RUNNING_ANALYSIS_FUTURES.pop(task_id, None)
+            future = None
+        if future is None:
+            progress = _save_analysis_progress(
+                task_id,
+                stage="queued",
+                percent=5,
+                status="running",
+                message="解析任务已启动，等待后台处理",
+            )
+            _RUNNING_ANALYSIS_FUTURES[task_id] = _ANALYSIS_EXECUTOR.submit(_run_async_analysis_job, task_id)
+            return progress
+
+    latest_task = registry.get(task_id)
+    if latest_task is None:
+        return progress
+    return _resolve_analysis_progress(latest_task)
+
+
+def _build_runtime_context_payload(task) -> dict[str, Any]:
+    execution = task.execution_result or {}
+    execution_meta = ((execution.get("metadata") or {}).get("execution") or {})
+    return {
+        "task_id": task.task_id,
+        "task_name": task.task_name,
+        "status": task.status,
+        "environment": task.environment,
+        "task_context": dict(task.task_context or {}),
+        "execution": {
+            "status": execution.get("status"),
+            "execution_mode": execution_meta.get("execution_mode"),
+            "base_url": execution_meta.get("base_url"),
+            "context": execution_meta.get("context") or {},
+        },
+        "updated_at": _utc_now_iso(),
     }
 
 
@@ -482,7 +845,7 @@ def _run_async_execution_job(
         started_at = time.time()
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _executor:
             worker_future = _executor.submit(
-                run_dsl,
+                _run_dsl_with_optional_progress,
                 dsl,
                 execution_mode=execution_mode,
                 progress_callback=_on_progress,
@@ -652,6 +1015,12 @@ def _task_parse_option_overrides(task) -> dict[str, Any]:
     return out
 
 
+def _with_task_context_status(task_context: dict[str, Any] | None, status: str) -> dict[str, Any]:
+    payload = dict(task_context or {})
+    payload["status"] = status
+    return payload
+
+
 def _resolve_parse_options(payload: Any = None) -> AnalysisParseOptions:
     if payload is None:
         return AnalysisParseOptions.resolve()
@@ -790,7 +1159,7 @@ def _ensure_pipeline(task, parse_options: AnalysisParseOptions | None = None) ->
     task.pipeline_result = result
     task.pipeline_result["parse_metadata"] = _parse_metadata_payload(result.get("parse_metadata", {}))
     task.status = "parsed"
-    task.task_context = result.get("task_context", task.task_context)
+    task.task_context = _with_task_context_status(result.get("task_context", task.task_context), task.status)
     task.artifact_dir = result.get("artifact_dir") or task.artifact_dir
     registry.save(task)
     return result
@@ -816,6 +1185,10 @@ def _build_task_analysis_report(task, *, persist_registry: bool = True) -> dict[
 
 
 def _persist_task_runtime(task, *, persist_registry: bool = True) -> None:
+    progress_snapshot = _build_runtime_progress_payload(task)
+    runtime_context_snapshot = _build_runtime_context_payload(task)
+    runtime_state_store.save_progress(task.task_id, progress_snapshot)
+    runtime_state_store.save_context(task.task_id, runtime_context_snapshot)
     if not task.artifact_dir:
         if persist_registry:
             registry.save(task)
@@ -831,8 +1204,105 @@ def _persist_task_runtime(task, *, persist_registry: bool = True) -> None:
             str(Path(subdirs["execution"]) / "execution_result.json"),
             task.execution_result,
         )
+    write_json_artifact(
+        str(Path(subdirs["execution"]) / "progress_snapshot.json"),
+        progress_snapshot,
+    )
+    write_json_artifact(
+        str(Path(subdirs["execution"]) / "runtime_context_snapshot.json"),
+        runtime_context_snapshot,
+    )
     if persist_registry:
         registry.save(task)
+
+
+def _run_async_analysis_job(task_id: str) -> None:
+    task = registry.get(task_id)
+    if task is None:
+        return
+    try:
+        parse_options = AnalysisParseOptions.resolve(_task_parse_option_overrides(task))
+        _save_analysis_progress(
+            task_id,
+            stage="queued",
+            percent=5,
+            status="running",
+            message="解析任务已启动，准备加载文档",
+        )
+
+        def _on_progress(stage: str, payload: dict[str, Any]) -> None:
+            current_task = registry.get(task_id)
+            if current_task is None:
+                return
+            percent = int(payload.get("percent", 0) or 0)
+            message = str(payload.get("message") or stage)
+            detail = {key: value for key, value in payload.items() if key not in {"stage", "percent", "message"}}
+            if stage == "requirement_parsed":
+                current_task.status = "parsed"
+                current_task.task_context = _with_task_context_status(current_task.task_context, "parsed")
+                registry.save(current_task)
+            elif stage in {"scenarios_built", "dsl_ready", "analysis_report_ready"}:
+                current_task.status = "generated"
+                current_task.task_context = _with_task_context_status(current_task.task_context, "generated")
+                registry.save(current_task)
+            _save_analysis_progress(
+                task_id,
+                stage=stage,
+                percent=percent,
+                status="running",
+                message=message,
+                detail=detail or None,
+            )
+
+        result = run_analysis_pipeline(
+            task_name=task.task_name,
+            requirement_text=task.requirement_text,
+            source_type=task.source_type,
+            source_path=task.source_path,
+            artifacts_base_dir=registry.artifacts_root,
+            task_id=task.task_id,
+            created_at=(task.task_context or {}).get("created_at") or task.created_at,
+            task_status=(task.task_context or {}).get("status") or task.status or "received",
+            artifact_dir_name=task.task_id,
+            use_llm=parse_options.use_llm,
+            rag_enabled=parse_options.rag_enabled,
+            retrieval_top_k=parse_options.retrieval_top_k,
+            rerank_enabled=parse_options.rerank_enabled,
+            model_profile=parse_options.model_profile,
+            progress_callback=_on_progress,
+        )
+        current_task = registry.get(task_id)
+        if current_task is None:
+            return
+        current_task.pipeline_result = result
+        current_task.status = "generated"
+        current_task.task_context = _with_task_context_status(result.get("task_context", current_task.task_context), "generated")
+        current_task.artifact_dir = result.get("artifact_dir") or current_task.artifact_dir
+        registry.save(current_task)
+        _save_analysis_progress(
+            task_id,
+            stage="ready",
+            percent=100,
+            status="completed",
+            message="任务解析完成，可进入详情页查看",
+            detail={"scenario_count": len(result.get("scenarios") or [])},
+        )
+    except Exception as exc:
+        current_task = registry.get(task_id)
+        if current_task is not None:
+            current_task.status = "failed"
+            current_task.task_context = _with_task_context_status(current_task.task_context, "failed")
+            registry.save(current_task)
+        _save_analysis_progress(
+            task_id,
+            stage="failed",
+            percent=100,
+            status="failed",
+            message=f"任务解析失败：{exc}",
+        )
+    finally:
+        with _RUNNING_ANALYSIS_LOCK:
+            _RUNNING_ANALYSIS_FUTURES.pop(task_id, None)
 
 
 @app.get("/health", response_model=ApiResponse)
@@ -851,8 +1321,292 @@ def version_info():
     return _success_response(payload, code="VERSION_OK", message="service version")
 
 
+@app.post("/api/auth/register", response_model=ApiResponse)
+def register_user(payload: RegisterRequest, request: Request):
+    store = _db_store_or_503()
+    normalized_username = payload.username.strip()
+    if not normalized_username:
+        raise HTTPException(status_code=400, detail="username is required")
+    display_name = str(payload.display_name or normalized_username).strip() or normalized_username
+    try:
+        user = store.create_user(
+            username=normalized_username,
+            email=(payload.email.strip() if payload.email else None),
+            display_name=display_name,
+            password_hash=hash_password(payload.password),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    default_project = store.ensure_default_workspace_and_project(user_id=str(user["id"]), username=normalized_username)
+    store.append_audit_log(
+        user_id=str(user["id"]),
+        action="auth.register",
+        resource_type="user",
+        resource_id=str(user["id"]),
+        detail_json={"username": normalized_username, "default_project_id": default_project["id"]},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(
+        {"user": user, "default_project": default_project},
+        code="AUTH_REGISTERED",
+        message="user registered",
+        status_code=201,
+    )
+
+
+@app.post("/api/auth/login", response_model=ApiResponse)
+def login_user(payload: LoginRequest, request: Request):
+    store = _db_store_or_503()
+    identity = store.get_user_credential_by_username(payload.username.strip())
+    if identity is None or not verify_password(payload.password, str(identity["password_hash"])):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    refresh_token = build_refresh_token()
+    refresh_hash = hash_refresh_token(refresh_token)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=max(auth_config.refresh_token_ttl_days, 1))
+    session_payload = store.create_user_session(
+        user_id=str(identity["id"]),
+        refresh_token_hash=refresh_hash,
+        expires_at=expires_at,
+        client_type=payload.client_type,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=_request_ip(request),
+    )
+    session_state_store.set_session(
+        str(session_payload["id"]),
+        {
+            "user_id": str(identity["id"]),
+            "username": str(identity["username"]),
+            "expires_at": session_payload["expires_at"],
+        },
+        ttl_seconds=int((expires_at - datetime.now(timezone.utc)).total_seconds()),
+    )
+    access_token, claims = build_access_token(
+        user_id=str(identity["id"]),
+        username=str(identity["username"]),
+        session_id=str(session_payload["id"]),
+        project_ids=_current_user_project_ids(str(identity["id"])),
+        config=auth_config,
+    )
+    store.touch_user_login(str(identity["id"]))
+    store.append_audit_log(
+        user_id=str(identity["id"]),
+        action="auth.login",
+        resource_type="session",
+        resource_id=str(session_payload["id"]),
+        detail_json={"client_type": payload.client_type},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(
+        {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": auth_config.access_token_ttl_minutes * 60,
+            "refresh_token": refresh_token,
+            "user": store.get_user_by_id(str(identity["id"])),
+            "projects": store.list_projects_for_user(str(identity["id"])),
+            "claims": claims,
+        },
+        code="AUTH_LOGGED_IN",
+        message="login success",
+    )
+
+
+@app.post("/api/auth/refresh", response_model=ApiResponse)
+def refresh_login(payload: RefreshTokenRequest):
+    store = _db_store_or_503()
+    matched_session = store.get_user_session_by_refresh_token_hash(hash_refresh_token(payload.refresh_token))
+    if matched_session is None:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    if not verify_refresh_token(payload.refresh_token, str(matched_session["refresh_token_hash"])):
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    if matched_session.get("revoked_at"):
+        raise HTTPException(status_code=401, detail="Refresh session already revoked")
+    expires_at = _parse_iso_timestamp(str(matched_session["expires_at"]))
+    if expires_at is None:
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+    if expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+    user = store.get_user_by_id(str(matched_session["user_id"]))
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    access_token, claims = build_access_token(
+        user_id=str(user["id"]),
+        username=str(user["username"]),
+        session_id=str(matched_session["id"]),
+        project_ids=_current_user_project_ids(str(user["id"])),
+        config=auth_config,
+    )
+    return _success_response(
+        {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": auth_config.access_token_ttl_minutes * 60,
+            "user": user,
+            "projects": store.list_projects_for_user(str(user["id"])),
+            "claims": claims,
+        },
+        code="AUTH_REFRESHED",
+        message="token refreshed",
+    )
+
+
+@app.post("/api/auth/logout", response_model=ApiResponse)
+def logout_user(request: Request, current_user: dict[str, Any] = Depends(_require_current_user)):
+    store = _db_store_or_503()
+    claims = current_user["claims"]
+    session_id = str(claims.get("session_id") or "")
+    jti = str(claims.get("jti") or "")
+    if session_id:
+        session_state_store.clear_session(session_id)
+        store.revoke_user_session(session_id)
+    if jti:
+        ttl_seconds = max(int(claims.get("exp", 0) - datetime.now(timezone.utc).timestamp()), 1)
+        session_state_store.revoke_token_jti(jti, ttl_seconds=ttl_seconds)
+    store.append_audit_log(
+        user_id=str(current_user["user"]["id"]),
+        action="auth.logout",
+        resource_type="session",
+        resource_id=session_id or None,
+        detail_json={"jti": jti},
+        ip_address=_request_ip(request),
+    )
+    return _success_response({"logged_out": True}, code="AUTH_LOGGED_OUT", message="logout success")
+
+
+@app.get("/api/auth/me", response_model=ApiResponse)
+def auth_me(current_user: dict[str, Any] = Depends(_require_current_user)):
+    store = _db_store_or_503()
+    return _success_response(
+        {
+            "user": current_user["user"],
+            "projects": store.list_projects_for_user(str(current_user["user"]["id"])),
+            "claims": current_user["claims"],
+        },
+        code="AUTH_ME_OK",
+        message="current user",
+    )
+
+
+@app.get("/api/users/me", response_model=ApiResponse)
+def get_my_profile(current_user: dict[str, Any] = Depends(_require_current_user)):
+    return _success_response(current_user["user"], code="USER_ME_OK", message="user profile")
+
+
+@app.get("/api/users", response_model=ApiResponse)
+def list_users(
+    keyword: str | None = None,
+    limit: int = Query(20, ge=1, le=100),
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    payload = store.list_users(keyword=keyword, limit=limit)
+    return _success_response(payload, code="USERS_OK", message="users listed")
+
+
+@app.patch("/api/users/me", response_model=ApiResponse)
+def update_my_profile(
+    payload: UpdateProfileRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    try:
+        updated = store.update_user_profile(
+            user_id=str(current_user["user"]["id"]),
+            display_name=payload.display_name,
+            email=payload.email,
+            avatar_url=payload.avatar_url,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="user.profile.update",
+        resource_type="user",
+        resource_id=str(current_user["user"]["id"]),
+        detail_json={"display_name": updated.get("display_name"), "email": updated.get("email")},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(updated, code="USER_ME_UPDATED", message="user profile updated")
+
+
+@app.get("/api/projects", response_model=ApiResponse)
+def list_projects(current_user: dict[str, Any] = Depends(_require_current_user)):
+    store = _db_store_or_503()
+    return _success_response(
+        store.list_projects_for_user(str(current_user["user"]["id"])),
+        code="PROJECTS_OK",
+        message="projects listed",
+    )
+
+
+@app.post("/api/projects", response_model=ApiResponse)
+def create_project(
+    payload: CreateProjectRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    project = store.create_project(
+        user_id=str(current_user["user"]["id"]),
+        name=payload.name.strip(),
+        description=payload.description,
+    )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="project.create",
+        resource_type="project",
+        resource_id=str(project["id"]),
+        detail_json={"name": project["name"]},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(project, code="PROJECT_CREATED", message="project created", status_code=201)
+
+
+@app.get("/api/projects/{project_id}", response_model=ApiResponse)
+def get_project(project_id: str, current_user: dict[str, Any] = Depends(_require_current_user)):
+    store = _db_store_or_503()
+    project = _ensure_project_access(project_id, current_user)
+    members = store.list_project_members(project_id)
+    return _success_response(
+        {"project": project, "members": members},
+        code="PROJECT_OK",
+        message="project fetched",
+    )
+
+
+@app.post("/api/projects/{project_id}/members", response_model=ApiResponse)
+def add_project_member(
+    project_id: str,
+    payload: AddProjectMemberRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    project = _ensure_project_access(project_id, current_user)
+    if project.get("role") not in {"owner", "editor"}:
+        raise HTTPException(status_code=403, detail="Only owner/editor can manage members")
+    target_user = store.get_user_by_username(payload.username.strip())
+    if target_user is None:
+        raise HTTPException(status_code=404, detail=f"User not found: {payload.username}")
+    member = store.add_project_member(project_id=project_id, user_id=str(target_user["id"]), role=payload.role)
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="project.member.save",
+        resource_type="project_member",
+        resource_id=f"{project_id}:{target_user['id']}",
+        detail_json={"project_id": project_id, "target_user": payload.username.strip(), "role": payload.role},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(member, code="PROJECT_MEMBER_SAVED", message="project member saved", status_code=201)
+
+
 @app.post("/api/tasks", response_model=ApiResponse)
-def create_task(payload: CreateTaskRequest):
+def create_task(
+    payload: CreateTaskRequest,
+    request: Request,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
     inline_requirement = str(payload.requirement_text or "")
     if not (payload.source_path or "").strip():
         integrity_issues = _detect_suspicious_inline_requirement(inline_requirement)
@@ -875,6 +1629,19 @@ def create_task(payload: CreateTaskRequest):
     if payload.rag_enabled is not None:
         base_ctx = replace(base_ctx, rag_enabled=bool(payload.rag_enabled))
     context = base_ctx.to_dict()
+    assigned_project_id = payload.project_id
+    created_by = None
+    if current_user is not None:
+        created_by = str(current_user["user"]["id"])
+        if assigned_project_id:
+            _ensure_project_access(assigned_project_id, current_user)
+        else:
+            store = _db_store_or_503()
+            default_project = store.ensure_default_workspace_and_project(
+                user_id=created_by,
+                username=str(current_user["user"]["username"]),
+            )
+            assigned_project_id = str(default_project["id"])
     record = registry.create_task(
         task_id=context["task_id"],
         task_name=context["task_name"],
@@ -883,10 +1650,31 @@ def create_task(payload: CreateTaskRequest):
         source_path=payload.source_path,
         target_system=payload.target_system,
         environment=payload.environment,
+        project_id=assigned_project_id,
+        created_by=created_by,
         task_context=context,
     )
+    _append_audit_log_safe(
+        user_id=created_by,
+        action="task.create",
+        resource_type="task",
+        resource_id=record.task_id,
+        detail_json={"task_name": record.task_name, "project_id": record.project_id, "source_type": record.source_type},
+        ip_address=_request_ip(request),
+    )
+    analysis_progress: dict[str, Any] | None = None
+    try:
+        analysis_progress = _submit_analysis_job_if_needed(record.task_id)
+    except Exception:
+        analysis_progress = None
     return _success_response(
-        {"task_id": record.task_id, "task_context": record.task_context},
+        {
+            "task_id": record.task_id,
+            "task_context": record.task_context,
+            "project_id": record.project_id,
+            "created_by": record.created_by,
+            "analysis_progress": analysis_progress,
+        },
         code="TASK_CREATED",
         message="task created",
         status_code=201,
@@ -898,12 +1686,25 @@ def list_tasks(
     status: TaskStatus | None = None,
     keyword: str | None = None,
     environment: str | None = None,
+    project_id: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
 ):
     items = registry.list(status=status.value if status else None, keyword=keyword)
+    if current_user is not None:
+        visible_project_ids = set(_current_user_project_ids(str(current_user["user"]["id"])))
+        visible_user_id = str(current_user["user"]["id"])
+        items = [
+            item
+            for item in items
+            if (item.created_by and str(item.created_by) == visible_user_id)
+            or (item.project_id and str(item.project_id) in visible_project_ids)
+        ]
     if environment:
         items = [item for item in items if item.environment == environment]
+    if project_id:
+        items = [item for item in items if item.project_id == project_id]
     payload = _paginate([item.to_summary() for item in items], page, page_size)
     TaskListResponse(**payload)
     return _success_response(payload, code="TASK_LIST_OK", message="tasks listed")
@@ -936,8 +1737,10 @@ def get_task(
         "full",
         description="full: complete payload; summary: small first paint (merge with full client-side).",
     ),
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
 ):
     task = _must_get_task(task_id)
+    _ensure_task_visible_to_user(task, current_user)
     pipeline = task.pipeline_result or {}
     base = {
         **task.to_summary(),
@@ -981,15 +1784,33 @@ def get_task(
 
 
 @app.delete("/api/tasks/{task_id}", response_model=ApiResponse)
-def delete_task(task_id: str):
+def delete_task(
+    task_id: str,
+    request: Request,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    task = _must_get_task(task_id)
+    _ensure_task_visible_to_user(task, current_user)
     if not registry.archive(task_id):
         raise HTTPException(status_code=404, detail=f"Task not found: {task_id}")
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+        action="task.archive",
+        resource_type="task",
+        resource_id=task_id,
+        detail_json={"project_id": task.project_id, "task_name": task.task_name},
+        ip_address=_request_ip(request),
+    )
     return _success_response({"task_id": task_id, "archived": True}, code="TASK_ARCHIVED", message="task archived")
 
 
 @app.post("/api/tasks/{task_id}/parse", response_model=ApiResponse)
-def parse_task(task_id: str, payload: TaskParseRequest | None = None):
-    task = _must_get_task(task_id)
+def parse_task(
+    task_id: str,
+    payload: TaskParseRequest | None = None,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    task = _must_get_visible_task(task_id, current_user)
     parse_options = _resolve_parse_options(payload)
     result = _ensure_pipeline(task, parse_options=parse_options)
     return _success_response({
@@ -998,6 +1819,34 @@ def parse_task(task_id: str, payload: TaskParseRequest | None = None):
         "parsed_requirement": result.get("parsed_requirement"),
         "parse_metadata": _parse_metadata_payload(result.get("parse_metadata", {})),
     }, code="TASK_PARSED", message="task parsed")
+
+
+@app.post("/api/tasks/{task_id}/analysis/start", response_model=ApiResponse)
+def start_task_analysis(
+    task_id: str,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    task = _must_get_visible_task(task_id, current_user)
+    progress = _resolve_analysis_progress(task)
+    if progress.get("status") == "completed":
+        return _success_response(progress, code="TASK_ANALYSIS_READY", message="analysis already completed")
+    progress = _submit_analysis_job_if_needed(task_id)
+    code = "TASK_ANALYSIS_STARTED" if progress.get("stage") == "queued" else "TASK_ANALYSIS_RUNNING"
+    message = "analysis started" if code == "TASK_ANALYSIS_STARTED" else "analysis running"
+    return _success_response(progress, code=code, message=message)
+
+
+@app.get("/api/tasks/{task_id}/analysis/progress", response_model=ApiResponse)
+def get_task_analysis_progress(
+    task_id: str,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    task = _must_get_visible_task(task_id, current_user)
+    return _success_response(
+        _resolve_analysis_progress(task),
+        code="TASK_ANALYSIS_PROGRESS_OK",
+        message="analysis progress",
+    )
 
 
 @app.post("/api/analysis/parse", response_model=ApiResponse)
@@ -1032,22 +1881,22 @@ def parse_analysis(payload: AnalysisParseRequest):
 
 
 @app.get("/api/tasks/{task_id}/parsed-requirement", response_model=ApiResponse)
-def get_parsed_requirement(task_id: str):
-    task = _must_get_task(task_id)
+def get_parsed_requirement(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     return _success_response(result.get("parsed_requirement", {}), code="PARSED_REQUIREMENT_OK", message="parsed requirement")
 
 
 @app.get("/api/tasks/{task_id}/retrieved-context", response_model=ApiResponse)
-def get_retrieved_context(task_id: str):
-    task = _must_get_task(task_id)
+def get_retrieved_context(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     return _success_response(result.get("retrieved_context", []), code="RETRIEVED_CONTEXT_OK", message="retrieved context")
 
 
 @app.post("/api/tasks/{task_id}/scenarios/generate", response_model=ApiResponse)
-def generate_scenarios(task_id: str):
-    task = _must_get_task(task_id)
+def generate_scenarios(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     task.status = TaskStatus.GENERATED.value
     registry.save(task)
@@ -1059,29 +1908,33 @@ def generate_scenarios(task_id: str):
 
 
 @app.get("/api/tasks/{task_id}/scenarios", response_model=ApiResponse)
-def get_scenarios(task_id: str):
-    task = _must_get_task(task_id)
+def get_scenarios(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     return _success_response(result.get("scenarios", []), code="SCENARIOS_OK", message="scenarios fetched")
 
 
 @app.get("/api/tasks/{task_id}/dsl", response_model=ApiResponse)
-def get_dsl(task_id: str):
-    task = _must_get_task(task_id)
+def get_dsl(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     return _success_response(result.get("test_case_dsl", {}), code="DSL_OK", message="dsl fetched")
 
 
 @app.get("/api/tasks/{task_id}/feature", response_model=ApiResponse)
-def get_feature(task_id: str):
-    task = _must_get_task(task_id)
+def get_feature(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     return _success_response({"feature_text": result.get("feature_text", "")}, code="FEATURE_OK", message="feature fetched")
 
 
 @app.post("/api/tasks/{task_id}/preflight-check", response_model=ApiResponse)
-def preflight_check(task_id: str, payload: PreflightCheckRequest | None = None):
-    task = _must_get_task(task_id)
+def preflight_check(
+    task_id: str,
+    payload: PreflightCheckRequest | None = None,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    task = _must_get_visible_task(task_id, current_user)
     body = payload or PreflightCheckRequest()
     selected_environment = body.environment or task.environment or "test"
     environment_config = _resolve_environment_config(task, selected_environment)
@@ -1095,6 +1948,7 @@ def preflight_check(task_id: str, payload: PreflightCheckRequest | None = None):
         base_url=base,
         default_headers=(environment_config.default_headers if environment_config else {}) or {},
         auth=(environment_config.auth if environment_config else {}) or {},
+        cookies=(environment_config.cookies if environment_config else {}) or {},
         latency_threshold_ms=body.latency_threshold_ms,
         checks=body.checks,
     )
@@ -1102,8 +1956,13 @@ def preflight_check(task_id: str, payload: PreflightCheckRequest | None = None):
 
 
 @app.post("/api/tasks/{task_id}/execute", response_model=ApiResponse)
-def execute_task(task_id: str, payload: ExecuteTaskRequest):
-    task = _must_get_task(task_id)
+def execute_task(
+    task_id: str,
+    payload: ExecuteTaskRequest,
+    request: Request,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     selected_environment = payload.environment or task.environment or "test"
     environment_config = _resolve_environment_config(task, selected_environment)
@@ -1127,11 +1986,13 @@ def execute_task(task_id: str, payload: ExecuteTaskRequest):
         with _RUNNING_EXECUTION_LOCK:
             running_future = _RUNNING_EXECUTION_FUTURES.get(task_id)
             if running_future and not running_future.done():
-                running_payload = task.execution_result or _build_running_execution_result(
+                running_payload = _build_running_execution_result(
                     task_id,
                     payload.execution_mode,
                     selected_environment,
                 )
+                if task.execution_result and task.execution_result.get("logs"):
+                    running_payload["logs"] = list(task.execution_result.get("logs") or [])
                 return _success_response(
                     running_payload,
                     code="TASK_EXECUTION_ALREADY_RUNNING",
@@ -1142,7 +2003,7 @@ def execute_task(task_id: str, payload: ExecuteTaskRequest):
         task.environment = selected_environment
         task.status = "running"
         _persist_task_runtime(task)
-        future = _ASYNC_EXECUTOR.submit(
+        future = _EXECUTION_EXECUTOR.submit(
             _run_async_execution_job,
             task_id,
             dsl,
@@ -1152,6 +2013,14 @@ def execute_task(task_id: str, payload: ExecuteTaskRequest):
         )
         with _RUNNING_EXECUTION_LOCK:
             _RUNNING_EXECUTION_FUTURES[task_id] = future
+        _append_audit_log_safe(
+            user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+            action="task.execute.start",
+            resource_type="task",
+            resource_id=task_id,
+            detail_json={"environment": selected_environment, "execution_mode": payload.execution_mode, "async_mode": True},
+            ip_address=_request_ip(request),
+        )
         return _success_response(running_payload, code="TASK_EXECUTION_STARTED", message="task execution started")
 
     execution_result = _run_dsl_with_timeout(dsl, payload.execution_mode)
@@ -1167,12 +2036,24 @@ def execute_task(task_id: str, payload: ExecuteTaskRequest):
     task.status = execution_result.get("status", "executed")
     result["analysis_report"] = _build_task_analysis_report(task)
     _record_execution_history(task, execution_result)
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+        action="task.execute.finish",
+        resource_type="task_run",
+        resource_id=task_id,
+        detail_json={
+            "environment": selected_environment,
+            "execution_mode": payload.execution_mode,
+            "status": execution_result.get("status"),
+        },
+        ip_address=_request_ip(request),
+    )
     return _success_response(execution_result, code="TASK_EXECUTED", message="task executed")
 
 
 @app.get("/api/tasks/{task_id}/execution", response_model=ApiResponse)
-def get_execution(task_id: str):
-    task = _must_get_task(task_id)
+def get_execution(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     if task.execution_result is None:
         payload = {"task_id": task_id, "executor": None, "status": "not_started", "scenario_results": [], "metrics": {}, "logs": []}
         return _success_response(payload, code="EXECUTION_OK", message="execution fetched")
@@ -1184,8 +2065,9 @@ async def stream_execution(
     task_id: str,
     interval_ms: int = Query(800, ge=200, le=5000),
     timeout_s: int = Query(60, ge=5, le=600),
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
 ):
-    _must_get_task(task_id)
+    _must_get_visible_task(task_id, current_user)
 
     async def _event_generator():
         started_at = datetime.now(timezone.utc)
@@ -1195,7 +2077,7 @@ async def stream_execution(
         yield _encode_sse({"task_id": task_id, "connected_at": _utc_now_iso()}, event="connected")
 
         while True:
-            task = _must_get_task(task_id)
+            task = _must_get_visible_task(task_id, current_user)
             execution = task.execution_result or {}
             status = str(execution.get("status") or "")
 
@@ -1245,8 +2127,12 @@ async def stream_execution(
 
 
 @app.get("/api/tasks/{task_id}/execution/explanations", response_model=ApiResponse)
-def get_execution_explanations(task_id: str, top_n: int = Query(5, ge=1, le=20)):
-    task = _must_get_task(task_id)
+def get_execution_explanations(
+    task_id: str,
+    top_n: int = Query(5, ge=1, le=20),
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    task = _must_get_visible_task(task_id, current_user)
     if task.execution_result is None:
         raise HTTPException(status_code=404, detail="No execution result; run execute first")
     er = dict(task.execution_result)
@@ -1260,8 +2146,9 @@ def get_regression_diff(
     task_id: str,
     base_execution_id: str | None = None,
     target_execution_id: str | None = None,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
 ):
-    _must_get_task(task_id)
+    _must_get_visible_task(task_id, current_user)
     items = registry.list_execution_history(task_id=task_id)
     items = [item for item in items if item.get("task_id") == task_id]
     items.sort(key=lambda item: str(item.get("executed_at") or ""))
@@ -1294,15 +2181,15 @@ def get_regression_diff(
 
 
 @app.get("/api/tasks/{task_id}/execution/logs", response_model=ApiResponse)
-def get_execution_logs(task_id: str):
-    task = _must_get_task(task_id)
+def get_execution_logs(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     payload = [] if task.execution_result is None else task.execution_result.get("logs", [])
     return _success_response(payload, code="EXECUTION_LOGS_OK", message="execution logs")
 
 
 @app.post("/api/tasks/{task_id}/execution/stop", response_model=ApiResponse)
-def stop_execution(task_id: str):
-    task = _must_get_task(task_id)
+def stop_execution(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     if task.execution_result is None or task.execution_result.get("status") != "running":
         payload = _model_to_dict(StopExecutionResponse(task_id=task_id, stopped=False, message="No running execution to stop"))
         return _success_response(payload, code="EXECUTION_STOP_SKIPPED", message="no running execution")
@@ -1328,21 +2215,21 @@ def stop_execution(task_id: str):
 
 
 @app.get("/api/tasks/{task_id}/validation-report", response_model=ApiResponse)
-def get_validation_report(task_id: str):
-    task = _must_get_task(task_id)
+def get_validation_report(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     return _success_response(result.get("validation_report", {}), code="VALIDATION_REPORT_OK", message="validation report")
 
 
 @app.get("/api/tasks/{task_id}/analysis-report", response_model=ApiResponse)
-def get_analysis_report(task_id: str):
-    task = _must_get_task(task_id)
+def get_analysis_report(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     return _success_response(_build_task_analysis_report(task), code="ANALYSIS_REPORT_OK", message="analysis report")
 
 
 @app.get("/api/tasks/{task_id}/dashboard", response_model=ApiResponse)
-def get_dashboard(task_id: str):
-    task = _must_get_task(task_id)
+def get_dashboard(task_id: str, current_user: dict[str, Any] | None = Depends(_optional_current_user)):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     execution = task.execution_result or {"status": "not_started", "metrics": {}, "logs": []}
     analysis_report = _build_task_analysis_report(task, persist_registry=False)
@@ -1374,8 +2261,9 @@ def get_dashboard(task_id: str):
 def get_artifacts(
     task_id: str,
     shallow: bool = Query(False, description="If true, return only artifact types (no embedded content)."),
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
 ):
-    task = _must_get_task(task_id)
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     artifacts: list[dict[str, Any]] = []
     for artifact_type, resolver in DEFAULT_ARTIFACT_TYPES.items():
@@ -1387,8 +2275,12 @@ def get_artifacts(
 
 
 @app.get("/api/tasks/{task_id}/artifacts/{artifact_type}", response_model=ApiResponse)
-def get_artifact_content(task_id: str, artifact_type: str):
-    task = _must_get_task(task_id)
+def get_artifact_content(
+    task_id: str,
+    artifact_type: str,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     resolver = DEFAULT_ARTIFACT_TYPES.get(artifact_type)
     if resolver is None:
@@ -1405,66 +2297,251 @@ def get_history_tasks(
     status: TaskStatus | None = None,
     keyword: str | None = None,
     environment: str | None = None,
+    project_id: str | None = None,
     start_time: str | None = None,
     end_time: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
 ):
     items = registry.list(status=status.value if status else None, keyword=keyword, include_archived=True)
+    if current_user is not None:
+        visible_project_ids = set(_current_user_project_ids(str(current_user["user"]["id"])))
+        visible_user_id = str(current_user["user"]["id"])
+        items = [
+            item
+            for item in items
+            if (item.created_by and str(item.created_by) == visible_user_id)
+            or (item.project_id and str(item.project_id) in visible_project_ids)
+        ]
     if environment:
         items = [item for item in items if item.environment == environment]
+    if project_id:
+        items = [item for item in items if item.project_id == project_id]
     items = _filter_tasks_by_time(items, start_time, end_time)
     payload = _paginate([item.to_summary() for item in items], page, page_size)
     return _success_response(payload, code="TASK_HISTORY_OK", message="task history")
 
 
+def _resolve_environment_scope(
+    *,
+    project_id: str | None,
+    current_user: dict[str, Any] | None,
+) -> str | None:
+    normalized = str(project_id or "").strip() or None
+    if normalized is None:
+        return None
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="project-scoped environments require authenticated access")
+    _ensure_project_access(normalized, current_user)
+    return normalized
+
+
+def _environment_payload_to_config(
+    payload: UpsertEnvironmentRequest,
+    *,
+    project_id: str | None,
+    existing_config: EnvironmentConfig | None = None,
+) -> EnvironmentConfig:
+    candidate = EnvironmentConfig(
+        name=payload.name,
+        base_url=payload.base_url,
+        default_headers=dict(payload.default_headers or {}),
+        auth=dict(payload.auth or {}),
+        cookies=dict(payload.cookies or {}),
+        description=payload.description,
+    )
+    return merge_masked_environment_config(candidate, existing_config)
+
+
+def _serialize_environment_response(config: EnvironmentConfig) -> dict[str, Any]:
+    return mask_environment_config(config)
+
+
 @app.get("/api/environments", response_model=ApiResponse)
-def list_environments():
-    payload = [item.to_dict() for item in registry.list_environments()]
+def list_environments(
+    project_id: str | None = None,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    scoped_project_id = _resolve_environment_scope(project_id=project_id, current_user=current_user)
+    payload = [
+        _serialize_environment_response(item)
+        for item in registry.list_environments(
+            project_id=scoped_project_id,
+            include_global=scoped_project_id is not None,
+        )
+    ]
     return _success_response(payload, code="ENVIRONMENTS_OK", message="environments listed")
 
 
 @app.post("/api/environments", response_model=ApiResponse)
-def create_or_update_environment(payload: UpsertEnvironmentRequest):
-    config = EnvironmentConfig(
-        name=payload.name,
-        base_url=payload.base_url,
-        default_headers=payload.default_headers,
-        auth=payload.auth,
-        cookies=payload.cookies,
-        description=payload.description,
+def create_or_update_environment(
+    payload: UpsertEnvironmentRequest,
+    request: Request,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    scoped_project_id = _resolve_environment_scope(project_id=payload.project_id, current_user=current_user)
+    existing_config = registry.get_environment(payload.name, project_id=scoped_project_id)
+    config = _environment_payload_to_config(
+        payload,
+        project_id=scoped_project_id,
+        existing_config=existing_config,
     )
-    registry.save_environment(config)
-    return _success_response(config.to_dict(), code="ENVIRONMENT_SAVED", message="environment saved", status_code=201)
+    registry.save_environment(
+        config,
+        project_id=scoped_project_id,
+        created_by=str(current_user["user"]["id"]) if current_user is not None else None,
+    )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+        action="environment.save",
+        resource_type="environment",
+        resource_id=f"{scoped_project_id or 'global'}:{payload.name}",
+        detail_json={"project_id": scoped_project_id, "name": payload.name, "base_url": payload.base_url},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(_serialize_environment_response(config), code="ENVIRONMENT_SAVED", message="environment saved", status_code=201)
 
 
 @app.get("/api/environments/{environment_name}", response_model=ApiResponse)
-def get_environment(environment_name: str):
-    config = registry.get_environment(environment_name)
+def get_environment(
+    environment_name: str,
+    project_id: str | None = None,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    scoped_project_id = _resolve_environment_scope(project_id=project_id, current_user=current_user)
+    config = registry.get_environment(environment_name, project_id=scoped_project_id)
     if config is None:
         raise HTTPException(status_code=404, detail=f"Environment not found: {environment_name}")
-    return _success_response(config.to_dict(), code="ENVIRONMENT_OK", message="environment fetched")
+    return _success_response(_serialize_environment_response(config), code="ENVIRONMENT_OK", message="environment fetched")
 
 
 @app.put("/api/environments/{environment_name}", response_model=ApiResponse)
-def update_environment(environment_name: str, payload: UpsertEnvironmentRequest):
-    config = EnvironmentConfig(
-        name=environment_name,
-        base_url=payload.base_url,
-        default_headers=payload.default_headers,
-        auth=payload.auth,
-        cookies=payload.cookies,
-        description=payload.description,
+def update_environment(
+    environment_name: str,
+    payload: UpsertEnvironmentRequest,
+    request: Request,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    scoped_project_id = _resolve_environment_scope(project_id=payload.project_id, current_user=current_user)
+    existing_config = registry.get_environment(environment_name, project_id=scoped_project_id)
+    config = _environment_payload_to_config(
+        UpsertEnvironmentRequest(
+            name=environment_name,
+            base_url=payload.base_url,
+            default_headers=payload.default_headers,
+            auth=payload.auth,
+            cookies=payload.cookies,
+            description=payload.description,
+            project_id=payload.project_id,
+        ),
+        project_id=scoped_project_id,
+        existing_config=existing_config,
     )
-    registry.save_environment(config)
-    return _success_response(config.to_dict(), code="ENVIRONMENT_UPDATED", message="environment updated")
+    registry.save_environment(
+        config,
+        project_id=scoped_project_id,
+        created_by=str(current_user["user"]["id"]) if current_user is not None else None,
+    )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+        action="environment.update",
+        resource_type="environment",
+        resource_id=f"{scoped_project_id or 'global'}:{environment_name}",
+        detail_json={"project_id": scoped_project_id, "name": environment_name, "base_url": payload.base_url},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(_serialize_environment_response(config), code="ENVIRONMENT_UPDATED", message="environment updated")
 
 
 @app.delete("/api/environments/{environment_name}", response_model=ApiResponse)
-def delete_environment(environment_name: str):
-    if not registry.delete_environment(environment_name):
+def delete_environment(
+    environment_name: str,
+    request: Request,
+    project_id: str | None = None,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    scoped_project_id = _resolve_environment_scope(project_id=project_id, current_user=current_user)
+    if not registry.delete_environment(environment_name, project_id=scoped_project_id):
         raise HTTPException(status_code=404, detail=f"Environment not found: {environment_name}")
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+        action="environment.delete",
+        resource_type="environment",
+        resource_id=f"{scoped_project_id or 'global'}:{environment_name}",
+        detail_json={"project_id": scoped_project_id, "name": environment_name},
+        ip_address=_request_ip(request),
+    )
     return _success_response({"name": environment_name, "deleted": True}, code="ENVIRONMENT_DELETED", message="environment deleted")
+
+
+@app.post("/api/environments/probe", response_model=ApiResponse)
+def probe_environment(
+    payload: UpsertEnvironmentRequest,
+    request: Request,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    scoped_project_id = _resolve_environment_scope(project_id=payload.project_id, current_user=current_user)
+    existing_config = registry.get_environment(payload.name, project_id=scoped_project_id)
+    config = _environment_payload_to_config(
+        payload,
+        project_id=scoped_project_id,
+        existing_config=existing_config,
+    )
+    result = run_preflight_check(
+        task_id=f"environment-probe:{config.name}",
+        base_url=config.base_url,
+        default_headers=config.default_headers,
+        auth=config.auth,
+        cookies=config.cookies,
+        latency_threshold_ms=1500.0,
+        checks=["base_url_reachable", "auth_config_valid"],
+    )
+    result["environment_name"] = config.name
+    result["project_id"] = scoped_project_id
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+        action="environment.probe",
+        resource_type="environment",
+        resource_id=f"{scoped_project_id or 'global'}:{config.name}",
+        detail_json={
+            "project_id": scoped_project_id,
+            "name": config.name,
+            "base_url": config.base_url,
+            "overall_status": result.get("overall_status"),
+            "blocking": result.get("blocking"),
+        },
+        ip_address=_request_ip(request),
+    )
+    return _success_response(result, code="ENVIRONMENT_PROBE_OK", message="environment probe completed")
+
+
+@app.get("/api/audit/logs", response_model=ApiResponse)
+def get_audit_logs(
+    action: str | None = None,
+    resource_type: str | None = None,
+    keyword: str | None = None,
+    user_id: str | None = None,
+    actor: str | None = None,
+    start_time: str | None = None,
+    end_time: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    payload = store.list_audit_logs(
+        action=action,
+        resource_type=resource_type,
+        keyword=keyword,
+        user_id=user_id,
+        actor=actor,
+        start_time=_parse_iso_timestamp(start_time),
+        end_time=_parse_iso_timestamp(end_time),
+        page=page,
+        page_size=page_size,
+    )
+    return _success_response(payload, code="AUDIT_LOGS_OK", message="audit logs")
 
 
 @app.get("/api/history/executions", response_model=ApiResponse)
@@ -1473,10 +2550,12 @@ def get_execution_history(
     status: TaskStatus | None = None,
     keyword: str | None = None,
     environment: str | None = None,
+    project_id: str | None = None,
     start_time: str | None = None,
     end_time: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
 ):
     items = registry.list_execution_history(
         task_id=task_id,
@@ -1484,6 +2563,23 @@ def get_execution_history(
         keyword=keyword,
         environment=environment,
     )
+    if current_user is not None:
+        visible_task_ids = {
+            item.task_id
+            for item in registry.list(include_archived=True)
+            if (
+                (item.created_by and str(item.created_by) == str(current_user["user"]["id"]))
+                or (item.project_id and item.project_id in set(_current_user_project_ids(str(current_user["user"]["id"]))))
+            )
+        }
+        items = [item for item in items if str(item.get("task_id") or "") in visible_task_ids]
+    if project_id:
+        visible_project_task_ids = {
+            item.task_id
+            for item in registry.list(include_archived=True)
+            if item.project_id == project_id
+        }
+        items = [item for item in items if str(item.get("task_id") or "") in visible_project_task_ids]
     items = _filter_dict_items_by_time(items, "executed_at", start_time, end_time)
     payload = _paginate(items, page, page_size)
     return _success_response(payload, code="EXECUTION_HISTORY_OK", message="execution history")

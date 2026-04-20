@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from requirement_analysis.knowledge_library import load_curated_knowledge_chunks
 
 
@@ -34,3 +36,48 @@ def test_knowledge_library_matches_external_domain_docs_without_platform_polluti
     source_files = {chunk.source_file for chunk in chunks}
     assert "domain/external/restful_booker.md" in source_files
     assert "domain/platform/task_center_api.md" not in source_files
+
+
+def test_knowledge_library_supports_external_registry(monkeypatch, tmp_path) -> None:
+    knowledge_root = tmp_path / "extra_knowledge"
+    manifests = knowledge_root / "manifests"
+    docs_dir = knowledge_root / "external"
+    manifests.mkdir(parents=True)
+    docs_dir.mkdir(parents=True)
+
+    registry_path = manifests / "extra_registry.json"
+    doc_path = docs_dir / "custom_api.md"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "entries": [
+                    {
+                        "knowledge_id": "custom_api_guidance",
+                        "path": "external/custom_api.md",
+                        "title": "Custom API Guidance",
+                        "knowledge_type": "external_domain",
+                        "domain": "custom",
+                        "activation_conditions": ["api_document"],
+                        "tags": ["custom", "api"],
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    doc_path.write_text(
+        "# Custom API\n\n## Auth\nPOST /custom/auth returns token\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("REQUIREMENT_ANALYSIS_EXTRA_KNOWLEDGE_REGISTRY", str(registry_path))
+    monkeypatch.setenv("REQUIREMENT_ANALYSIS_EXTRA_KNOWLEDGE_ROOT", str(knowledge_root))
+
+    chunks = load_curated_knowledge_chunks(
+        raw_text="# Custom\n\n`POST /custom/auth`",
+        cleaned_text="# Custom\n\n`POST /custom/auth`",
+    )
+
+    source_files = {chunk.source_file for chunk in chunks}
+    assert "external/custom_api.md" in source_files

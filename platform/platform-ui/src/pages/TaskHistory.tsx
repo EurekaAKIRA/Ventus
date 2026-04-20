@@ -16,6 +16,7 @@ import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import type { HistoryTaskItem } from "../types";
 import { fetchHistoryTasks } from "../api/tasks";
 import StatusTag from "../components/StatusTag";
+import { useAuth } from "../auth/AuthContext";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -46,6 +47,7 @@ function resolvePresetRange(mode: WindowMode): [Dayjs, Dayjs] {
 export default function TaskHistory() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { currentProjectId } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<HistoryTaskItem[]>([]);
@@ -64,6 +66,7 @@ export default function TaskHistory() {
         keyword: keyword.trim() || undefined,
         status: status || undefined,
         environment: environment || undefined,
+        project_id: currentProjectId || undefined,
         start_time: range ? range[0].startOf("day").toISOString() : undefined,
         end_time: range ? range[1].endOf("day").toISOString() : undefined,
         page: 1,
@@ -85,7 +88,7 @@ export default function TaskHistory() {
       void load();
     }, 220);
     return () => window.clearTimeout(timer);
-  }, [keyword, status, environment, range]);
+  }, [keyword, status, environment, range, currentProjectId]);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);

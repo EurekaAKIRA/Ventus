@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,6 +43,21 @@ def _registry_path() -> Path:
     return _knowledge_root() / "manifests" / "knowledge_registry.json"
 
 
+def _resolve_external_registry_paths() -> list[Path]:
+    raw = str(os.getenv("REQUIREMENT_ANALYSIS_EXTRA_KNOWLEDGE_REGISTRY", "") or "").strip()
+    if not raw:
+        return []
+    parts = [segment.strip() for segment in raw.split(os.pathsep)]
+    return [Path(item).expanduser().resolve() for item in parts if item]
+
+
+def _resolve_external_knowledge_root() -> Path | None:
+    raw = str(os.getenv("REQUIREMENT_ANALYSIS_EXTRA_KNOWLEDGE_ROOT", "") or "").strip()
+    if not raw:
+        return None
+    return Path(raw).expanduser().resolve()
+
+
 def load_curated_knowledge_chunks(*, raw_text: str, cleaned_text: str) -> list[DocumentChunk]:
     registry = _load_registry()
     if not registry:
@@ -49,10 +65,11 @@ def load_curated_knowledge_chunks(*, raw_text: str, cleaned_text: str) -> list[D
 
     context = f"{raw_text or ''}\n{cleaned_text or ''}"
     chunks: list[DocumentChunk] = []
+    seen_chunk_ids: set[str] = set()
     for entry in registry:
         if not _entry_matches(entry, context):
             continue
-        doc_path = _knowledge_root() / entry.path
+        doc_path = _resolve_entry_path(entry)
         if not doc_path.exists():
             continue
         text = doc_path.read_text(encoding="utf-8").strip()
@@ -62,12 +79,15 @@ def load_curated_knowledge_chunks(*, raw_text: str, cleaned_text: str) -> list[D
         for index, (section_title, content) in enumerate(sections, start=1):
             title = section_title or entry.title
             chunk_id = f"knowledge_{entry.knowledge_id}_{index:02d}"
+            if chunk_id in seen_chunk_ids:
+                continue
+            seen_chunk_ids.add(chunk_id)
             chunks.append(
                 DocumentChunk(
                     chunk_id=chunk_id,
                     content=content,
                     section_title=title,
-                    source_file=str(doc_path.relative_to(_knowledge_root())).replace("\\", "/"),
+                    source_file=_display_source_file(doc_path),
                     source_block=f"{entry.knowledge_type}:{entry.knowledge_id}:{index}",
                     tokens_estimate=max(1, len(content) // 2),
                     keywords=_build_keywords(entry, title, content),
@@ -78,7 +98,18 @@ def load_curated_knowledge_chunks(*, raw_text: str, cleaned_text: str) -> list[D
 
 
 def _load_registry() -> list[KnowledgeEntry]:
-    path = _registry_path()
+    out: list[KnowledgeEntry] = []
+    seen_ids: set[str] = set()
+    for path in [_registry_path(), *_resolve_external_registry_paths()]:
+        for entry in _load_registry_entries_from_path(path):
+            if entry.knowledge_id in seen_ids:
+                continue
+            seen_ids.add(entry.knowledge_id)
+            out.append(entry)
+    return out
+
+
+def _load_registry_entries_from_path(path: Path) -> list[KnowledgeEntry]:
     if not path.exists():
         return []
     try:
@@ -111,6 +142,28 @@ def _load_registry() -> list[KnowledgeEntry]:
             )
         )
     return out
+
+
+def _resolve_entry_path(entry: KnowledgeEntry) -> Path:
+    candidate = Path(entry.path)
+    if candidate.is_absolute():
+        return candidate
+    external_root = _resolve_external_knowledge_root()
+    if external_root is not None:
+        external_candidate = external_root / entry.path
+        if external_candidate.exists():
+            return external_candidate
+    return _knowledge_root() / entry.path
+
+
+def _display_source_file(path: Path) -> str:
+    roots = [root for root in (_resolve_external_knowledge_root(), _knowledge_root()) if root is not None]
+    for root in roots:
+        try:
+            return str(path.relative_to(root)).replace("\\", "/")
+        except ValueError:
+            continue
+    return str(path).replace("\\", "/")
 
 
 def _entry_matches(entry: KnowledgeEntry, context: str) -> bool:

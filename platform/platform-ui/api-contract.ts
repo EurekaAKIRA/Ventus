@@ -19,6 +19,9 @@ export interface TaskContext {
   notes: string[];
   /** Vector RAG preference at task creation (embeddings + vector ranking). Does not disable LLM enhancement. */
   rag_enabled?: boolean | null;
+  project_id?: string;
+  created_by?: string;
+  target_system?: string | null;
 }
 
 export interface RetrievedChunk {
@@ -201,6 +204,7 @@ export interface ParseMetadata {
   fallback_reason: string;
   llm_error_type: string;
   llm_provider_profile: string;
+  model_profile?: string;
   retrieval_mode: string;
   retrieval_top_k: number;
   rerank_enabled: boolean;
@@ -225,6 +229,17 @@ export interface AnalysisReport {
   step_assertion_quality?: Array<Record<string, unknown>>;
   findings: string[];
   chart_data: Record<string, unknown>;
+}
+
+export interface AnalysisProgressPayload {
+  task_id: string;
+  kind: "analysis" | string;
+  stage: string;
+  percent: number;
+  status: "idle" | "running" | "completed" | "failed" | string;
+  message: string;
+  updated_at: string;
+  detail?: Record<string, unknown>;
 }
 
 export interface TaskListItem extends TaskContext {}
@@ -321,4 +336,92 @@ export interface RegressionDiffPayload {
   metrics_diff?: Record<string, unknown>;
   failure_type_diff?: Array<Record<string, unknown>>;
   verdict?: "improved" | "regressed" | "unchanged" | string;
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  email?: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  workspace_id?: string | null;
+  last_login_at?: string | null;
+}
+
+export interface ProjectSummary {
+  id: string;
+  workspace_id?: string | null;
+  name: string;
+  description?: string | null;
+  owner_user_id?: string | null;
+  is_default?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ProjectMemberPayload {
+  id?: string;
+  project_id?: string;
+  user_id?: string;
+  username?: string;
+  display_name?: string;
+  role: string;
+  created_at?: string;
+  joined_at?: string;
+}
+
+export interface AuthLoginPayload {
+  access_token: string;
+  refresh_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  session_id?: string;
+  user?: UserProfile | null;
+  projects?: ProjectSummary[];
+}
+
+export interface AuthRegisterPayload {
+  user: UserProfile;
+  projects?: ProjectSummary[];
+}
+
+export interface AuthMePayload {
+  user: UserProfile | null;
+  projects: ProjectSummary[];
+}
+
+export interface CreateProjectPayload extends ProjectSummary {}
+
+export interface EnvironmentPayload {
+  name: string;
+  base_url?: string;
+  default_headers?: Record<string, string>;
+  auth?: Record<string, unknown>;
+  cookies?: Record<string, unknown>;
+  description?: string;
+  project_id?: string;
+  default_headers_masked?: boolean;
+  auth_masked?: boolean;
+  cookies_masked?: boolean;
+  masked_header_keys?: string[];
+}
+
+export interface AuditLogPayload {
+  id: string;
+  user_id?: string | null;
+  username?: string | null;
+  display_name?: string | null;
+  action: string;
+  resource_type: string;
+  resource_id?: string | null;
+  detail_json?: Record<string, unknown> | unknown[] | null;
+  ip_address?: string | null;
+  created_at?: string | null;
+}
+
+export interface AuditLogListPayload {
+  items: AuditLogPayload[];
+  total: number;
+  page: number;
+  page_size: number;
 }

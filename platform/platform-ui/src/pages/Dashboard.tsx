@@ -31,6 +31,7 @@ import {
 } from "@ant-design/icons";
 import type { ExecutionHistoryItem, HistoryTaskItem, TaskListItem } from "../types";
 import { fetchExecutionHistory, fetchHistoryTasks, fetchTaskList } from "../api/tasks";
+import { useAuth } from "../auth/AuthContext";
 import StatusTag from "../components/StatusTag";
 
 const { Title, Text } = Typography;
@@ -126,6 +127,7 @@ function describeDonutArc(
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { currentProjectId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
   const [historyTasks, setHistoryTasks] = useState<HistoryTaskItem[]>([]);
@@ -182,9 +184,9 @@ export default function Dashboard() {
     const { start, end } = resolveTimeRange();
     try {
       const [taskResult, historyTasksResult, historyResult] = await Promise.allSettled([
-        fetchTaskList(),
-        fetchHistoryTasks({ page: 1, page_size: 200, start_time: start, end_time: end }),
-        fetchExecutionHistory({ page: 1, page_size: 200, start_time: start, end_time: end }),
+        fetchTaskList({ project_id: currentProjectId || undefined }),
+        fetchHistoryTasks({ page: 1, page_size: 200, project_id: currentProjectId || undefined, start_time: start, end_time: end }),
+        fetchExecutionHistory({ page: 1, page_size: 200, project_id: currentProjectId || undefined, start_time: start, end_time: end }),
       ]);
 
       if (taskResult.status === "fulfilled") {
@@ -220,7 +222,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     void load();
-  }, [timeFilterMode, customRange]);
+  }, [timeFilterMode, customRange, currentProjectId]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -234,7 +236,7 @@ export default function Dashboard() {
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [autoRefresh, timeFilterMode, customRange]);
+  }, [autoRefresh, timeFilterMode, customRange, currentProjectId]);
 
   const taskDataset = useMemo<TaskLike[]>(
     () => (historyTasks.length ? (historyTasks as TaskLike[]) : (tasks as TaskLike[])),

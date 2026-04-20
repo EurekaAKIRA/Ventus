@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "cases": [
+    {
+      "case_id": "platform_task_create",
+      "title": "Platform task create contract",
+      "raw_text": "# Task Center\n\n## 场景\n`POST /api/tasks`\n创建任务并返回 task_id。",
+      "cleaned_text": "# Task Center\n\n## 场景\n`POST /api/tasks`\n创建任务并返回 task_id。",
+      "query": "POST /api/tasks create task endpoint",
+      "expected_source_files": [
+        "domain/platform/task_center_api.md"
+      ],
+      "top_k": 5
+    },
+    {
+      "case_id": "restful_booker_auth",
+      "title": "Restful Booker auth",
+      "raw_text": "# Restful Booker\n\n## API\n`POST /auth`\n登录获取 token。",
+      "cleaned_text": "# Restful Booker\n\n## API\n`POST /auth`\n登录获取 token。",
+      "query": "POST /auth login token endpoint",
+      "expected_source_files": [
+        "domain/external/restful_booker.md"
+      ],
+      "top_k": 5
+    },
+    {
+      "case_id": "dependency_lifecycle_rule",
+      "title": "Dependency lifecycle rule",
+      "raw_text": "# API Scenario\n\n需要先创建 booking，再执行 DELETE /booking/{id}。",
+      "cleaned_text": "# API Scenario\n\n需要先创建 booking，再执行 DELETE /booking/{id}。",
+      "query": "resource lifecycle create before delete booking rule",
+      "expected_source_files": [
+        "generation_rules/dependency_lifecycle.md"
+      ],
+      "top_k": 5
+    },
+    {
+      "case_id": "auth_propagation_rule",
+      "title": "Auth propagation rule",
+      "raw_text": "# API Scenario\n\nPOST /auth 获取 token，之后在 Authorization header 中复用。",
+      "cleaned_text": "# API Scenario\n\nPOST /auth 获取 token，之后在 Authorization header 中复用。",
+      "query": "token propagation authorization header save_context uses_context",
+      "expected_source_files": [
+        "generation_rules/auth_propagation.md"
+      ],
+      "top_k": 5
+    },
+    {
+      "case_id": "api_challenges_domain",
+      "title": "API Challenges domain",
+      "raw_text": "# API Challenges\n\n`POST /secret/token`\n拿 token 后请求受保护资源。",
+      "cleaned_text": "# API Challenges\n\n`POST /secret/token`\n拿 token 后请求受保护资源。",
+      "query": "POST /secret/token protected resource challenge",
+      "expected_source_files": [
+        "domain/external/api_challenges.md"
+      ],
+      "top_k": 5
+    }
+  ]
+}

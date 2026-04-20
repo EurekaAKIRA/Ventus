@@ -26,6 +26,7 @@ import {
 } from "@ant-design/icons";
 import type { TaskListItem } from "../types";
 import { fetchTaskList, deleteTask } from "../api/tasks";
+import { useAuth } from "../auth/AuthContext";
 import StatusTag from "../components/StatusTag";
 import MetricCard from "../components/MetricCard";
 import {
@@ -54,6 +55,7 @@ type FocusMode = "all" | "focus" | "failed" | "running";
 export default function TaskList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { currentProjectId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [serverTasks, setServerTasks] = useState<TaskListItem[]>([]);
   const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
@@ -75,7 +77,11 @@ export default function TaskList() {
     try {
       const nextKeyword = params?.keyword ?? keyword;
       const nextStatus = params?.status ?? status;
-      const { items } = await fetchTaskList({ keyword: nextKeyword, status: nextStatus || undefined });
+      const { items } = await fetchTaskList({
+        keyword: nextKeyword,
+        status: nextStatus || undefined,
+        project_id: currentProjectId || undefined,
+      });
       setServerTasks(items);
       setLastUpdatedAt(new Date().toISOString());
       setRefreshCountdown(refreshSeconds);
@@ -95,7 +101,7 @@ export default function TaskList() {
       void load({ keyword, status });
     }, 180);
     return () => window.clearTimeout(timer);
-  }, [keyword, status]);
+  }, [keyword, status, currentProjectId]);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
@@ -127,7 +133,7 @@ export default function TaskList() {
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [autoRefresh, refreshSeconds, keyword, status]);
+  }, [autoRefresh, refreshSeconds, keyword, status, currentProjectId]);
 
   const activeTasks = useMemo(
     () =>

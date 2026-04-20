@@ -1,0 +1,30 @@
+%%{init: {'flowchart': {'nodeSpacing': 44, 'rankSpacing': 72, 'padding': 20, 'useMaxWidth': false}}}%%
+flowchart LR
+  开始([开始])
+  结束([结束])
+
+  输入["接收任务输入\n（任务名/需求文本/来源文件）"]
+  上下文["规范化输入\n生成任务上下文与原始需求"]
+  解析["需求解析\n清洗、分块、检索增强、结构化"]
+  用例["生成测试场景与测试 DSL"]
+  校验["生成 Gherkin 并执行校验"]
+  报告["汇总验证结果并生成分析报告"]
+  结果["组装结果对象\n（PipelineResult）"]
+  判断{"是否需要落盘产物？"}
+  落盘["写入产物目录\nraw/parsed/scenarios/validation 等"]
+  返回["返回结果"]
+  subgraph r1[" "]
+    direction LR
+    开始 --> 输入 --> 上下文 --> 解析 --> 用例
+  end
+  subgraph r2[" "]
+    direction LR
+    校验 --> 报告 --> 结果 --> 判断
+  end
+
+  用例 -.->|转入第二行| 校验
+  判断 -- 是 --> 落盘 --> 返回 --> 结束
+  判断 -- 否 --> 返回 --> 结束
+
+  style r1 fill:transparent,stroke:transparent
+  style r2 fill:transparent,stroke:transparent

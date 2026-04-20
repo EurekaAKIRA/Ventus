@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Callable
 
 from .input_handler import normalize_input
 from .artifact_manager import build_task_artifact_dir, ensure_task_subdirs, write_json_artifact, write_text_artifact
@@ -40,6 +41,27 @@ def _build_scenario_model(payload: dict) -> ScenarioModel:
     )
 
 
+def _emit_pipeline_progress(
+    progress_callback: Callable[[str, dict[str, Any]], None] | None,
+    stage: str,
+    *,
+    percent: int,
+    message: str,
+    **extra: Any,
+) -> None:
+    if progress_callback is None:
+        return
+    progress_callback(
+        stage,
+        {
+            "stage": stage,
+            "percent": percent,
+            "message": message,
+            **extra,
+        },
+    )
+
+
 def run_analysis_pipeline(
     task_name: str,
     requirement_text: str = "",
@@ -55,6 +77,7 @@ def run_analysis_pipeline(
     retrieval_top_k: int | None = None,
     rerank_enabled: bool | None = None,
     model_profile: str | None = None,
+    progress_callback: Callable[[str, dict[str, Any]], None] | None = None,
 ) -> dict:
     """Run the current minimal end-to-end platform pipeline."""
     parse_options = AnalysisParseOptions.resolve(
@@ -77,6 +100,14 @@ def run_analysis_pipeline(
     )
     task_context = TaskContext(**payload["task_context"])
     task_context = replace(task_context, rag_enabled=parse_options.rag_enabled)
+    _emit_pipeline_progress(
+        progress_callback,
+        "input_normalized",
+        percent=10,
+        message="任务输入已标准化，开始解析需求文档",
+        task_id=task_context.task_id,
+        task_name=task_context.task_name,
+    )
 
     parse_bundle = parse_requirement_bundle(
         requirement_text=payload["raw_requirement"],
@@ -88,6 +119,15 @@ def run_analysis_pipeline(
     outline = parse_bundle["outline"]
     chunks = [DocumentChunk(**item) for item in parse_bundle["chunks"]]
     retrieved_context = [RetrievedChunk(**item) for item in parse_bundle["retrieved_context"]]
+    _emit_pipeline_progress(
+        progress_callback,
+        "requirement_parsed",
+        percent=45,
+        message="需求解析完成，开始生成测试场景",
+        chunk_count=len(chunks),
+        retrieved_count=len(retrieved_context),
+        parse_mode=str(parse_bundle.get("parse_metadata", {}).get("parse_mode", "rules")),
+    )
 
     parsed_requirement = ParsedRequirement(**parse_bundle["parsed_requirement"])
     parse_validation_report = ValidationReport(**parse_bundle["validation_report"])
@@ -95,6 +135,13 @@ def run_analysis_pipeline(
         _build_scenario_model(scenario)
         for scenario in build_scenarios(parsed_requirement.to_dict(), use_llm=parse_options.use_llm)
     ]
+    _emit_pipeline_progress(
+        progress_callback,
+        "scenarios_built",
+        percent=70,
+        message="测试场景已生成，开始构建 DSL 与 Feature",
+        scenario_count=len(scenarios),
+    )
     dsl_payload = build_test_case_dsl(
         task_context,
         scenarios,
@@ -111,6 +158,13 @@ def run_analysis_pipeline(
         **dsl_payload
     )
     feature_text = generate_feature(task_context.task_name, [scenario.to_dict() for scenario in scenarios])
+    _emit_pipeline_progress(
+        progress_callback,
+        "dsl_ready",
+        percent=85,
+        message="DSL 与 Feature 已生成，开始校验并汇总分析报告",
+        scenario_count=len(scenarios),
+    )
     feature_validation_report = ValidationReport(**validate_feature_text(feature_text))
     validation_report = ValidationReport(
         feature_name=feature_validation_report.feature_name,
@@ -150,6 +204,13 @@ def run_analysis_pipeline(
 
     result_payload = result.to_dict()
     result_payload["parse_metadata"] = parse_bundle.get("parse_metadata", {})
+    _emit_pipeline_progress(
+        progress_callback,
+        "analysis_report_ready",
+        percent=95,
+        message="分析报告已生成，正在落盘产物",
+        scenario_count=len(scenarios),
+    )
 
     if artifacts_base_dir:
         result_payload["artifact_dir"] = persist_pipeline_artifacts(
@@ -157,6 +218,14 @@ def run_analysis_pipeline(
             artifacts_base_dir,
             task_dir_name=artifact_dir_name or task_context.task_id,
         )
+    _emit_pipeline_progress(
+        progress_callback,
+        "ready",
+        percent=100,
+        message="任务解析完成，可进入详情页查看",
+        scenario_count=len(scenarios),
+        artifact_dir=result_payload.get("artifact_dir"),
+    )
 
     return result_payload
 

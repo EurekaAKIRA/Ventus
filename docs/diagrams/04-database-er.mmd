@@ -1,0 +1,21 @@
+%% 实体关系依据：docs/user_module_database_schema_draft.md（用户模块数据库 Schema 草案 v1）。
+%% 备注：表名保持英文以便与 SQL/ORM 一致；业务含义以该文档各表「用途」小节为准。
+erDiagram
+    USERS ||--o{ USER_CREDENTIALS : 拥有
+    USERS ||--o{ USER_SESSIONS : 拥有
+    USERS ||--o{ PROJECTS : 创建
+    USERS ||--o{ TASKS : 创建
+    USERS ||--o{ TASK_RUNS : 触发
+    USERS ||--o{ AUDIT_LOGS : 记录
+
+    WORKSPACES ||--o{ PROJECTS : 包含
+    PROJECTS ||--o{ PROJECT_MEMBERS : 拥有
+    USERS ||--o{ PROJECT_MEMBERS : 加入
+
+    PROJECTS ||--o{ TASKS : 包含
+    PROJECTS ||--o{ ENVIRONMENTS : 拥有
+
+    TASKS ||--o{ TASK_INPUTS : 拥有
+    TASKS ||--o{ TASK_RUNS : 拥有
+    TASKS ||--o{ TASK_STATUS_EVENTS : 产生
+    TASK_RUNS ||--o{ TASK_STATUS_EVENTS : 产生

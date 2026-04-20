@@ -11,6 +11,7 @@
 - 推荐约束与索引
 - 建表顺序
 - 与现有 `task-center` 的映射方式
+- 与 Redis / artifact 的职责边界
 
 ## 2. 主键与通用字段约定
 
@@ -47,6 +48,29 @@
 
 - `status`
 - `archived`
+
+## 2.3 存储边界约定
+
+关系型数据库只保存：
+
+- 需要长期保留的业务主数据
+- 需要审计、查询、统计的元数据
+- 指向 artifact 的路径与摘要
+
+Redis 只保存：
+
+- 运行期、短生命周期、跨步骤传递的上下文
+- 实时进度
+- 执行锁 / 幂等键
+- 会话快速校验态与撤销态
+
+artifact 文件目录继续保存：
+
+- 原始文档
+- 解析结果
+- DSL / feature
+- 执行结果
+- 报告文件
 
 ## 3. ER 关系概览
 
@@ -313,6 +337,8 @@ erDiagram
 | `finished_at` | TIMESTAMP | NULL | 结束时间 |
 | `duration_ms` | BIGINT | NULL | 耗时 |
 | `summary_json` | JSON/TEXT | NULL | 摘要信息 |
+| `progress_snapshot_json` | JSON/TEXT | NULL | 最终进度摘要 |
+| `runtime_context_snapshot_path` | VARCHAR(1024) | NULL | 最终上下文快照路径 |
 | `analysis_report_path` | VARCHAR(1024) | NULL | 报告路径 |
 | `execution_result_path` | VARCHAR(1024) | NULL | 执行结果路径 |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
@@ -326,6 +352,23 @@ erDiagram
 - `ix_task_runs_task_id_run_no`
 - `ix_task_runs_triggered_by_started_at`
 - `ix_task_runs_status_started_at`
+
+---
+
+## 4.9A 说明：为什么没有 task_runtime_contexts 表
+
+本设计刻意不新增类似 `task_runtime_contexts`、`step_context_entries` 这类运行态明细表。
+
+原因：
+
+- 运行期 context 是高频、短生命周期、跨步骤传递的数据
+- 更适合 Redis，而不是关系型数据库持续写入
+- 真正需要长期保留的只是一份最终摘要或快照
+
+因此：
+
+- Redis 保存执行中的完整 runtime context
+- `task_runs` 只保存摘要字段和最终快照路径
 
 ---
 
@@ -427,6 +470,26 @@ platform/task-center/src/task_center/db/
 
 这样可以保留一段时间 JSON repository 与 DB repository 并存。
 
+### 5.3 Redis 接入建议
+
+建议新增运行态基础模块：
+
+```text
+platform/task-center/src/task_center/runtime/
+  redis_client.py
+  context_store.py
+  progress_store.py
+  execution_lock.py
+  session_store.py
+```
+
+职责：
+
+- `context_store.py`：保存运行时上下文
+- `progress_store.py`：保存实时进度
+- `execution_lock.py`：防重执行
+- `session_store.py`：登录会话与 token 撤销态
+
 ## 6. 建表顺序建议
 
 建议迁移顺序：
@@ -461,12 +524,21 @@ platform/task-center/src/task_center/db/
 - 追加一条 `task_runs`
 - 更新 `tasks.current_run_id`
 - 写状态变更事件
+- 初始化 Redis runtime context / progress key
 
 ### 7.3 当前环境管理
 
 当前环境 JSON 存储未来对应：
 
 - 直接改为 `environments` 表
+
+### 7.4 当前跨步骤上下文
+
+未来建议映射：
+
+- 执行中：Redis `task_runtime:{task_uid}:{run_no}:context`
+- 执行完成：摘要回写 `task_runs.summary_json`
+- 如需完整留痕：快照文件写入 artifact，再把路径写入 `task_runs.runtime_context_snapshot_path`
 
 ## 8. 迁移策略建议
 
@@ -509,3 +581,11 @@ platform/task-center/src/task_center/db/
 - `user_sessions`
 - `environments`
 - `audit_logs`
+
+同时建议立即定义 Redis 的最小 key 集：
+
+- `session:{session_id}`
+- `token_revocation:{jti}`
+- `task_runtime:{task_uid}:{run_no}:context`
+- `task_runtime:{task_uid}:{run_no}:progress`
+- `lock:task_execute:{task_uid}`

@@ -6,15 +6,18 @@ import {
   fetchFeatureText,
   fetchRetrievedContext,
   fetchScenarios,
+  fetchTaskAnalysisProgress,
   fetchTaskArtifactContent,
   fetchTaskArtifacts,
   fetchTaskDashboard,
   fetchTaskDetail,
   fetchValidationReport,
   refreshTaskParse,
+  startTaskAnalysis,
   DEFAULT_REQUIREMENT_RAG_ENABLED,
 } from "../../api/tasks";
 import type {
+  AnalysisProgressPayload,
   TaskArtifactContent,
   TaskArtifactItem,
   TaskDashboardPayload,
@@ -49,8 +52,48 @@ const DEFAULT_STAGE_STATE: Record<StageKey, StageStatus> = {
   dashboard: "wait",
 };
 
+const ANALYSIS_PROGRESS_POLL_MS = 500;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function isAnalysisCompleted(progress: AnalysisProgressPayload | null | undefined): boolean {
+  if (!progress) {
+    return false;
+  }
+  return progress.status === "completed" || progress.stage === "ready" || progress.percent >= 100;
+}
+
+function deriveCreateFlowStageState(progress: AnalysisProgressPayload | null | undefined): Record<StageKey, StageStatus> {
+  if (!progress) {
+    return { basic: "process", artifacts: "wait", dashboard: "wait" };
+  }
+
+  if (progress.status === "failed") {
+    if (["queued", "input_normalized", "idle"].includes(progress.stage)) {
+      return { basic: "error", artifacts: "wait", dashboard: "wait" };
+    }
+    if (["requirement_parsed", "scenarios_built", "dsl_ready"].includes(progress.stage)) {
+      return { basic: "finish", artifacts: "error", dashboard: "wait" };
+    }
+    return { basic: "finish", artifacts: "finish", dashboard: "error" };
+  }
+
+  if (["analysis_report_ready", "ready"].includes(progress.stage) || isAnalysisCompleted(progress)) {
+    return { basic: "finish", artifacts: "finish", dashboard: "process" };
+  }
+
+  if (["requirement_parsed", "scenarios_built", "dsl_ready"].includes(progress.stage)) {
+    return { basic: "finish", artifacts: "process", dashboard: "wait" };
+  }
+
+  return { basic: "process", artifacts: "wait", dashboard: "wait" };
+}
+
 export function useTaskDetailData(params: { taskId: string; fromCreateFlow: boolean }) {
   const { taskId, fromCreateFlow } = params;
+  const mountedRef = useRef(true);
   const requestSeqRef = useRef(0);
   const activeRequestRef = useRef(0);
   const detailRef = useRef<ExtendedTaskDetail | null>(null);
@@ -63,6 +106,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
   const [stageState, setStageState] = useState<Record<StageKey, StageStatus>>(DEFAULT_STAGE_STATE);
   const [stageError, setStageError] = useState<string | null>(null);
   const [refreshStageText, setRefreshStageText] = useState("");
+  const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgressPayload | null>(null);
   const [detail, setDetail] = useState<ExtendedTaskDetail | null>(null);
   const [taskDashboard, setTaskDashboard] = useState<TaskDashboardPayload | null>(null);
   const [dashboardLoadError, setDashboardLoadError] = useState<string | null>(null);
@@ -83,6 +127,14 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     detailRef.current = detail;
   }, [detail]);
 
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+      activeRequestRef.current = 0;
+    },
+    [],
+  );
+
   const resetSilentPollRefs = useCallback(() => {
     lastSilentSummaryFpRef.current = "";
     lastSilentHeavySnapRef.current = "";
@@ -96,7 +148,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     }
     const requestId = ++requestSeqRef.current;
     activeRequestRef.current = requestId;
-    const isLatest = () => activeRequestRef.current === requestId;
+    const isLatest = () => mountedRef.current && activeRequestRef.current === requestId;
     const updateStage = (key: StageKey, status: StageStatus) => {
       if (!isLatest()) return;
       setStageState((prev) => ({ ...prev, [key]: status }));
@@ -110,6 +162,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
       setRefreshing(!fromCreateFlow);
       setStageState({ basic: "process", artifacts: "wait", dashboard: "wait" });
       setStageError(null);
+      setAnalysisProgress(null);
     } else if (mode === "manual") {
       setRefreshing(true);
       setRefreshStageText(`正在刷新：${STAGE_LABELS.basic}`);
@@ -118,6 +171,93 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     }
 
     try {
+      if (mode === "initial" && fromCreateFlow) {
+        const summary = (await fetchTaskDetail(taskId, { detailLevel: "summary" })) as ExtendedTaskDetail;
+        if (!isLatest()) {
+          return;
+        }
+        setDetail(summary);
+        setStageState({ basic: "finish", artifacts: "wait", dashboard: "wait" });
+
+        let progress = await startTaskAnalysis(taskId);
+        if (!isLatest()) {
+          return;
+        }
+        setAnalysisProgress(progress);
+        setStageState(deriveCreateFlowStageState(progress));
+
+        while (isLatest() && progress.status !== "failed" && !isAnalysisCompleted(progress)) {
+          await delay(ANALYSIS_PROGRESS_POLL_MS);
+          if (!isLatest()) {
+            return;
+          }
+          try {
+            progress = await fetchTaskAnalysisProgress(taskId);
+          } catch (error) {
+            if (isLatest()) {
+              setStageError((error as Error).message || "解析进度加载失败，正在重试");
+            }
+            continue;
+          }
+          if (!isLatest()) {
+            return;
+          }
+          setStageError(null);
+          setAnalysisProgress(progress);
+          setStageState(deriveCreateFlowStageState(progress));
+        }
+
+        if (!isLatest()) {
+          return;
+        }
+
+        if (progress.status === "failed") {
+          setStageError(progress.message || "任务解析失败");
+          setStageState(deriveCreateFlowStageState(progress));
+          return;
+        }
+
+        setAnalysisProgress({
+          ...progress,
+          message: "解析完成，正在装载详情页",
+        });
+        setStageState({ basic: "finish", artifacts: "finish", dashboard: "process" });
+
+        const [fullResult, artifactResult, dashboardResult] = await Promise.allSettled([
+          fetchTaskDetail(taskId, { detailLevel: "full" }),
+          fetchTaskArtifacts(taskId, { shallow: true }),
+          fetchTaskDashboard(taskId),
+        ]);
+
+        if (!isLatest()) {
+          return;
+        }
+
+        if (fullResult.status === "fulfilled") {
+          setDetail((prev) => ({ ...(prev ?? {}), ...fullResult.value }) as ExtendedTaskDetail);
+        } else {
+          setStageError((fullResult.reason as Error)?.message || "任务详情装载失败");
+        }
+
+        if (artifactResult.status === "fulfilled") {
+          setArtifacts(artifactResult.value);
+        } else {
+          setArtifacts([]);
+          setStageError((prev) => prev ?? ((artifactResult.reason as Error)?.message || "产物索引加载失败"));
+        }
+
+        if (dashboardResult.status === "fulfilled") {
+          setTaskDashboard(dashboardResult.value);
+          setDashboardLoadError(null);
+          setStageState({ basic: "finish", artifacts: "finish", dashboard: "finish" });
+        } else {
+          setDashboardLoadError("任务看板加载失败，可稍后重试");
+          setStageState({ basic: "finish", artifacts: "finish", dashboard: "error" });
+          setStageError((prev) => prev ?? ((dashboardResult.reason as Error)?.message || "任务看板加载失败"));
+        }
+        return;
+      }
+
       const detailPromise = fetchTaskDetail(taskId, { detailLevel: "summary" }).catch((error) => {
         if (mode !== "silent" && isLatest()) {
           updateStage("basic", "error");
@@ -132,19 +272,14 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
         throw error;
       });
 
-      const [detailResult, artifactResult] = await Promise.allSettled([detailPromise, artifactPromise]);
-
+      const summary = (await detailPromise) as ExtendedTaskDetail;
       if (!isLatest()) {
         return;
       }
 
-      if (detailResult.status === "fulfilled") {
-        setDetail(detailResult.value as ExtendedTaskDetail);
-        if (mode !== "silent") {
-          updateStage("basic", "finish");
-        }
-      } else {
-        throw detailResult.reason;
+      setDetail(summary);
+      if (mode !== "silent") {
+        updateStage("basic", "finish");
       }
 
       void fetchTaskDetail(taskId, { detailLevel: "full" })
@@ -157,18 +292,6 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
         .catch(() => {
           /* 首屏已可用；全量字段失败时保留 summary，各 Tab 可能缺数据 */
         });
-
-      if (artifactResult.status === "fulfilled") {
-        setArtifacts(artifactResult.value);
-        if (mode !== "silent") {
-          updateStage("artifacts", "finish");
-        }
-      } else {
-        setArtifacts([]);
-        if (mode !== "silent") {
-          updateStage("artifacts", "error");
-        }
-      }
 
       if (mode !== "silent") {
         updateStage("dashboard", "process");
@@ -194,8 +317,28 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
             updateStage("dashboard", "error");
           }
         });
+
+      try {
+        const artifactList = await artifactPromise;
+        if (!isLatest()) {
+          return;
+        }
+        setArtifacts(artifactList);
+        if (mode !== "silent") {
+          updateStage("artifacts", "finish");
+        }
+      } catch {
+        if (!isLatest()) {
+          return;
+        }
+        setArtifacts([]);
+        if (mode !== "silent") {
+          updateStage("artifacts", "error");
+        }
+      }
     } catch (error) {
       if (isLatest()) {
+        setStageError((error as Error).message || "任务详情加载失败");
         message.error((error as Error).message || "任务详情加载失败");
       }
     } finally {
@@ -291,6 +434,11 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     setBootLoading(fromCreateFlow);
     setRefreshing(false);
     setRefreshStageText("");
+    setAnalysisProgress(null);
+    setDetail(null);
+    setTaskDashboard(null);
+    setDashboardLoadError(null);
+    setArtifacts([]);
     resetSilentPollRefs();
     void load({ mode: "initial" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -403,6 +551,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     stageState,
     stageError,
     refreshStageText,
+    analysisProgress,
     detail,
     taskDashboard,
     dashboardLoadError,

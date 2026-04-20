@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -16,6 +16,7 @@ import {
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { createTask, DEFAULT_REQUIREMENT_RAG_ENABLED } from "../api/tasks";
+import { useAuth } from "../auth/AuthContext";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -74,6 +75,14 @@ export default function TaskCreate() {
   const navigate = useNavigate();
   const [readingFile, setReadingFile] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const { currentProjectId, projects, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const currentValue = String(form.getFieldValue("project_id") ?? "").trim();
+    if (!currentValue && currentProjectId) {
+      form.setFieldValue("project_id", currentProjectId);
+    }
+  }, [currentProjectId, form]);
 
   const handleSubmit = async (values: Record<string, any>) => {
     const targetSystem = String(values.target_system ?? "").trim();
@@ -102,6 +111,7 @@ export default function TaskCreate() {
         target_system: targetSystem || undefined,
         environment: values.environment || undefined,
         rag_enabled: Boolean(values.rag_enabled),
+        project_id: values.project_id || currentProjectId || undefined,
       });
       message.success("任务创建成功");
       navigate(`/tasks/${result.task_id}?from=create`, {
@@ -129,6 +139,7 @@ export default function TaskCreate() {
             environment: "test",
             target_system: DEFAULT_TARGET_SYSTEM,
             rag_enabled: DEFAULT_REQUIREMENT_RAG_ENABLED,
+            project_id: currentProjectId || undefined,
           }}
           onFinish={handleSubmit}
         >
@@ -138,6 +149,22 @@ export default function TaskCreate() {
             extra="可留空。若已导入文档，系统会默认使用文档文件名作为任务名称。"
           >
             <Input placeholder="例如：用户登录功能测试；留空则自动取文档文件名" />
+          </Form.Item>
+
+          <Form.Item
+            name="project_id"
+            label="所属项目"
+            extra={isAuthenticated ? "默认使用当前项目，后续列表与历史也会按该项目自动过滤。" : "未登录时可先创建任务，登录后会启用项目隔离。"}
+          >
+            <Select
+              allowClear
+              placeholder={isAuthenticated ? "请选择项目" : "登录后可按项目归属"}
+              disabled={!isAuthenticated}
+              options={projects.map((project) => ({
+                value: project.id,
+                label: project.is_default ? `${project.name}（默认）` : project.name,
+              }))}
+            />
           </Form.Item>
 
           <Row gutter={24}>

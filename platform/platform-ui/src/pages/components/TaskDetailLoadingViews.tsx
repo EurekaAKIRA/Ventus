@@ -1,4 +1,5 @@
 import { Alert, Card, Progress, Space, Spin, Steps, Typography } from "antd";
+import type { AnalysisProgressPayload } from "../../types";
 import type { StageKey, StageStatus } from "../hooks/useTaskDetailData";
 
 const { Title, Text } = Typography;
@@ -10,26 +11,34 @@ export function TaskDetailBootLoadingCard(props: {
   stageState: Record<StageKey, StageStatus>;
   stageError: string | null;
   stageLabels: StageLabels;
+  analysisProgress?: AnalysisProgressPayload | null;
 }) {
-  const { fromCreateFlow, stageState, stageError, stageLabels } = props;
+  const { fromCreateFlow, stageState, stageError, stageLabels, analysisProgress } = props;
 
   const stageItems = [
     {
       title: stageLabels.basic,
-      description: "任务元信息、状态、解析摘要",
+      description: fromCreateFlow ? "任务已创建，正在建立解析上下文" : "任务元信息、状态、解析摘要",
       status: stageState.basic,
     },
     {
       title: stageLabels.artifacts,
-      description: "DSL / Feature / 报告等产物入口",
+      description: fromCreateFlow ? "解析需求并生成场景、DSL、Feature" : "DSL / Feature / 报告等产物入口",
       status: stageState.artifacts,
     },
     {
       title: stageLabels.dashboard,
-      description: "执行摘要、分析图表、质量指标",
+      description: fromCreateFlow ? "整理报告并装载完整详情页" : "执行摘要、分析图表、质量指标",
       status: stageState.dashboard,
     },
   ];
+  const progressPercent = Math.max(0, Math.min(100, Number(analysisProgress?.percent ?? 0)));
+  const progressStatus =
+    analysisProgress?.status === "failed"
+      ? "exception"
+      : analysisProgress?.status === "completed"
+        ? "success"
+        : "active";
 
   return (
     <Card bordered={false}>
@@ -42,6 +51,12 @@ export function TaskDetailBootLoadingCard(props: {
             {fromCreateFlow ? "任务已创建，正在准备详情数据。" : "正在加载任务详情，请稍候。"}
           </Text>
         </Space>
+        {fromCreateFlow ? (
+          <Space direction="vertical" size={6} style={{ width: "100%" }}>
+            <Text strong>{analysisProgress?.message || "正在启动解析任务"}</Text>
+            <Progress percent={progressPercent} status={progressStatus} />
+          </Space>
+        ) : null}
         <Steps direction="vertical" size="small" items={stageItems as unknown as Parameters<typeof Steps>[0]["items"]} />
         {stageError ? <Alert type="warning" showIcon message={stageError} /> : null}
         <Spin size="small" />

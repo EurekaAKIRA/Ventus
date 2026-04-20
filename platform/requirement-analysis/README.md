@@ -81,6 +81,64 @@
 
 模型调用统一通过 `platform/shared` 的 `model_gateway` 完成，不在分析模块重复封装厂商 SDK。
 
+## 知识库扩展
+
+除内置知识库外，当前还支持通过环境变量注入外部知识源：
+
+- `REQUIREMENT_ANALYSIS_EXTRA_KNOWLEDGE_REGISTRY`
+  可填写一个或多个 registry JSON 路径，多个路径使用系统路径分隔符连接
+- `REQUIREMENT_ANALYSIS_EXTRA_KNOWLEDGE_ROOT`
+  外部知识文档根目录，registry 中相对路径会基于该目录解析
+
+这样可以在不改代码的情况下，把新的业务域文档接入 RAG 检索链。
+
+## RAG 评测
+
+模块已补充离线评测入口：
+
+- `requirement_analysis.rag_evaluator.evaluate_retrieval_cases(...)`
+- `requirement_analysis.rag_benchmark.run_rag_benchmark(...)`
+- `platform/requirement-analysis/scripts/run_rag_benchmark.py`
+
+可用于固定样例集的检索评估，输出：
+
+- `recall_at_k`
+- `mrr`
+- 按 source file 的命中统计
+- 每个 case 的命中排名与检索模式
+
+这部分适合直接用于论文实验或回归评测。
+
+默认 benchmark 样例集位于：
+
+- `platform/requirement-analysis/benchmarks/rag_benchmark_cases.json`
+
+可直接执行：
+
+```powershell
+python platform/requirement-analysis/scripts/run_rag_benchmark.py
+```
+
+如果已配置 embedding 模型密钥，会输出三组结果：
+
+- `keyword`
+- `vector_keyword`
+- `vector_keyword_rerank`
+
+如果未配置 embedding，则仍会输出 `keyword` 基线，并对向量模式给出 `skip_reason`。
+
+执行后默认会在以下目录生成三份结果文件：
+
+- `platform/requirement-analysis/benchmark_results/rag_benchmark.json`
+- `platform/requirement-analysis/benchmark_results/rag_benchmark_summary.csv`
+- `platform/requirement-analysis/benchmark_results/rag_benchmark.md`
+
+其中：
+
+- `JSON` 适合保留完整原始结果
+- `CSV` 适合直接导入 Excel / 绘图
+- `Markdown` 适合直接贴进论文草稿或实验记录
+
 ## 当前边界与建议
 
 - 当前能力已经可用于主链路，但解析质量仍需结合业务样例持续回归。

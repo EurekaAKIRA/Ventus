@@ -1,0 +1,34 @@
+%% 模块关系依据：platform 包划分与 platform/shared/src/platform_shared/models.py 等共享模型。
+%% 相关源路径备注：platform/task-center/src/task_center/pipeline.py、platform/requirement-analysis、platform/case-generation、platform/result-analysis、platform/execution-engine、platform/shared。
+%%{init: {'flowchart': {'nodeSpacing': 38, 'rankSpacing': 44, 'padding': 22}}}%%
+flowchart TB
+  subgraph Entry["调用入口"]
+    API["FastAPI\ntask_center.api"]
+    CLI["CLI\ntask_center.cli"]
+  end
+
+  PL["编排 pipeline\nrun_analysis_pipeline\n（pipeline.py）"]
+
+  subgraph Modules["业务模块包"]
+    TC["task_center\n输入、产物、注册表"]
+    RA["requirement_analysis"]
+    CG["case_generation"]
+    RES["result_analysis"]
+    EE["execution_engine\n消费 DSL，可独立触发"]
+  end
+
+  SH["platform_shared\n模型、策略、网关等"]
+
+  API --> PL
+  CLI --> PL
+  PL --> TC
+  PL --> RA
+  PL --> CG
+  PL --> RES
+  EE -.->|消费 TestCaseDSL| CG
+
+  TC --> SH
+  RA --> SH
+  CG --> SH
+  RES --> SH
+  EE --> SH
