@@ -619,12 +619,11 @@ export default function Dashboard() {
 
   return (
     <Space direction="vertical" size={20} style={{ width: "100%" }} className="dashboard-enter">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Space direction="vertical" size={2}>
-          <Title level={4} style={{ margin: 0 }}>测试运营仪表盘</Title>
-          <Text type="secondary">用于快速判断健康度、风险优先级和待办处理顺序</Text>
-        </Space>
-        <Space wrap>
+      <div className="page-hero page-hero--dashboard">
+        <div className="page-hero__copy">
+          <Title level={3} className="page-hero__title">测试运营仪表盘</Title>
+        </div>
+        <div className="page-hero__actions">
           <Text type="secondary">{autoRefresh ? `${refreshCountdown}s 后自动刷新` : "自动刷新已暂停"}</Text>
           {lastUpdatedAt ? <Text type="secondary">最近更新：{new Date(lastUpdatedAt).toLocaleTimeString()}</Text> : null}
           <Segmented
@@ -649,10 +648,11 @@ export default function Dashboard() {
           <Button icon={<ReloadOutlined />} onClick={() => void load()}>刷新数据</Button>
           <Button onClick={() => navigate("/tasks?focus=focus")}>进入任务列表</Button>
           <Button onClick={() => navigate("/tasks/history")}>进入历史任务</Button>
-        </Space>
+        </div>
       </div>
 
       <Segmented<DashboardView>
+        className="dashboard-view-switch"
         value={dashboardView}
         onChange={(value) => setDashboardView(value as DashboardView)}
         options={[

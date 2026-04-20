@@ -163,12 +163,27 @@ export default function TaskHistory() {
 
   return (
     <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <Space direction="vertical" size={2}>
-        <Title level={4} style={{ margin: 0 }}>历史任务</Title>
-        <Text type="secondary">审计层：用于回溯已完成任务与报告，不承担执行控制。</Text>
-      </Space>
+      <div className="page-hero">
+        <div className="page-hero__copy">
+          <Title level={3} className="page-hero__title">历史任务</Title>
+        </div>
+        <div className="page-hero__meta">
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">总任务</span>
+            <span className="page-meta-chip__value">{summary.total}</span>
+          </div>
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">失败</span>
+            <span className="page-meta-chip__value">{summary.failed}</span>
+          </div>
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">通过</span>
+            <span className="page-meta-chip__value">{summary.passed}</span>
+          </div>
+        </div>
+      </div>
 
-      <Card bordered={false}>
+      <Card bordered={false} className="panel-card">
         <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }} wrap>
           <Space wrap>
             <Segmented<WindowMode>

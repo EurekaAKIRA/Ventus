@@ -17,7 +17,7 @@ export default function MetricCard({
   color,
 }: MetricCardProps) {
   return (
-    <Card bordered={false} hoverable>
+    <Card bordered={false} hoverable className="metric-card">
       <Statistic
         title={title}
         value={value}

@@ -289,12 +289,11 @@ export default function TaskList() {
 
   return (
     <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Space direction="vertical" size={2}>
-          <Title level={4} style={{ margin: 0 }}>任务列表</Title>
-          <Text type="secondary">执行层：用于处理当前进行中的任务（不含已通过与已归档）。</Text>
-        </Space>
-        <Space>
+      <div className="page-hero">
+        <div className="page-hero__copy">
+          <Title level={3} className="page-hero__title">任务列表</Title>
+        </div>
+        <div className="page-hero__actions">
           <Segmented<FocusMode>
             value={focusMode}
             onChange={(value) => setFocusMode(value as FocusMode)}
@@ -331,17 +330,17 @@ export default function TaskList() {
           </Button>
           <Button icon={<HistoryOutlined />} onClick={() => navigate("/tasks/history")}>历史任务</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/tasks/create")}>创建任务</Button>
-        </Space>
+        </div>
       </div>
 
       <div className="metric-row">
         <MetricCard title="当前待处理任务" value={summary.total} />
-          <MetricCard title="执行中" value={summary.running} color="#722ed1" />
+        <MetricCard title="执行中" value={summary.running} color="#4f8cff" />
         <MetricCard title="失败" value={summary.failed} color="#ff4d4f" />
-        <MetricCard title="待推进" value={summary.pending} color="#d48806" />
+        <MetricCard title="待推进" value={summary.pending} color="#f5b94c" />
       </div>
 
-      <Card bordered={false}>
+      <Card bordered={false} className="panel-card">
         <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }} wrap>
           <Space>
             <Input

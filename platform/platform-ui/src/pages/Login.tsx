@@ -71,86 +71,82 @@ export default function Login() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-        background:
-          "radial-gradient(circle at top left, rgba(114,46,209,0.14), transparent 34%), linear-gradient(135deg, #f7f3ff 0%, #f5f7ff 42%, #ffffff 100%)",
-      }}
-    >
-      <Card bordered={false} style={{ width: "100%", maxWidth: 520, boxShadow: "0 16px 40px rgba(31, 35, 41, 0.08)" }}>
-        <Space direction="vertical" size={18} style={{ width: "100%" }}>
-          <div>
-            <Title level={3} style={{ marginBottom: 8 }}>
-              Ventus 平台登录
-            </Title>
-            <Text type="secondary">登录后即可按项目管理任务、历史与执行结果，前后端会自动复用当前项目上下文。</Text>
-          </div>
-          <Alert
-            type="info"
-            showIcon
-            message="首次使用可直接注册"
-            description="注册成功后，服务端会自动创建默认工作区与默认项目。"
-          />
-          <Tabs
-            activeKey={activeTab}
-            onChange={(value) => setActiveTab(value as AuthTabKey)}
-            items={[
-              {
-                key: "login",
-                label: "登录",
-                children: (
-                  <Form layout="vertical" onFinish={handleLogin}>
-                    <Form.Item name="username" label="用户名" rules={[{ required: true, message: "请输入用户名" }]}>
-                      <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
-                    </Form.Item>
-                    <Form.Item name="password" label="密码" rules={[{ required: true, message: "请输入密码" }]}>
-                      <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
-                    </Form.Item>
-                    <Button type="primary" htmlType="submit" loading={submitting} block>
-                      登录
-                    </Button>
-                  </Form>
-                ),
-              },
-              {
-                key: "register",
-                label: "注册",
-                children: (
-                  <Form layout="vertical" onFinish={handleRegister}>
-                    <Form.Item name="username" label="用户名" rules={[{ required: true, message: "请输入用户名" }]}>
-                      <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
-                    </Form.Item>
-                    <Form.Item name="display_name" label="显示名称">
-                      <Input placeholder="可选，用于页面展示" />
-                    </Form.Item>
-                    <Form.Item name="email" label="邮箱">
-                      <Input placeholder="可选，用于通知或找回" />
-                    </Form.Item>
-                    <Form.Item name="password" label="密码" rules={[{ required: true, message: "请输入密码" }]}>
-                      <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
-                    </Form.Item>
-                    <Form.Item
-                      name="confirm_password"
-                      label="确认密码"
-                      rules={[{ required: true, message: "请再次输入密码" }]}
-                    >
-                      <Input.Password prefix={<LockOutlined />} placeholder="请再次输入密码" />
-                    </Form.Item>
-                    <Button type="primary" htmlType="submit" loading={submitting} block>
-                      注册并登录
-                    </Button>
-                  </Form>
-                ),
-              },
-            ]}
-          />
-        </Space>
-      </Card>
+    <div className="auth-screen">
+      <div className="auth-screen__grid">
+        <section className="auth-screen__story">
+          <Title level={1} className="auth-screen__title">
+            Ventus QA Platform
+          </Title>
+        </section>
+
+        <Card bordered={false} className="auth-screen__panel">
+          <Space direction="vertical" size={18} style={{ width: "100%" }}>
+            <div>
+              <Title level={3} style={{ marginBottom: 8 }}>
+                Ventus 平台登录
+              </Title>
+            </div>
+            <Alert
+              type="info"
+              showIcon
+              message="可直接注册后使用"
+            />
+            <Tabs
+              activeKey={activeTab}
+              onChange={(value) => setActiveTab(value as AuthTabKey)}
+              items={[
+                {
+                  key: "login",
+                  label: "登录",
+                  children: (
+                    <Form layout="vertical" onFinish={handleLogin}>
+                      <Form.Item name="username" label="用户名" rules={[{ required: true, message: "请输入用户名" }]}>
+                        <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
+                      </Form.Item>
+                      <Form.Item name="password" label="密码" rules={[{ required: true, message: "请输入密码" }]}>
+                        <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
+                      </Form.Item>
+                      <Button type="primary" htmlType="submit" loading={submitting} block>
+                        登录
+                      </Button>
+                    </Form>
+                  ),
+                },
+                {
+                  key: "register",
+                  label: "注册",
+                  children: (
+                    <Form layout="vertical" onFinish={handleRegister}>
+                      <Form.Item name="username" label="用户名" rules={[{ required: true, message: "请输入用户名" }]}>
+                        <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
+                      </Form.Item>
+                      <Form.Item name="display_name" label="显示名称">
+                        <Input placeholder="可选，用于页面展示" />
+                      </Form.Item>
+                      <Form.Item name="email" label="邮箱">
+                        <Input placeholder="可选，用于通知或找回" />
+                      </Form.Item>
+                      <Form.Item name="password" label="密码" rules={[{ required: true, message: "请输入密码" }]}>
+                        <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
+                      </Form.Item>
+                      <Form.Item
+                        name="confirm_password"
+                        label="确认密码"
+                        rules={[{ required: true, message: "请再次输入密码" }]}
+                      >
+                        <Input.Password prefix={<LockOutlined />} placeholder="请再次输入密码" />
+                      </Form.Item>
+                      <Button type="primary" htmlType="submit" loading={submitting} block>
+                        注册并登录
+                      </Button>
+                    </Form>
+                  ),
+                },
+              ]}
+            />
+          </Space>
+        </Card>
+      </div>
     </div>
   );
 }
