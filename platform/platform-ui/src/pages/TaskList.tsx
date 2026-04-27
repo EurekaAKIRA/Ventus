@@ -28,7 +28,6 @@ import type { TaskListItem } from "../types";
 import { fetchTaskList, deleteTask } from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
 import StatusTag from "../components/StatusTag";
-import MetricCard from "../components/MetricCard";
 import {
   isFailedStatus,
   isPendingStatus,
@@ -224,13 +223,21 @@ export default function TaskList() {
       title: "任务名称",
       dataIndex: "task_name",
       key: "task_name",
-      render: (text: string, record: TaskListItem) => <a onClick={() => navigate(`/tasks/${record.task_id}`)}>{text}</a>,
+      render: (text: string, record: TaskListItem) => (
+        <div className="table-primary-cell">
+          <a onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}`)}>{text}</a>
+          <Text type="secondary" className="table-secondary-text">
+            {record.task_id}
+          </Text>
+        </div>
+      ),
     },
     {
       title: "来源",
       dataIndex: "source_type",
       key: "source_type",
       width: 100,
+      render: (value: string) => <Tag>{value}</Tag>,
     },
     {
       title: "状态",
@@ -274,7 +281,7 @@ export default function TaskList() {
       width: 150,
       render: (_: unknown, record: TaskListItem) => (
         <Space>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => navigate(`/tasks/${record.task_id}`)}>
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}`)}>
             详情
           </Button>
           <Popconfirm title="确定删除此任务？" onConfirm={() => void handleDelete(record.task_id)}>
@@ -333,16 +340,28 @@ export default function TaskList() {
         </div>
       </div>
 
-      <div className="metric-row">
-        <MetricCard title="当前待处理任务" value={summary.total} />
-        <MetricCard title="执行中" value={summary.running} color="#4f8cff" />
-        <MetricCard title="失败" value={summary.failed} color="#ff4d4f" />
-        <MetricCard title="待推进" value={summary.pending} color="#f5b94c" />
+      <div className="compact-stats">
+        <span className="compact-stats__item">
+          <span className="compact-stats__label">待处理</span>
+          <strong className="compact-stats__value">{summary.total}</strong>
+        </span>
+        <span className="compact-stats__item">
+          <span className="compact-stats__label">执行中</span>
+          <strong className="compact-stats__value">{summary.running}</strong>
+        </span>
+        <span className="compact-stats__item">
+          <span className="compact-stats__label">失败</span>
+          <strong className="compact-stats__value">{summary.failed}</strong>
+        </span>
+        <span className="compact-stats__item">
+          <span className="compact-stats__label">待推进</span>
+          <strong className="compact-stats__value">{summary.pending}</strong>
+        </span>
       </div>
 
       <Card bordered={false} className="panel-card">
-        <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }} wrap>
-          <Space>
+        <div className="page-toolbar">
+          <div className="page-toolbar__group">
             <Input
               placeholder="搜索任务名称或 ID"
               prefix={<SearchOutlined />}
@@ -370,7 +389,17 @@ export default function TaskList() {
             >
               重置
             </Button>
-          </Space>
+          </div>
+          <div className="page-toolbar__group">
+            <span className="surface-chip">
+              刷新 <strong>{autoRefresh ? `${refreshCountdown}s` : "暂停"}</strong>
+            </span>
+            {lastUpdatedAt ? (
+              <span className="surface-chip">
+                最近更新 <strong>{new Date(lastUpdatedAt).toLocaleTimeString()}</strong>
+              </span>
+            ) : null}
+          </div>
           <Button
             icon={<ExclamationCircleOutlined />}
             danger
@@ -381,7 +410,7 @@ export default function TaskList() {
           >
             仅看失败任务
           </Button>
-        </Space>
+        </div>
 
         {statusStats.length ? (
           <Space wrap style={{ marginBottom: 16 }}>
@@ -395,10 +424,17 @@ export default function TaskList() {
         ) : null}
 
         <Table
+          className="platform-table"
           dataSource={tasks}
           columns={columns}
           rowKey="task_id"
           loading={loading}
+          rowClassName={(record) => {
+            if (isFailedStatus(record.status)) return "task-row task-row--failed";
+            if (isRunningStatus(record.status)) return "task-row task-row--running";
+            if (isPendingStatus(record.status)) return "task-row task-row--pending";
+            return "task-row";
+          }}
           pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
         />
       </Card>

@@ -11,11 +11,12 @@ from typing import Any, Iterator
 from platform_shared.models import EnvironmentConfig
 from sqlalchemy import select
 from sqlalchemy import or_
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, aliased, sessionmaker
 
 from task_center.db import (
     AuditLog,
     Base,
+    Defect,
     Environment,
     Project,
     ProjectMember,
@@ -659,6 +660,175 @@ class DatabaseTaskStore:
                 for member, user in rows
             ]
 
+    def is_project_member(self, *, project_id: str, user_id: str) -> bool:
+        with self.session() as session:
+            row = session.scalar(
+                select(ProjectMember).where(
+                    ProjectMember.project_id == self._parse_uuid(project_id),
+                    ProjectMember.user_id == self._parse_uuid(user_id),
+                )
+            )
+            return row is not None
+
+    def create_defect(
+        self,
+        *,
+        project_id: str,
+        reporter_user_id: str,
+        title: str,
+        description: str | None = None,
+        severity: str = "medium",
+        status: str = "open",
+        source: str = "manual",
+        task_uid: str | None = None,
+        assignee_user_id: str | None = None,
+        reproduction_steps: str | None = None,
+        expected_result: str | None = None,
+        actual_result: str | None = None,
+    ) -> dict[str, Any]:
+        with self.session() as session:
+            task_row = self._resolve_task_row_by_uid(session, task_uid, project_id=project_id)
+            defect = Defect(
+                defect_key=self._build_defect_key(),
+                project_id=self._parse_uuid(project_id),
+                task_id=task_row.id if task_row is not None else None,
+                reporter_user_id=self._parse_uuid(reporter_user_id),
+                assignee_user_id=self._parse_uuid(assignee_user_id),
+                title=title,
+                description=description,
+                severity=severity,
+                status=status,
+                source=source,
+                reproduction_steps=reproduction_steps,
+                expected_result=expected_result,
+                actual_result=actual_result,
+                created_at=_utc_now(),
+                updated_at=_utc_now(),
+            )
+            session.add(defect)
+            session.flush()
+            return self._load_defect_payload(session, defect.id)
+
+    def get_defect(self, defect_id: str) -> dict[str, Any] | None:
+        with self.session() as session:
+            try:
+                parsed_id = self._parse_uuid(defect_id)
+            except Exception:
+                return None
+            row = session.scalar(select(Defect).where(Defect.id == parsed_id))
+            if row is None:
+                return None
+            return self._load_defect_payload(session, row.id)
+
+    def update_defect(
+        self,
+        defect_id: str,
+        *,
+        title: str | None = None,
+        description: str | None = None,
+        severity: str | None = None,
+        status: str | None = None,
+        source: str | None = None,
+        task_uid: str | None = None,
+        clear_task: bool = False,
+        assignee_user_id: str | None = None,
+        clear_assignee: bool = False,
+        reproduction_steps: str | None = None,
+        expected_result: str | None = None,
+        actual_result: str | None = None,
+    ) -> dict[str, Any]:
+        with self.session() as session:
+            defect = session.scalar(select(Defect).where(Defect.id == self._parse_uuid(defect_id)))
+            if defect is None:
+                raise KeyError(f"unknown defect_id: {defect_id}")
+            project_id = str(defect.project_id)
+            if clear_task:
+                defect.task_id = None
+            elif task_uid is not None:
+                task_row = self._resolve_task_row_by_uid(session, task_uid, project_id=project_id)
+                defect.task_id = task_row.id if task_row is not None else None
+            if title is not None:
+                defect.title = title
+            if description is not None:
+                defect.description = description
+            if severity is not None:
+                defect.severity = severity
+            if status is not None:
+                defect.status = status
+            if source is not None:
+                defect.source = source
+            if clear_assignee:
+                defect.assignee_user_id = None
+            elif assignee_user_id is not None:
+                defect.assignee_user_id = self._parse_uuid(assignee_user_id)
+            if reproduction_steps is not None:
+                defect.reproduction_steps = reproduction_steps
+            if expected_result is not None:
+                defect.expected_result = expected_result
+            if actual_result is not None:
+                defect.actual_result = actual_result
+            defect.updated_at = _utc_now()
+            session.flush()
+            return self._load_defect_payload(session, defect.id)
+
+    def list_defects(
+        self,
+        *,
+        project_id: str,
+        status: str | None = None,
+        severity: str | None = None,
+        keyword: str | None = None,
+        task_uid: str | None = None,
+        assignee_user_id: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> dict[str, Any]:
+        with self.session() as session:
+            reporter = aliased(User)
+            assignee = aliased(User)
+            stmt = (
+                select(Defect, Task, reporter, assignee)
+                .outerjoin(Task, Task.id == Defect.task_id)
+                .outerjoin(reporter, reporter.id == Defect.reporter_user_id)
+                .outerjoin(assignee, assignee.id == Defect.assignee_user_id)
+                .where(Defect.project_id == self._parse_uuid(project_id))
+                .order_by(Defect.created_at.desc(), Defect.defect_key.desc())
+            )
+            if status:
+                stmt = stmt.where(Defect.status == status)
+            if severity:
+                stmt = stmt.where(Defect.severity == severity)
+            if task_uid:
+                stmt = stmt.where(Task.task_uid == task_uid)
+            if assignee_user_id:
+                stmt = stmt.where(Defect.assignee_user_id == self._parse_uuid(assignee_user_id))
+
+            rows = session.execute(stmt).all()
+            payload = [self._defect_to_payload(defect, task_row, reporter_row, assignee_row) for defect, task_row, reporter_row, assignee_row in rows]
+            kw = str(keyword or "").strip().lower()
+            if kw:
+                payload = [
+                    item
+                    for item in payload
+                    if kw in str(item.get("defect_key", "")).lower()
+                    or kw in str(item.get("title", "")).lower()
+                    or kw in str(item.get("description", "")).lower()
+                    or kw in str(item.get("task_id", "")).lower()
+                    or kw in str(item.get("task_name", "")).lower()
+                    or kw in str(item.get("assignee_username", "")).lower()
+                    or kw in str(item.get("reporter_username", "")).lower()
+                ]
+            safe_page = max(1, int(page))
+            safe_page_size = max(1, min(int(page_size), 200))
+            start = (safe_page - 1) * safe_page_size
+            end = start + safe_page_size
+            return {
+                "items": payload[start:end],
+                "total": len(payload),
+                "page": safe_page,
+                "page_size": safe_page_size,
+            }
+
     def append_audit_log(
         self,
         *,
@@ -829,4 +999,69 @@ class DatabaseTaskStore:
             "created_at": project.created_at.isoformat() if project.created_at else None,
             "updated_at": project.updated_at.isoformat() if project.updated_at else None,
             "role": role,
+        }
+
+    @staticmethod
+    def _build_defect_key() -> str:
+        return f"DEF-{_utc_now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+
+    @staticmethod
+    def _resolve_task_row_by_uid(session: Session, task_uid: str | None, *, project_id: str) -> Task | None:
+        normalized_task_uid = str(task_uid or "").strip()
+        if not normalized_task_uid:
+            return None
+        row = session.scalar(
+            select(Task).where(
+                Task.task_uid == normalized_task_uid,
+                Task.project_id == DatabaseTaskStore._parse_uuid(project_id),
+            )
+        )
+        if row is None:
+            raise KeyError(f"unknown task_uid for project: {normalized_task_uid}")
+        return row
+
+    def _load_defect_payload(self, session: Session, defect_id: uuid.UUID) -> dict[str, Any]:
+        reporter = aliased(User)
+        assignee = aliased(User)
+        row = session.execute(
+            select(Defect, Task, reporter, assignee)
+            .outerjoin(Task, Task.id == Defect.task_id)
+            .outerjoin(reporter, reporter.id == Defect.reporter_user_id)
+            .outerjoin(assignee, assignee.id == Defect.assignee_user_id)
+            .where(Defect.id == defect_id)
+        ).first()
+        if row is None:
+            raise KeyError(f"unknown defect_id: {defect_id}")
+        defect, task_row, reporter_row, assignee_row = row
+        return self._defect_to_payload(defect, task_row, reporter_row, assignee_row)
+
+    @staticmethod
+    def _defect_to_payload(
+        defect: Defect,
+        task_row: Task | None,
+        reporter_row: User | None,
+        assignee_row: User | None,
+    ) -> dict[str, Any]:
+        return {
+            "id": str(defect.id),
+            "defect_key": defect.defect_key,
+            "project_id": str(defect.project_id),
+            "task_id": task_row.task_uid if task_row is not None else None,
+            "task_name": task_row.task_name if task_row is not None else None,
+            "reporter_user_id": str(defect.reporter_user_id),
+            "reporter_username": reporter_row.username if reporter_row is not None else None,
+            "reporter_display_name": reporter_row.display_name if reporter_row is not None else None,
+            "assignee_user_id": str(defect.assignee_user_id) if defect.assignee_user_id else None,
+            "assignee_username": assignee_row.username if assignee_row is not None else None,
+            "assignee_display_name": assignee_row.display_name if assignee_row is not None else None,
+            "title": defect.title,
+            "description": defect.description or "",
+            "severity": defect.severity,
+            "status": defect.status,
+            "source": defect.source,
+            "reproduction_steps": defect.reproduction_steps or "",
+            "expected_result": defect.expected_result or "",
+            "actual_result": defect.actual_result or "",
+            "created_at": defect.created_at.isoformat() if defect.created_at else None,
+            "updated_at": defect.updated_at.isoformat() if defect.updated_at else None,
         }

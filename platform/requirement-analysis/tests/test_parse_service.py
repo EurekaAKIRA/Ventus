@@ -241,10 +241,13 @@ def test_parse_service_retrieval_query_prefers_structured_api_signals() -> None:
     )
 
     preview = result["parse_metadata"]["retrieval_query_preview"]
+    variants = result["parse_metadata"]["retrieval_query_variants_preview"]
     assert "Restful Booker E2E2 Plus" in preview
     assert "Scenario: Booking 生命周期管理" in preview
     assert "POST /auth" in preview
     assert "POST /booking" in preview
+    assert result["parse_metadata"]["retrieval_query_count"] >= 2
+    assert any("POST /auth" in item for item in variants)
 
 
 def test_parse_service_applies_contract_knowledge_only_for_platform_docs() -> None:

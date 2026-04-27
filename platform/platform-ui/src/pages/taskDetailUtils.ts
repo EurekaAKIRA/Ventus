@@ -81,7 +81,7 @@ function isExecutionTerminal(detail: ExtendedTaskDetail | null): boolean {
 function isPipelineIdleWithScenarios(detail: ExtendedTaskDetail | null): boolean {
   if (!detail) return false;
   if (deriveExecutionStatus(detail) !== "not_started") return false;
-  const life = normalizeStatus(detail.task_context?.status);
+  const life = normalizeStatus(detail.status || detail.task_context?.status);
   return life === "generated" && (detail.scenarios?.length ?? 0) > 0;
 }
 

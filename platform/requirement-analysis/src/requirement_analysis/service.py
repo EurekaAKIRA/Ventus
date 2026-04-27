@@ -6,7 +6,7 @@ import re
 import time
 from dataclasses import dataclass
 from math import ceil
-from typing import Any
+from typing import Any, Callable
 
 from platform_shared import get_requirement_analysis_runtime_config
 from platform_shared.models import ParsedRequirement, RetrievedChunk, ValidationReport
@@ -51,6 +51,27 @@ _RETRIEVAL_HINTS = (
 )
 
 
+def _emit_parse_progress(
+    progress_callback: Callable[[str, dict[str, Any]], None] | None,
+    stage: str,
+    *,
+    percent: int,
+    message: str,
+    **extra: Any,
+) -> None:
+    if progress_callback is None:
+        return
+    progress_callback(
+        stage,
+        {
+            "stage": stage,
+            "percent": percent,
+            "message": message,
+            **extra,
+        },
+    )
+
+
 @dataclass(slots=True)
 class AnalysisParseOptions:
     """Parse options from API / runtime defaults.
@@ -86,6 +107,7 @@ def parse_requirement_bundle(
     requirement_text: str = "",
     source_path: str | None = None,
     options: AnalysisParseOptions | None = None,
+    progress_callback: Callable[[str, dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     parse_options = options or AnalysisParseOptions.resolve()
@@ -100,6 +122,14 @@ def parse_requirement_bundle(
     raw_text = load_document(source_path=source_path, inline_text=requirement_text)
     input_integrity_issues = _detect_input_integrity_issues(raw_text)
     document = parse_document(raw_text)
+    _emit_parse_progress(
+        progress_callback,
+        "document_loaded",
+        percent=14,
+        message="文档已加载，正在切分内容并提取结构",
+        document_char_count=len(raw_text),
+        cleaned_char_count=len(document.get("cleaned_text", "")),
+    )
     t_after_document = time.perf_counter()
     chunks = chunk_text(document.get("cleaned_text", ""), source_file=source_path or "")
     contract_extra = build_contract_chunks(contract_cfg) if _should_include_contract_knowledge(raw_text, document.get("cleaned_text", "")) else []
@@ -117,14 +147,15 @@ def parse_requirement_bundle(
         embedding_config=enhancement_config,
     )
     t_after_index = time.perf_counter()
-    query = _build_retrieval_query(requirement_text, document.get("cleaned_text", ""))
+    retrieval_queries = build_retrieval_queries(requirement_text, document.get("cleaned_text", ""))
+    query = retrieval_queries[0] if retrieval_queries else ""
     retrieval_scoring = get_retrieval_scoring_config()
     retrieval_diagnostics: dict[str, Any] = {}
     boost = contract_cfg.official_score_boost if contract_cfg.enabled else 0.0
     min_score = contract_cfg.min_retrieval_score if contract_cfg.enabled else 0.0
     retrieval_items = retrieve_relevant_chunks(
         index,
-        query,
+        retrieval_queries,
         top_k=parse_options.retrieval_top_k,
         use_vector_rag=parse_options.rag_enabled,
         embedding_config=enhancement_config,
@@ -136,6 +167,15 @@ def parse_requirement_bundle(
     )
     retrieval_items = _dedupe_chunks(retrieval_items)
     retrieved_context = [RetrievedChunk(**item) for item in retrieval_items]
+    _emit_parse_progress(
+        progress_callback,
+        "retrieval_ready",
+        percent=24,
+        message="检索上下文已准备完成，正在进行规则解析",
+        chunk_count=len(chunks),
+        retrieved_count=len(retrieved_context),
+        retrieval_query_count=len(retrieval_queries),
+    )
     t_after_retrieval = time.perf_counter()
 
     fallback_reason = ""
@@ -162,6 +202,14 @@ def parse_requirement_bundle(
     llm_enhancement_ms = 0.0
     llm_diagnostics: dict[str, Any] = {}
     if parse_options.use_llm:
+        _emit_parse_progress(
+            progress_callback,
+            "llm_enhancing",
+            percent=34,
+            message="正在调用 LLM 增强解析，复杂文档可能需要数秒",
+            model_profile=parse_options.model_profile,
+            retrieval_mode=index.get("retrieval_mode", "keyword"),
+        )
         llm_requirement = requirement_text or document.get("cleaned_text", "")
         if enhancement_config is None:
             fallback_reason = "llm_config_missing"
@@ -189,6 +237,14 @@ def parse_requirement_bundle(
                     llm_error_type = exc.__class__.__name__
             finally:
                 llm_enhancement_ms = round((time.perf_counter() - t_llm) * 1000, 2)
+        _emit_parse_progress(
+            progress_callback,
+            "llm_enhanced",
+            percent=40,
+            message="LLM 解析增强已完成，正在汇总结构化需求",
+            parse_mode="llm" if parse_mode == "llm" else "rules",
+            fallback_reason=fallback_reason or "",
+        )
 
     parsed_requirement = ParsedRequirement(**parsed_payload)
     validation_report = _build_validation_report(
@@ -240,6 +296,8 @@ def parse_requirement_bundle(
         "retrieval_top_k": parse_options.retrieval_top_k,
         "retrieval_query_preview": query[:600],
         "retrieval_query_char_count": len(query),
+        "retrieval_query_count": len(retrieval_queries),
+        "retrieval_query_variants_preview": retrieval_queries[:4],
         "rerank_enabled": parse_options.rerank_enabled,
         "retrieval_metrics": _build_retrieval_metrics(
             retrieval_items,
@@ -404,10 +462,10 @@ def _dedupe_chunks(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return deduped
 
 
-def _build_retrieval_query(requirement_text: str, cleaned_text: str) -> str:
+def build_retrieval_queries(requirement_text: str, cleaned_text: str) -> list[str]:
     text = (cleaned_text or requirement_text or "").strip()
     if not text:
-        return ""
+        return []
 
     parts: list[str] = []
     heading_match = re.search(r"^\s*#\s+(.+)$", text, re.MULTILINE)
@@ -434,12 +492,47 @@ def _build_retrieval_query(requirement_text: str, cleaned_text: str) -> str:
     if endpoint_tokens:
         parts.append("显式接口: " + " | ".join(endpoint_tokens))
 
-    query = "\n".join(_dedupe_strings(parts))
-    if not query:
-        query = text
-    if len(query) < 400:
-        query = f"{query}\n{text[:800]}".strip()
-    return query[:_RETRIEVAL_QUERY_MAX_CHARS]
+    primary_query = "\n".join(_dedupe_strings(parts))
+    if not primary_query:
+        primary_query = text
+    if len(primary_query) < 400:
+        primary_query = f"{primary_query}\n{text[:800]}".strip()
+
+    queries: list[str] = [primary_query[:_RETRIEVAL_QUERY_MAX_CHARS]]
+    if heading_match and endpoint_tokens:
+        queries.append(
+            "\n".join(
+                _dedupe_strings(
+                    [
+                        heading_match.group(1).strip(),
+                        "接口焦点",
+                        *endpoint_tokens[:8],
+                    ]
+                )
+            )[:_RETRIEVAL_QUERY_MAX_CHARS]
+        )
+
+    support_lines: list[str] = []
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        lowered = stripped.lower()
+        if any(token in lowered for token in ("save_context", "uses_context", "资源来源", "关键依赖", "鉴权", "authorization", "cookie", "token")):
+            support_lines.append(stripped)
+    if support_lines:
+        queries.append("\n".join(_dedupe_strings(support_lines[:10]))[:_RETRIEVAL_QUERY_MAX_CHARS])
+
+    base_url = _extract_base_url(requirement_text, cleaned_text)
+    if base_url:
+        queries.append(f"Base URL: {base_url}"[:_RETRIEVAL_QUERY_MAX_CHARS])
+
+    return _dedupe_strings([item.strip() for item in queries if item.strip()])
+
+
+def _build_retrieval_query(requirement_text: str, cleaned_text: str) -> str:
+    queries = build_retrieval_queries(requirement_text, cleaned_text)
+    return queries[0] if queries else ""
 
 
 def _should_include_contract_knowledge(raw_text: str, cleaned_text: str) -> bool:
@@ -459,6 +552,8 @@ def _build_retrieval_metrics(
     unique_ids = len({item.get("chunk_id", "") for item in items if item.get("chunk_id")})
     duplicate_count = max(returned - unique_ids, 0)
     scores = [float(item.get("score", 0)) for item in items]
+    source_files = {str(item.get("source_file", "") or "").strip() for item in items if str(item.get("source_file", "") or "").strip()}
+    doc_types = {str(item.get("doc_type", "") or "").strip() for item in items if str(item.get("doc_type", "") or "").strip()}
     embedding_stats = (index or {}).get("embedding_stats", {})
     diag = diagnostics or {}
     return {
@@ -467,6 +562,9 @@ def _build_retrieval_metrics(
         "coverage_ratio": round((returned / top_k), 3) if top_k else 0.0,
         "duplicate_ratio": round((duplicate_count / returned), 3) if returned else 0.0,
         "score_avg": round(sum(scores) / len(scores), 3) if scores else 0.0,
+        "source_file_count": len(source_files),
+        "source_file_diversity": round((len(source_files) / returned), 3) if returned else 0.0,
+        "doc_type_count": len(doc_types),
         "rerank_applied": rerank_enabled,
         "embedded_chunk_count": embedding_stats.get("embedded_chunk_count", 0),
         "embedding_coverage": embedding_stats.get("embedding_coverage", 0.0),

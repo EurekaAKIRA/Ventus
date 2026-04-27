@@ -14,7 +14,7 @@ export function TaskDetailParsedTab(props: {
 
   if (!hasParsedResult) {
     return (
-      <div className="empty-tab">
+      <div className="task-detail-empty">
         <Empty description="暂无解析结果" />
       </div>
     );
@@ -27,6 +27,7 @@ export function TaskDetailParsedTab(props: {
       </Col>
       <Col span={24}>
         <Card
+          className="panel-card"
           bordered={false}
           title="结构化需求"
           extra={
@@ -63,7 +64,7 @@ export function TaskDetailParsedTab(props: {
         </Card>
       </Col>
       <Col span={24}>
-        <Card bordered={false} title="检索上下文">
+        <Card bordered={false} className="panel-card" title="检索上下文">
           {detail.retrieved_context?.length ? (
             <List
               dataSource={detail.retrieved_context.slice(0, 5)}

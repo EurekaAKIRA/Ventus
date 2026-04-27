@@ -117,7 +117,9 @@ export default function TaskHistory() {
       title: "任务名称",
       dataIndex: "task_name",
       key: "task_name",
-      render: (text: string, record: HistoryTaskItem) => <a onClick={() => navigate(`/tasks/${record.task_id}?tab=report`)}>{text}</a>,
+      render: (text: string, record: HistoryTaskItem) => (
+        <a onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}?tab=report`)}>{text}</a>
+      ),
     },
     {
       title: "状态",
@@ -146,8 +148,8 @@ export default function TaskHistory() {
       width: 220,
       render: (_: unknown, record: HistoryTaskItem) => (
         <Space>
-          <a onClick={() => navigate(`/tasks/${record.task_id}?tab=report&source=history`)}>查看报告</a>
-          <a onClick={() => navigate(`/tasks/${record.task_id}?tab=report&source=history&compare=latest`)}>回归对比</a>
+          <a onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}?tab=report&source=history`)}>查看报告</a>
+          <a onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}?tab=report&source=history&compare=latest`)}>回归对比</a>
         </Space>
       ),
     },

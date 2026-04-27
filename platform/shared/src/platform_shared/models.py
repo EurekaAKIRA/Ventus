@@ -57,6 +57,7 @@ class RetrievedChunk:
     section_title: str = ""
     source_file: str = ""
     doc_type: str = ""
+    query_match_count: int = 0
 
     def to_dict(self) -> dict:
         return asdict(self)

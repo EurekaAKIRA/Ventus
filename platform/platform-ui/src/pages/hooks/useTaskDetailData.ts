@@ -32,6 +32,7 @@ import {
 } from "../taskDetailUtils";
 
 export type ExtendedTaskDetail = TaskDetailPayload & {
+  status?: string;
   target_system?: string;
   environment?: string;
 };
@@ -52,7 +53,7 @@ const DEFAULT_STAGE_STATE: Record<StageKey, StageStatus> = {
   dashboard: "wait",
 };
 
-const ANALYSIS_PROGRESS_POLL_MS = 500;
+const ANALYSIS_PROGRESS_POLL_MS = 250;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -128,9 +129,12 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
   }, [detail]);
 
   useEffect(
-    () => () => {
-      mountedRef.current = false;
-      activeRequestRef.current = 0;
+    () => {
+      mountedRef.current = true;
+      return () => {
+        mountedRef.current = false;
+        activeRequestRef.current = 0;
+      };
     },
     [],
   );
@@ -177,9 +181,25 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
           return;
         }
         setDetail(summary);
+        setBootLoading(false);
         setStageState({ basic: "finish", artifacts: "wait", dashboard: "wait" });
 
-        let progress = await startTaskAnalysis(taskId);
+        setAnalysisProgress({
+          task_id: taskId,
+          kind: "analysis",
+          stage: "queued",
+          percent: 5,
+          status: "running",
+          message: "正在连接后台解析任务",
+          updated_at: new Date().toISOString(),
+        });
+
+        let progress =
+          (await fetchTaskAnalysisProgress(taskId).catch(() => null)) ??
+          (await startTaskAnalysis(taskId));
+        if (progress.status === "idle") {
+          progress = await startTaskAnalysis(taskId);
+        }
         if (!isLatest()) {
           return;
         }
@@ -221,40 +241,64 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
           ...progress,
           message: "解析完成，正在装载详情页",
         });
-        setStageState({ basic: "finish", artifacts: "finish", dashboard: "process" });
+        setStageState({ basic: "finish", artifacts: "process", dashboard: "wait" });
 
-        const [fullResult, artifactResult, dashboardResult] = await Promise.allSettled([
-          fetchTaskDetail(taskId, { detailLevel: "full" }),
-          fetchTaskArtifacts(taskId, { shallow: true }),
-          fetchTaskDashboard(taskId),
-        ]);
+        void fetchTaskDetail(taskId, { detailLevel: "full" })
+          .then((fullValue) => {
+            if (!isLatest()) {
+              return;
+            }
+            setDetail((prev) => ({ ...(prev ?? {}), ...fullValue }) as ExtendedTaskDetail);
+          })
+          .catch((error) => {
+            if (!isLatest()) {
+              return;
+            }
+            setStageError((prev) => prev ?? ((error as Error)?.message || "任务详情装载失败"));
+          });
 
-        if (!isLatest()) {
-          return;
-        }
+        void fetchTaskArtifacts(taskId, { shallow: true })
+          .then((artifactList) => {
+            if (!isLatest()) {
+              return;
+            }
+            setArtifacts(artifactList);
+            setStageState((prev) => ({
+              ...prev,
+              artifacts: "finish",
+              dashboard: prev.dashboard === "wait" ? "process" : prev.dashboard,
+            }));
+          })
+          .catch((error) => {
+            if (!isLatest()) {
+              return;
+            }
+            setArtifacts([]);
+            setStageState((prev) => ({
+              ...prev,
+              artifacts: "error",
+              dashboard: prev.dashboard === "wait" ? "process" : prev.dashboard,
+            }));
+            setStageError((prev) => prev ?? ((error as Error)?.message || "产物索引加载失败"));
+          });
 
-        if (fullResult.status === "fulfilled") {
-          setDetail((prev) => ({ ...(prev ?? {}), ...fullResult.value }) as ExtendedTaskDetail);
-        } else {
-          setStageError((fullResult.reason as Error)?.message || "任务详情装载失败");
-        }
-
-        if (artifactResult.status === "fulfilled") {
-          setArtifacts(artifactResult.value);
-        } else {
-          setArtifacts([]);
-          setStageError((prev) => prev ?? ((artifactResult.reason as Error)?.message || "产物索引加载失败"));
-        }
-
-        if (dashboardResult.status === "fulfilled") {
-          setTaskDashboard(dashboardResult.value);
-          setDashboardLoadError(null);
-          setStageState({ basic: "finish", artifacts: "finish", dashboard: "finish" });
-        } else {
-          setDashboardLoadError("任务看板加载失败，可稍后重试");
-          setStageState({ basic: "finish", artifacts: "finish", dashboard: "error" });
-          setStageError((prev) => prev ?? ((dashboardResult.reason as Error)?.message || "任务看板加载失败"));
-        }
+        void fetchTaskDashboard(taskId)
+          .then((dashboardValue) => {
+            if (!isLatest()) {
+              return;
+            }
+            setTaskDashboard(dashboardValue);
+            setDashboardLoadError(null);
+            setStageState((prev) => ({ ...prev, dashboard: "finish" }));
+          })
+          .catch((error) => {
+            if (!isLatest()) {
+              return;
+            }
+            setDashboardLoadError("任务看板加载失败，可稍后重试");
+            setStageState((prev) => ({ ...prev, dashboard: "error" }));
+            setStageError((prev) => prev ?? ((error as Error)?.message || "任务看板加载失败"));
+          });
         return;
       }
 
@@ -353,7 +397,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
         setRefreshStageText("");
       }
     }
-  }, [taskId, resetSilentPollRefs]);
+  }, [taskId, fromCreateFlow, resetSilentPollRefs]);
 
   /**
    * 分析完成前：仅轮询轻量 summary；指纹未变则不拉 full/产物/看板。
@@ -441,8 +485,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     setArtifacts([]);
     resetSilentPollRefs();
     void load({ mode: "initial" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskId, fromCreateFlow]);
+  }, [taskId, fromCreateFlow, load, resetSilentPollRefs]);
 
   const refreshParsedSection = async () => {
     try {

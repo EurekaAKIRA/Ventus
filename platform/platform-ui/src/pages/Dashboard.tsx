@@ -5,27 +5,23 @@ import {
   Button,
   Card,
   Col,
-  DatePicker,
   Empty,
   List,
   Row,
   Segmented,
   Space,
   Spin,
-  Switch,
   Table,
   Tag,
   Typography,
   message,
 } from "antd";
-import type { Dayjs } from "dayjs";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
   ExclamationCircleOutlined,
   FireOutlined,
-  ReloadOutlined,
   RightOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
@@ -35,8 +31,6 @@ import { useAuth } from "../auth/AuthContext";
 import StatusTag from "../components/StatusTag";
 
 const { Title, Text } = Typography;
-const { RangePicker } = DatePicker;
-type TimeFilterMode = "7d" | "30d" | "custom";
 type TodoViewMode = "all" | "failed" | "running" | "pending";
 type DashboardView = "overview" | "quality" | "risk" | "ops";
 type TaskLike = TaskListItem & { finished_at?: string };
@@ -133,14 +127,9 @@ export default function Dashboard() {
   const [historyTasks, setHistoryTasks] = useState<HistoryTaskItem[]>([]);
   const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
   const [trendWindow, setTrendWindow] = useState<7 | 30>(7);
-  const [timeFilterMode, setTimeFilterMode] = useState<TimeFilterMode>("7d");
-  const [customRange, setCustomRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [todoViewMode, setTodoViewMode] = useState<TodoViewMode>("all");
   const [dashboardView, setDashboardView] = useState<DashboardView>("overview");
   const [hoveredFunnelKey, setHoveredFunnelKey] = useState<string | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshCountdown, setRefreshCountdown] = useState(10);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string>("");
 
   const openTaskList = (params?: Record<string, string>) => {
     const qp = new URLSearchParams();
@@ -164,13 +153,7 @@ export default function Dashboard() {
   };
 
   const resolveTimeRange = () => {
-    if (timeFilterMode === "custom" && customRange) {
-      return {
-        start: customRange[0].startOf("day").toISOString(),
-        end: customRange[1].endOf("day").toISOString(),
-      };
-    }
-    const days = timeFilterMode === "30d" ? 30 : 7;
+    const days = 7;
     return {
       start: new Date(Date.now() - (days - 1) * 24 * 60 * 60 * 1000).toISOString(),
       end: new Date().toISOString(),
@@ -211,8 +194,6 @@ export default function Dashboard() {
         message.warning("执行历史暂不可用，趋势分析已降级显示");
         setExecutionHistory([]);
       }
-      setLastUpdatedAt(new Date().toISOString());
-      setRefreshCountdown(10);
     } finally {
       if (!options?.silent) {
         setLoading(false);
@@ -222,21 +203,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     void load();
-  }, [timeFilterMode, customRange, currentProjectId]);
+  }, [currentProjectId]);
 
   useEffect(() => {
-    if (!autoRefresh) return;
     const timer = window.setInterval(() => {
-      setRefreshCountdown((prev) => {
-        if (prev <= 1) {
-          void load({ silent: true });
-          return 10;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      void load({ silent: true });
+    }, 10000);
     return () => window.clearInterval(timer);
-  }, [autoRefresh, timeFilterMode, customRange, currentProjectId]);
+  }, [currentProjectId]);
 
   const taskDataset = useMemo<TaskLike[]>(
     () => (historyTasks.length ? (historyTasks as TaskLike[]) : (tasks as TaskLike[])),
@@ -573,7 +547,9 @@ export default function Dashboard() {
       title: "任务",
       dataIndex: "task_name",
       key: "task_name",
-      render: (text: string, record: TaskListItem) => <a onClick={() => navigate(`/tasks/${record.task_id}`)}>{text}</a>,
+      render: (text: string, record: TaskListItem) => (
+        <a onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}`)}>{text}</a>
+      ),
     },
     {
       title: "状态",
@@ -595,7 +571,9 @@ export default function Dashboard() {
       title: "任务",
       dataIndex: "task_name",
       key: "task_name",
-      render: (text: string, record: TaskListItem) => <a onClick={() => navigate(`/tasks/${record.task_id}`)}>{text}</a>,
+      render: (text: string, record: TaskListItem) => (
+        <a onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}`)}>{text}</a>
+      ),
     },
     {
       title: "状态",
@@ -622,32 +600,6 @@ export default function Dashboard() {
       <div className="page-hero page-hero--dashboard">
         <div className="page-hero__copy">
           <Title level={3} className="page-hero__title">测试运营仪表盘</Title>
-        </div>
-        <div className="page-hero__actions">
-          <Text type="secondary">{autoRefresh ? `${refreshCountdown}s 后自动刷新` : "自动刷新已暂停"}</Text>
-          {lastUpdatedAt ? <Text type="secondary">最近更新：{new Date(lastUpdatedAt).toLocaleTimeString()}</Text> : null}
-          <Segmented
-            size="small"
-            value={timeFilterMode}
-            onChange={(value) => setTimeFilterMode(value as TimeFilterMode)}
-            options={[
-              { label: "近7天", value: "7d" },
-              { label: "近30天", value: "30d" },
-              { label: "自定义", value: "custom" },
-            ]}
-          />
-          {timeFilterMode === "custom" ? (
-            <RangePicker
-              size="small"
-              value={customRange}
-              onChange={(value) => setCustomRange(value as [Dayjs, Dayjs] | null)}
-              allowClear
-            />
-          ) : null}
-          <Switch checked={autoRefresh} onChange={setAutoRefresh} checkedChildren="自动" unCheckedChildren="手动" />
-          <Button icon={<ReloadOutlined />} onClick={() => void load()}>刷新数据</Button>
-          <Button onClick={() => navigate("/tasks?focus=focus")}>进入任务列表</Button>
-          <Button onClick={() => navigate("/tasks/history")}>进入历史任务</Button>
         </div>
       </div>
 

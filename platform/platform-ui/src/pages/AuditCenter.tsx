@@ -3,6 +3,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { Button, Card, DatePicker, Input, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { AuditLogPayload } from "../types";
 import { fetchAuditLogs } from "../api/system";
+import MetricCard from "../components/MetricCard";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -38,6 +39,13 @@ export default function AuditCenter() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+
+  const rangeLabel = useMemo(() => {
+    if (!range?.[0] || !range?.[1]) {
+      return "全部时间";
+    }
+    return `${range[0].format("MM-DD")} ~ ${range[1].format("MM-DD")}`;
+  }, [range]);
 
   const queryParams = useMemo(
     () => ({
@@ -89,63 +97,93 @@ export default function AuditCenter() {
 
   return (
     <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div>
-        <Title level={4} style={{ marginBottom: 4 }}>审计日志</Title>
-        <Text type="secondary">这里展示数据库里的关键操作留痕。现在可以按资源、操作人和时间范围筛选，也可以导出当前结果。</Text>
+      <div className="page-hero">
+        <div className="page-hero__copy">
+          <Title level={3} className="page-hero__title">审计日志</Title>
+        </div>
+        <div className="page-hero__meta">
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">当前筛选总数</span>
+            <span className="page-meta-chip__value">{total}</span>
+          </div>
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">资源类型</span>
+            <span className="page-meta-chip__value">{resourceType || "全部"}</span>
+          </div>
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">时间范围</span>
+            <span className="page-meta-chip__value">{rangeLabel}</span>
+          </div>
+        </div>
       </div>
-      <Card bordered={false}>
-        <Space style={{ marginBottom: 16 }} wrap>
-          <Input
-            allowClear
-            placeholder="搜索 action / resource / detail"
-            value={keyword}
-            onChange={(e) => {
-              setPage(1);
-              setKeyword(e.target.value);
-            }}
-            style={{ width: 260 }}
-          />
-          <Input
-            allowClear
-            placeholder="操作人（用户名 / 显示名）"
-            value={actor}
-            onChange={(e) => {
-              setPage(1);
-              setActor(e.target.value);
-            }}
-            style={{ width: 220 }}
-          />
-          <Select
-            allowClear
-            placeholder="资源类型"
-            value={resourceType || undefined}
-            onChange={(value) => {
-              setPage(1);
-              setResourceType(String(value || ""));
-            }}
-            style={{ width: 180 }}
-            options={[
-              { value: "task", label: "task" },
-              { value: "task_run", label: "task_run" },
-              { value: "project", label: "project" },
-              { value: "project_member", label: "project_member" },
-              { value: "environment", label: "environment" },
-              { value: "user", label: "user" },
-              { value: "session", label: "session" },
-            ]}
-          />
-          <RangePicker
-            value={range}
-            onChange={(value) => {
-              setPage(1);
-              setRange(value);
-            }}
-          />
-          <Button onClick={exportCurrentRows} disabled={!items.length}>
-            导出当前页 CSV
-          </Button>
-        </Space>
+
+      <div className="metric-row">
+        <MetricCard title="当前页记录" value={items.length} />
+        <MetricCard title="总记录" value={total} color="#4f8cff" />
+        <MetricCard title="按操作人筛选" value={actor || "未设置"} color="#3ecf8e" />
+        <MetricCard title="关键词筛选" value={keyword || "未设置"} color="#f5b94c" />
+      </div>
+
+      <Card bordered={false} className="panel-card">
+        <div className="page-toolbar">
+          <div className="page-toolbar__group">
+            <Input
+              allowClear
+              placeholder="搜索 action / resource / detail"
+              value={keyword}
+              onChange={(e) => {
+                setPage(1);
+                setKeyword(e.target.value);
+              }}
+              style={{ width: 260 }}
+            />
+            <Input
+              allowClear
+              placeholder="操作人（用户名 / 显示名）"
+              value={actor}
+              onChange={(e) => {
+                setPage(1);
+                setActor(e.target.value);
+              }}
+              style={{ width: 220 }}
+            />
+            <Select
+              allowClear
+              placeholder="资源类型"
+              value={resourceType || undefined}
+              onChange={(value) => {
+                setPage(1);
+                setResourceType(String(value || ""));
+              }}
+              style={{ width: 180 }}
+              options={[
+                { value: "task", label: "task" },
+                { value: "task_run", label: "task_run" },
+                { value: "project", label: "project" },
+                { value: "project_member", label: "project_member" },
+                { value: "defect", label: "defect" },
+                { value: "environment", label: "environment" },
+                { value: "user", label: "user" },
+                { value: "session", label: "session" },
+              ]}
+            />
+            <RangePicker
+              value={range}
+              onChange={(value) => {
+                setPage(1);
+                setRange(value);
+              }}
+            />
+          </div>
+          <div className="page-toolbar__group">
+            <Button onClick={() => void load()}>刷新</Button>
+            <Button onClick={exportCurrentRows} disabled={!items.length}>
+              导出当前页 CSV
+            </Button>
+          </div>
+        </div>
         <Table
+          className="platform-table"
           rowKey="id"
           loading={loading}
           dataSource={items}
@@ -195,7 +233,7 @@ export default function AuditCenter() {
               dataIndex: "detail_json",
               key: "detail_json",
               render: (value: unknown) => (
-                <span style={{ fontFamily: "Consolas, monospace", fontSize: 12 }}>
+                <span className="mono-inline">
                   {value ? JSON.stringify(value) : "-"}
                 </span>
               ),

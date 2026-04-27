@@ -294,7 +294,7 @@ export function useTaskExecution(params: {
     if (executionStatus !== "running" || activeTabKey !== "execution") {
       return;
     }
-    const source = new EventSource(`${API_BASE_URL}/api/tasks/${taskId}/execution/stream`);
+    const source = new EventSource(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}/execution/stream`);
     source.onopen = () => setStreamStatus("connected");
     source.onerror = () => {
       setStreamStatus("fallback");

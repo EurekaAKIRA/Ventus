@@ -178,3 +178,90 @@ def test_retrieve_relevant_chunks_supports_weight_tuning(monkeypatch) -> None:
         rerank=False,
     )
     assert lexical_hits[0]["chunk_id"] == "chunk_lexical"
+
+
+def test_retrieve_relevant_chunks_supports_multi_query(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "requirement_analysis.retriever.request_embeddings",
+        lambda texts, _: [[1.0, 0.0] if "profile" in text else [0.0, 1.0] for text in texts],
+    )
+    index = {
+        "chunks": [
+            {
+                "chunk_id": "chunk_profile",
+                "content": "query profile token details",
+                "section_title": "Profile",
+                "source_file": "",
+                "keywords": ["query", "profile", "token"],
+            },
+            {
+                "chunk_id": "chunk_booking",
+                "content": "delete booking by id requires create chain",
+                "section_title": "Booking",
+                "source_file": "",
+                "keywords": ["delete", "booking", "create"],
+            },
+        ],
+        "chunk_embeddings": {
+            "chunk_profile": [1.0, 0.0],
+            "chunk_booking": [0.0, 1.0],
+        },
+    }
+    diagnostics: dict[str, object] = {}
+
+    hits = retrieve_relevant_chunks(
+        index=index,
+        query=["query profile token", "delete booking id"],
+        top_k=2,
+        use_vector_rag=True,
+        embedding_config=OpenAIEnhancementConfig(gateway=_FakeGateway()),  # type: ignore[arg-type]
+        rerank=False,
+        out_diagnostics=diagnostics,
+    )
+
+    hit_ids = [item["chunk_id"] for item in hits]
+    assert "chunk_profile" in hit_ids
+    assert "chunk_booking" in hit_ids
+    assert diagnostics["retrieval_query_count"] == 2
+    assert all(int(item.get("query_match_count", 0)) >= 1 for item in hits)
+
+
+def test_retrieve_relevant_chunks_promotes_source_diversity() -> None:
+    index = {
+        "chunks": [
+            {
+                "chunk_id": "chunk_a1",
+                "content": "POST /booking create booking flow",
+                "section_title": "Booking Create",
+                "source_file": "restful_booker.md",
+                "keywords": ["post", "booking", "create"],
+            },
+            {
+                "chunk_id": "chunk_a2",
+                "content": "DELETE /booking/{id} delete booking flow",
+                "section_title": "Booking Delete",
+                "source_file": "restful_booker.md",
+                "keywords": ["delete", "booking"],
+            },
+            {
+                "chunk_id": "chunk_b1",
+                "content": "resource lifecycle requires explicit source",
+                "section_title": "Dependency Lifecycle",
+                "source_file": "dependency_lifecycle.md",
+                "keywords": ["resource", "lifecycle", "source"],
+            },
+        ],
+        "chunk_embeddings": {},
+    }
+
+    hits = retrieve_relevant_chunks(
+        index=index,
+        query="booking delete resource source",
+        top_k=2,
+        use_vector_rag=False,
+        rerank=False,
+    )
+
+    source_files = [item["source_file"] for item in hits]
+    assert len(source_files) == 2
+    assert len(set(source_files)) == 2

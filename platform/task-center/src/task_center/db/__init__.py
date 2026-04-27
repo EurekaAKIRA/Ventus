@@ -3,6 +3,7 @@
 from .base import Base, GUID, TimestampMixin, utc_now
 from .models import (
     AuditLog,
+    Defect,
     Environment,
     Project,
     ProjectMember,
@@ -20,6 +21,7 @@ from .session import create_session_factory, create_task_center_engine, get_data
 __all__ = [
     "AuditLog",
     "Base",
+    "Defect",
     "Environment",
     "GUID",
     "Project",

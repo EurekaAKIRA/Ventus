@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { Alert, Button, Card, Form, Input, List, Popconfirm, Space, Table, Tag, Typography, message } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Card, Col, Empty, Form, Input, List, Popconfirm, Row, Space, Table, Tag, Typography, message } from "antd";
 import type { EnvironmentPayload, PreflightCheckPayload } from "../types";
 import { deleteEnvironment, fetchEnvironments, probeEnvironment, saveEnvironment, updateEnvironment } from "../api/system";
+import MetricCard from "../components/MetricCard";
 import { useAuth } from "../auth/AuthContext";
 
 const { Title, Text } = Typography;
@@ -45,7 +46,7 @@ function buildPayload(values: EnvironmentFormValues, projectId?: string): Enviro
 
 export default function EnvironmentCenter() {
   const [form] = Form.useForm<EnvironmentFormValues>();
-  const { currentProjectId, isAuthenticated } = useAuth();
+  const { currentProjectId, isAuthenticated, projects } = useAuth();
   const [items, setItems] = useState<EnvironmentPayload[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -139,41 +140,82 @@ export default function EnvironmentCenter() {
     }
   };
 
+  const currentProject = useMemo(
+    () => projects.find((project) => project.id === currentProjectId) ?? null,
+    [projects, currentProjectId],
+  );
+  const maskedConfigs = useMemo(
+    () => items.filter((item) => item.default_headers_masked || item.auth_masked || item.cookies_masked).length,
+    [items],
+  );
+  const authEnabled = useMemo(
+    () => items.filter((item) => item.auth && Object.keys(item.auth).length).length,
+    [items],
+  );
+  const cookieEnabled = useMemo(
+    () => items.filter((item) => item.cookies && Object.keys(item.cookies).length).length,
+    [items],
+  );
+
   return (
     <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div>
-        <Title level={4} style={{ marginBottom: 4 }}>环境管理</Title>
-        <Text type="secondary">这里的配置会直接影响执行器。现在除了 base URL，还支持默认请求头、auth、cookies，并能在保存前先做连通性探测。</Text>
+      <div className="page-hero">
+        <div className="page-hero__copy">
+          <Title level={3} className="page-hero__title">环境管理</Title>
+        </div>
+        <div className="page-hero__meta">
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">当前项目</span>
+            <span className="page-meta-chip__value">{currentProject?.name || "未选择"}</span>
+          </div>
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">环境数量</span>
+            <span className="page-meta-chip__value">{items.length}</span>
+          </div>
+        </div>
       </div>
-      <Card bordered={false} title={editingName ? `编辑环境：${editingName}` : "新增环境"}>
+
+      <div className="metric-row">
+        <MetricCard title="环境总数" value={items.length} />
+        <MetricCard title="鉴权已配置" value={authEnabled} color="#4f8cff" />
+        <MetricCard title="Cookies 已配置" value={cookieEnabled} color="#3ecf8e" />
+        <MetricCard title="受保护配置" value={maskedConfigs} color="#f5b94c" />
+      </div>
+
+      <Card bordered={false} className="panel-card panel-card--form" title={editingName ? `编辑环境：${editingName}` : "新增环境"}>
         <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Form.Item name="name" label="环境名" rules={[{ required: true, message: "请输入环境名" }]}>
-            <Input placeholder="例如 staging / qa / prod" disabled={Boolean(editingName)} />
-          </Form.Item>
-          <Form.Item name="base_url" label="Base URL" rules={[{ required: true, message: "请输入 Base URL" }]}>
-            <Input placeholder="https://api.example.com" />
-          </Form.Item>
-          <Form.Item name="default_headers_text" label="默认请求头 JSON">
-            <TextArea rows={4} placeholder='{"Authorization":"Bearer demo"}' />
-          </Form.Item>
-          <Text type="secondary" style={{ display: "block", marginTop: -12, marginBottom: 12 }}>
-            敏感 header 值会以 `***MASKED***` 形式回显；直接保存会保留原值，改成新值才会覆盖。
-          </Text>
-          <Form.Item name="auth_text" label="鉴权 JSON">
-            <TextArea rows={4} placeholder='{"type":"bearer","token":"demo-token"}' />
-          </Form.Item>
-          <Text type="secondary" style={{ display: "block", marginTop: -12, marginBottom: 12 }}>
-            已保存的鉴权内容不会明文返回；看到 `***MASKED***` 表示后端仍会保留旧 secret。
-          </Text>
-          <Form.Item name="cookies_text" label="Cookies JSON">
-            <TextArea rows={4} placeholder='{"session":"cookie-value"}' />
-          </Form.Item>
-          <Text type="secondary" style={{ display: "block", marginTop: -12, marginBottom: 12 }}>
-            如需清空 cookies，请改成 `{}` 后再保存。
-          </Text>
+          <Row gutter={16}>
+            <Col xs={24} lg={8}>
+              <Form.Item name="name" label="环境名" rules={[{ required: true, message: "请输入环境名" }]}>
+                <Input placeholder="例如 staging / qa / prod" disabled={Boolean(editingName)} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} lg={16}>
+              <Form.Item name="base_url" label="Base URL" rules={[{ required: true, message: "请输入 Base URL" }]}>
+                <Input placeholder="https://api.example.com" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item name="description" label="描述">
             <TextArea rows={3} placeholder="环境说明" />
           </Form.Item>
+          <Row gutter={16}>
+            <Col xs={24} xl={8}>
+              <Form.Item name="default_headers_text" label="默认请求头 JSON">
+                <TextArea rows={5} placeholder='{"Authorization":"Bearer demo"}' />
+              </Form.Item>
+            </Col>
+            <Col xs={24} xl={8}>
+              <Form.Item name="auth_text" label="鉴权 JSON">
+                <TextArea rows={5} placeholder='{"type":"bearer","token":"demo-token"}' />
+              </Form.Item>
+            </Col>
+            <Col xs={24} xl={8}>
+              <Form.Item name="cookies_text" label="Cookies JSON">
+                <TextArea rows={5} placeholder='{"session":"cookie-value"}' />
+              </Form.Item>
+            </Col>
+          </Row>
           <Space wrap>
             <Button type="primary" htmlType="submit" loading={saving} disabled={!isAuthenticated || !currentProjectId}>
               {editingName ? "更新环境" : "保存环境"}
@@ -187,7 +229,7 @@ export default function EnvironmentCenter() {
       </Card>
 
       {probeResult ? (
-        <Card bordered={false} title={`环境探测结果：${probeResult.environment_name || probeResult.task_id || "当前表单"}`}>
+        <Card bordered={false} className="panel-card" title={`环境探测结果：${probeResult.environment_name || probeResult.task_id || "当前表单"}`}>
           <Space direction="vertical" size={12} style={{ width: "100%" }}>
             <Space wrap>
               <Text>总体状态</Text>
@@ -249,12 +291,20 @@ export default function EnvironmentCenter() {
         </Card>
       ) : null}
 
-      <Card bordered={false} title="环境列表">
+      <Card bordered={false} className="panel-card" title="环境列表">
         <Table
+          className="platform-table"
           rowKey="name"
           loading={loading}
           dataSource={items}
           pagination={false}
+          locale={{
+            emptyText: (
+              <div className="table-empty-state">
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前项目还没有环境配置" />
+              </div>
+            ),
+          }}
           columns={[
             { title: "名称", dataIndex: "name", key: "name", width: 160 },
             { title: "Base URL", dataIndex: "base_url", key: "base_url", ellipsis: true },

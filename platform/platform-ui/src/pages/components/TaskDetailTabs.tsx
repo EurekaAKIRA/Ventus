@@ -128,14 +128,22 @@ export function TaskDetailTabs(props: {
     onOpenArtifact,
   } = props;
 
+  const renderTabLabel = (label: string, badge?: number | string | null) => (
+    <span className="task-detail-tab-label">
+      <span>{label}</span>
+      {badge !== undefined && badge !== null && badge !== "" ? <span className="task-detail-tab-badge">{badge}</span> : null}
+    </span>
+  );
+
   return (
     <Tabs
+      className="task-detail-tabs"
       activeKey={activeTabKey}
       onChange={onTabChange}
       items={[
         {
           key: "parsed",
-          label: "解析",
+          label: renderTabLabel("解析", hasParsedResult ? "ready" : null),
           children: (
             <TaskDetailParsedTab
               detail={detail}
@@ -147,7 +155,7 @@ export function TaskDetailTabs(props: {
         },
         {
           key: "scenario",
-          label: "场景",
+          label: renderTabLabel("场景", detail.scenarios?.length ?? 0),
           children: (
             <TaskDetailScenarioTab
               detail={detail}
@@ -158,7 +166,7 @@ export function TaskDetailTabs(props: {
         },
         {
           key: "dsl",
-          label: "DSL / Feature",
+          label: renderTabLabel("DSL / Feature", detail.test_case_dsl?.scenarios?.length ?? 0),
           children: (
             <TaskDetailDslTab
               detail={detail}
@@ -180,7 +188,7 @@ export function TaskDetailTabs(props: {
         },
         {
           key: "execution",
-          label: "执行",
+          label: renderTabLabel("执行", executionCaseRows.length || null),
           children: (
             <TaskDetailExecutionTab
               pollingError={pollingError}
@@ -209,7 +217,7 @@ export function TaskDetailTabs(props: {
         },
         {
           key: "report",
-          label: "报告",
+          label: renderTabLabel("报告", primaryAnalysisReport ? "1" : null),
           children: (
             <TaskDetailReportTab
               dashboardLoadError={dashboardLoadError}
@@ -236,7 +244,7 @@ export function TaskDetailTabs(props: {
         },
         {
           key: "artifacts",
-          label: "产物",
+          label: renderTabLabel("产物", artifacts.length || null),
           children: <TaskDetailArtifactsTab artifacts={artifacts} onOpenArtifact={onOpenArtifact} />,
         },
       ]}

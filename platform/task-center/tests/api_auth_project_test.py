@@ -529,3 +529,323 @@ order_id ← json.id
     full_data = full_detail.json()["data"]
     assert full_data["task_context"]["status"] in {"generated", "parsed"}
     assert str(full_data["parse_metadata"]["parse_mode"]).strip()
+
+
+def test_task_draft_agent_endpoint_returns_suggestions(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    client.post(
+        "/api/auth/register",
+        json={"username": "alice", "password": "password123", "email": "alice@example.com"},
+    )
+    login_data = client.post("/api/auth/login", json={"username": "alice", "password": "password123"}).json()["data"]
+    headers = _auth_headers(login_data["access_token"])
+    project_id = login_data["projects"][0]["id"]
+
+    create_env = client.post(
+        "/api/environments",
+        json={
+            "name": "staging",
+            "base_url": "https://api.example.com",
+            "project_id": project_id,
+        },
+        headers=headers,
+    )
+    assert create_env.status_code == 201
+
+    response = client.post(
+        "/api/tasks/agent/draft",
+        json={
+            "task_name": "",
+            "requirement_text": "# 用户登录接口验证\n\nBase URL: https://api.example.com\n\n验证登录成功与失败场景。",
+            "source_path": "login_requirement.md",
+            "project_id": project_id,
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["suggested_task_name"] == "login_requirement"
+    assert data["detected_base_url"] == "https://api.example.com"
+    assert data["recommended_environment"] == "staging"
+    assert data["form_patch"]["environment"] == "staging"
+    assert data["summary"]["ready_to_create"] is True
+    assert data["summary"]["ready_to_execute"] is True
+    assert data["summary"]["highlight_count"] >= 2
+    assert data["summary"]["risk_count"] >= 1
+    assert data["capabilities"]["backend_ready"] is True
+    assert data["capabilities"]["mcp_direct_supported"] is False
+    assert data["capabilities"]["auto_analysis_supported"] is True
+    assert data["capabilities"]["diagnostics_supported"] is True
+    assert data["capabilities"]["document_actions_supported"] is True
+    assert data["capabilities"]["knowledge_rag_supported"] is True
+    assert data["summary"]["confidence_level"] in {"low", "medium", "high"}
+    assert isinstance(data["summary"]["confidence_score"], int)
+    fields = [item["field"] for item in data["suggestions"]]
+    assert "task_name" in fields
+    assert "target_system" in fields
+    assert "environment" in fields
+    assert any(item["name"] == "staging" and item["match_type"] == "exact_base_url" for item in data["environment_candidates"])
+    assert any(item["key"] == "environment" and item["status"] == "ready" for item in data["checks"])
+    assert any(item["key"] == "document_shape" and item["value"] == "自由描述" for item in data["signals"])
+    assert any(item["key"] == "scenario_outlook" for item in data["signals"])
+    assert data["scenario_outlook"]["estimated_scenario_count"] >= 1
+    assert data["resource_groups"] == []
+    assert any("目标系统" in item for item in data["highlights"])
+    assert any("自动场景生成覆盖率" in item for item in data["risks"])
+    assert any("`METHOD /path`" in item for item in data["document_fixes"])
+    assert any(item["key"] == "method_path_template" for item in data["document_actions"])
+    assert any(item["key"] == "request_expected_template" for item in data["document_actions"])
+    assert data["document_preview"]["action_count"] >= 2
+    assert "Base URL" in data["document_preview"]["content"]
+    request_follow_up = next(item for item in data["follow_up_questions"] if item["key"] == "request_structure")
+    assert request_follow_up["action_kind"] == "apply_document_action"
+    assert request_follow_up["document_action_key"] == "request_expected_template"
+
+
+def test_task_draft_agent_requires_auth_for_project_scope(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/tasks/agent/draft",
+        json={
+            "requirement_text": "Base URL: https://api.example.com",
+            "project_id": "project_demo",
+        },
+    )
+    assert response.status_code == 401
+
+
+def test_task_draft_agent_follow_up_supports_inline_answers(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/tasks/agent/draft",
+        json={
+            "requirement_text": """
+登录接口验证
+
+需要 Bearer token 才能访问详情接口。
+""",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    target_question = next(item for item in data["follow_up_questions"] if item["key"] == "target_system")
+    assert target_question["answer_mode"] == "field"
+    assert "https://" in target_question["answer_placeholder"]
+    auth_question = next(item for item in data["follow_up_questions"] if item["key"] == "auth_confirmation")
+    assert auth_question["answer_mode"] == "append_requirement"
+    assert "{answer}" in auth_question["answer_template"]
+
+
+def test_task_draft_agent_prefers_better_environment_match(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    client.post(
+        "/api/auth/register",
+        json={"username": "alice", "password": "password123", "email": "alice@example.com"},
+    )
+    login_data = client.post("/api/auth/login", json={"username": "alice", "password": "password123"}).json()["data"]
+    headers = _auth_headers(login_data["access_token"])
+    project_id = login_data["projects"][0]["id"]
+
+    for name, base_url in (
+        ("test", "https://wrong.example.com"),
+        ("staging", "https://api.example.com"),
+    ):
+        response = client.post(
+            "/api/environments",
+            json={
+                "name": name,
+                "base_url": base_url,
+                "project_id": project_id,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 201
+
+    response = client.post(
+        "/api/tasks/agent/draft",
+        json={
+            "task_name": "登录接口",
+            "requirement_text": "Base URL: https://api.example.com\n验证登录成功。",
+            "environment": "test",
+            "project_id": project_id,
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["recommended_environment"] == "staging"
+    assert data["form_patch"]["environment"] == "staging"
+    assert data["summary"]["ready_to_execute"] is False
+    assert any("不一致" in item for item in data["warnings"])
+    assert data["summary"]["risk_count"] >= 1
+    assert any(item["key"] == "environment_match" and item["tone"] == "warning" for item in data["signals"])
+
+
+def test_task_draft_agent_detects_resource_lifecycle_risks(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/tasks/agent/draft",
+        json={
+            "task_name": "",
+            "requirement_text": """
+## Booking patch
+
+**Request:** `PATCH /booking/{id}`
+**Expected:** 更新成功
+
+**Request:** `GET /booking/{id}`
+**Expected:** 返回最新详情
+""",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["summary"]["risk_count"] >= 1
+    assert any("活资源" in item for item in data["risks"])
+    assert any(item["key"] == "request_expected" and item["tone"] == "success" for item in data["signals"])
+    assert data["scenario_outlook"]["lifecycle_chain_count"] == 0
+    assert "PATCH /booking/{id}" in data["scenario_outlook"]["uncovered_live_resource_endpoints"]
+    assert any(item["resource_key"] == "booking" and item["status"] == "needs_source" for item in data["resource_groups"])
+    assert "PATCH /booking/{id}" in data["recognized_endpoints"]
+    assert "GET /booking/{id}" in data["recognized_endpoints"]
+    assert any("资源来源" in item for item in data["document_fixes"])
+    assert any(item["key"] == "resource_source_template" for item in data["document_actions"])
+    assert data["document_preview"]["content"]
+    resource_follow_up = next(item for item in data["follow_up_questions"] if item["key"] == "resource_source")
+    assert resource_follow_up["action_kind"] == "apply_document_action"
+    assert resource_follow_up["document_action_key"] == "resource_source_template"
+    assert resource_follow_up["answer_mode"] == "append_requirement"
+    assert "{answer}" in resource_follow_up["answer_template"]
+
+
+def test_task_draft_agent_includes_knowledge_hits_for_platform_doc(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/tasks/agent/draft",
+        json={
+            "requirement_text": """
+# Task Center 主链路
+
+`POST /api/tasks`
+`GET /api/tasks/{task_id}`
+`POST /api/tasks/{task_id}/execute`
+""",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["rag_support"]["knowledge_applied"] is True
+    assert data["rag_support"]["retrieved_hit_count"] >= 1
+    assert data["rag_support"]["query_count"] >= 1
+    assert data["rag_support"]["source_file_count"] >= 1
+    assert data["rag_support"]["source_file_diversity"] > 0
+    assert data["rag_support"]["query_variants_preview"]
+    assert data["knowledge_hits"]
+    assert any(int(item.get("query_match_count", 0)) >= 1 for item in data["knowledge_hits"])
+    assert any("task_center_api.md" in item["source_file"] for item in data["knowledge_hits"])
+
+
+def test_project_defect_management_flow(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    for username in ("alice", "bob", "charlie"):
+        response = client.post(
+            "/api/auth/register",
+            json={"username": username, "password": "password123", "email": f"{username}@example.com"},
+        )
+        assert response.status_code == 201
+
+    alice_login = client.post("/api/auth/login", json={"username": "alice", "password": "password123"}).json()["data"]
+    bob_login = client.post("/api/auth/login", json={"username": "bob", "password": "password123"}).json()["data"]
+    charlie_login = client.post("/api/auth/login", json={"username": "charlie", "password": "password123"}).json()["data"]
+    alice_headers = _auth_headers(alice_login["access_token"])
+    bob_headers = _auth_headers(bob_login["access_token"])
+    charlie_headers = _auth_headers(charlie_login["access_token"])
+    project_id = alice_login["projects"][0]["id"]
+    bob_user_id = bob_login["user"]["id"]
+
+    add_member = client.post(
+        f"/api/projects/{project_id}/members",
+        json={"username": "bob", "role": "editor"},
+        headers=alice_headers,
+    )
+    assert add_member.status_code == 201
+
+    task_resp = client.post(
+        "/api/tasks",
+        json={
+            "task_name": "Checkout Task",
+            "source_type": "text",
+            "requirement_text": "验证订单结算失败处理。",
+            "target_system": "https://api.example.com",
+            "project_id": project_id,
+        },
+        headers=alice_headers,
+    )
+    assert task_resp.status_code == 201
+    task_id = task_resp.json()["data"]["task_id"]
+
+    create_defect = client.post(
+        "/api/defects",
+        json={
+            "project_id": project_id,
+            "task_id": task_id,
+            "title": "订单结算失败时返回 500",
+            "description": "下单后进入结算接口，服务端直接报 500。",
+            "severity": "high",
+            "assignee_user_id": bob_user_id,
+            "reproduction_steps": "1. 创建订单\n2. 调用 POST /checkout",
+            "expected_result": "返回 200，并进入支付流程",
+            "actual_result": "返回 500，页面提示系统错误",
+        },
+        headers=alice_headers,
+    )
+    assert create_defect.status_code == 201
+    defect = create_defect.json()["data"]
+    defect_id = defect["id"]
+    assert defect["defect_key"].startswith("DEF-")
+    assert defect["task_id"] == task_id
+    assert defect["reporter_username"] == "alice"
+    assert defect["assignee_username"] == "bob"
+
+    listed = client.get(
+        "/api/defects",
+        params={"project_id": project_id, "status": "open"},
+        headers=bob_headers,
+    )
+    assert listed.status_code == 200
+    list_payload = listed.json()["data"]
+    assert list_payload["total"] == 1
+    assert list_payload["items"][0]["id"] == defect_id
+
+    updated = client.patch(
+        f"/api/defects/{defect_id}",
+        json={
+            "status": "in_progress",
+            "severity": "critical",
+            "clear_assignee": True,
+        },
+        headers=bob_headers,
+    )
+    assert updated.status_code == 200
+    updated_payload = updated.json()["data"]
+    assert updated_payload["status"] == "in_progress"
+    assert updated_payload["severity"] == "critical"
+    assert updated_payload["assignee_user_id"] is None
+
+    detail = client.get(f"/api/defects/{defect_id}", headers=alice_headers)
+    assert detail.status_code == 200
+    assert detail.json()["data"]["task_name"] == "Checkout Task"
+
+    denied = client.get(
+        "/api/defects",
+        params={"project_id": project_id},
+        headers=charlie_headers,
+    )
+    assert denied.status_code == 403

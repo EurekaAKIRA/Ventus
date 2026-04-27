@@ -7,6 +7,7 @@ import asyncio
 import hashlib
 import inspect
 import os
+import re
 from dataclasses import replace
 import json
 import threading
@@ -40,8 +41,10 @@ from .api_models import (
     AddProjectMemberRequest,
     AnalysisParseRequest,
     ApiResponse,
+    CreateDefectRequest,
     CreateProjectRequest,
     CreateTaskRequest,
+    TaskDraftAgentRequest,
     ErrorResponse,
     ExecuteTaskRequest,
     HealthInfo,
@@ -54,6 +57,7 @@ from .api_models import (
     StopExecutionResponse,
     TaskListResponse,
     TaskStatus,
+    UpdateDefectRequest,
     UpsertEnvironmentRequest,
     UpdateProfileRequest,
     VersionInfo,
@@ -68,12 +72,18 @@ from .runtime_store import build_runtime_state_store
 from .secure_config import mask_environment_config, merge_masked_environment_config
 from .session_store import build_session_state_store
 from requirement_analysis import AnalysisParseOptions, parse_requirement_bundle
+from requirement_analysis.knowledge_index import build_index as build_requirement_knowledge_index
+from requirement_analysis.knowledge_library import load_curated_knowledge_chunks
+from requirement_analysis.retriever import retrieve_relevant_chunks as retrieve_requirement_knowledge_chunks
+from requirement_analysis.service import build_retrieval_queries as build_requirement_retrieval_queries
 from result_analysis import build_analysis_report
 
 
 APP_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS_ROOT = str(Path(os.getenv("TASK_CENTER_ARTIFACTS_ROOT", str(APP_ROOT / "api_artifacts"))))
 APP_VERSION = "0.2.0"
+VALID_DEFECT_STATUSES = {"open", "in_progress", "resolved", "closed"}
+VALID_DEFECT_SEVERITIES = {"low", "medium", "high", "critical"}
 EXECUTION_TIMEOUT_SECONDS = 300  # 5 分钟执行上限，防止慢接口挂起
 _EXECUTION_MAX_WORKERS = max(1, int(str(os.getenv("TASK_CENTER_EXECUTION_WORKERS", "4")).strip() or "4"))
 _ANALYSIS_MAX_WORKERS = max(1, int(str(os.getenv("TASK_CENTER_ANALYSIS_WORKERS", "4")).strip() or "4"))
@@ -385,6 +395,1127 @@ def _detect_suspicious_inline_requirement(raw_text: str) -> list[str]:
     if size_aligned and trailing_incomplete:
         issues.append(f"文本长度为 {len(text)}，且末尾停在未完成片段")
     return _dedupe_strings(issues)
+
+
+def _derive_task_name_hint(*, task_name: str, source_path: str | None, requirement_text: str) -> str:
+    explicit = str(task_name or "").strip()
+    if explicit:
+        return explicit
+
+    raw_source = str(source_path or "").strip()
+    if raw_source:
+        stem = Path(raw_source).stem.strip()
+        if stem:
+            return stem
+
+    text = str(requirement_text or "")
+    for line in text.splitlines():
+        normalized = line.strip()
+        if not normalized:
+            continue
+        if normalized.startswith("#"):
+            candidate = normalized.lstrip("#").strip(" -:：\t")
+            if candidate:
+                return candidate[:80]
+        if len(normalized) <= 80:
+            return normalized.strip(" -:：\t")[:80]
+    return ""
+
+
+def _extract_base_url_hint(requirement_text: str, fallback_target_system: str | None = None) -> str:
+    fallback = str(fallback_target_system or "").strip()
+    if fallback:
+        return fallback.rstrip("/")
+
+    content = str(requirement_text or "").strip()
+    if not content:
+        return ""
+
+    labeled_patterns = [
+        r"(?:base\s*url|baseurl|服务地址|服务域名|接口地址|接口域名|请求地址|环境地址)\s*[:：|]\s*`?(https?:\/\/[^\s)`>\"']+)`?",
+        r"^\s*[-*]?\s*(?:默认\s*)?(?:base\s*url|baseurl|服务地址|服务域名|接口地址|接口域名|请求地址|环境地址)\s+`?(https?:\/\/[^\s)`>\"']+)`?\s*$",
+    ]
+    for raw_pattern in labeled_patterns:
+        matched = re.search(raw_pattern, content, flags=re.IGNORECASE | re.MULTILINE)
+        if matched and matched.group(1):
+            return matched.group(1).rstrip("/")
+
+    absolute_urls = [
+        item.group(0).rstrip("/")
+        for item in re.finditer(r"https?:\/\/[^\s)`>\"']+", content, flags=re.IGNORECASE | re.MULTILINE)
+    ]
+    if len(absolute_urls) == 1:
+        return absolute_urls[0]
+    return ""
+
+
+def _normalize_base_url_for_match(raw_url: str | None) -> str:
+    value = str(raw_url or "").strip().rstrip("/")
+    if not value:
+        return ""
+    parsed = urlparse(value)
+    if not parsed.scheme or not parsed.netloc:
+        return value
+    host = (parsed.hostname or parsed.netloc).lower()
+    port = parsed.port
+    include_port = port is not None and not (
+        (parsed.scheme.lower() == "http" and port == 80)
+        or (parsed.scheme.lower() == "https" and port == 443)
+    )
+    netloc = f"{host}:{port}" if include_port else host
+    path = parsed.path.rstrip("/")
+    return f"{parsed.scheme.lower()}://{netloc}{path}"
+
+
+def _extract_url_host(raw_url: str | None) -> str:
+    normalized = _normalize_base_url_for_match(raw_url)
+    if not normalized:
+        return ""
+    parsed = urlparse(normalized)
+    return (parsed.hostname or "").lower()
+
+
+def _normalize_endpoint_token(raw_value: str) -> str:
+    token = str(raw_value or "").strip().strip("`").rstrip(".,;)")
+    if not token:
+        return ""
+    lowered = token.lower()
+    if lowered.startswith("http://") or lowered.startswith("https://"):
+        parsed = urlparse(token)
+        path = parsed.path or "/"
+        if parsed.query:
+            path = f"{path}?{parsed.query}"
+        return path
+    return token
+
+
+def _extract_requirement_endpoint_signatures(requirement_text: str) -> list[tuple[str, str]]:
+    text = str(requirement_text or "")
+    pattern = re.compile(r"`?(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+([^\s`]+)`?", flags=re.IGNORECASE)
+    seen: set[tuple[str, str]] = set()
+    endpoints: list[tuple[str, str]] = []
+    for matched in pattern.finditer(text):
+        method = str(matched.group(1) or "").upper()
+        raw_path = _normalize_endpoint_token(str(matched.group(2) or ""))
+        if not raw_path or not (raw_path.startswith("/") or raw_path.startswith("http")):
+            continue
+        signature = (method, raw_path)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        endpoints.append(signature)
+    return endpoints
+
+
+def _infer_requirement_resource_key(path: str) -> str:
+    raw_path = _normalize_endpoint_token(path)
+    parsed = urlparse(raw_path)
+    normalized_path = parsed.path or raw_path
+    segments = [segment for segment in normalized_path.split("/") if segment]
+    for segment in segments:
+        lowered = segment.lower()
+        if lowered in {"api", "internal", "openapi"}:
+            continue
+        if re.fullmatch(r"v\d+", lowered):
+            continue
+        if segment.isdigit():
+            continue
+        if (segment.startswith("{") and segment.endswith("}")) or segment.startswith(":") or (segment.startswith("<") and segment.endswith(">")):
+            continue
+        return lowered
+    return ""
+
+
+def _endpoint_requires_live_resource(method: str, path: str) -> bool:
+    upper_method = str(method or "").upper()
+    if upper_method in {"PUT", "PATCH", "DELETE"}:
+        return True
+    normalized_path = _normalize_endpoint_token(path)
+    if upper_method != "GET":
+        return False
+    return bool(
+        re.search(r"/(?:\{[^/]+\}|:[^/]+|<[^/]+>|[^/]+Id)(?:$|[/?])", normalized_path, flags=re.IGNORECASE)
+        or re.search(r"/\d+(?:$|[/?])", normalized_path)
+    )
+
+
+def _extract_requirement_auth_hints(requirement_text: str) -> list[str]:
+    text = str(requirement_text or "")
+    keyword_map = [
+        (r"\bbearer\b|authorization", "Bearer"),
+        (r"\bx-api-key\b|api[-_\s]?key", "API Key"),
+        (r"\bbasic\b|\bbasic auth\b", "Basic"),
+        (r"\bcookie\b|session", "Cookie"),
+        (r"\bjwt\b|\btoken\b", "Token"),
+        (r"登录|鉴权|认证", "登录态"),
+    ]
+    hints: list[str] = []
+    for pattern, label in keyword_map:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            hints.append(label)
+    return _dedupe_strings(hints)
+
+
+def _merge_requirement_text_with_document_action(raw_text: str, action: dict[str, Any]) -> str:
+    current_text = str(raw_text or "")
+    content = str(action.get("content") or "")
+    if not content.strip():
+        return current_text
+    mode = str(action.get("mode") or "").strip().lower()
+    if mode == "prepend":
+        return f"{content}{current_text}".strip()
+    return f"{current_text.rstrip()}\n{content}".strip()
+
+
+def _build_task_draft_agent_knowledge_support(
+    *,
+    requirement_text: str,
+) -> dict[str, Any]:
+    cleaned_text = str(requirement_text or "").strip()
+    if not cleaned_text:
+        return {
+            "knowledge_hits": [],
+            "knowledge_summary": "",
+            "rag_support": {
+                "knowledge_applied": False,
+                "knowledge_chunk_count": 0,
+                "retrieved_hit_count": 0,
+                "query_count": 0,
+                "query_variants_preview": [],
+                "source_file_count": 0,
+                "source_file_diversity": 0.0,
+                "doc_type_count": 0,
+            },
+        }
+
+    knowledge_chunks = load_curated_knowledge_chunks(raw_text=requirement_text, cleaned_text=cleaned_text)
+    if not knowledge_chunks:
+        return {
+            "knowledge_hits": [],
+            "knowledge_summary": "",
+            "rag_support": {
+                "knowledge_applied": False,
+                "knowledge_chunk_count": 0,
+                "retrieved_hit_count": 0,
+                "query_count": 0,
+                "query_variants_preview": [],
+                "source_file_count": 0,
+                "source_file_diversity": 0.0,
+                "doc_type_count": 0,
+            },
+        }
+
+    queries = build_requirement_retrieval_queries(requirement_text, cleaned_text)
+    index = build_requirement_knowledge_index(knowledge_chunks, enable_vector_rag=False, embedding_config=None)
+    diagnostics: dict[str, Any] = {}
+    hits = retrieve_requirement_knowledge_chunks(
+        index,
+        queries,
+        top_k=3,
+        use_vector_rag=False,
+        embedding_config=None,
+        rerank=False,
+        out_diagnostics=diagnostics,
+    )
+    knowledge_hits: list[dict[str, Any]] = []
+    for item in hits:
+        excerpt = str(item.get("content") or "").replace("\n", " ").strip()
+        knowledge_hits.append(
+            {
+                "title": str(item.get("section_title") or item.get("source_file") or "Knowledge"),
+                "source_file": str(item.get("source_file") or ""),
+                "doc_type": str(item.get("doc_type") or ""),
+                "score": float(item.get("score", 0.0) or 0.0),
+                "query_match_count": int(item.get("query_match_count", 0) or 0),
+                "excerpt": excerpt[:180],
+            }
+        )
+    knowledge_sources = _dedupe_strings(hit["source_file"] for hit in knowledge_hits)
+    doc_types = _dedupe_strings(hit["doc_type"] for hit in knowledge_hits)
+    knowledge_summary = ""
+    if knowledge_hits:
+        knowledge_summary = (
+            f"已从知识库匹配到 {len(knowledge_hits)} 条参考片段"
+            + (f"，覆盖 {len(knowledge_sources)} 份来源文档" if knowledge_sources else "")
+        )
+    return {
+        "knowledge_hits": knowledge_hits,
+        "knowledge_summary": knowledge_summary,
+        "rag_support": {
+            "knowledge_applied": bool(knowledge_hits),
+            "knowledge_chunk_count": len(knowledge_chunks),
+            "retrieved_hit_count": len(knowledge_hits),
+            "query_count": len(queries),
+            "query_variants_preview": diagnostics.get("retrieval_query_variants_preview", queries[:4]),
+            "source_file_count": len(knowledge_sources),
+            "source_file_diversity": round((len(knowledge_sources) / len(knowledge_hits)), 3) if knowledge_hits else 0.0,
+            "doc_type_count": len(doc_types),
+        },
+    }
+
+
+def _build_task_draft_follow_up_questions(
+    *,
+    detected_base_url: str,
+    recommended_environment: str,
+    request_block_count: int,
+    expected_block_count: int,
+    has_context_flow: bool,
+    lifecycle_resource_risk: bool,
+    auth_hints: list[str],
+    available_action_keys: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    action_keys = available_action_keys or set()
+    questions: list[dict[str, Any]] = []
+    if not detected_base_url:
+        questions.append(
+            {
+                "key": "target_system",
+                "field": "target_system",
+                "priority": "high",
+                "question": "目标系统的 Base URL 是什么？",
+                "reason": "没有 Base URL 时，环境匹配和后续执行都无法稳定进行",
+                "action_kind": "focus_field",
+                "action_label": "去填写",
+                "answer_mode": "field",
+                "answer_placeholder": "例如：https://api.example.com",
+            }
+        )
+    if not recommended_environment:
+        questions.append(
+            {
+                "key": "environment",
+                "field": "environment",
+                "priority": "high",
+                "question": "这份任务应该绑定哪个执行环境？",
+                "reason": "只有执行环境明确后，任务才能直接进入执行链路",
+                "action_kind": "focus_field",
+                "action_label": "去选择",
+            }
+        )
+    if request_block_count == 0:
+        question = {
+            "key": "request_structure",
+            "field": "requirement_text",
+            "priority": "medium",
+            "question": "能否把关键步骤改写成 `**Request:**` 结构？",
+            "reason": "明确请求边界后，场景拆分和接口覆盖识别会更稳定",
+        }
+        if "request_expected_template" in action_keys:
+            question.update(
+                {
+                    "action_kind": "apply_document_action",
+                    "action_label": "插入模板",
+                    "document_action_key": "request_expected_template",
+                }
+            )
+        else:
+            question.update({"action_kind": "focus_field", "action_label": "去补充"})
+        questions.append(question)
+    if expected_block_count == 0:
+        question = {
+            "key": "expected_structure",
+            "field": "requirement_text",
+            "priority": "medium",
+            "question": "每个步骤的预期结果能否显式写成 `**Expected:**`？",
+            "reason": "没有预期结果时，断言生成会偏弱",
+        }
+        if "request_expected_template" in action_keys:
+            question.update(
+                {
+                    "action_kind": "apply_document_action",
+                    "action_label": "插入模板",
+                    "document_action_key": "request_expected_template",
+                }
+            )
+        else:
+            question.update({"action_kind": "focus_field", "action_label": "去补充"})
+        questions.append(question)
+    if lifecycle_resource_risk and not has_context_flow:
+        question = {
+            "key": "resource_source",
+            "field": "requirement_text",
+            "priority": "high",
+            "question": "这些 detail/update/patch/delete 接口依赖的资源 id 是从哪里来的？",
+            "reason": "需要明确 create、list/detail 保存 id，或预置资源来源，避免场景裸跑",
+        }
+        if "resource_source_template" in action_keys:
+            question.update(
+                {
+                    "action_kind": "apply_document_action",
+                    "action_label": "插入来源说明",
+                    "document_action_key": "resource_source_template",
+                }
+            )
+        else:
+            question.update({"action_kind": "focus_field", "action_label": "去补充"})
+        question.update(
+            {
+                "answer_mode": "append_requirement",
+                "answer_placeholder": "例如：先调用 POST /booking 创建，再复用返回的 booking_id",
+                "answer_template": "\n**资源来源:**\n- {answer}\n",
+            }
+        )
+        questions.append(question)
+    if auth_hints:
+        questions.append(
+            {
+                "key": "auth_confirmation",
+                "field": "requirement_text",
+                "priority": "low",
+                "question": f"鉴权信息是否需要明确写成 header / cookie / token 传递方式？",
+                "reason": "文档已出现鉴权提示，补清传递方式后更利于环境配置和场景执行",
+                "action_kind": "focus_field",
+                "action_label": "补充说明",
+                "answer_mode": "append_requirement",
+                "answer_placeholder": "例如：Header `Authorization: Bearer {{token}}`",
+                "answer_template": "\n**鉴权说明:**\n- {answer}\n",
+            }
+        )
+    return questions
+
+
+def _build_task_draft_document_preview(
+    *,
+    requirement_text: str,
+    suggested_task_name: str,
+    detected_base_url: str,
+    recognized_endpoints: list[str],
+    document_actions: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    normalized_actions = [action for action in document_actions if str(action.get("content") or "").strip()]
+    normalized_text = str(requirement_text or "").strip()
+    auth_hints = _extract_requirement_auth_hints(requirement_text)
+    if not normalized_actions and not normalized_text:
+        return None
+
+    applied_action_keys: list[str] = [
+        action_key
+        for action in normalized_actions
+        if (action_key := str(action.get("key") or "").strip())
+    ]
+    action_key_set = set(applied_action_keys)
+
+    draft_lines: list[str] = []
+    document_title = str(suggested_task_name or "").strip() or "API 测试需求"
+    draft_lines.append(f"# {document_title}")
+    draft_lines.append("")
+    draft_lines.append("## 目标")
+    draft_lines.append(f"- 验证 {document_title} 的核心接口链路与关键结果")
+    draft_lines.append("")
+    draft_lines.append("## 环境信息")
+    draft_lines.append(f"- Base URL: {detected_base_url or 'https://your-api-host'}")
+    if auth_hints:
+        draft_lines.append(f"- 鉴权提示: {'、'.join(auth_hints)}")
+    draft_lines.append("")
+
+    if recognized_endpoints:
+        draft_lines.append("## 涉及接口")
+        for endpoint in recognized_endpoints[:8]:
+            draft_lines.append(f"- `{endpoint}`")
+        draft_lines.append("")
+
+    draft_lines.append("## 场景清单")
+    if recognized_endpoints:
+        for index, endpoint in enumerate(recognized_endpoints[: min(3, len(recognized_endpoints))], start=1):
+            draft_lines.append(f"### Scenario {index}: {endpoint}")
+            draft_lines.append(f"**Request:** `{endpoint}`")
+            draft_lines.append("**Expected:** 返回 200，且响应结构符合预期")
+            draft_lines.append("")
+    else:
+        draft_lines.append("### Scenario 1: 示例场景")
+        draft_lines.append("**Request:** `GET /resource`")
+        draft_lines.append("**Expected:** 返回 200，且响应结构符合预期")
+        draft_lines.append("")
+
+    if "context_flow_template" in action_key_set:
+        draft_lines.append("## 上下文传递")
+        draft_lines.append("**save_context:**")
+        draft_lines.append("resource_id ← json.id")
+        draft_lines.append("")
+        draft_lines.append("**uses_context:**")
+        draft_lines.append("resource_id")
+        draft_lines.append("")
+
+    if "resource_source_template" in action_key_set:
+        draft_lines.append("## 资源来源")
+        draft_lines.append("- 同场景 `POST /resource` 创建")
+        draft_lines.append("- 或先通过 `GET /resource` 获取并保存 id")
+        draft_lines.append("")
+
+    if normalized_text:
+        draft_lines.append("## 补充说明")
+        draft_lines.append(normalized_text)
+
+    preview_content = "\n".join(draft_lines).strip()
+    title_summary = "结构化草稿"
+    return {
+        "content": preview_content.strip(),
+        "summary": f"已生成 {title_summary}",
+        "action_count": len(normalized_actions),
+        "applied_action_keys": applied_action_keys,
+    }
+
+
+def _build_task_draft_document_diagnostics(
+    *,
+    requirement_text: str,
+    detected_base_url: str,
+    recommended_environment: str,
+    selected_environment: str,
+    environment_target_aligned: bool,
+    suggested_task_name: str,
+) -> dict[str, Any]:
+    text = str(requirement_text or "")
+    endpoint_signatures = _extract_requirement_endpoint_signatures(text)
+    endpoint_count = len(endpoint_signatures)
+    unique_method_count = len({method for method, _ in endpoint_signatures})
+    recognized_endpoints = [f"{method} {path}" for method, path in endpoint_signatures[:8]]
+    request_block_count = len(re.findall(r"\*\*Request:\*\*", text, flags=re.IGNORECASE))
+    expected_block_count = len(re.findall(r"\*\*Expected:\*\*", text, flags=re.IGNORECASE))
+    save_context_count = len(re.findall(r"\*\*save_context:\*\*", text, flags=re.IGNORECASE))
+    uses_context_count = len(re.findall(r"\*\*uses_context:\*\*", text, flags=re.IGNORECASE))
+    explicit_resource_source = bool(
+        re.search(r"资源来源|关键依赖|预置资源|fixture|preseed|seed data|existing resource", text, flags=re.IGNORECASE)
+    )
+    auth_hints = _extract_requirement_auth_hints(text)
+    has_context_flow = save_context_count > 0 or uses_context_count > 0
+    lifecycle_resource_risk = False
+    has_heading = bool(re.search(r"^\s*#\s+\S+", text, flags=re.MULTILINE))
+
+    if request_block_count > 0 and expected_block_count > 0:
+        document_shape = "结构化"
+        document_shape_tone = "success"
+    elif endpoint_count > 0 or has_context_flow:
+        document_shape = "半结构化"
+        document_shape_tone = "default"
+    elif text.strip():
+        document_shape = "自由描述"
+        document_shape_tone = "warning"
+    else:
+        document_shape = "空白"
+        document_shape_tone = "warning"
+
+    signals: list[dict[str, Any]] = [
+        {
+            "key": "document_shape",
+            "label": "文档形态",
+            "value": document_shape,
+            "tone": document_shape_tone,
+        },
+        {
+            "key": "endpoint_count",
+            "label": "接口识别",
+            "value": f"{endpoint_count} 个接口 / {unique_method_count} 种方法" if endpoint_count else "未识别到接口标识",
+            "tone": "success" if endpoint_count else "warning",
+        },
+        {
+            "key": "request_expected",
+            "label": "结构锚点",
+            "value": f"Request {request_block_count} / Expected {expected_block_count}",
+            "tone": (
+                "success"
+                if request_block_count > 0 and expected_block_count > 0 and request_block_count == expected_block_count
+                else "warning"
+                if request_block_count > 0 or expected_block_count > 0
+                else "default"
+            ),
+        },
+        {
+            "key": "context_flow",
+            "label": "上下文传递",
+            "value": (
+                f"save_context {save_context_count} / uses_context {uses_context_count}"
+                if has_context_flow
+                else "未显式声明"
+            ),
+            "tone": "success" if has_context_flow else "default",
+        },
+        {
+            "key": "auth_hints",
+            "label": "鉴权提示",
+            "value": "、".join(auth_hints) if auth_hints else "未识别到明显鉴权提示",
+            "tone": "success" if auth_hints else "default",
+        },
+        {
+            "key": "environment_match",
+            "label": "执行环境",
+            "value": recommended_environment or selected_environment or "待匹配",
+            "tone": (
+                "success"
+                if recommended_environment and environment_target_aligned
+                else "warning"
+                if recommended_environment or selected_environment
+                else "default"
+            ),
+        },
+    ]
+
+    highlights: list[str] = []
+    risks: list[str] = []
+    if detected_base_url:
+        highlights.append(f"已识别目标系统 {detected_base_url}")
+    if endpoint_count > 0:
+        highlights.append(f"识别到 {endpoint_count} 个接口标识，后续场景生成会更稳定")
+    if request_block_count > 0 and expected_block_count > 0:
+        highlights.append("文档已使用 Request / Expected 结构锚点，解析稳定性更高")
+    if has_context_flow:
+        highlights.append("文档已显式描述上下文传递，可支持跨步骤复用资源 ID")
+    if auth_hints:
+        highlights.append(f"检测到 { '、'.join(auth_hints) } 鉴权提示，可提前核对环境配置")
+    if recommended_environment and environment_target_aligned:
+        highlights.append(f"已匹配到与目标系统对齐的执行环境“{recommended_environment}”")
+
+    if not detected_base_url:
+        risks.append("未明确目标系统地址，执行前仍需手动确认 Base URL")
+    if endpoint_count == 0 and request_block_count == 0:
+        risks.append("未识别到明确的 `METHOD /path` 或 `**Request:**`，自动场景生成覆盖率可能偏低")
+    if request_block_count > 0 and expected_block_count == 0:
+        risks.append("存在 `**Request:**` 但缺少 `**Expected:**`，断言生成信息可能不足")
+    if expected_block_count > 0 and request_block_count == 0:
+        risks.append("存在 `**Expected:**` 但缺少 `**Request:**`，步骤边界可能不清晰")
+    if request_block_count > 0 and expected_block_count > 0 and request_block_count != expected_block_count:
+        risks.append(f"`Request` 与 `Expected` 数量不一致（{request_block_count}/{expected_block_count}），建议核对步骤边界")
+
+    by_resource: dict[str, list[tuple[str, str]]] = {}
+    for method, path in endpoint_signatures:
+        resource_key = _infer_requirement_resource_key(path)
+        if not resource_key:
+            continue
+        by_resource.setdefault(resource_key, []).append((method, path))
+
+    read_only_endpoint_count = sum(1 for method, path in endpoint_signatures if method == "GET" and not _endpoint_requires_live_resource(method, path))
+    write_endpoint_count = sum(1 for method, _ in endpoint_signatures if method in {"POST", "PUT", "PATCH", "DELETE"})
+    lifecycle_chain_count = 0
+    uncovered_live_resource_endpoints: list[str] = []
+
+    if not explicit_resource_source:
+        for resource_key, entries in by_resource.items():
+            methods = {method for method, _ in entries}
+            has_list_like_query = any(method == "GET" and not _endpoint_requires_live_resource(method, path) for method, path in entries)
+            requires_live_resource = any(_endpoint_requires_live_resource(method, path) for method, path in entries)
+            has_live_source = "POST" in methods or (has_list_like_query and has_context_flow)
+            if requires_live_resource and has_live_source:
+                lifecycle_chain_count += 1
+            if requires_live_resource and not has_live_source:
+                lifecycle_resource_risk = True
+                risks.append(
+                    f"检测到 {resource_key} 资源存在 detail/update/patch/delete，但未看到资源来源、create 或显式上下文传递，独立场景可能缺少活资源"
+                )
+                uncovered_live_resource_endpoints.extend(
+                    f"{method} {path}" for method, path in entries if _endpoint_requires_live_resource(method, path)
+                )
+    else:
+        lifecycle_chain_count = sum(
+            1
+            for entries in by_resource.values()
+            if any(_endpoint_requires_live_resource(method, path) for method, path in entries)
+        )
+
+    recognized_endpoint_set = set(recognized_endpoints)
+    uncovered_live_resource_endpoints = [
+        endpoint
+        for endpoint in _dedupe_strings(uncovered_live_resource_endpoints)
+        if endpoint in recognized_endpoint_set
+    ]
+    standalone_endpoint_count = max(endpoint_count - max(lifecycle_chain_count, 0), 0)
+    estimated_scenario_count = 0
+    if endpoint_count == 0:
+        estimated_scenario_count = 1 if text.strip() else 0
+    elif by_resource:
+        read_only_resource_count = sum(
+            1
+            for entries in by_resource.values()
+            if any(method == "GET" and not _endpoint_requires_live_resource(method, path) for method, path in entries)
+            and not any(_endpoint_requires_live_resource(method, path) for method, path in entries)
+        )
+        estimated_scenario_count = max(lifecycle_chain_count + read_only_resource_count, 1)
+        if endpoint_count <= 2 and request_block_count <= 1:
+            estimated_scenario_count = max(estimated_scenario_count, endpoint_count)
+    else:
+        estimated_scenario_count = max(min(request_block_count or endpoint_count, 4), 1)
+
+    scenario_shape = "依赖链型" if lifecycle_chain_count else "单接口/松散型" if endpoint_count else "待补充"
+    resource_groups: list[dict[str, Any]] = []
+    for resource_key, entries in by_resource.items():
+        methods = sorted({method for method, _ in entries})
+        endpoints = [f"{method} {path}" for method, path in entries]
+        has_list_like_query = any(method == "GET" and not _endpoint_requires_live_resource(method, path) for method, path in entries)
+        has_live_resource = any(_endpoint_requires_live_resource(method, path) for method, path in entries)
+        has_create = "POST" in methods
+        has_live_source = has_create or (has_list_like_query and has_context_flow) or explicit_resource_source
+        if has_live_resource and has_live_source:
+            status = "complete"
+        elif has_live_resource:
+            status = "needs_source"
+        elif has_list_like_query:
+            status = "read_only"
+        else:
+            status = "single_step"
+        resource_groups.append(
+            {
+                "resource_key": resource_key,
+                "methods": methods,
+                "endpoints": endpoints,
+                "status": status,
+                "has_create": has_create,
+                "has_context_flow": has_context_flow,
+                "has_live_resource": has_live_resource,
+                "has_list_source": has_list_like_query,
+                "estimated_scenarios": 1 if endpoints else 0,
+            }
+        )
+    resource_groups.sort(key=lambda item: (str(item.get("status") or ""), str(item.get("resource_key") or "")))
+    scenario_outlook = {
+        "estimated_scenario_count": estimated_scenario_count,
+        "endpoint_count": endpoint_count,
+        "resource_group_count": len(by_resource),
+        "write_endpoint_count": write_endpoint_count,
+        "read_only_endpoint_count": read_only_endpoint_count,
+        "lifecycle_chain_count": lifecycle_chain_count,
+        "standalone_endpoint_count": standalone_endpoint_count,
+        "uncovered_live_resource_endpoints": uncovered_live_resource_endpoints,
+        "scenario_shape": scenario_shape,
+    }
+
+    signals.append(
+        {
+            "key": "scenario_outlook",
+            "label": "场景预估",
+            "value": (
+                f"约 {estimated_scenario_count} 个场景"
+                if estimated_scenario_count
+                else "待补充接口或步骤后再预估"
+            ),
+            "tone": "warning" if lifecycle_resource_risk else "success" if estimated_scenario_count else "default",
+        }
+    )
+
+    if estimated_scenario_count:
+        highlights.append(f"按当前文档形态，预计可形成约 {estimated_scenario_count} 个场景")
+    if uncovered_live_resource_endpoints:
+        risks.append(f"以下接口仍缺少活资源来源：{', '.join(uncovered_live_resource_endpoints[:3])}")
+
+    if recommended_environment and not environment_target_aligned:
+        risks.append(f"当前环境建议为“{recommended_environment}”，但与识别到的目标系统还未完全对齐")
+    elif detected_base_url and not recommended_environment:
+        risks.append("已识别目标系统，但尚未匹配到可执行环境")
+
+    document_fixes: list[str] = []
+    document_actions: list[dict[str, Any]] = []
+    if suggested_task_name and not has_heading:
+        document_fixes.append("建议补充文档标题，便于任务目标和文档主题保持一致")
+        document_actions.append(
+            {
+                "key": "title_template",
+                "title": "补充文档标题",
+                "mode": "prepend",
+                "reason": "补齐标题后，任务目标和文档主题会更清晰",
+                "content": f"# {suggested_task_name}\n\n",
+            }
+        )
+    if not detected_base_url:
+        document_fixes.append("在文档顶部补充 `Base URL: https://...`，避免目标系统无法自动识别")
+        document_actions.append(
+            {
+                "key": "base_url_template",
+                "title": "补充 Base URL",
+                "mode": "prepend",
+                "reason": "先明确目标系统地址，后续环境匹配和场景执行会更稳定",
+                "content": "Base URL: https://your-api-host\n",
+            }
+        )
+    if endpoint_count == 0:
+        document_fixes.append("将关键接口统一写成 `METHOD /path`，例如 `POST /booking`，提升接口识别率")
+        document_actions.append(
+            {
+                "key": "method_path_template",
+                "title": "插入接口标识模板",
+                "mode": "append",
+                "reason": "显式写出 `METHOD /path`，Agent 才能稳定识别接口覆盖范围",
+                "content": "\n## 接口清单\n- `GET /resource`\n- `POST /resource`\n",
+            }
+        )
+    if request_block_count == 0:
+        document_fixes.append("为每个步骤补充 `**Request:**`，明确请求边界")
+        request_line = recognized_endpoints[0] if recognized_endpoints else "GET /resource"
+        document_actions.append(
+            {
+                "key": "request_expected_template",
+                "title": "插入步骤模板",
+                "mode": "append",
+                "reason": "补齐 Request / Expected 结构锚点，便于场景和断言生成",
+                "content": (
+                    "\n## Scenario: 示例场景\n"
+                    f"**Request:** `{request_line}`\n"
+                    "**Expected:** 返回 200，且响应结构符合预期\n"
+                ),
+            }
+        )
+    if expected_block_count == 0:
+        document_fixes.append("为每个步骤补充 `**Expected:**`，让断言生成更稳定")
+    if endpoint_count > 1 and not has_context_flow:
+        document_fixes.append("跨步骤依赖资源 ID 时，显式增加 `**save_context:**` 和 `**uses_context:**`")
+        document_actions.append(
+            {
+                "key": "context_flow_template",
+                "title": "插入上下文传递模板",
+                "mode": "append",
+                "reason": "跨步骤依赖资源 ID 时，显式声明上下文字段能减少场景缺失",
+                "content": (
+                    "\n**save_context:**\n"
+                    "resource_id ← json.id\n\n"
+                    "**uses_context:**\n"
+                    "resource_id\n"
+                ),
+            }
+        )
+    if lifecycle_resource_risk and not explicit_resource_source:
+        document_fixes.append("对 detail/update/patch/delete 这类依赖活资源的接口，补充资源来源，或并入 create/list 依赖链")
+        document_actions.append(
+            {
+                "key": "resource_source_template",
+                "title": "插入资源来源说明",
+                "mode": "append",
+                "reason": "需要活资源的接口不应裸跑，补充来源后场景依赖更完整",
+                "content": (
+                    "\n**资源来源:**\n"
+                    "- 同场景 `POST /resource` 创建\n"
+                    "- 或先通过 `GET /resource` 获取并保存 id\n"
+                ),
+            }
+        )
+    if auth_hints and not recommended_environment:
+        document_fixes.append("文档已提示鉴权要求，但执行环境未匹配成功，建议先核对环境中的 auth/cookies 配置")
+
+    follow_up_questions = _build_task_draft_follow_up_questions(
+        detected_base_url=detected_base_url,
+        recommended_environment=recommended_environment,
+        request_block_count=request_block_count,
+        expected_block_count=expected_block_count,
+        has_context_flow=has_context_flow,
+        lifecycle_resource_risk=lifecycle_resource_risk,
+        auth_hints=auth_hints,
+        available_action_keys={
+            str(item.get("key") or "").strip()
+            for item in document_actions
+            if str(item.get("key") or "").strip()
+        },
+    )
+
+    return {
+        "signals": signals,
+        "recognized_endpoints": recognized_endpoints,
+        "highlights": _dedupe_strings(highlights),
+        "risks": _dedupe_strings(risks),
+        "document_fixes": _dedupe_strings(document_fixes),
+        "document_actions": document_actions,
+        "follow_up_questions": follow_up_questions,
+        "lifecycle_resource_risk": lifecycle_resource_risk,
+        "has_context_flow": has_context_flow,
+        "request_block_count": request_block_count,
+        "expected_block_count": expected_block_count,
+        "auth_hints": auth_hints,
+        "scenario_outlook": scenario_outlook,
+        "resource_groups": resource_groups,
+    }
+
+
+def _build_task_draft_environment_candidates(
+    *,
+    project_id: str | None,
+    detected_base_url: str,
+    selected_environment: str | None,
+) -> list[dict[str, Any]]:
+    normalized_detected_base_url = _normalize_base_url_for_match(detected_base_url)
+    detected_host = _extract_url_host(normalized_detected_base_url)
+    selected_environment_name = str(selected_environment or "").strip()
+    ranked_candidates: list[tuple[int, dict[str, Any]]] = []
+    seen_names: set[str] = set()
+
+    for config in registry.list_environments(project_id=project_id, include_global=project_id is not None):
+        match_type = ""
+        score = 0
+        normalized_env_base_url = _normalize_base_url_for_match(config.base_url)
+        env_host = _extract_url_host(normalized_env_base_url)
+
+        if normalized_detected_base_url and normalized_env_base_url and normalized_env_base_url == normalized_detected_base_url:
+            match_type = "exact_base_url"
+            score = 100
+        elif detected_host and env_host and env_host == detected_host:
+            match_type = "same_host"
+            score = 80
+        elif selected_environment_name and config.name == selected_environment_name:
+            match_type = "selected_environment"
+            score = 60
+
+        if not match_type or config.name in seen_names:
+            continue
+
+        seen_names.add(config.name)
+        ranked_candidates.append(
+            (
+                score,
+                {
+                    "name": config.name,
+                    "base_url": config.base_url,
+                    "description": config.description,
+                    "match_type": match_type,
+                },
+            )
+        )
+
+    ranked_candidates.sort(key=lambda item: (-item[0], str(item[1].get("name") or "")))
+    return [item[1] for item in ranked_candidates]
+
+
+def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_id: str | None = None) -> dict[str, Any]:
+    normalized_project_id = str(project_id or payload.project_id or "").strip() or None
+    requirement_text = str(payload.requirement_text or "")
+    selected_environment = str(payload.environment or "").strip()
+    suggested_task_name = _derive_task_name_hint(
+        task_name=payload.task_name,
+        source_path=payload.source_path,
+        requirement_text=requirement_text,
+    )
+    detected_base_url = _extract_base_url_hint(
+        requirement_text=requirement_text,
+        fallback_target_system=payload.target_system,
+    )
+    warnings = _detect_suspicious_inline_requirement(requirement_text)
+    if not requirement_text.strip():
+        warnings.append("需求描述为空，Agent 无法给出有效建议")
+    if not suggested_task_name:
+        warnings.append("未识别到可用的任务名称")
+    if not detected_base_url:
+        warnings.append("未识别到目标系统地址")
+
+    selected_environment_config = registry.get_environment(selected_environment, project_id=normalized_project_id) if selected_environment else None
+    environment_candidates = _build_task_draft_environment_candidates(
+        project_id=normalized_project_id,
+        detected_base_url=detected_base_url,
+        selected_environment=selected_environment,
+    )
+    if selected_environment and selected_environment_config is None:
+        warnings.append(f"执行环境“{selected_environment}”不存在，请确认环境配置")
+
+    selected_environment_base_url = _normalize_base_url_for_match(
+        selected_environment_config.base_url if selected_environment_config is not None else ""
+    )
+    detected_base_url_normalized = _normalize_base_url_for_match(detected_base_url)
+    environment_target_aligned = True
+    if (
+        selected_environment_config is not None
+        and selected_environment_base_url
+        and detected_base_url_normalized
+        and selected_environment_base_url != detected_base_url_normalized
+    ):
+        environment_target_aligned = False
+        warnings.append(
+            f"当前执行环境“{selected_environment}”的 Base URL 为 {selected_environment_config.base_url}，"
+            f"与识别到的目标系统 {detected_base_url} 不一致"
+        )
+
+    recommended_environment = ""
+    recommended_environment_reason = ""
+    if selected_environment and selected_environment_config is not None and environment_target_aligned:
+        recommended_environment = selected_environment
+        recommended_environment_reason = "沿用当前选择且已对齐目标系统的执行环境"
+    elif environment_candidates:
+        recommended_environment = str(environment_candidates[0].get("name") or "")
+        match_type = str(environment_candidates[0].get("match_type") or "")
+        if match_type == "exact_base_url":
+            recommended_environment_reason = "已匹配到与目标系统一致的执行环境"
+        elif match_type == "same_host":
+            recommended_environment_reason = "已匹配到与目标系统同主机的执行环境"
+        elif match_type == "selected_environment":
+            recommended_environment_reason = "沿用当前选择的执行环境"
+        else:
+            recommended_environment_reason = "已匹配到建议的执行环境"
+    elif selected_environment and selected_environment_config is not None:
+        recommended_environment = selected_environment
+        recommended_environment_reason = "当前保留你选择的执行环境，但还需要核对目标系统地址"
+
+    suggestions: list[dict[str, Any]] = []
+    if suggested_task_name:
+        suggestions.append(
+            {
+                "field": "task_name",
+                "value": suggested_task_name,
+                "reason": "根据标题、首行内容或文件名推断",
+            }
+        )
+    if detected_base_url:
+        suggestions.append(
+            {
+                "field": "target_system",
+                "value": detected_base_url,
+                "reason": "根据需求文本中的 Base URL / 服务地址提取",
+            }
+        )
+    if recommended_environment:
+        suggestions.append(
+            {
+                "field": "environment",
+                "value": recommended_environment,
+                "reason": recommended_environment_reason,
+            }
+        )
+
+    requirement_ready = bool(requirement_text.strip())
+    task_name_ready = bool(suggested_task_name)
+    target_ready = bool(detected_base_url)
+    environment_ready = bool(recommended_environment)
+    ready_fields = sum((requirement_ready, task_name_ready, target_ready, environment_ready))
+    ready_to_create = requirement_ready and task_name_ready and target_ready
+    ready_to_execute = ready_to_create and environment_ready and environment_target_aligned
+
+    if suggested_task_name and detected_base_url and recommended_environment:
+        reply = (
+            f"已识别任务名“{suggested_task_name}”、目标系统 {detected_base_url}，"
+            f"并建议使用执行环境“{recommended_environment}”。"
+        )
+    elif suggested_task_name and detected_base_url:
+        reply = f"已识别任务名“{suggested_task_name}”和目标系统 {detected_base_url}。"
+    elif suggested_task_name:
+        reply = f"已识别任务名“{suggested_task_name}”，但目标系统还需要你确认。"
+    elif detected_base_url:
+        reply = f"已识别目标系统 {detected_base_url}，但任务名还需要你确认。"
+    else:
+        reply = "当前信息不足，建议先补充完整需求文本。"
+
+    next_actions: list[str] = []
+    if not requirement_ready:
+        next_actions.append("补充需求描述或导入需求文档")
+    if not target_ready:
+        next_actions.append("确认目标系统地址")
+    if not task_name_ready:
+        next_actions.append("补充任务名称")
+    if not environment_ready:
+        next_actions.append("选择可用的执行环境")
+    if environment_ready and not environment_target_aligned:
+        next_actions.append("核对执行环境与目标系统地址是否一致")
+
+    diagnostics = _build_task_draft_document_diagnostics(
+        requirement_text=requirement_text,
+        detected_base_url=detected_base_url,
+        recommended_environment=recommended_environment,
+        selected_environment=selected_environment,
+        environment_target_aligned=environment_target_aligned,
+        suggested_task_name=suggested_task_name,
+    )
+    knowledge_support = _build_task_draft_agent_knowledge_support(requirement_text=requirement_text)
+    document_preview = _build_task_draft_document_preview(
+        requirement_text=requirement_text,
+        suggested_task_name=suggested_task_name,
+        detected_base_url=detected_base_url,
+        recognized_endpoints=diagnostics["recognized_endpoints"],
+        document_actions=diagnostics["document_actions"],
+    )
+    checks = [
+        {
+            "key": "requirement_text",
+            "status": "ready" if requirement_ready else "attention",
+            "message": "需求描述已提供" if requirement_ready else "请先补充需求描述或导入文档",
+        },
+        {
+            "key": "task_name",
+            "status": "ready" if task_name_ready else "attention",
+            "message": f"任务名称建议为“{suggested_task_name}”" if task_name_ready else "未识别到任务名称",
+        },
+        {
+            "key": "target_system",
+            "status": "ready" if target_ready else "attention",
+            "message": f"目标系统建议为 {detected_base_url}" if target_ready else "未识别到目标系统地址",
+        },
+        {
+            "key": "environment",
+            "status": "ready" if environment_ready else "attention",
+            "message": (
+                f"执行环境建议为“{recommended_environment}”"
+                if environment_ready
+                else "尚未匹配到可执行环境"
+            ),
+        },
+        {
+            "key": "environment_target_alignment",
+            "status": "ready" if environment_target_aligned else "warning",
+            "message": (
+                "执行环境与目标系统地址一致"
+                if environment_target_aligned
+                else "当前执行环境与识别到的目标系统地址不一致"
+            ),
+        },
+    ]
+
+    form_patch: dict[str, Any] = {}
+    if suggested_task_name and suggested_task_name != str(payload.task_name or "").strip():
+        form_patch["task_name"] = suggested_task_name
+    if detected_base_url and detected_base_url != _normalize_base_url_for_match(payload.target_system):
+        form_patch["target_system"] = detected_base_url
+    if recommended_environment and recommended_environment != selected_environment:
+        form_patch["environment"] = recommended_environment
+
+    confidence_score = max(
+        0,
+        min(
+            100,
+            int(
+                (ready_fields / 4) * 60
+                + min(len(diagnostics["recognized_endpoints"]) * 5, 15)
+                + min(len(knowledge_support["knowledge_hits"]) * 5, 10)
+                - min(len(diagnostics["risks"]) * 12, 36)
+            ),
+        ),
+    )
+    confidence_level = "high" if confidence_score >= 80 else "medium" if confidence_score >= 55 else "low"
+
+    return {
+        "reply": reply,
+        "summary": {
+            "ready_score": ready_fields,
+            "max_score": 4,
+            "requirement_chars": len(requirement_text),
+            "ready_to_create": ready_to_create,
+            "ready_to_execute": ready_to_execute,
+            "highlight_count": len(diagnostics["highlights"]),
+            "risk_count": len(diagnostics["risks"]),
+            "confidence_score": confidence_score,
+            "confidence_level": confidence_level,
+        },
+        "suggested_task_name": suggested_task_name,
+        "detected_base_url": detected_base_url,
+        "selected_environment": selected_environment or None,
+        "recommended_environment": recommended_environment or None,
+        "environment_candidates": environment_candidates,
+        "checks": checks,
+        "form_patch": form_patch,
+        "signals": diagnostics["signals"],
+        "recognized_endpoints": diagnostics["recognized_endpoints"],
+        "scenario_outlook": diagnostics["scenario_outlook"],
+        "resource_groups": diagnostics["resource_groups"],
+        "highlights": diagnostics["highlights"],
+        "risks": diagnostics["risks"],
+        "document_fixes": diagnostics["document_fixes"],
+        "document_actions": diagnostics["document_actions"],
+        "document_preview": document_preview,
+        "knowledge_hits": knowledge_support["knowledge_hits"],
+        "knowledge_summary": knowledge_support["knowledge_summary"],
+        "rag_support": knowledge_support["rag_support"],
+        "follow_up_questions": diagnostics["follow_up_questions"],
+        "warnings": _dedupe_strings(warnings),
+        "next_actions": _dedupe_strings(next_actions),
+        "suggestions": suggestions,
+        "capabilities": {
+            "backend_ready": True,
+            "mcp_direct_supported": False,
+            "requires_backend_proxy": True,
+            "auto_analysis_supported": True,
+            "diagnostics_supported": True,
+            "document_actions_supported": True,
+            "knowledge_rag_supported": True,
+        },
+    }
 
 
 def _parse_iso_timestamp(raw: str | None) -> datetime | None:
@@ -1601,6 +2732,153 @@ def add_project_member(
     return _success_response(member, code="PROJECT_MEMBER_SAVED", message="project member saved", status_code=201)
 
 
+@app.get("/api/defects", response_model=ApiResponse)
+def list_defects(
+    project_id: str,
+    status: str | None = None,
+    severity: str | None = None,
+    keyword: str | None = None,
+    task_id: str | None = None,
+    assignee_user_id: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    _ensure_project_access(project_id, current_user)
+    store = _db_store_or_503()
+    payload = store.list_defects(
+        project_id=project_id,
+        status=_normalize_defect_status(status) if status else None,
+        severity=_normalize_defect_severity(severity) if severity else None,
+        keyword=keyword,
+        task_uid=_validate_defect_task_reference(task_id, project_id=project_id) if task_id else None,
+        assignee_user_id=_validate_defect_assignee(
+            assignee_user_id=assignee_user_id,
+            project_id=project_id,
+            current_user=current_user,
+        )
+        if assignee_user_id
+        else None,
+        page=page,
+        page_size=page_size,
+    )
+    return _success_response(payload, code="DEFECTS_OK", message="defects listed")
+
+
+@app.post("/api/defects", response_model=ApiResponse)
+def create_defect(
+    payload: CreateDefectRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    if not payload.title.strip():
+        raise HTTPException(status_code=400, detail="title is required")
+    _ensure_project_access(payload.project_id, current_user)
+    store = _db_store_or_503()
+    try:
+        defect = store.create_defect(
+            project_id=payload.project_id,
+            reporter_user_id=str(current_user["user"]["id"]),
+            title=payload.title.strip(),
+            description=str(payload.description or "").strip() or None,
+            severity=_normalize_defect_severity(payload.severity),
+            status=_normalize_defect_status(payload.status),
+            source=str(payload.source or "manual").strip() or "manual",
+            task_uid=_validate_defect_task_reference(payload.task_id, project_id=payload.project_id),
+            assignee_user_id=_validate_defect_assignee(
+                assignee_user_id=payload.assignee_user_id,
+                project_id=payload.project_id,
+                current_user=current_user,
+            ),
+            reproduction_steps=str(payload.reproduction_steps or "").strip() or None,
+            expected_result=str(payload.expected_result or "").strip() or None,
+            actual_result=str(payload.actual_result or "").strip() or None,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="defect.create",
+        resource_type="defect",
+        resource_id=str(defect["id"]),
+        detail_json={
+            "defect_key": defect["defect_key"],
+            "project_id": defect["project_id"],
+            "task_id": defect.get("task_id"),
+            "severity": defect["severity"],
+            "status": defect["status"],
+        },
+        ip_address=_request_ip(request),
+    )
+    return _success_response(defect, code="DEFECT_CREATED", message="defect created", status_code=201)
+
+
+@app.get("/api/defects/{defect_id}", response_model=ApiResponse)
+def get_defect(defect_id: str, current_user: dict[str, Any] = Depends(_require_current_user)):
+    store = _db_store_or_503()
+    defect = store.get_defect(defect_id)
+    if defect is None:
+        raise HTTPException(status_code=404, detail=f"Defect not found: {defect_id}")
+    _ensure_project_access(str(defect["project_id"]), current_user)
+    return _success_response(defect, code="DEFECT_OK", message="defect fetched")
+
+
+@app.patch("/api/defects/{defect_id}", response_model=ApiResponse)
+def update_defect(
+    defect_id: str,
+    payload: UpdateDefectRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    existing = store.get_defect(defect_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Defect not found: {defect_id}")
+    if payload.title is not None and not payload.title.strip():
+        raise HTTPException(status_code=400, detail="title cannot be empty")
+    project_id = str(existing["project_id"])
+    _ensure_project_access(project_id, current_user)
+    try:
+        defect = store.update_defect(
+            defect_id,
+            task_uid=_validate_defect_task_reference(payload.task_id, project_id=project_id) if payload.task_id is not None else None,
+            clear_task=bool(payload.clear_task),
+            title=payload.title.strip() if payload.title is not None else None,
+            description=str(payload.description or "").strip() if payload.description is not None else None,
+            severity=_normalize_defect_severity(payload.severity) if payload.severity is not None else None,
+            status=_normalize_defect_status(payload.status) if payload.status is not None else None,
+            source=str(payload.source or "").strip() if payload.source is not None else None,
+            assignee_user_id=_validate_defect_assignee(
+                assignee_user_id=payload.assignee_user_id,
+                project_id=project_id,
+                current_user=current_user,
+            )
+            if payload.assignee_user_id is not None and str(payload.assignee_user_id).strip()
+            else None,
+            clear_assignee=bool(payload.clear_assignee),
+            reproduction_steps=str(payload.reproduction_steps or "").strip() if payload.reproduction_steps is not None else None,
+            expected_result=str(payload.expected_result or "").strip() if payload.expected_result is not None else None,
+            actual_result=str(payload.actual_result or "").strip() if payload.actual_result is not None else None,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="defect.update",
+        resource_type="defect",
+        resource_id=str(defect["id"]),
+        detail_json={
+            "defect_key": defect["defect_key"],
+            "status": defect["status"],
+            "severity": defect["severity"],
+            "assignee_user_id": defect.get("assignee_user_id"),
+            "task_id": defect.get("task_id"),
+        },
+        ip_address=_request_ip(request),
+    )
+    return _success_response(defect, code="DEFECT_UPDATED", message="defect updated")
+
+
 @app.post("/api/tasks", response_model=ApiResponse)
 def create_task(
     payload: CreateTaskRequest,
@@ -1679,6 +2957,20 @@ def create_task(
         message="task created",
         status_code=201,
     )
+
+
+@app.post("/api/tasks/agent/draft", response_model=ApiResponse)
+def suggest_task_draft(
+    payload: TaskDraftAgentRequest,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    project_id = str(payload.project_id or "").strip() or None
+    if project_id:
+        if current_user is None:
+            raise HTTPException(status_code=401, detail="project-scoped task draft suggestions require authenticated access")
+        _ensure_project_access(project_id, current_user)
+    result = _build_task_draft_agent_payload(payload, project_id=project_id)
+    return _success_response(result, code="TASK_DRAFT_AGENT_OK", message="task draft suggestions ready")
 
 
 @app.get("/api/tasks", response_model=ApiResponse)
@@ -2334,6 +3626,50 @@ def _resolve_environment_scope(
     if current_user is None:
         raise HTTPException(status_code=401, detail="project-scoped environments require authenticated access")
     _ensure_project_access(normalized, current_user)
+    return normalized
+
+
+def _normalize_defect_status(raw_status: str | None) -> str:
+    normalized = str(raw_status or "").strip().lower() or "open"
+    if normalized not in VALID_DEFECT_STATUSES:
+        raise HTTPException(status_code=400, detail=f"invalid defect status: {normalized}")
+    return normalized
+
+
+def _normalize_defect_severity(raw_severity: str | None) -> str:
+    normalized = str(raw_severity or "").strip().lower() or "medium"
+    if normalized not in VALID_DEFECT_SEVERITIES:
+        raise HTTPException(status_code=400, detail=f"invalid defect severity: {normalized}")
+    return normalized
+
+
+def _validate_defect_task_reference(task_id: str | None, *, project_id: str) -> str | None:
+    normalized = str(task_id or "").strip()
+    if not normalized:
+        return None
+    task = registry.get(normalized)
+    if task is None or task.archived:
+        raise HTTPException(status_code=404, detail=f"Task not found: {normalized}")
+    if str(task.project_id or "") != str(project_id):
+        raise HTTPException(status_code=400, detail="task_id does not belong to the selected project")
+    return normalized
+
+
+def _validate_defect_assignee(
+    *,
+    assignee_user_id: str | None,
+    project_id: str,
+    current_user: dict[str, Any],
+) -> str | None:
+    normalized = str(assignee_user_id or "").strip()
+    if not normalized:
+        return None
+    store = _db_store_or_503()
+    user = store.get_user_by_id(normalized)
+    if user is None:
+        raise HTTPException(status_code=404, detail=f"Assignee not found: {normalized}")
+    if not store.is_project_member(project_id=project_id, user_id=normalized):
+        raise HTTPException(status_code=400, detail="assignee_user_id is not a member of the selected project")
     return normalized
 
 

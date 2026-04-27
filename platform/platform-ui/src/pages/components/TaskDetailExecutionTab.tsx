@@ -56,6 +56,7 @@ export function TaskDetailExecutionTab(props: {
     <Space direction="vertical" style={{ width: "100%" }}>
       {pollingError ? <Alert type="warning" showIcon message="状态同步异常" description={pollingError} /> : null}
       <Card
+        className="panel-card"
         bordered={false}
         title="执行前检查"
         extra={
@@ -122,7 +123,7 @@ export function TaskDetailExecutionTab(props: {
         )}
       </Card>
 
-      <Card bordered={false} title="执行用例（按测试点）">
+      <Card bordered={false} className="panel-card" title="执行用例（按测试点）">
         <Space direction="vertical" size={12} style={{ width: "100%" }}>
           <Input
             allowClear
@@ -166,6 +167,7 @@ export function TaskDetailExecutionTab(props: {
       </Card>
 
       <Card
+        className="panel-card"
         bordered={false}
         title="执行摘要"
         extra={
@@ -189,6 +191,7 @@ export function TaskDetailExecutionTab(props: {
       </Card>
 
       <Card
+        className="panel-card"
         bordered={false}
         title="失败归因"
         extra={
@@ -223,7 +226,7 @@ export function TaskDetailExecutionTab(props: {
         )}
       </Card>
 
-      <Card bordered={false} title="执行日志">
+      <Card bordered={false} className="panel-card" title="执行日志">
         <LogPanel logs={detail.execution_result?.logs ?? []} />
       </Card>
     </Space>

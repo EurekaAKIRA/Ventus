@@ -8,11 +8,13 @@ import {
   ExperimentOutlined,
   HistoryOutlined,
   DeploymentUnitOutlined,
+  BugOutlined,
   LoginOutlined,
   LogoutOutlined,
   PlusOutlined,
   DatabaseOutlined,
   UserOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "./auth/AuthContext";
 
@@ -23,6 +25,8 @@ const menuItems = [
   { key: "/dashboard", icon: <DashboardOutlined />, label: "仪表盘" },
   { key: "/tasks", icon: <UnorderedListOutlined />, label: "任务列表" },
   { key: "/tasks/history", icon: <HistoryOutlined />, label: "历史任务" },
+  { key: "/defects", icon: <BugOutlined />, label: "缺陷管理" },
+  { key: "/agent", icon: <RobotOutlined />, label: "Agent 工作台" },
   { key: "/tasks/create", icon: <PlusCircleOutlined />, label: "创建任务" },
   { key: "/environments", icon: <DeploymentUnitOutlined />, label: "环境管理" },
   { key: "/audit", icon: <DatabaseOutlined />, label: "审计日志" },
@@ -33,6 +37,8 @@ const pageMeta: Record<string, { title: string }> = {
   "/dashboard": { title: "测试运营总览" },
   "/tasks": { title: "任务与执行工作台" },
   "/tasks/history": { title: "历史与回归追踪" },
+  "/defects": { title: "缺陷与修复协同" },
+  "/agent": { title: "智能 Agent 工作台" },
   "/tasks/create": { title: "新建测试任务" },
   "/environments": { title: "环境与鉴权配置" },
   "/audit": { title: "平台审计视图" },

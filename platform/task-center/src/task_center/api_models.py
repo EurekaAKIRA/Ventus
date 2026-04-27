@@ -29,6 +29,15 @@ class CreateTaskRequest(BaseModel):
     project_id: str | None = None
 
 
+class TaskDraftAgentRequest(BaseModel):
+    task_name: str = ""
+    requirement_text: str = ""
+    source_path: str | None = None
+    target_system: str | None = None
+    environment: str | None = None
+    project_id: str | None = None
+
+
 class ExecuteTaskRequest(BaseModel):
     execution_mode: str = "api"
     environment: str | None = None
@@ -160,6 +169,35 @@ class CreateProjectRequest(BaseModel):
 class AddProjectMemberRequest(BaseModel):
     username: str
     role: str = "viewer"
+
+
+class CreateDefectRequest(BaseModel):
+    project_id: str
+    task_id: str | None = None
+    title: str
+    description: str = ""
+    severity: str = "medium"
+    status: str = "open"
+    source: str = "manual"
+    assignee_user_id: str | None = None
+    reproduction_steps: str = ""
+    expected_result: str = ""
+    actual_result: str = ""
+
+
+class UpdateDefectRequest(BaseModel):
+    task_id: str | None = None
+    clear_task: bool = False
+    title: str | None = None
+    description: str | None = None
+    severity: str | None = None
+    status: str | None = None
+    source: str | None = None
+    assignee_user_id: str | None = None
+    clear_assignee: bool = False
+    reproduction_steps: str | None = None
+    expected_result: str | None = None
+    actual_result: str | None = None
 
 
 class ApiResponse(BaseModel):

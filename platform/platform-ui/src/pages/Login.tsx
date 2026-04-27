@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Alert, Button, Card, Form, Input, Space, Tabs, Typography, message } from "antd";
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { Button, Card, Form, Input, Space, Tabs, Typography, message } from "antd";
+import { LockOutlined, SafetyCertificateOutlined, ThunderboltOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuth } from "../auth/AuthContext";
 
 const { Title, Text } = Typography;
@@ -74,9 +74,29 @@ export default function Login() {
     <div className="auth-screen">
       <div className="auth-screen__grid">
         <section className="auth-screen__story">
+          <Text className="auth-screen__eyebrow">API Test Operations</Text>
           <Title level={1} className="auth-screen__title">
             Ventus QA Platform
           </Title>
+          <Text className="auth-screen__subtitle">
+            从需求文档到执行与审计，用一套界面串起整个 API 自动化链路。
+          </Text>
+          <div className="auth-screen__feature-list">
+            <div className="auth-screen__feature-card">
+              <ThunderboltOutlined />
+              <div>
+                <Text strong>解析与生成</Text>
+                <Text>文档导入后直接进入任务链路。</Text>
+              </div>
+            </div>
+            <div className="auth-screen__feature-card">
+              <SafetyCertificateOutlined />
+              <div>
+                <Text strong>执行与审计</Text>
+                <Text>环境、任务、结果与日志集中管理。</Text>
+              </div>
+            </div>
+          </div>
         </section>
 
         <Card bordered={false} className="auth-screen__panel">
@@ -85,12 +105,8 @@ export default function Login() {
               <Title level={3} style={{ marginBottom: 8 }}>
                 Ventus 平台登录
               </Title>
+              <Text type="secondary">新账号可以直接注册后进入平台。</Text>
             </div>
-            <Alert
-              type="info"
-              showIcon
-              message="可直接注册后使用"
-            />
             <Tabs
               activeKey={activeTab}
               onChange={(value) => setActiveTab(value as AuthTabKey)}

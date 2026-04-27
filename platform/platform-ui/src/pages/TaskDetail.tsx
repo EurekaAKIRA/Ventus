@@ -1,18 +1,6 @@
 ﻿import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
-import {
-  Button,
-  Col,
-  Empty,
-  Input,
-  Progress,
-  Row,
-  Space,
-  Table,
-  Tag,
-} from "antd";
-import { fetchAnalysisReport } from "../api/tasks";
-import LogPanel from "../components/LogPanel";
+import { Card, Empty, Progress, Space, Tag, Typography } from "antd";
 import { ExtendedTaskDetail, StageKey, StageStatus, useTaskDetailData } from "./hooks/useTaskDetailData";
 import { useTaskExecution } from "./hooks/useTaskExecution";
 import { ExecutionCaseRow, useExecutionCaseRows } from "./hooks/useExecutionCaseRows";
@@ -21,23 +9,15 @@ import { TaskDetailDrawers } from "./components/TaskDetailDrawers";
 import { TaskDetailTabs } from "./components/TaskDetailTabs";
 import {
   TaskDetailBootLoadingCard,
+  TaskDetailCreateProgressCard,
   TaskDetailInitialRefreshingView,
   TaskDetailRefreshingBanner,
 } from "./components/TaskDetailLoadingViews";
-import {
-  ChartDatum,
-  deriveExecutionStatus,
-  flattenNumericEntries,
-  isAnalyzingStatus,
-  isTaskDetailPollingSettled,
-  isValidHttpUrl,
-  normalizeStatus,
-  resolveTabKey,
-  toReadableText,
-} from "./taskDetailUtils";
+import { deriveExecutionStatus, flattenNumericEntries, isTaskDetailPollingSettled, isValidHttpUrl, normalizeStatus, resolveTabKey, toReadableText } from "./taskDetailUtils";
 
 const FEATURE_PREVIEW_LINES = 18;
 const DSL_PREVIEW_SCENARIOS = 4;
+const { Text } = Typography;
 
 /** 分析完成前：轻量 summary 轮询；完成后停。执行中由 useTaskExecution 轮询。 */
 const PRE_SETTLED_DETAIL_POLL_MS = 12000;
@@ -58,9 +38,7 @@ export default function TaskDetail() {
   const { taskId = "" } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
-  const fromCreateFlow =
-    searchParams.get("from") === "create" ||
-    Boolean((location.state as { fromCreate?: boolean } | null)?.fromCreate);
+  const fromCreateFlow = searchParams.get("from") === "create";
   const {
     bootLoading,
     refreshing,
@@ -119,7 +97,6 @@ export default function TaskDetail() {
     regressionDiff,
     regressionError,
     streamEvents,
-    streamStatus,
     runPreflightCheck,
     loadExecutionExplanations,
     loadRegressionDiff,
@@ -189,15 +166,20 @@ export default function TaskDetail() {
     if (searchParams.get("from") !== "create") {
       return;
     }
-    if (isAnalyzingStatus(detail.task_context?.status)) {
+    const analysisCompleted =
+      analysisProgress?.status === "completed" || analysisProgress?.status === "failed";
+    const detailFullyReady =
+      isTaskDetailPollingSettled(detail) &&
+      (stageState.dashboard === "finish" || stageState.dashboard === "error");
+    if (!analysisCompleted || !detailFullyReady) {
       return;
     }
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete("from");
     setSearchParams(nextParams, { replace: true });
-  }, [detail, searchParams, setSearchParams]);
+  }, [analysisProgress?.status, detail, searchParams, setSearchParams, stageState.dashboard]);
 
-  if (bootLoading) {
+  if (bootLoading && !detail) {
     return (
       <TaskDetailBootLoadingCard
         fromCreateFlow={fromCreateFlow}
@@ -214,7 +196,11 @@ export default function TaskDetail() {
   }
 
   if (!detail) {
-    return <Empty description="任务不存在或响应为空" />;
+    return (
+      <div className="task-detail-empty">
+        <Empty description="任务不存在或响应为空" />
+      </div>
+    );
   }
 
   const detectedBaseUrl = detail.parse_metadata?.detected_base_url?.trim() || "";
@@ -263,9 +249,10 @@ export default function TaskDetail() {
     },
   ] as const;
 
-  const scenarioPass = detail.execution_result?.scenario_results.filter((s) => s.status === "passed").length ?? 0;
-  const scenarioFail = detail.execution_result?.scenario_results.filter((s) => s.status === "failed").length ?? 0;
-  const scenarioTotal = detail.execution_result?.scenario_results.length ?? 0;
+  const scenarioResults = detail.execution_result?.scenario_results ?? [];
+  const scenarioPass = scenarioResults.filter((s) => s.status === "passed").length;
+  const scenarioFail = scenarioResults.filter((s) => s.status === "failed").length;
+  const scenarioTotal = scenarioResults.length;
   const analysisChartData = taskDashboard?.chart_data ?? primaryAnalysisReport?.chart_data;
   const chartItems = flattenNumericEntries(analysisChartData)
     .filter((item) => item.value >= 0)
@@ -295,6 +282,23 @@ export default function TaskDetail() {
   const refreshStatusText =
     refreshStageText ||
     (processingStage ? `正在刷新：${STAGE_LABELS[processingStage]}` : hasStageError ? "刷新过程出现异常" : "正在刷新");
+  const showCreateFlowProgressCard =
+    fromCreateFlow &&
+    Boolean(detail) &&
+    Boolean(analysisProgress) &&
+    (analysisProgress?.status !== "completed" || stageState.dashboard !== "finish") &&
+    !refreshing;
+  const hasSummaryOnlyDetail =
+    !detail.parsed_requirement &&
+    !detail.retrieved_context?.length &&
+    !detail.scenarios?.length &&
+    !detail.test_case_dsl &&
+    !detail.validation_report &&
+    !detail.analysis_report &&
+    !detail.feature_text &&
+    !detail.execution_result &&
+    !taskDashboard &&
+    artifacts.length === 0;
   const executionCaseColumns = [
     { title: "ID", dataIndex: "id", key: "id", width: 180 },
     { title: "用例名称", dataIndex: "name", key: "name", ellipsis: true },
@@ -341,13 +345,21 @@ export default function TaskDetail() {
   ];
 
   return (
-    <Space direction="vertical" size={20} style={{ width: "100%" }}>
+    <Space direction="vertical" size={20} style={{ width: "100%" }} className="task-detail-page">
       {showTopRefreshBanner ? (
         <TaskDetailRefreshingBanner
           refreshStatusText={refreshStatusText}
           refreshProgressPercent={refreshProgressPercent}
           hasStageError={hasStageError}
           stageError={stageError}
+        />
+      ) : null}
+      {showCreateFlowProgressCard ? (
+        <TaskDetailCreateProgressCard
+          stageState={stageState}
+          stageError={stageError}
+          stageLabels={CREATE_FLOW_STAGE_LABELS}
+          analysisProgress={analysisProgress}
         />
       ) : null}
       <TaskDetailTopSection
@@ -371,61 +383,71 @@ export default function TaskDetail() {
         onStopExecution={() => void stopCurrentExecution()}
       />
 
-      <TaskDetailTabs
-        activeTabKey={activeTabKey}
-        onTabChange={onTabChange}
-        detail={detail}
-        hasParsedResult={hasParsedResult}
-        onRefreshParsedSection={() => void refreshParsedSection()}
-        onRefreshScenarioSection={() => void refreshScenarioSection()}
-        onOpenRawData={openRawData}
-        dslDisplayScenarios={dslDisplayScenarios}
-        hasDslOverflow={hasDslOverflow}
-        dslExpanded={dslExpanded}
-        onToggleDslExpanded={() => setDslExpanded((prev) => !prev)}
-        featureText={featureText}
-        featureDisplayLines={featureDisplayLines}
-        hasFeatureOverflow={hasFeatureOverflow}
-        featureExpanded={featureExpanded}
-        onToggleFeatureExpanded={() => setFeatureExpanded((prev) => !prev)}
-        featurePreviewLines={FEATURE_PREVIEW_LINES}
-        dslPreviewScenarios={DSL_PREVIEW_SCENARIOS}
-        pollingError={pollingError}
-        preflightLoading={preflightLoading}
-        preflightError={preflightError}
-        preflightResult={preflightResult}
-        onRunPreflightCheck={() => void runPreflightCheck()}
-        caseKeyword={caseKeyword}
-        onCaseKeywordChange={setCaseKeyword}
-        selectedTestPoint={selectedTestPoint}
-        onSelectTestPoint={setSelectedTestPoint}
-        executionCaseRows={executionCaseRows}
-        testPointGroups={testPointGroups}
-        filteredExecutionCaseRows={filteredExecutionCaseRows}
-        executionCaseColumns={executionCaseColumns}
-        refreshing={refreshing}
-        onRefresh={() => void load({ mode: "manual" })}
-        explanationsLoading={explanationsLoading}
-        explanationsError={explanationsError}
-        executionExplanations={executionExplanations}
-        onLoadExecutionExplanations={() => void loadExecutionExplanations()}
-        dashboardLoadError={dashboardLoadError}
-        taskDashboard={taskDashboard}
-        toReadableText={toReadableText}
-        regressionLoading={regressionLoading}
-        shouldCompareLatest={shouldCompareLatest}
-        regressionError={regressionError}
-        regressionDiff={regressionDiff}
-        onLoadRegressionDiff={() => void loadRegressionDiff()}
-        primaryAnalysisReport={primaryAnalysisReport}
-        qualityColor={qualityColor}
-        onRefreshReportSection={() => void refreshReportSection()}
-        chartItems={chartItems}
-        chartMax={chartMax}
-        analysisChartData={analysisChartData}
-        artifacts={artifacts}
-        onOpenArtifact={openArtifact}
-      />
+      {hasSummaryOnlyDetail ? (
+        <Card bordered={false} className="panel-card task-detail-loading-card">
+          <Space direction="vertical" size={10} style={{ width: "100%" }}>
+            <Text strong>详情补充中</Text>
+            <Text type="secondary">基础信息已经可见，场景、DSL、报告和产物正在后台继续装载。</Text>
+            <Progress percent={Math.max(refreshProgressPercent, 20)} showInfo={false} status="active" />
+          </Space>
+        </Card>
+      ) : (
+        <TaskDetailTabs
+          activeTabKey={activeTabKey}
+          onTabChange={onTabChange}
+          detail={detail}
+          hasParsedResult={hasParsedResult}
+          onRefreshParsedSection={() => void refreshParsedSection()}
+          onRefreshScenarioSection={() => void refreshScenarioSection()}
+          onOpenRawData={openRawData}
+          dslDisplayScenarios={dslDisplayScenarios}
+          hasDslOverflow={hasDslOverflow}
+          dslExpanded={dslExpanded}
+          onToggleDslExpanded={() => setDslExpanded((prev) => !prev)}
+          featureText={featureText}
+          featureDisplayLines={featureDisplayLines}
+          hasFeatureOverflow={hasFeatureOverflow}
+          featureExpanded={featureExpanded}
+          onToggleFeatureExpanded={() => setFeatureExpanded((prev) => !prev)}
+          featurePreviewLines={FEATURE_PREVIEW_LINES}
+          dslPreviewScenarios={DSL_PREVIEW_SCENARIOS}
+          pollingError={pollingError}
+          preflightLoading={preflightLoading}
+          preflightError={preflightError}
+          preflightResult={preflightResult}
+          onRunPreflightCheck={() => void runPreflightCheck()}
+          caseKeyword={caseKeyword}
+          onCaseKeywordChange={setCaseKeyword}
+          selectedTestPoint={selectedTestPoint}
+          onSelectTestPoint={setSelectedTestPoint}
+          executionCaseRows={executionCaseRows}
+          testPointGroups={testPointGroups}
+          filteredExecutionCaseRows={filteredExecutionCaseRows}
+          executionCaseColumns={executionCaseColumns}
+          refreshing={refreshing}
+          onRefresh={() => void load({ mode: "manual" })}
+          explanationsLoading={explanationsLoading}
+          explanationsError={explanationsError}
+          executionExplanations={executionExplanations}
+          onLoadExecutionExplanations={() => void loadExecutionExplanations()}
+          dashboardLoadError={dashboardLoadError}
+          taskDashboard={taskDashboard}
+          toReadableText={toReadableText}
+          regressionLoading={regressionLoading}
+          shouldCompareLatest={shouldCompareLatest}
+          regressionError={regressionError}
+          regressionDiff={regressionDiff}
+          onLoadRegressionDiff={() => void loadRegressionDiff()}
+          primaryAnalysisReport={primaryAnalysisReport}
+          qualityColor={qualityColor}
+          onRefreshReportSection={() => void refreshReportSection()}
+          chartItems={chartItems}
+          chartMax={chartMax}
+          analysisChartData={analysisChartData}
+          artifacts={artifacts}
+          onOpenArtifact={openArtifact}
+        />
+      )}
 
       <TaskDetailDrawers
         artifactDrawerOpen={artifactDrawerOpen}

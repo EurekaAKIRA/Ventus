@@ -425,3 +425,179 @@ export interface AuditLogListPayload {
   page: number;
   page_size: number;
 }
+
+export type DefectStatus = "open" | "in_progress" | "resolved" | "closed";
+export type DefectSeverity = "low" | "medium" | "high" | "critical";
+
+export interface DefectPayload {
+  id: string;
+  defect_key: string;
+  project_id: string;
+  task_id?: string | null;
+  task_name?: string | null;
+  reporter_user_id: string;
+  reporter_username?: string | null;
+  reporter_display_name?: string | null;
+  assignee_user_id?: string | null;
+  assignee_username?: string | null;
+  assignee_display_name?: string | null;
+  title: string;
+  description: string;
+  severity: DefectSeverity | string;
+  status: DefectStatus | string;
+  source: string;
+  reproduction_steps: string;
+  expected_result: string;
+  actual_result: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface DefectListPayload {
+  items: DefectPayload[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface TaskDraftAgentSuggestion {
+  field: string;
+  value: string;
+  reason?: string;
+}
+
+export interface TaskDraftAgentCheck {
+  key: string;
+  status: "ready" | "attention" | "warning" | string;
+  message: string;
+}
+
+export interface TaskDraftAgentEnvironmentCandidate {
+  name: string;
+  base_url?: string;
+  description?: string;
+  match_type: "exact_base_url" | "same_host" | "selected_environment" | string;
+}
+
+export interface TaskDraftAgentSignal {
+  key: string;
+  label: string;
+  value: string;
+  tone?: "success" | "warning" | "default" | string;
+}
+
+export interface TaskDraftAgentDocumentAction {
+  key: string;
+  title: string;
+  mode: "prepend" | "append" | string;
+  reason?: string;
+  content: string;
+}
+
+export interface TaskDraftAgentDocumentPreview {
+  content: string;
+  summary: string;
+  action_count: number;
+  applied_action_keys: string[];
+}
+
+export interface TaskDraftAgentKnowledgeHit {
+  title: string;
+  source_file: string;
+  doc_type: string;
+  score: number;
+  query_match_count?: number;
+  excerpt: string;
+}
+
+export interface TaskDraftAgentResourceGroup {
+  resource_key: string;
+  methods: string[];
+  endpoints: string[];
+  status: "complete" | "needs_source" | "read_only" | "single_step" | string;
+  has_create?: boolean;
+  has_context_flow?: boolean;
+  has_live_resource?: boolean;
+  has_list_source?: boolean;
+  estimated_scenarios?: number;
+}
+
+export interface TaskDraftAgentFollowUpQuestion {
+  key: string;
+  field?: string;
+  priority?: "high" | "medium" | "low" | string;
+  question: string;
+  reason?: string;
+  action_kind?: "focus_field" | "apply_document_action" | "apply_form_patch" | string;
+  action_label?: string;
+  document_action_key?: string;
+  answer_mode?: "field" | "append_requirement" | string;
+  answer_placeholder?: string;
+  answer_template?: string;
+}
+
+export interface TaskDraftAgentPayload {
+  reply: string;
+  summary: {
+    ready_score: number;
+    max_score: number;
+    requirement_chars: number;
+    ready_to_create?: boolean;
+    ready_to_execute?: boolean;
+    highlight_count?: number;
+    risk_count?: number;
+    confidence_score?: number;
+    confidence_level?: "high" | "medium" | "low" | string;
+  };
+  suggested_task_name?: string;
+  detected_base_url?: string;
+  selected_environment?: string | null;
+  recommended_environment?: string | null;
+  environment_candidates: TaskDraftAgentEnvironmentCandidate[];
+  checks: TaskDraftAgentCheck[];
+  form_patch: Record<string, string>;
+  signals: TaskDraftAgentSignal[];
+  recognized_endpoints: string[];
+  scenario_outlook?: {
+    estimated_scenario_count?: number;
+    endpoint_count?: number;
+    resource_group_count?: number;
+    write_endpoint_count?: number;
+    read_only_endpoint_count?: number;
+    lifecycle_chain_count?: number;
+    standalone_endpoint_count?: number;
+    uncovered_live_resource_endpoints?: string[];
+    scenario_shape?: string;
+  };
+  resource_groups?: TaskDraftAgentResourceGroup[];
+  highlights: string[];
+  risks: string[];
+  document_fixes: string[];
+  document_actions: TaskDraftAgentDocumentAction[];
+  document_preview?: TaskDraftAgentDocumentPreview | null;
+  knowledge_hits: TaskDraftAgentKnowledgeHit[];
+  knowledge_summary?: string;
+  rag_support?: {
+    knowledge_applied?: boolean;
+    knowledge_chunk_count?: number;
+    retrieved_hit_count?: number;
+    query_count?: number;
+    query_variants_preview?: string[];
+    source_file_count?: number;
+    source_file_diversity?: number;
+    doc_type_count?: number;
+  };
+  follow_up_questions: TaskDraftAgentFollowUpQuestion[];
+  warnings: string[];
+  next_actions: string[];
+  suggestions: TaskDraftAgentSuggestion[];
+  capabilities: {
+    backend_ready: boolean;
+    mcp_direct_supported: boolean;
+    requires_backend_proxy: boolean;
+    auto_analysis_supported?: boolean;
+    diagnostics_supported?: boolean;
+    document_actions_supported?: boolean;
+    knowledge_rag_supported?: boolean;
+  };
+}

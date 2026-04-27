@@ -8,8 +8,10 @@ const Dashboard = lazy(() => import("../pages/Dashboard"));
 const Login = lazy(() => import("../pages/Login"));
 const TaskList = lazy(() => import("../pages/TaskList"));
 const TaskCreate = lazy(() => import("../pages/TaskCreate"));
+const AgentStudio = lazy(() => import("../pages/TaskCreate"));
 const TaskDetail = lazy(() => import("../pages/TaskDetail"));
 const TaskHistory = lazy(() => import("../pages/TaskHistory"));
+const DefectCenter = lazy(() => import("../pages/DefectCenter"));
 const UserCenter = lazy(() => import("../pages/UserCenter"));
 const EnvironmentCenter = lazy(() => import("../pages/EnvironmentCenter"));
 const AuditCenter = lazy(() => import("../pages/AuditCenter"));
@@ -80,6 +82,8 @@ const router = createBrowserRouter([
           { path: "dashboard", element: withSuspense(<Dashboard />) },
           { path: "tasks", element: withSuspense(<TaskList />) },
           { path: "tasks/history", element: withSuspense(<TaskHistory />) },
+          { path: "defects", element: withSuspense(<DefectCenter />) },
+          { path: "agent", element: withSuspense(<AgentStudio />) },
           { path: "tasks/create", element: withSuspense(<TaskCreate />) },
           { path: "tasks/:taskId", element: withSuspense(<TaskDetail />) },
           { path: "environments", element: withSuspense(<EnvironmentCenter />) },

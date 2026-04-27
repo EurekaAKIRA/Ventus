@@ -113,6 +113,7 @@ def run_analysis_pipeline(
         requirement_text=payload["raw_requirement"],
         source_path=source_path,
         options=parse_options,
+        progress_callback=progress_callback,
     )
     raw_requirement = parse_bundle["raw_requirement"]
     cleaned_text = parse_bundle["cleaned_text"]

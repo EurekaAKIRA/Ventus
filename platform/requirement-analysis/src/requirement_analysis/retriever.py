@@ -95,7 +95,7 @@ def _api_chunk_boost(chunk: dict, *, api_focused: bool) -> float:
 
 def retrieve_relevant_chunks(
     index: dict,
-    query: str,
+    query: str | list[str],
     top_k: int = 5,
     use_vector_rag: bool = False,  # same flag as AnalysisParseOptions.rag_enabled
     embedding_config: OpenAIEnhancementConfig | None = None,
@@ -109,40 +109,59 @@ def retrieve_relevant_chunks(
 ) -> list[dict]:
     """Return chunks ranked by keyword score plus optional vector similarity."""
     scoring = scoring_config or get_retrieval_scoring_config()
-    query_terms = set(tokenize_text(query))
-    query_keywords = extract_keywords(query, limit=8)
-    api_focused = _query_is_api_focused(query)
-    query_embedding: list[float] = []
+    query_variants = _normalize_queries(query)
+    if not query_variants:
+        return []
+    query_profiles = [
+        {
+            "text": item,
+            "terms": set(tokenize_text(item)),
+            "keywords": extract_keywords(item, limit=8),
+            "api_focused": _query_is_api_focused(item),
+        }
+        for item in query_variants
+    ]
+    query_keywords = _dedupe_keywords(keyword for profile in query_profiles for keyword in profile["keywords"])
+    api_focused = any(bool(profile["api_focused"]) for profile in query_profiles)
+    query_embeddings: list[list[float]] = []
     if use_vector_rag and embedding_config is not None:
         try:
-            vectors = request_embeddings([query], embedding_config)
+            vectors = request_embeddings(query_variants, embedding_config)
             if vectors:
-                query_embedding = vectors[0]
+                query_embeddings = [vector for vector in vectors if vector]
         except Exception:
-            query_embedding = []
+            query_embeddings = []
     chunk_embeddings = index.get("chunk_embeddings") or {}
     lexical_scores: dict[str, float] = {}
     vector_scores: dict[str, float] = {}
+    query_match_counts: dict[str, int] = {}
     chunk_payload: dict[str, dict] = {}
     for chunk in index.get("chunks", []):
         chunk_id = chunk.get("chunk_id", "")
         if not chunk_id:
             continue
         chunk_payload[chunk_id] = chunk
-        lexical_scores[chunk_id] = _score_chunk(chunk, query_terms, query_keywords)
-        if query_embedding:
+        lexical_variant_scores = [_score_chunk(chunk, profile["terms"], profile["keywords"]) for profile in query_profiles]
+        lexical_scores[chunk_id] = max(lexical_variant_scores, default=0.0)
+        match_count = sum(1 for score in lexical_variant_scores if score > 0)
+        if query_embeddings:
             vector = chunk_embeddings.get(chunk_id, [])
             if vector:
-                vector_scores[chunk_id] = max(cosine_similarity(query_embedding, vector), 0.0)
+                vector_variant_scores = [max(cosine_similarity(query_embedding, vector), 0.0) for query_embedding in query_embeddings]
+                vector_scores[chunk_id] = max(vector_variant_scores, default=0.0)
+                match_count += sum(1 for score in vector_variant_scores if score > 0.18)
+        query_match_counts[chunk_id] = match_count
 
     scored = _merge_scores(
         lexical_scores=lexical_scores,
         vector_scores=vector_scores,
+        query_match_counts=query_match_counts,
         chunk_payload=chunk_payload,
         scoring=scoring,
         official_doc_boost=official_doc_boost,
         api_focused=api_focused,
     )
+    scored = _promote_source_diversity(scored)
     window = max(top_k, rerank_window) if rerank else top_k
     ranked = scored[:window]
     if rerank and vector_scores:
@@ -150,15 +169,19 @@ def retrieve_relevant_chunks(
             ranked=ranked,
             vector_scores=vector_scores,
             lexical_scores=lexical_scores,
+            query_match_counts=query_match_counts,
             query_keywords=query_keywords,
             scoring=scoring,
             official_doc_boost=official_doc_boost,
             api_focused=api_focused,
         )
+        ranked = _promote_source_diversity(ranked)
     before_threshold = len(ranked)
     if min_final_score > 0:
         ranked = [item for item in ranked if float(item.get("score", 0.0)) >= min_final_score]
     if out_diagnostics is not None:
+        out_diagnostics["retrieval_query_count"] = len(query_variants)
+        out_diagnostics["retrieval_query_variants_preview"] = query_variants[:4]
         out_diagnostics["retrieval_min_final_score"] = min_final_score
         out_diagnostics["retrieval_candidates_before_threshold"] = before_threshold
         out_diagnostics["retrieval_low_score_rejection"] = bool(
@@ -167,10 +190,56 @@ def retrieve_relevant_chunks(
     return ranked[:top_k]
 
 
+def _normalize_queries(query: str | list[str]) -> list[str]:
+    if isinstance(query, list):
+        raw_items = query
+    else:
+        raw_items = [query]
+    normalized: list[str] = []
+    for item in raw_items:
+        value = str(item or "").strip()
+        if value and value not in normalized:
+            normalized.append(value)
+    return normalized
+
+
+def _dedupe_keywords(items) -> list[str]:
+    keywords: list[str] = []
+    for item in items:
+        value = str(item or "").strip()
+        if value and value not in keywords:
+            keywords.append(value)
+    return keywords
+
+
+def _promote_source_diversity(items: list[dict]) -> list[dict]:
+    if len(items) <= 2:
+        return items
+    remaining = [dict(item) for item in items]
+    selected: list[dict] = []
+    source_counts: dict[str, int] = {}
+    while remaining:
+        best_index = 0
+        best_score = float("-inf")
+        for index, item in enumerate(remaining):
+            source_file = str(item.get("source_file", "") or item.get("chunk_id", ""))
+            seen_count = source_counts.get(source_file, 0)
+            adjusted_score = float(item.get("score", 0.0) or 0.0) - (seen_count * 0.18)
+            if adjusted_score > best_score:
+                best_score = adjusted_score
+                best_index = index
+        chosen = remaining.pop(best_index)
+        source_file = str(chosen.get("source_file", "") or chosen.get("chunk_id", ""))
+        source_counts[source_file] = source_counts.get(source_file, 0) + 1
+        selected.append(chosen)
+    return selected
+
+
 def _merge_scores(
     *,
     lexical_scores: dict[str, float],
     vector_scores: dict[str, float],
+    query_match_counts: dict[str, int],
     chunk_payload: dict[str, dict],
     scoring: RetrievalScoringConfig,
     official_doc_boost: float = 0.0,
@@ -185,6 +254,7 @@ def _merge_scores(
             continue
         normalized_lexical = lexical_score / max_lexical
         score = (normalized_lexical * scoring.lexical_weight) + (vector_score * scoring.vector_weight)
+        score += max(query_match_counts.get(chunk_id, 0) - 1, 0) * 0.15
         score += _official_doc_boost_amount(chunk, official_doc_boost)
         score += _api_chunk_boost(chunk, api_focused=api_focused)
         payload = RetrievedChunk(
@@ -194,6 +264,7 @@ def _merge_scores(
             section_title=chunk.get("section_title", ""),
             source_file=chunk.get("source_file", ""),
             doc_type=str(chunk.get("doc_type", "") or ""),
+            query_match_count=int(query_match_counts.get(chunk_id, 0) or 0),
         )
         scored.append(payload.to_dict())
     scored.sort(key=lambda item: item["score"], reverse=True)
@@ -205,6 +276,7 @@ def _rerank_candidates(
     ranked: list[dict],
     vector_scores: dict[str, float],
     lexical_scores: dict[str, float],
+    query_match_counts: dict[str, int],
     query_keywords: list[str],
     scoring: RetrievalScoringConfig,
     official_doc_boost: float = 0.0,
@@ -223,10 +295,10 @@ def _rerank_candidates(
         title_boost = scoring.rerank_title_boost if any(keyword.lower() in title.lower() for keyword in query_keywords[:3]) else 0.0
         content_boost = scoring.rerank_content_boost if any(keyword.lower() in content.lower() for keyword in query_keywords[:2]) else 0.0
         final_score = (vector_score * scoring.rerank_vector_weight) + (lexical_score * scoring.rerank_lexical_weight) + title_boost + content_boost
+        final_score += max(query_match_counts.get(chunk_id, 0) - 1, 0) * 0.15
         chunk_stub = {"doc_type": item.get("doc_type", "")}
         final_score += _official_doc_boost_amount(chunk_stub, official_doc_boost)
         final_score += _api_chunk_boost(item, api_focused=api_focused)
         reranked.append({**item, "score": round(final_score, 3)})
     reranked.sort(key=lambda item: item["score"], reverse=True)
     return reranked
-

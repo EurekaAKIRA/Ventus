@@ -15,6 +15,7 @@ import type {
   TaskContext,
   TaskDashboardPayload,
   TaskDetailPayload,
+  TaskDraftAgentPayload,
   TaskListItem,
   TestCaseDSL,
   ValidationReport,
@@ -43,6 +44,14 @@ export const DEFAULT_REQUIREMENT_RAG_ENABLED = false;
 const USE_MOCK_API = String(import.meta.env.VITE_USE_MOCK_API ?? "").toLowerCase() === "true";
 const HISTORY_PAGE_SIZE_MAX = 200;
 let regressionDiffApiAvailable: boolean | null = null;
+
+function taskApiPath(taskId: string): string {
+  return `/api/tasks/${encodeURIComponent(taskId)}`;
+}
+
+function taskArtifactApiPath(taskId: string, artifactType: string): string {
+  return `${taskApiPath(taskId)}/artifacts/${encodeURIComponent(artifactType)}`;
+}
 
 function normalizeStatus(status: string): string {
   return status === "scenario_generated" ? "generated" : status;
@@ -143,7 +152,7 @@ export async function fetchTaskDetail(taskId: string, options?: { detailLevel?: 
   try {
     const level = options?.detailLevel ?? "full";
     const qs = level === "summary" ? "?detail_level=summary" : "";
-    return await requestApi<TaskDetailPayload>(`/api/tasks/${taskId}${qs}`);
+    return await requestApi<TaskDetailPayload>(`${taskApiPath(taskId)}${qs}`);
   } catch (error) {
     throw new Error(`获取任务详情失败: ${(error as Error).message}`);
   }
@@ -196,13 +205,178 @@ export async function createTask(payload: {
   }
 }
 
+export async function fetchTaskDraftAgent(payload: {
+  task_name?: string;
+  requirement_text?: string;
+  source_path?: string;
+  target_system?: string;
+  environment?: string;
+  project_id?: string;
+}): Promise<TaskDraftAgentPayload> {
+  if (USE_MOCK_API) {
+    await delay(240);
+    return {
+      reply: "已根据当前输入生成建议。",
+      summary: {
+        ready_score: 2,
+        max_score: 4,
+        requirement_chars: String(payload.requirement_text ?? "").length,
+        ready_to_create: true,
+        ready_to_execute: Boolean(payload.environment),
+        highlight_count: 2,
+        risk_count: 0,
+        confidence_score: 74,
+        confidence_level: "medium",
+      },
+      suggested_task_name: payload.task_name || "示例任务",
+      detected_base_url: payload.target_system || "",
+      selected_environment: payload.environment || null,
+      recommended_environment: payload.environment || null,
+      environment_candidates: payload.environment
+        ? [
+            {
+              name: payload.environment,
+              match_type: "selected_environment",
+            },
+          ]
+        : [],
+      checks: [
+        {
+          key: "requirement_text",
+          status: String(payload.requirement_text ?? "").trim() ? "ready" : "attention",
+          message: String(payload.requirement_text ?? "").trim() ? "需求描述已提供" : "请补充需求描述",
+        },
+      ],
+      form_patch: {},
+      signals: [
+        {
+          key: "document_shape",
+          label: "文档形态",
+          value: "半结构化",
+          tone: "default",
+        },
+        {
+          key: "endpoint_count",
+          label: "接口识别",
+          value: payload.target_system ? "1 个接口 / 1 种方法" : "未识别到接口标识",
+          tone: payload.target_system ? "success" : "warning",
+        },
+      ],
+      recognized_endpoints: payload.target_system ? ["GET /demo/resource"] : [],
+      scenario_outlook: {
+        estimated_scenario_count: payload.target_system ? 1 : 0,
+        endpoint_count: payload.target_system ? 1 : 0,
+        resource_group_count: payload.target_system ? 1 : 0,
+        write_endpoint_count: 0,
+        read_only_endpoint_count: payload.target_system ? 1 : 0,
+        lifecycle_chain_count: 0,
+        standalone_endpoint_count: payload.target_system ? 1 : 0,
+        uncovered_live_resource_endpoints: [],
+        scenario_shape: payload.target_system ? "单接口/松散型" : "待补充",
+      },
+      resource_groups: payload.target_system
+        ? [
+            {
+              resource_key: "resource",
+              methods: ["GET"],
+              endpoints: ["GET /demo/resource"],
+              status: "read_only",
+              has_create: false,
+              has_context_flow: false,
+              has_live_resource: false,
+              has_list_source: true,
+              estimated_scenarios: 1,
+            },
+          ]
+        : [],
+      highlights: ["已生成基础草案", "可继续回填任务名称和目标系统"],
+      risks: [],
+      document_fixes: ["为关键步骤补充 `**Request:**` 和 `**Expected:**`，便于后续自动场景生成"],
+      document_actions: [
+        {
+          key: "request_expected_template",
+          title: "插入步骤模板",
+          mode: "append",
+          reason: "补齐 Request / Expected 结构锚点",
+          content: "\n## Scenario: 示例场景\n**Request:** `GET /resource`\n**Expected:** 返回 200\n",
+        },
+      ],
+      document_preview: {
+        content: `${String(payload.requirement_text ?? "").trim()}\n\n## Scenario: 示例场景\n**Request:** \`GET /resource\`\n**Expected:** 返回 200`.trim(),
+        summary: "已整合步骤模板",
+        action_count: 1,
+        applied_action_keys: ["request_expected_template"],
+      },
+      knowledge_hits: [
+        {
+          title: "API Requirement Spec v1",
+          source_file: "standards/api_requirement_spec_v1.md",
+          doc_type: "standard",
+          score: 4.2,
+          query_match_count: 2,
+          excerpt: "建议文档统一使用 Request / Expected / save_context 等结构锚点，减少后续解析歧义。",
+        },
+      ],
+      knowledge_summary: "已从知识库匹配到 1 条参考片段",
+      rag_support: {
+        knowledge_applied: true,
+        knowledge_chunk_count: 3,
+        retrieved_hit_count: 1,
+        query_count: 2,
+        query_variants_preview: ["POST /auth/login", "Base URL: https://api.example.com"],
+        source_file_count: 1,
+        source_file_diversity: 1,
+        doc_type_count: 1,
+      },
+      follow_up_questions: [
+        {
+          key: "request_structure",
+          field: "requirement_text",
+          priority: "medium",
+          question: "能否把关键步骤改写成 `**Request:**` 结构？",
+          reason: "这样更利于场景边界识别",
+          action_kind: "apply_document_action",
+          action_label: "插入模板",
+          document_action_key: "request_expected_template",
+          answer_mode: "append_requirement",
+          answer_placeholder: "例如：先创建订单，再查询详情",
+          answer_template: "\n**补充说明:**\n- {answer}\n",
+        },
+      ],
+      warnings: [],
+      next_actions: [],
+      suggestions: [],
+      capabilities: {
+        backend_ready: true,
+        mcp_direct_supported: false,
+        requires_backend_proxy: true,
+        auto_analysis_supported: true,
+        diagnostics_supported: true,
+        document_actions_supported: true,
+        knowledge_rag_supported: true,
+      },
+    };
+  }
+  try {
+    return await requestApi<TaskDraftAgentPayload>("/api/tasks/agent/draft", {
+      method: "POST",
+      body: JSON.stringify({
+        ...payload,
+        project_id: payload.project_id ?? (getStoredCurrentProjectId() || undefined),
+      }),
+    });
+  } catch (error) {
+    throw new Error(`获取 Agent 建议失败: ${(error as Error).message}`);
+  }
+}
+
 export async function deleteTask(taskId: string): Promise<void> {
   if (USE_MOCK_API) {
     await delay(300);
     return;
   }
   try {
-    await requestApi(`/api/tasks/${taskId}`, { method: "DELETE" });
+    await requestApi(taskApiPath(taskId), { method: "DELETE" });
   } catch (error) {
     throw new Error(`删除任务失败: ${(error as Error).message}`);
   }
@@ -214,7 +388,7 @@ export async function fetchParsedRequirement(taskId: string): Promise<ParsedRequ
     return { ...mockParsedRequirement };
   }
   try {
-    return await requestApi<ParsedRequirement>(`/api/tasks/${taskId}/parsed-requirement`);
+    return await requestApi<ParsedRequirement>(`${taskApiPath(taskId)}/parsed-requirement`);
   } catch (error) {
     throw new Error(`获取结构化需求失败: ${(error as Error).message}`);
   }
@@ -226,7 +400,7 @@ export async function fetchRetrievedContext(taskId: string): Promise<RetrievedCh
     return [...mockRetrievedContext];
   }
   try {
-    return await requestApi<RetrievedChunk[]>(`/api/tasks/${taskId}/retrieved-context`);
+    return await requestApi<RetrievedChunk[]>(`${taskApiPath(taskId)}/retrieved-context`);
   } catch (error) {
     throw new Error(`获取检索上下文失败: ${(error as Error).message}`);
   }
@@ -250,7 +424,7 @@ export async function refreshTaskParse(
   }
   try {
     return await requestApi<{ parsed_requirement: ParsedRequirement; parse_metadata: TaskDetailPayload["parse_metadata"] }>(
-      `/api/tasks/${taskId}/parse`,
+      `${taskApiPath(taskId)}/parse`,
       {
         method: "POST",
         body: JSON.stringify(payload ?? {}),
@@ -278,7 +452,7 @@ export async function startTaskAnalysis(taskId: string): Promise<AnalysisProgres
     };
   }
   try {
-    return await requestApi<AnalysisProgressPayload>(`/api/tasks/${taskId}/analysis/start`, {
+    return await requestApi<AnalysisProgressPayload>(`${taskApiPath(taskId)}/analysis/start`, {
       method: "POST",
     });
   } catch (error) {
@@ -303,7 +477,7 @@ export async function fetchTaskAnalysisProgress(taskId: string): Promise<Analysi
     };
   }
   try {
-    return await requestApi<AnalysisProgressPayload>(`/api/tasks/${taskId}/analysis/progress`);
+    return await requestApi<AnalysisProgressPayload>(`${taskApiPath(taskId)}/analysis/progress`);
   } catch (error) {
     throw new Error(`获取解析进度失败: ${(error as Error).message}`);
   }
@@ -315,7 +489,7 @@ export async function fetchScenarios(taskId: string): Promise<ScenarioModel[]> {
     return [...mockScenarios];
   }
   try {
-    return await requestApi<ScenarioModel[]>(`/api/tasks/${taskId}/scenarios`);
+    return await requestApi<ScenarioModel[]>(`${taskApiPath(taskId)}/scenarios`);
   } catch (error) {
     throw new Error(`获取场景失败: ${(error as Error).message}`);
   }
@@ -327,7 +501,7 @@ export async function fetchDsl(taskId: string): Promise<TestCaseDSL> {
     return { ...mockTestCaseDSL };
   }
   try {
-    return await requestApi<TestCaseDSL>(`/api/tasks/${taskId}/dsl`);
+    return await requestApi<TestCaseDSL>(`${taskApiPath(taskId)}/dsl`);
   } catch (error) {
     throw new Error(`获取 DSL 失败: ${(error as Error).message}`);
   }
@@ -339,7 +513,7 @@ export async function fetchFeatureText(taskId: string): Promise<string> {
     return mockTaskDetail.feature_text ?? "";
   }
   try {
-    const payload = await requestApi<{ feature_text?: string }>(`/api/tasks/${taskId}/feature`);
+    const payload = await requestApi<{ feature_text?: string }>(`${taskApiPath(taskId)}/feature`);
     return payload.feature_text ?? "";
   } catch (error) {
     throw new Error(`获取 Feature 失败: ${(error as Error).message}`);
@@ -355,7 +529,7 @@ export async function startExecution(
     return;
   }
   try {
-    await requestApi(`/api/tasks/${taskId}/execute`, {
+    await requestApi(`${taskApiPath(taskId)}/execute`, {
       method: "POST",
       body: JSON.stringify(payload ?? { execution_mode: "api", async_mode: true }),
     });
@@ -370,7 +544,7 @@ export async function stopExecution(taskId: string): Promise<void> {
     return;
   }
   try {
-    await requestApi(`/api/tasks/${taskId}/execution/stop`, {
+    await requestApi(`${taskApiPath(taskId)}/execution/stop`, {
       method: "POST",
       body: JSON.stringify({}),
     });
@@ -398,7 +572,7 @@ export async function fetchExecution(taskId: string): Promise<ExecutionResult> {
     };
   }
   try {
-    return await requestApi<ExecutionResult>(`/api/tasks/${taskId}/execution`);
+    return await requestApi<ExecutionResult>(`${taskApiPath(taskId)}/execution`);
   } catch (error) {
     throw new Error(`获取执行结果失败: ${(error as Error).message}`);
   }
@@ -410,7 +584,7 @@ export async function fetchValidationReport(taskId: string): Promise<ValidationR
     return { ...mockValidationReport };
   }
   try {
-    return await requestApi<ValidationReport>(`/api/tasks/${taskId}/validation-report`);
+    return await requestApi<ValidationReport>(`${taskApiPath(taskId)}/validation-report`);
   } catch (error) {
     throw new Error(`获取校验报告失败: ${(error as Error).message}`);
   }
@@ -422,7 +596,7 @@ export async function fetchAnalysisReport(taskId: string): Promise<AnalysisRepor
     return { ...mockAnalysisReport };
   }
   try {
-    return await requestApi<AnalysisReport>(`/api/tasks/${taskId}/analysis-report`);
+    return await requestApi<AnalysisReport>(`${taskApiPath(taskId)}/analysis-report`);
   } catch (error) {
     throw new Error(`获取分析报告失败: ${(error as Error).message}`);
   }
@@ -435,7 +609,7 @@ export async function fetchTaskArtifacts(taskId: string, options?: { shallow?: b
   }
   try {
     const shallow = options?.shallow === true;
-    const path = shallow ? `/api/tasks/${taskId}/artifacts?shallow=true` : `/api/tasks/${taskId}/artifacts`;
+    const path = shallow ? `${taskApiPath(taskId)}/artifacts?shallow=true` : `${taskApiPath(taskId)}/artifacts`;
     const payload = await requestApi<{ task_id: string; artifacts: Array<{ type: string; content?: unknown }> }>(path);
     return payload.artifacts.map((item) => ({
       type: item.type,
@@ -454,7 +628,7 @@ export async function fetchTaskArtifactContent(taskId: string, artifactType: str
   }
   try {
     const payload = await requestApi<{ task_id: string; type: string; content: unknown }>(
-      `/api/tasks/${taskId}/artifacts/${artifactType}`,
+      taskArtifactApiPath(taskId, artifactType),
     );
     return {
       type: payload.type ?? artifactType,
@@ -609,7 +783,7 @@ export async function fetchTaskDashboard(taskId: string): Promise<TaskDashboardP
     };
   }
   try {
-    return await requestApi<TaskDashboardPayload>(`/api/tasks/${taskId}/dashboard`);
+    return await requestApi<TaskDashboardPayload>(`${taskApiPath(taskId)}/dashboard`);
   } catch (error) {
     throw new Error(`获取单任务看板失败: ${(error as Error).message}`);
   }
@@ -637,7 +811,7 @@ export async function fetchPreflightCheck(
       suggestions: [],
     };
   }
-  return await requestApi<PreflightCheckPayload>(`/api/tasks/${taskId}/preflight-check`, {
+  return await requestApi<PreflightCheckPayload>(`${taskApiPath(taskId)}/preflight-check`, {
     method: "POST",
     body: JSON.stringify(
       payload ?? {
@@ -672,7 +846,7 @@ export async function fetchExecutionExplanations(
   if (params?.execution_id) qp.set("execution_id", params.execution_id);
   if (typeof params?.top_n === "number") qp.set("top_n", String(params.top_n));
   const suffix = qp.toString() ? `?${qp.toString()}` : "";
-  return await requestApi<ExecutionExplanationPayload>(`/api/tasks/${taskId}/execution/explanations${suffix}`);
+  return await requestApi<ExecutionExplanationPayload>(`${taskApiPath(taskId)}/execution/explanations${suffix}`);
 }
 
 export async function fetchRegressionDiff(
@@ -758,7 +932,7 @@ export async function fetchRegressionDiff(
   const suffix = qp.toString() ? `?${qp.toString()}` : "";
 
   try {
-    const payload = await requestApi<RegressionDiffPayload>(`/api/tasks/${taskId}/regression-diff${suffix}`);
+    const payload = await requestApi<RegressionDiffPayload>(`${taskApiPath(taskId)}/regression-diff${suffix}`);
     regressionDiffApiAvailable = true;
     return payload;
   } catch (error) {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Avatar,
   AutoComplete,
   Button,
   Card,
@@ -20,6 +21,7 @@ import { TeamOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuth } from "../auth/AuthContext";
 import { addProjectMember, fetchProject, searchUsers, updateMyProfile } from "../api/auth";
 import type { ProjectMemberPayload, UserProfile } from "../types";
+import MetricCard from "../components/MetricCard";
 
 const { Title, Text } = Typography;
 
@@ -67,6 +69,7 @@ export default function UserCenter() {
     () => projects.find((item) => item.id === currentProjectId) ?? null,
     [projects, currentProjectId],
   );
+  const ownerCount = useMemo(() => members.filter((member) => member.role === "owner").length, [members]);
 
   const handleSaveProfile = async (values: { display_name?: string; email?: string; avatar_url?: string }) => {
     setSavingProfile(true);
@@ -120,16 +123,49 @@ export default function UserCenter() {
 
   return (
     <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div>
-        <Title level={4} style={{ marginBottom: 4 }}>
-          用户中心
-        </Title>
-        <Text type="secondary">这里补齐了真正可操作的用户模块入口：个人资料、当前项目、项目成员管理。</Text>
+      <div className="page-hero">
+        <div className="page-hero__copy">
+          <Title level={3} className="page-hero__title">用户中心</Title>
+        </div>
+        <div className="page-hero__meta">
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">当前用户</span>
+            <span className="page-meta-chip__value">{user?.display_name || user?.username || "-"}</span>
+          </div>
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">当前项目</span>
+            <span className="page-meta-chip__value">{currentProject?.name || "未选择"}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="metric-row">
+        <MetricCard title="可访问项目" value={projects.length} />
+        <MetricCard title="当前项目成员" value={members.length} color="#4f8cff" />
+        <MetricCard title="Owner 数量" value={ownerCount} color="#f5b94c" />
+        <MetricCard title="当前账号" value={user?.username || "-"} color="#3ecf8e" />
       </div>
 
       <Row gutter={16}>
         <Col xs={24} xl={10}>
-          <Card bordered={false} title="个人资料" extra={<UserOutlined />}>
+          <Card bordered={false} className="panel-card panel-card--form" title="个人资料" extra={<UserOutlined />}>
+            <div className="profile-spotlight">
+              <Avatar size={56} src={user?.avatar_url || undefined} icon={<UserOutlined />} className="profile-spotlight__avatar" />
+              <div className="profile-spotlight__meta">
+                <Text strong className="profile-spotlight__name">
+                  {user?.display_name || user?.username || "当前用户"}
+                </Text>
+                <Text type="secondary">@{user?.username || "-"}</Text>
+                <div className="profile-spotlight__chips">
+                  <span className="surface-chip">
+                    邮箱 <strong>{user?.email || "未填写"}</strong>
+                  </span>
+                  <span className="surface-chip">
+                    项目 <strong>{projects.length}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
             <Form form={profileForm} layout="vertical" onFinish={handleSaveProfile}>
               <Form.Item name="username" label="用户名">
                 <Input disabled />
@@ -152,6 +188,7 @@ export default function UserCenter() {
 
         <Col xs={24} xl={14}>
           <Card
+            className="panel-card"
             bordered={false}
             title="当前项目"
             extra={<TeamOutlined />}
@@ -166,14 +203,16 @@ export default function UserCenter() {
                 />
                 <div>
                   <Text type="secondary">你可访问的项目</Text>
-                  <div style={{ marginTop: 10 }}>
-                    <Space wrap>
-                      {projects.map((project) => (
-                        <Tag key={project.id} color={project.id === currentProjectId ? "processing" : "default"}>
-                          {project.name}
-                        </Tag>
-                      ))}
-                    </Space>
+                  <div className="project-pill-grid">
+                    {projects.map((project) => (
+                      <div
+                        key={project.id}
+                        className={`project-pill${project.id === currentProjectId ? " is-active" : ""}`}
+                      >
+                        <span className="project-pill__name">{project.name}</span>
+                        <span className="project-pill__meta">{project.is_default ? "默认" : "项目"}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </Space>
@@ -186,7 +225,7 @@ export default function UserCenter() {
 
       <Row gutter={16}>
         <Col xs={24} xl={9}>
-          <Card bordered={false} title="添加项目成员">
+          <Card bordered={false} className="panel-card panel-card--form" title="添加项目成员">
             <Form form={memberForm} layout="vertical" onFinish={handleAddMember}>
               <Form.Item
                 name="username"
@@ -223,24 +262,25 @@ export default function UserCenter() {
         </Col>
 
         <Col xs={24} xl={15}>
-          <Card bordered={false} title="项目成员">
+          <Card bordered={false} className="panel-card" title="项目成员">
             <List
+              className="member-list"
               loading={loadingMembers}
               locale={{ emptyText: "当前项目暂无成员数据" }}
               dataSource={members}
               renderItem={(item) => (
                 <List.Item>
-                  <Space style={{ width: "100%", justifyContent: "space-between" }}>
+                  <div className="member-row">
                     <Space direction="vertical" size={2}>
-                      <Text strong>{item.display_name || item.username || item.user_id}</Text>
+                      <Text strong className="member-row__name">{item.display_name || item.username || item.user_id}</Text>
                       <Text type="secondary">{item.username}</Text>
                     </Space>
-                    <Space>
+                    <Space className="member-row__actions">
                       <Tag color={item.role === "owner" ? "gold" : item.role === "editor" ? "processing" : "default"}>
                         {item.role}
                       </Tag>
                     </Space>
-                  </Space>
+                  </div>
                 </List.Item>
               )}
             />

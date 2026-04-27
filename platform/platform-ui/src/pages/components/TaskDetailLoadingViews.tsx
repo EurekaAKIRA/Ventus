@@ -6,16 +6,13 @@ const { Title, Text } = Typography;
 
 type StageLabels = Record<StageKey, string>;
 
-export function TaskDetailBootLoadingCard(props: {
+function buildStageItems(props: {
   fromCreateFlow: boolean;
   stageState: Record<StageKey, StageStatus>;
-  stageError: string | null;
   stageLabels: StageLabels;
-  analysisProgress?: AnalysisProgressPayload | null;
 }) {
-  const { fromCreateFlow, stageState, stageError, stageLabels, analysisProgress } = props;
-
-  const stageItems = [
+  const { fromCreateFlow, stageState, stageLabels } = props;
+  return [
     {
       title: stageLabels.basic,
       description: fromCreateFlow ? "任务已创建，正在建立解析上下文" : "任务元信息、状态、解析摘要",
@@ -32,6 +29,17 @@ export function TaskDetailBootLoadingCard(props: {
       status: stageState.dashboard,
     },
   ];
+}
+
+export function TaskDetailBootLoadingCard(props: {
+  fromCreateFlow: boolean;
+  stageState: Record<StageKey, StageStatus>;
+  stageError: string | null;
+  stageLabels: StageLabels;
+  analysisProgress?: AnalysisProgressPayload | null;
+}) {
+  const { fromCreateFlow, stageState, stageError, stageLabels, analysisProgress } = props;
+  const stageItems = buildStageItems({ fromCreateFlow, stageState, stageLabels });
   const progressPercent = Math.max(0, Math.min(100, Number(analysisProgress?.percent ?? 0)));
   const progressStatus =
     analysisProgress?.status === "failed"
@@ -41,7 +49,7 @@ export function TaskDetailBootLoadingCard(props: {
         : "active";
 
   return (
-    <Card bordered={false}>
+    <Card bordered={false} className="panel-card task-detail-loading-card">
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
         <Space direction="vertical" size={4}>
           <Title level={4} style={{ margin: 0 }}>
@@ -65,6 +73,42 @@ export function TaskDetailBootLoadingCard(props: {
   );
 }
 
+export function TaskDetailCreateProgressCard(props: {
+  stageState: Record<StageKey, StageStatus>;
+  stageError: string | null;
+  stageLabels: StageLabels;
+  analysisProgress?: AnalysisProgressPayload | null;
+}) {
+  const { stageState, stageError, stageLabels, analysisProgress } = props;
+  const stageItems = buildStageItems({ fromCreateFlow: true, stageState, stageLabels });
+  const progressPercent = Math.max(0, Math.min(100, Number(analysisProgress?.percent ?? 0)));
+  const progressStatus =
+    analysisProgress?.status === "failed"
+      ? "exception"
+      : analysisProgress?.status === "completed"
+        ? "success"
+        : "active";
+
+  return (
+    <Card bordered={false} className="panel-card task-detail-loading-card">
+      <Space direction="vertical" size={14} style={{ width: "100%" }}>
+        <Space direction="vertical" size={4}>
+          <Title level={5} style={{ margin: 0 }}>
+            解析进度
+          </Title>
+          <Text type="secondary">详情页已打开，后台会继续补齐场景、DSL 和报告。</Text>
+        </Space>
+        <Space direction="vertical" size={6} style={{ width: "100%" }}>
+          <Text strong>{analysisProgress?.message || "正在准备解析任务"}</Text>
+          <Progress percent={progressPercent} status={progressStatus} />
+        </Space>
+        <Steps direction="vertical" size="small" items={stageItems as unknown as Parameters<typeof Steps>[0]["items"]} />
+        {stageError ? <Alert type="warning" showIcon message={stageError} /> : null}
+      </Space>
+    </Card>
+  );
+}
+
 export function TaskDetailInitialRefreshingView(props: {
   refreshStageText: string;
   stageError: string | null;
@@ -73,6 +117,7 @@ export function TaskDetailInitialRefreshingView(props: {
 
   return (
     <Space
+      className="task-detail-empty"
       direction="vertical"
       size={12}
       style={{ width: "100%", minHeight: "45vh", alignItems: "center", justifyContent: "center" }}
@@ -92,7 +137,7 @@ export function TaskDetailRefreshingBanner(props: {
   const { refreshStatusText, refreshProgressPercent, hasStageError, stageError } = props;
 
   return (
-    <Card bordered={false}>
+    <Card bordered={false} className="panel-card task-detail-loading-card">
       <Space direction="vertical" size={8} style={{ width: "100%" }}>
         <Text strong>{refreshStatusText}</Text>
         <Progress

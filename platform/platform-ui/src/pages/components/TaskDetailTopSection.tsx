@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Descriptions, Space, Steps, Tag, Typography } from "antd";
+import { Alert, Button, Card, Space, Steps, Tag, Typography } from "antd";
 import MetricCard from "../../components/MetricCard";
 import StatusTag from "../../components/StatusTag";
 import { formatDateTime } from "../../utils/dateFormat";
@@ -52,15 +52,53 @@ export function TaskDetailTopSection(props: {
   const effectiveDslBaseUrl =
     ((detail.test_case_dsl?.metadata as Record<string, any> | undefined)?.execution as Record<string, any> | undefined)?.base_url ||
     "-";
+  const activeStatus = uiExecutionStatus === "running" ? "running" : displayTaskStatus;
+  const baseUrlReady = parsedBaseUrl !== "-" || effectiveDslBaseUrl !== "-" || Boolean(detail.target_system);
+  const overviewItems = [
+    { label: "任务 ID", value: detail.task_context.task_id || "-" },
+    { label: "来源类型", value: detail.task_context.source_type || "-" },
+    { label: "创建时间", value: formatDateTime(detail.task_context.created_at) || "-" },
+    { label: "环境", value: detail.environment || "-" },
+    { label: "目标系统", value: detail.target_system || "-" },
+    { label: "解析 Base URL", value: parsedBaseUrl },
+    { label: "执行 Base URL", value: effectiveDslBaseUrl },
+    { label: "文档路径", value: detail.task_context.source_path || "-" },
+  ];
 
   return (
-    <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Title level={4} style={{ margin: 0 }}>
-          任务详情
-        </Title>
-        <Space>
-          <Button onClick={onToggleOverview}>{showTopOverview ? "收起概览" : "展开概览"}</Button>
+    <Space direction="vertical" size={18} style={{ width: "100%" }}>
+      <div className="task-detail-hero">
+        <div className="task-detail-hero__copy">
+          <Text className="page-hero__eyebrow">Task Detail</Text>
+          <Title level={3} className="task-detail-hero__title">
+            {detail.task_context.task_name || "任务详情"}
+          </Title>
+          <Space wrap size={[8, 10]} className="task-detail-hero__chips">
+            <StatusTag status={activeStatus} />
+            <Tag bordered={false} className="status-pill status-pill--neutral">
+              {detail.task_context.task_id || "-"}
+            </Tag>
+            <Tag bordered={false} className="status-pill status-pill--neutral">
+              {detail.environment || "default"}
+            </Tag>
+            {baseUrlReady ? (
+              <Tag bordered={false} className="status-pill status-pill--success">
+                Base URL 就绪
+              </Tag>
+            ) : (
+              <Tag bordered={false} className="status-pill status-pill--warning">
+                Base URL 待补充
+              </Tag>
+            )}
+            {preflightBlocking ? (
+              <Tag bordered={false} className="status-pill status-pill--danger">
+                前置检查阻断
+              </Tag>
+            ) : null}
+          </Space>
+        </div>
+        <div className="task-detail-hero__actions">
+          <Button onClick={onToggleOverview}>{showTopOverview ? "收起详情" : "展开详情"}</Button>
           <Button loading={refreshing} disabled={refreshing} onClick={onRefresh}>
             刷新
           </Button>
@@ -75,24 +113,19 @@ export function TaskDetailTopSection(props: {
           >
             停止执行
           </Button>
-        </Space>
+        </div>
       </div>
 
-      <Card bordered={false} bodyStyle={{ paddingTop: 12, paddingBottom: 12 }}>
-        <Space wrap size={[12, 8]}>
-          <Text type="secondary">当前状态</Text>
-          <StatusTag status={uiExecutionStatus === "running" ? "running" : displayTaskStatus} />
-          <Text type="secondary">场景数</Text>
-          <Tag color="processing">{detail.scenarios?.length ?? 0}</Tag>
-          {detail.parse_metadata?.detected_base_url ? <Tag color="success">已解析 Base URL</Tag> : null}
-          {!isTargetSystemValid && !detail.parse_metadata?.detected_base_url ? <Tag color="warning">Base URL 待补充</Tag> : null}
-          {preflightBlocking ? <Tag color="error">前置检查阻断</Tag> : null}
-        </Space>
-      </Card>
+      <div className="metric-row task-detail-metrics">
+        <MetricCard title="当前状态" value={activeStatus} color="#3ecf8e" />
+        <MetricCard title="解析状态" value={hasParsedResult ? "已完成" : "待生成"} color={hasParsedResult ? "#3ecf8e" : "#f5b94c"} />
+        <MetricCard title="场景数量" value={detail.scenarios?.length ?? 0} color={hasScenarios ? "#4f8cff" : "#8da2b8"} />
+        <MetricCard title="执行门槛" value={preflightBlocking ? "阻断" : canExecute ? "可执行" : "待配置"} color={preflightBlocking ? "#ff6b6b" : canExecute ? "#3ecf8e" : "#f5b94c"} />
+      </div>
 
       {showTopOverview ? (
-        <>
-          <Card bordered={false}>
+        <div className="task-detail-overview-grid">
+          <Card bordered={false} className="panel-card" title="流程进度">
             <Space direction="vertical" size={16} style={{ width: "100%" }}>
               <Steps items={steps} size="small" />
               {!isTargetSystemValid ? (
@@ -118,32 +151,18 @@ export function TaskDetailTopSection(props: {
             </Space>
           </Card>
 
-          <div className="metric-row">
-            <MetricCard title="任务状态" value={uiExecutionStatus === "running" ? "running" : displayTaskStatus} color="#722ed1" />
-            <MetricCard title="解析结果" value={hasParsedResult ? "已完成" : "待生成"} color={hasParsedResult ? "#52c41a" : "#d48806"} />
-            <MetricCard title="场景数量" value={detail.scenarios?.length ?? 0} color={hasScenarios ? "#52c41a" : "#d48806"} />
-            <MetricCard title="执行状态" value={uiExecutionStatus} color={uiExecutionStatus === "failed" ? "#ff4d4f" : "#722ed1"} />
-          </div>
-
-          <Card bordered={false}>
-            <Descriptions title="任务信息" bordered size="small" column={{ xs: 1, md: 2, lg: 3 }}>
-              <Descriptions.Item label="任务名称">{detail.task_context.task_name}</Descriptions.Item>
-              <Descriptions.Item label="任务 ID">{detail.task_context.task_id}</Descriptions.Item>
-              <Descriptions.Item label="状态">
-                <StatusTag status={uiExecutionStatus === "running" ? "running" : displayTaskStatus} />
-              </Descriptions.Item>
-              <Descriptions.Item label="来源类型">{detail.task_context.source_type}</Descriptions.Item>
-              <Descriptions.Item label="创建时间">{formatDateTime(detail.task_context.created_at)}</Descriptions.Item>
-              <Descriptions.Item label="语言">{detail.task_context.language}</Descriptions.Item>
-              <Descriptions.Item label="target_system">{detail.target_system || "-"}</Descriptions.Item>
-              <Descriptions.Item label="文档路径">{detail.task_context.source_path || "-"}</Descriptions.Item>
-              <Descriptions.Item label="environment">{detail.environment || "-"}</Descriptions.Item>
-              <Descriptions.Item label="解析 Base URL">{parsedBaseUrl}</Descriptions.Item>
-              <Descriptions.Item label="执行 Base URL">{effectiveDslBaseUrl}</Descriptions.Item>
-            </Descriptions>
+          <Card bordered={false} className="panel-card" title="运行上下文">
+            <div className="task-detail-meta-grid">
+              {overviewItems.map((item) => (
+                <div key={item.label} className="task-detail-meta-item">
+                  <span className="task-detail-meta-item__label">{item.label}</span>
+                  <strong className="task-detail-meta-item__value">{item.value}</strong>
+                </div>
+              ))}
+            </div>
           </Card>
-        </>
+        </div>
       ) : null}
-    </>
+    </Space>
   );
 }

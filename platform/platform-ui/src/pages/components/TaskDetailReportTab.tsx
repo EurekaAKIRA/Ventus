@@ -61,7 +61,7 @@ export function TaskDetailReportTab(props: {
     <Space direction="vertical" style={{ width: "100%" }}>
       {dashboardLoadError ? <Alert type="info" showIcon message={dashboardLoadError} /> : null}
       {taskDashboard ? (
-        <Card bordered={false} title="任务摘要">
+        <Card bordered={false} className="panel-card" title="任务摘要">
           <Space direction="vertical" size={8} style={{ width: "100%" }}>
             {taskDashboard.task_summary_text ? (
               <Text>{taskDashboard.task_summary_text}</Text>
@@ -84,6 +84,7 @@ export function TaskDetailReportTab(props: {
         </Card>
       ) : null}
       <Card
+        className="panel-card"
         bordered={false}
         title="失败归因"
         extra={
@@ -118,6 +119,7 @@ export function TaskDetailReportTab(props: {
         )}
       </Card>
       <Card
+        className="panel-card"
         bordered={false}
         title="回归对比"
         extra={
@@ -152,7 +154,7 @@ export function TaskDetailReportTab(props: {
           <Text type="secondary">暂无回归对比结果</Text>
         )}
       </Card>
-      <Card bordered={false} title="分析报告" extra={<Button size="small" onClick={onRefreshReportSection}>刷新</Button>}>
+      <Card bordered={false} className="panel-card" title="分析报告" extra={<Button size="small" onClick={onRefreshReportSection}>刷新</Button>}>
         {primaryAnalysisReport ? (
           <Space direction="vertical" size={8} style={{ width: "100%" }}>
             <Space>
@@ -169,7 +171,7 @@ export function TaskDetailReportTab(props: {
         )}
       </Card>
 
-      <Card bordered={false} title="分析图表（chart_data）">
+      <Card bordered={false} className="panel-card" title="分析图表（chart_data）">
         {chartItems.length ? (
           <Space direction="vertical" size={10} style={{ width: "100%" }}>
             {chartItems.map((item) => (
