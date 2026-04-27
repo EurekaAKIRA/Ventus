@@ -284,3 +284,33 @@ def test_parse_golden_constraints_capture_explicit_status_rules_and_drop_placeho
     assert "GET /booking?firstname=..." not in endpoints
     assert "GET /booking?firstname=Jamie" in endpoints
     assert "GET /booking?lastname=Brown" in endpoints
+
+
+def test_parse_golden_extracts_step_level_expected_status() -> None:
+    result = parse_requirement_bundle(
+        requirement_text="""
+        # Defect demo
+
+        ### Scenario: 缺陷导出演示
+
+        #### Step 1 — 访问演示接口
+
+        **Request:** `GET /__defect_demo_must_fail__`
+
+        **Expected:**
+
+        - HTTP `418`
+        - `code` = `DEFECT_DEMO_SHOULD_FAIL`
+        """,
+        options=AnalysisParseOptions(
+            use_llm=False,
+            rag_enabled=False,
+            retrieval_top_k=3,
+            rerank_enabled=False,
+        ),
+    )
+
+    expected = " ".join(result["parsed_requirement"]["expected_results"])
+
+    assert "GET /__defect_demo_must_fail__ Expected: HTTP `418`" in expected
+    assert "DEFECT_DEMO_SHOULD_FAIL" in expected

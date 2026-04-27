@@ -221,6 +221,11 @@ def _flatten_dsl_steps(test_case_dsl: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _categorize_failure(step: dict[str, Any]) -> str:
+    raw_category = str(step.get("error_category") or (step.get("response") or {}).get("error_category") or "").strip()
+    if raw_category == "assertion_shape_mismatch":
+        return "assertion_shape_mismatch"
+    if raw_category == "assertion_error":
+        return "assertion_failed"
     message = str(step.get("message", "")).lower()
     response = step.get("response") or {}
     status_code = response.get("status_code", 0) or 0

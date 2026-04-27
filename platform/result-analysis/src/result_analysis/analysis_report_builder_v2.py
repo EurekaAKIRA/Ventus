@@ -27,7 +27,8 @@ def build_analysis_report(
     validation_errors = len(validation_report.errors)
     step_stats = _collect_step_stats(execution_result, test_case_dsl, validation_report)
     scenario_overview = _collect_scenario_overview(execution_result)
-    quality_status = _resolve_quality_status(validation_report, step_stats["failed_step_count"])
+    api_coverage = _collect_api_coverage(execution_result, test_case_dsl)
+    quality_status = _resolve_quality_status(validation_report, step_stats["failed_step_count"], step_stats["assertion_quality"])
     failure_reasons = _merge_failure_reasons(step_stats["failure_reasons"], validation_report)
 
     summary = {
@@ -51,6 +52,15 @@ def build_analysis_report(
         "assertion_passed": step_stats["assertion_stats"]["passed"],
         "assertion_failed": step_stats["assertion_stats"]["failed"],
         "assertion_pass_rate": step_stats["assertion_stats"]["pass_rate"],
+        "assertion_strength_score": step_stats["assertion_quality"]["score"],
+        "assertion_strength_level": step_stats["assertion_quality"]["level"],
+        "weak_assertion_step_count": step_stats["assertion_quality"]["weak_step_count"],
+        "api_endpoint_count": api_coverage["total_endpoints"],
+        "api_executed_endpoint_count": api_coverage["executed_endpoints"],
+        "api_passed_endpoint_count": api_coverage["passed_endpoints"],
+        "api_failed_endpoint_count": api_coverage["failed_endpoints"],
+        "api_coverage_ratio": api_coverage["coverage_ratio"],
+        "api_endpoint_pass_ratio": api_coverage["pass_ratio"],
         "context_defined_keys": step_stats["context_stats"]["defined_key_count"],
         "context_used_keys": step_stats["context_stats"]["used_key_count"],
         "context_extracted_keys": step_stats["context_stats"]["extracted_key_count"],
@@ -70,6 +80,7 @@ def build_analysis_report(
             failure_reasons=failure_reasons,
             assertion_stats=step_stats["assertion_stats"],
             context_stats=step_stats["context_stats"],
+            api_coverage=api_coverage,
             task_summary_text=task_summary_text,
         ),
         execution_overview={
@@ -107,6 +118,8 @@ def build_analysis_report(
                 "passed": step_stats["assertion_stats"]["passed"],
                 "failed": step_stats["assertion_stats"]["failed"],
                 "pass_rate": step_stats["assertion_stats"]["pass_rate"],
+                "strength_score": step_stats["assertion_quality"]["score"],
+                "strength_level": step_stats["assertion_quality"]["level"],
             },
             "context": {
                 "defined": step_stats["context_stats"]["defined_key_count"],
@@ -114,14 +127,23 @@ def build_analysis_report(
                 "extracted": step_stats["context_stats"]["extracted_key_count"],
             },
             "failure_reasons": {item["category"]: item["count"] for item in failure_reasons},
+            "api_coverage": {
+                "covered": api_coverage["executed_endpoints"],
+                "uncovered": api_coverage["not_executed_endpoints"],
+                "passed": api_coverage["passed_endpoints"],
+                "failed": api_coverage["failed_endpoints"],
+                "coverage_ratio": api_coverage["coverage_ratio"],
+            },
         },
     )
     return report.to_dict()
 
 
-def _resolve_quality_status(validation_report: ValidationReport, failed_step_count: int) -> str:
+def _resolve_quality_status(validation_report: ValidationReport, failed_step_count: int, assertion_quality: dict[str, Any]) -> str:
     if failed_step_count or not validation_report.passed or validation_report.errors:
         return "failed"
+    if assertion_quality.get("level") in {"low", "none"} and assertion_quality.get("request_step_count", 0):
+        return "warning"
     if validation_report.warnings:
         return "warning"
     return "passed"
@@ -208,6 +230,7 @@ def _collect_step_stats(
     total_assertions, passed_assertion_count, failed_assertion_count = compute_assertion_execution_stats(
         scenario_results, test_case_dsl
     )
+    assertion_quality = _collect_assertion_quality(metrics, scenario_results, test_case_dsl)
     used_context_keys = sorted({key for step in dsl_steps for key in (step.get("uses_context") or [])})
     save_context_map: dict[str, Any] = {}
     for step in dsl_steps:
@@ -245,6 +268,7 @@ def _collect_step_stats(
             "validation_errors": len(validation_report.errors),
             "validation_warnings": len(validation_report.warnings),
         },
+        "assertion_quality": assertion_quality,
         "context_stats": {
             "defined_keys": sorted(save_context_map.keys()),
             "defined_key_count": len(save_context_map),
@@ -297,7 +321,138 @@ def _has_execution_data(execution_result: dict[str, Any]) -> bool:
     )
 
 
+def _collect_api_coverage(execution_result: dict[str, Any], test_case_dsl: dict[str, Any]) -> dict[str, Any]:
+    metrics = execution_result.get("metrics") or {}
+    api_coverage = metrics.get("api_coverage")
+    if isinstance(api_coverage, dict):
+        return {
+            "total_endpoints": int(api_coverage.get("total_endpoints", 0) or 0),
+            "executed_endpoints": int(api_coverage.get("executed_endpoints", 0) or 0),
+            "passed_endpoints": int(api_coverage.get("passed_endpoints", 0) or 0),
+            "failed_endpoints": int(api_coverage.get("failed_endpoints", 0) or 0),
+            "not_executed_endpoints": int(api_coverage.get("not_executed_endpoints", 0) or 0),
+            "coverage_ratio": float(api_coverage.get("coverage_ratio", 0) or 0),
+            "pass_ratio": float(api_coverage.get("pass_ratio", 0) or 0),
+            "endpoints": list(api_coverage.get("endpoints") or []),
+        }
+
+    planned: dict[str, dict[str, Any]] = {}
+    for scenario in test_case_dsl.get("scenarios", []):
+        for step in scenario.get("steps", []):
+            request_payload = step.get("request")
+            if not isinstance(request_payload, dict):
+                continue
+            key = _endpoint_key_from_request(request_payload)
+            if not key:
+                continue
+            method, _, path = key.partition(" ")
+            item = planned.setdefault(
+                key,
+                {
+                    "endpoint": key,
+                    "method": method,
+                    "path": path,
+                    "planned_steps": 0,
+                    "executed_steps": 0,
+                    "passed_steps": 0,
+                    "failed_steps": 0,
+                    "status": "not_executed",
+                    "status_codes": {},
+                    "failure_categories": {},
+                },
+            )
+            item["planned_steps"] += 1
+
+    total = len(planned)
+    return {
+        "total_endpoints": total,
+        "executed_endpoints": 0,
+        "passed_endpoints": 0,
+        "failed_endpoints": 0,
+        "not_executed_endpoints": total,
+        "coverage_ratio": 0.0,
+        "pass_ratio": 0.0,
+        "endpoints": sorted(planned.values(), key=lambda value: (value["path"], value["method"])),
+    }
+
+
+def _collect_assertion_quality(
+    metrics: dict[str, Any],
+    scenario_results: list[dict[str, Any]],
+    test_case_dsl: dict[str, Any],
+) -> dict[str, Any]:
+    metric_quality = metrics.get("assertion_quality")
+    if isinstance(metric_quality, dict):
+        return {
+            "score": float(metric_quality.get("score", 0) or 0),
+            "level": str(metric_quality.get("level", "none") or "none"),
+            "request_step_count": int(metric_quality.get("request_step_count", 0) or 0),
+            "weak_step_count": int(metric_quality.get("weak_step_count", 0) or 0),
+            "high_value_step_count": int(metric_quality.get("high_value_step_count", 0) or 0),
+            "reasons": list(metric_quality.get("reasons") or []),
+        }
+
+    summaries: list[dict[str, Any]] = []
+    for scenario in scenario_results:
+        for step in scenario.get("steps", []) or []:
+            summary = step.get("assertion_summary")
+            if isinstance(summary, dict) and summary.get("total"):
+                summaries.append(summary)
+    if summaries:
+        score = round(sum(float(item.get("strength_score", 0) or 0) for item in summaries) / len(summaries), 2)
+        return {
+            "score": score,
+            "level": _assertion_quality_level(score),
+            "request_step_count": len(summaries),
+            "weak_step_count": len([item for item in summaries if item.get("weak_assertion")]),
+            "high_value_step_count": len([item for item in summaries if item.get("quality_level") == "high"]),
+            "reasons": sorted({reason for item in summaries for reason in item.get("quality_reasons", [])}),
+        }
+
+    request_steps = [
+        step
+        for scenario in test_case_dsl.get("scenarios", []) or []
+        for step in scenario.get("steps", []) or []
+        if isinstance(step.get("request"), dict) and step.get("request")
+    ]
+    return {
+        "score": 0,
+        "level": "none",
+        "request_step_count": len(request_steps),
+        "weak_step_count": len(request_steps),
+        "high_value_step_count": 0,
+        "reasons": ["no_executed_assertion_summary"] if request_steps else ["no_request_steps"],
+    }
+
+
+def _assertion_quality_level(score: float) -> str:
+    if score >= 75:
+        return "high"
+    if score >= 55:
+        return "medium"
+    if score > 0:
+        return "low"
+    return "none"
+
+
+def _endpoint_key_from_request(request_payload: dict[str, Any]) -> str:
+    method = str(request_payload.get("method", "GET") or "GET").upper()
+    url = str(request_payload.get("url", "") or "")
+    if not url:
+        return ""
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    path = parsed.path or url
+    if not path.startswith("/"):
+        path = "/" + path
+    return f"{method} {path}"
+
+
 def _categorize_failure(step: dict[str, Any]) -> str:
+    raw_category = str(step.get("error_category") or (step.get("response") or {}).get("error_category") or "").strip()
+    if raw_category:
+        return _normalize_failure_category(raw_category)
     message = str(step.get("message", "")).lower()
     response = step.get("response") or {}
     status_code = response.get("status_code", 0) or 0
@@ -316,14 +471,40 @@ def _categorize_failure(step: dict[str, Any]) -> str:
     return "execution_error"
 
 
+def _normalize_failure_category(category: str) -> str:
+    mapping = {
+        "context_error": "missing_context",
+        "assertion_error": "assertion_failed",
+        "assertion_shape_mismatch": "assertion_shape_mismatch",
+        "auth_error": "auth_error",
+        "timeout_error": "timeout",
+        "network_error": "network_error",
+        "tls_error": "tls_error",
+        "rate_limit_error": "rate_limit",
+        "upstream_error": "upstream_error",
+        "http_client_error": "client_error",
+        "http_server_error": "server_error",
+        "response_parse_error": "response_parse_error",
+        "request_validation_error": "request_validation_error",
+    }
+    return mapping.get(category, category or "execution_error")
+
+
 def _failure_category_label(category: str) -> str:
     labels = {
         "missing_context": "Context Missing",
         "assertion_failed": "Assertion Failed",
+        "assertion_shape_mismatch": "Assertion Shape Mismatch",
+        "auth_error": "Authentication Failed",
         "server_error": "Server Error",
         "client_error": "Client Error",
         "timeout": "Timeout",
         "network_error": "Network Error",
+        "tls_error": "TLS/SSL Error",
+        "rate_limit": "Rate Limited",
+        "upstream_error": "Upstream Error",
+        "response_parse_error": "Response Parse Error",
+        "request_validation_error": "Request Validation Error",
         "execution_error": "Execution Error",
         "validation_error": "Validation Error",
         "validation_warning": "Validation Warning",
@@ -334,6 +515,10 @@ def _failure_category_label(category: str) -> str:
 def _build_reason_detail(step: dict[str, Any], category: str) -> str:
     response = step.get("response") or {}
     status_code = response.get("status_code")
+    if category == "auth_error" and status_code:
+        return f"HTTP {status_code}: check token/cookie/auth headers"
+    if category in {"timeout", "network_error", "tls_error"}:
+        return str(response.get("error") or step.get("message") or _failure_category_label(category))
     if category in {"server_error", "client_error"} and status_code:
         return f"HTTP {status_code}"
     if step.get("message"):
@@ -440,14 +625,17 @@ def _build_dashboard(
     failure_reasons: list[dict[str, Any]],
     assertion_stats: dict[str, Any],
     context_stats: dict[str, Any],
+    api_coverage: dict[str, Any],
     task_summary_text: str,
 ) -> dict[str, Any]:
     cards = [
         {"key": "scenarios", "label": "Scenarios", "value": summary["scenario_count"]},
+        {"key": "api_coverage", "label": "API Coverage", "value": summary["api_coverage_ratio"]},
         {"key": "steps", "label": "Total Steps", "value": summary["total_steps"]},
         {"key": "passed_steps", "label": "Passed", "value": summary["passed_steps"]},
         {"key": "failed_steps", "label": "Failed", "value": summary["failed_steps"]},
         {"key": "success_rate", "label": "Success Rate", "value": summary["success_rate"]},
+        {"key": "assertion_strength", "label": "Assertion Strength", "value": summary["assertion_strength_score"]},
         {"key": "avg_elapsed_ms", "label": "Avg Elapsed(ms)", "value": summary["avg_elapsed_ms"]},
         {"key": "max_elapsed_ms", "label": "Max Elapsed(ms)", "value": summary["max_elapsed_ms"]},
     ]
@@ -465,6 +653,10 @@ def _build_dashboard(
             "avg_elapsed_ms": summary["avg_elapsed_ms"],
             "max_elapsed_ms": summary["max_elapsed_ms"],
             "assertion_pass_rate": assertion_stats["pass_rate"],
+            "assertion_strength_score": summary["assertion_strength_score"],
+            "assertion_strength_level": summary["assertion_strength_level"],
+            "api_coverage_ratio": api_coverage["coverage_ratio"],
+            "api_endpoint_pass_ratio": api_coverage["pass_ratio"],
             "context_extracted_keys": context_stats["extracted_key_count"],
         },
         "cards": cards,
@@ -484,7 +676,11 @@ def _build_dashboard(
             "passed": assertion_stats["passed"],
             "failed": assertion_stats["failed"],
             "pass_rate": assertion_stats["pass_rate"],
+            "strength_score": summary["assertion_strength_score"],
+            "strength_level": summary["assertion_strength_level"],
+            "weak_step_count": summary["weak_assertion_step_count"],
         },
+        "api_coverage": api_coverage,
         "context_summary": {
             "defined_keys": context_stats["defined_key_count"],
             "used_keys": context_stats["used_key_count"],
@@ -510,7 +706,8 @@ def _build_task_summary_text(task_name: str, quality_status: str, summary: dict[
         f"共分析 {summary['scenario_count']} 个场景，执行 {summary['executed_steps']} 个步骤；"
         f"其中通过 {summary['passed_steps']} 个、失败 {summary['failed_steps']} 个，"
         f"成功率 {summary['success_rate']}%，平均耗时 {summary['avg_elapsed_ms']}ms，"
-        f"最大耗时 {summary['max_elapsed_ms']}ms。"
+        f"最大耗时 {summary['max_elapsed_ms']}ms；"
+        f"断言强度 {summary['assertion_strength_score']}（{summary['assertion_strength_level']}）。"
     )
 
 

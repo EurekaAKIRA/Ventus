@@ -8,7 +8,7 @@ const Dashboard = lazy(() => import("../pages/Dashboard"));
 const Login = lazy(() => import("../pages/Login"));
 const TaskList = lazy(() => import("../pages/TaskList"));
 const TaskCreate = lazy(() => import("../pages/TaskCreate"));
-const AgentStudio = lazy(() => import("../pages/TaskCreate"));
+const AgentStudio = lazy(() => import("../pages/AgentStudio"));
 const TaskDetail = lazy(() => import("../pages/TaskDetail"));
 const TaskHistory = lazy(() => import("../pages/TaskHistory"));
 const DefectCenter = lazy(() => import("../pages/DefectCenter"));

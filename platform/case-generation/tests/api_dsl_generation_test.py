@@ -531,6 +531,260 @@ def test_httpbin_status_endpoint_does_not_require_json_body_assertion() -> None:
     assert not any(item["source"] == "json" and item["op"] == "exists" for item in request_assertions)
 
 
+def test_request_step_uses_explicit_expected_http_status() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_defect_demo",
+        name="defect demo",
+        goal="exercise failed assertion export",
+        steps=[
+            ScenarioStep(type="given", text="task center is available"),
+            ScenarioStep(type="when", text="调用 GET /__defect_demo_must_fail__"),
+            ScenarioStep(type="then", text="应按文档预期校验失败"),
+        ],
+        assertions=["应按文档预期校验失败"],
+        source_chunks=[],
+        preconditions=[],
+    )
+    parsed_requirement = {
+        "objective": "defect demo",
+        "actions": ["调用 GET /__defect_demo_must_fail__"],
+        "expected_results": [
+            "GET /__defect_demo_must_fail__ Expected: HTTP `418`",
+            "GET /__defect_demo_must_fail__ Expected: `code` = `DEFECT_DEMO_SHOULD_FAIL`",
+        ],
+        "api_endpoints": [
+            {"method": "GET", "path": "/__defect_demo_must_fail__", "description": "缺陷演示"},
+        ],
+        "source_chunks": [],
+    }
+
+    dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+    request_step = dsl["scenarios"][0]["steps"][1]
+    status_assertions = [
+        item for item in request_step["assertions"]
+        if isinstance(item, dict) and item.get("source") == "status_code"
+    ]
+
+    assert status_assertions
+    assert status_assertions[0]["op"] == "eq"
+    assert status_assertions[0]["expected"] == 418
+    assert any(
+        item.get("source") == "json.code" and item.get("op") == "eq" and item.get("expected") == "DEFECT_DEMO_SHOULD_FAIL"
+        for item in request_step["assertions"]
+        if isinstance(item, dict)
+    )
+
+
+def test_auth_dependency_chains_and_semantic_assertions_are_strengthened() -> None:
+    from case_generation import build_scenarios, build_test_case_dsl
+    from platform_shared.models import ScenarioModel
+    from requirement_analysis import parse_requirement
+
+    requirement_text = """
+    # DummyJSON compact API requirement
+
+    ## 接口清单
+
+    ### 接口：登录并获取 tokens
+    - 方法：`POST`
+    - 路径：`/auth/login`
+    - 功能：使用用户名密码获取 accessToken 与 refreshToken
+    - 结果语义：返回非空 `accessToken` 与 `refreshToken`
+
+    ### 接口：获取当前授权用户
+    - 方法：`GET`
+    - 路径：`/auth/me`
+    - 功能：读取当前 Bearer token 对应用户
+    - 鉴权：是
+    - 结果语义：返回当前用户信息
+
+    ### 接口：刷新 tokens
+    - 方法：`POST`
+    - 路径：`/auth/refresh`
+    - 功能：基于 refreshToken 刷新授权会话
+    - 请求语义：提交 `refreshToken`
+    - 结果语义：返回新 `accessToken` 与新 `refreshToken`
+
+    ### 接口：查询 todos 列表
+    - 方法：`GET`
+    - 路径：`/todos`
+    - 功能：分页查询 todos
+    - 结果语义：返回 `todos`、`total`、`skip`、`limit`
+
+    ### 接口：模拟创建 todo
+    - 方法：`POST`
+    - 路径：`/todos/add`
+    - 功能：模拟创建 todo
+    - 结果语义：返回新 todo 与新 id
+
+    ### 接口：模拟删除 todo
+    - 方法：`DELETE`
+    - 路径：`/todos/{id}`
+    - 功能：模拟删除 todo
+    - 资源前置条件：需要已存在预置 todo
+    - 结果语义：返回删除标记 `isDeleted` 与 `deletedOn`
+
+    ## 预期效果
+    - `POST /auth/login` 成功后应返回非空 `accessToken` 与 `refreshToken`
+    - `GET /auth/me` 携带合法 Bearer token 时应返回当前用户信息
+    - `POST /auth/refresh` 应返回新的 token 对
+    - `GET /todos` 应返回分页结构与 todo 列表
+    - `POST /todos/add` 应返回新 id
+    - `DELETE /todos/{id}` 应返回删除标记
+
+    **save_context:**
+    - `access_token` ← `json.accessToken`
+    - `refresh_token` ← `json.refreshToken`
+    """
+
+    parsed_requirement = parse_requirement(requirement_text, use_llm=False)
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    dsl = build_test_case_dsl(_build_task_context(), scenarios, parsed_requirement=parsed_requirement)
+
+    request_steps = [
+        step
+        for scenario in dsl["scenarios"]
+        for step in scenario["steps"]
+        if step.get("request", {}).get("method")
+    ]
+
+    auth_me_steps = [step for step in request_steps if step["request"]["url"] == "/auth/me"]
+    assert auth_me_steps
+    assert any(step.get("uses_context") == ["access_token"] for step in auth_me_steps)
+    assert any(step["request"].get("auth") == {"type": "bearer", "token_context": "access_token"} for step in auth_me_steps)
+
+    refresh_steps = [step for step in request_steps if step["request"]["url"] == "/auth/refresh"]
+    assert refresh_steps
+    assert refresh_steps[0].get("uses_context") == ["refresh_token"]
+    assert refresh_steps[0]["request"]["json"]["refreshToken"] == "{{refresh_token}}"
+
+    todos_step = next(step for step in request_steps if step["request"]["url"] == "/todos")
+    todos_assertions = [item for item in todos_step["assertions"] if isinstance(item, dict)]
+    assert any(item.get("source") == "json.todos" and item.get("op") in {"len_gt", "type_is"} for item in todos_assertions)
+    assert any(item.get("source") == "json.total" for item in todos_assertions)
+
+    create_step = next(step for step in request_steps if step["request"]["url"] == "/todos/add")
+    assert any(
+        item.get("source") == "json.id" and item.get("op") == "exists"
+        for item in create_step["assertions"]
+        if isinstance(item, dict)
+    )
+
+    delete_step = next(step for step in request_steps if step["request"]["method"] == "DELETE")
+    assert any(
+        item.get("source") == "json.isDeleted" and item.get("op") == "eq" and item.get("expected") is True
+        for item in delete_step["assertions"]
+        if isinstance(item, dict)
+    )
+    assert any(
+        item.get("source") == "json.deletedOn" and item.get("op") == "exists"
+        for item in delete_step["assertions"]
+        if isinstance(item, dict)
+    )
+
+
+def test_response_shape_prevents_collection_field_over_inference() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    def request_assertions(parsed_requirement: dict, step_text: str) -> list[dict]:
+        scenario = ScenarioModel(
+            scenario_id="scenario_shape",
+            name=step_text,
+            goal="validate response shape",
+            steps=[
+                ScenarioStep(type="given", text="service is available"),
+                ScenarioStep(type="when", text=step_text),
+                ScenarioStep(type="then", text="response matches documented shape"),
+            ],
+            assertions=["response matches documented shape"],
+            source_chunks=[],
+            preconditions=[],
+        )
+        dsl = build_test_case_dsl(_build_task_context(), [scenario], parsed_requirement=parsed_requirement)
+        return [
+            item
+            for item in dsl["scenarios"][0]["steps"][1]["assertions"]
+            if isinstance(item, dict)
+        ]
+
+    jsonplaceholder_posts = {
+        "objective": "JSONPlaceholder posts",
+        "actions": ["调用 GET /posts"],
+        "expected_results": ["`GET /posts` 应返回 posts 数组"],
+        "constraints": [],
+        "api_endpoints": [{"method": "GET", "path": "/posts", "description": "返回 posts 数组"}],
+        "source_chunks": [],
+    }
+    post_assertions = request_assertions(jsonplaceholder_posts, "调用 GET /posts")
+    assert not any(item.get("source") == "json.posts" for item in post_assertions)
+    assert any(item.get("source") == "json" and item.get("op") in {"len_gt", "type_is"} for item in post_assertions)
+
+    dummyjson_todos = {
+        "objective": "DummyJSON todos",
+        "actions": ["调用 GET /todos"],
+        "expected_results": ["`GET /todos` 应返回分页结构与 todo 列表"],
+        "constraints": [],
+        "api_endpoints": [{"method": "GET", "path": "/todos", "description": "返回 `todos`、`total`、`skip`、`limit`"}],
+        "source_chunks": [],
+    }
+    todo_assertions = request_assertions(dummyjson_todos, "调用 GET /todos")
+    assert any(item.get("source") == "json.todos" and item.get("op") in {"len_gt", "type_is"} for item in todo_assertions)
+    assert any(item.get("source") == "json.total" for item in todo_assertions)
+
+    httpbin_get = {
+        "objective": "httpbin get",
+        "actions": ["调用 GET /get"],
+        "expected_results": ["`GET /get` 应准确回显请求内容"],
+        "constraints": [],
+        "api_endpoints": [{"method": "GET", "path": "/get", "description": "回显请求内容"}],
+        "source_chunks": [],
+    }
+    httpbin_assertions = request_assertions(httpbin_get, "调用 GET /get")
+    assert not any(item.get("source") == "json" and item.get("op") == "type_is" and item.get("expected") == "array" for item in httpbin_assertions)
+    assert not any(item.get("source") == "json" and str(item.get("op", "")).startswith("len_") for item in httpbin_assertions)
+
+    petstore_user = {
+        "objective": "petstore user",
+        "actions": ["调用 GET /user/{username}"],
+        "expected_results": ["`GET /user/{username}` 应返回用户信息"],
+        "constraints": [],
+        "api_endpoints": [{"method": "GET", "path": "/user/{username}", "description": "返回用户信息"}],
+        "source_chunks": [],
+    }
+    user_assertions = request_assertions(petstore_user, "调用 GET /user/{username}")
+    assert not any(item.get("source") == "json" and item.get("op") == "type_is" and item.get("expected") == "array" for item in user_assertions)
+
+    petstore_pet = {
+        "objective": "petstore pet detail",
+        "actions": ["调用 GET /pet/{petId}", "调用 GET /pet/findByStatus"],
+        "expected_results": ["`GET /pet/{petId}` 应返回 pet 详情", "`GET /pet/findByStatus` 应返回 pet 列表"],
+        "constraints": [],
+        "api_endpoints": [
+            {"method": "GET", "path": "/pet/findByStatus", "description": "返回 pet 列表"},
+            {"method": "GET", "path": "/pet/{petId}", "description": "返回 pet 详情"},
+        ],
+        "source_chunks": [],
+    }
+    pet_detail_assertions = request_assertions(petstore_pet, "调用 GET /pet/{petId}")
+    assert not any(item.get("source") == "json" and item.get("op") == "type_is" and item.get("expected") == "array" for item in pet_detail_assertions)
+
+    jsonplaceholder_comments = {
+        "objective": "JSONPlaceholder comments",
+        "actions": ["调用 GET /comments?postId={id}"],
+        "expected_results": ["`GET /comments?postId={id}` 应返回 comments 数组"],
+        "constraints": [],
+        "api_endpoints": [{"method": "GET", "path": "/comments?postId={id}", "description": "返回 comments 数组"}],
+        "source_chunks": [],
+    }
+    comment_assertions = request_assertions(jsonplaceholder_comments, "调用 GET /comments?postId={id}")
+    assert not any(item.get("source") == "json.comments" for item in comment_assertions)
+    assert any(item.get("source") == "json" and item.get("op") in {"len_gt", "type_is"} for item in comment_assertions)
+
+
 def test_bare_id_placeholder_prefers_resource_context_for_todo_paths() -> None:
     from case_generation.dsl_generator import _build_request_template
 

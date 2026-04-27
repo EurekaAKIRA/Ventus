@@ -56,6 +56,10 @@ export function TaskDetailReportTab(props: {
     chartMax,
     analysisChartData,
   } = props;
+  const reportSummary = (primaryAnalysisReport?.summary ?? {}) as Record<string, unknown>;
+  const assertionStrengthScore = reportSummary.assertion_strength_score;
+  const assertionStrengthLevel = reportSummary.assertion_strength_level;
+  const weakAssertionStepCount = reportSummary.weak_assertion_step_count;
 
   return (
     <Space direction="vertical" style={{ width: "100%" }}>
@@ -161,6 +165,15 @@ export function TaskDetailReportTab(props: {
               <Text>质量状态</Text>
               <Tag color={qualityColor}>{primaryAnalysisReport.quality_status}</Tag>
             </Space>
+            {assertionStrengthScore !== undefined || assertionStrengthLevel !== undefined ? (
+              <Space wrap>
+                <Text>断言强度</Text>
+                <Tag color={assertionStrengthLevel === "high" ? "success" : assertionStrengthLevel === "medium" ? "processing" : "warning"}>
+                  {String(assertionStrengthScore ?? "-")} / {String(assertionStrengthLevel ?? "-")}
+                </Tag>
+                {weakAssertionStepCount !== undefined ? <Text type="secondary">弱断言步骤：{String(weakAssertionStepCount)}</Text> : null}
+              </Space>
+            ) : null}
             <Text>任务：{primaryAnalysisReport.task_name}</Text>
             <Button size="small" onClick={() => onOpenRawData("分析报告 JSON", primaryAnalysisReport)}>
               查看原始数据

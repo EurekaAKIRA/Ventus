@@ -298,6 +298,11 @@ def _has_execution_data(execution_result: dict[str, Any]) -> bool:
 
 
 def _categorize_failure(step: dict[str, Any]) -> str:
+    raw_category = str(step.get("error_category") or (step.get("response") or {}).get("error_category") or "").strip()
+    if raw_category == "assertion_shape_mismatch":
+        return "assertion_shape_mismatch"
+    if raw_category == "assertion_error":
+        return "assertion_failed"
     message = str(step.get("message", "")).lower()
     response = step.get("response") or {}
     status_code = response.get("status_code", 0) or 0
@@ -320,6 +325,7 @@ def _failure_category_label(category: str) -> str:
     labels = {
         "missing_context": "Context Missing",
         "assertion_failed": "Assertion Failed",
+        "assertion_shape_mismatch": "Assertion Shape Mismatch",
         "server_error": "Server Error",
         "client_error": "Client Error",
         "timeout": "Timeout",

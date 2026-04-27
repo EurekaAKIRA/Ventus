@@ -244,6 +244,105 @@ function getAgentResourceStatusColor(status?: string): string {
   }
 }
 
+function getAgentPlanStatusLabel(status?: string): string {
+  switch (status) {
+    case "done":
+      return "已完成";
+    case "next":
+      return "下一步";
+    case "review":
+      return "需审阅";
+    case "blocked":
+      return "阻断";
+    default:
+      return status || "未知";
+  }
+}
+
+function getAgentPlanStatusColor(status?: string): string {
+  switch (status) {
+    case "done":
+      return "success";
+    case "next":
+      return "processing";
+    case "review":
+      return "warning";
+    case "blocked":
+      return "error";
+    default:
+      return "default";
+  }
+}
+
+function getAgentQualityGateStatusLabel(status?: string): string {
+  switch (status) {
+    case "pass":
+      return "通过";
+    case "warn":
+      return "需核对";
+    case "block":
+      return "阻断";
+    default:
+      return status || "未知";
+  }
+}
+
+function getAgentQualityGateStatusColor(status?: string): string {
+  switch (status) {
+    case "pass":
+      return "success";
+    case "warn":
+      return "warning";
+    case "block":
+      return "error";
+    default:
+      return "default";
+  }
+}
+
+function getAgentVerdictColor(severity?: string): string {
+  switch (severity) {
+    case "success":
+      return "success";
+    case "error":
+      return "error";
+    case "warning":
+      return "warning";
+    default:
+      return "default";
+  }
+}
+
+function getAgentBlueprintStatusLabel(status?: string): string {
+  switch (status) {
+    case "ready":
+      return "可生成";
+    case "needs_context":
+      return "缺上下文";
+    case "read_only":
+      return "只读";
+    case "single_step":
+      return "单接口";
+    default:
+      return status || "未知";
+  }
+}
+
+function getAgentBlueprintStatusColor(status?: string): string {
+  switch (status) {
+    case "ready":
+      return "success";
+    case "needs_context":
+      return "error";
+    case "read_only":
+      return "processing";
+    case "single_step":
+      return "default";
+    default:
+      return "default";
+  }
+}
+
 function buildAgentSnapshotKey(values: {
   task_name?: string;
   requirement_text?: string;
@@ -262,7 +361,11 @@ function buildAgentSnapshotKey(values: {
   });
 }
 
-export default function TaskCreate() {
+type TaskCreateProps = {
+  mode?: "create" | "agent";
+};
+
+export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -283,7 +386,7 @@ export default function TaskCreate() {
   const userEditedFieldsRef = useRef<Set<string>>(new Set());
   const agentFocusTimerRef = useRef<number | null>(null);
   const { currentProjectId, projects, isAuthenticated } = useAuth();
-  const isAgentStudio = location.pathname.startsWith("/agent");
+  const isAgentStudio = mode === "agent" || location.pathname.startsWith("/agent");
   const watchedTaskName = Form.useWatch("task_name", form);
   const watchedRequirementText = Form.useWatch("requirement_text", form);
   const watchedTargetSystem = Form.useWatch("target_system", form);
@@ -923,6 +1026,10 @@ export default function TaskCreate() {
     agentPayload?.signals.length ||
       agentPayload?.scenario_outlook ||
       agentPayload?.resource_groups?.length ||
+      agentPayload?.action_plan?.length ||
+      agentPayload?.scenario_blueprint?.length ||
+      agentPayload?.quality_gates?.length ||
+      agentPayload?.coverage_gaps?.length ||
       agentPayload?.recognized_endpoints.length ||
       agentPayload?.highlights.length ||
       agentPayload?.checks.length ||
@@ -947,6 +1054,8 @@ export default function TaskCreate() {
     sortedFollowUpQuestions.length +
     (agentPayload?.document_actions.length ?? 0) +
     (agentPayload?.knowledge_hits.length ?? 0) +
+    (agentPayload?.quality_gates?.filter((item) => item.status === "block" || item.status === "warn").length ?? 0) +
+    (agentPayload?.coverage_gaps?.length ?? 0) +
     (agentPayload?.risks.length ?? 0) +
     (agentPayload?.warnings.length ?? 0);
   const activeStudioViewHasContent =
@@ -1000,6 +1109,16 @@ export default function TaskCreate() {
         actionLabel: "看链路",
       });
     }
+    const blockingGates = (agentPayload.quality_gates ?? []).filter((item) => item.status === "block");
+    if (blockingGates.length) {
+      items.push({
+        key: "quality_gates",
+        title: `${blockingGates.length} 个质量门禁未通过`,
+        detail: blockingGates[0]?.detail || "先处理阻断项再创建任务会更稳。",
+        view: "overview",
+        actionLabel: "看门禁",
+      });
+    }
     if (agentPayload.risks.length) {
       items.push({
         key: "risks",
@@ -1026,27 +1145,33 @@ export default function TaskCreate() {
         tone: "default",
         title: isAgentStudio ? "先导入文档，再让 Agent 开始诊断" : "导入文档后，创建助手会先帮你补全草案",
         description: isAgentStudio
-          ? "工作台更适合先处理追问、文档修正和知识依据，再决定是否创建任务。"
+          ? "工作台只负责追问、文档修正和知识依据，创建与执行仍回到工作流完成。"
           : "创建页只保留快速补全；复杂问题再进入 Agent 工作台。",
       };
     }
     if (agentPayload.summary.ready_to_execute) {
       return {
         tone: "success",
-        title: "当前可以创建并执行",
-        description: "任务草案、执行环境和主要依赖已经基本齐备，可以直接推进。",
+        title: isAgentStudio ? "当前草案可以带回工作流" : "当前可以创建并执行",
+        description: isAgentStudio
+          ? "任务草案、执行环境和主要依赖已经基本齐备，建议回到创建页提交。"
+          : "任务草案、执行环境和主要依赖已经基本齐备，可以直接推进。",
       };
     }
     if (agentPayload.summary.ready_to_create) {
       return {
         tone: "warning",
-        title: "当前可以创建，但执行前还有待确认项",
-        description: "建议先看追问或风险，再决定是否立即执行。",
+        title: isAgentStudio ? "草案可回填，但执行前还有待确认项" : "当前可以创建，但执行前还有待确认项",
+        description: isAgentStudio
+          ? "建议先处理追问或风险，再把草案带回创建页。"
+          : "建议先看追问或风险，再决定是否立即执行。",
       };
     }
     return {
       tone: "warning",
-      title: `创建前还需处理 ${Math.max(agentDecisionItems.length, 1)} 项关键问题`,
+      title: isAgentStudio
+        ? `回到工作流前还需处理 ${Math.max(agentDecisionItems.length, 1)} 项关键问题`
+        : `创建前还需处理 ${Math.max(agentDecisionItems.length, 1)} 项关键问题`,
       description: agentDecisionItems[0]?.detail || "先补齐文档和依赖信息，再创建任务会更稳。",
     };
   }, [agentDecisionItems, agentPayload, isAgentStudio]);
@@ -1088,6 +1213,45 @@ export default function TaskCreate() {
               <Alert type="warning" showIcon message="表单内容已变化，Agent 将自动刷新分析，请稍候。" />
             ) : null}
             <Alert type="info" showIcon message={agentPayload.reply} />
+            {agentPayload.diagnostic_verdict ? (
+              <div className={`create-task-agent-verdict is-${agentPayload.diagnostic_verdict.severity || "default"}`}>
+                <div className="create-task-agent-verdict__head">
+                  <div className="create-task-agent-verdict__copy">
+                    <Text type="secondary">诊断结论</Text>
+                    <Text strong className="create-task-agent-verdict__title">
+                      {agentPayload.diagnostic_verdict.label}
+                    </Text>
+                    <Text type="secondary">{agentPayload.diagnostic_verdict.summary}</Text>
+                  </div>
+                  <Tag color={getAgentVerdictColor(agentPayload.diagnostic_verdict.severity)}>
+                    {agentPayload.diagnostic_verdict.primary_action}
+                  </Tag>
+                </div>
+                <div className="create-task-agent-verdict__metrics">
+                  <span>
+                    自动修复 <strong>{agentPayload.diagnostic_verdict.auto_fix_count}</strong>
+                  </span>
+                  <span>
+                    待人工确认 <strong>{agentPayload.diagnostic_verdict.manual_action_count}</strong>
+                  </span>
+                  <span>
+                    预计场景 <strong>{agentPayload.diagnostic_verdict.estimated_scenario_count}</strong>
+                  </span>
+                  <span>
+                    阻断接口 <strong>{agentPayload.diagnostic_verdict.blocked_endpoint_count}</strong>
+                  </span>
+                </div>
+                {agentPayload.diagnostic_verdict.blockers.length ? (
+                  <div className="create-task-agent-verdict__blockers">
+                    {agentPayload.diagnostic_verdict.blockers.slice(0, 3).map((item) => (
+                      <Text key={item} type="secondary">
+                        {item}
+                      </Text>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             <div className={`create-task-agent-decision is-${agentDecisionSummary.tone}`}>
               <div className="create-task-agent-decision__copy">
                 <Text type="secondary">当前结论</Text>
@@ -1132,10 +1296,10 @@ export default function TaskCreate() {
                 字数 <strong>{agentPayload.summary.requirement_chars}</strong>
               </span>
               <span className="surface-chip">
-                可创建 <strong>{agentPayload.summary.ready_to_create ? "是" : "否"}</strong>
+                {isAgentStudio ? "可带回" : "可创建"} <strong>{agentPayload.summary.ready_to_create ? "是" : "否"}</strong>
               </span>
               <span className="surface-chip">
-                可执行 <strong>{agentPayload.summary.ready_to_execute ? "是" : "否"}</strong>
+                {isAgentStudio ? "执行准备" : "可执行"} <strong>{agentPayload.summary.ready_to_execute ? "是" : "否"}</strong>
               </span>
               <span className="surface-chip">
                 亮点 <strong>{agentPayload.summary.highlight_count ?? agentPayload.highlights.length}</strong>
@@ -1206,6 +1370,59 @@ export default function TaskCreate() {
               </div>
             )}
             <div className={`create-task-agent-sections${isAgentStudio ? " is-studio" : ""}`}>
+              {showOverviewSections && agentPayload.action_plan?.length ? (
+                <div className="create-task-agent-section create-task-agent-section--wide">
+                  <Text strong className="create-task-agent-section__title">
+                    Agent 行动计划
+                  </Text>
+                  <div className="create-task-agent-plan">
+                    {agentPayload.action_plan.map((item, index) => (
+                      <div key={item.key} className={`create-task-agent-plan__item is-${item.status || "default"}`}>
+                        <span className="create-task-agent-plan__step">{index + 1}</span>
+                        <div className="create-task-agent-plan__copy">
+                          <div className="create-task-agent-list__row">
+                            <Text strong>{item.title}</Text>
+                            <Tag color={getAgentPlanStatusColor(item.status)}>{getAgentPlanStatusLabel(item.status)}</Tag>
+                          </div>
+                          <Text type="secondary">{item.detail}</Text>
+                        </div>
+                        {item.target_view ? (
+                          <Button
+                            size="small"
+                            type="link"
+                            onClick={() => handleOpenAgentFocus(item.target_view as "overview" | "followups" | "document" | "knowledge")}
+                          >
+                            {item.action_label || "查看"}
+                          </Button>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {showOverviewSections && agentPayload.quality_gates?.length ? (
+                <div className="create-task-agent-section">
+                  <Text strong className="create-task-agent-section__title">
+                    质量门禁
+                  </Text>
+                  <div className="create-task-agent-list">
+                    {agentPayload.quality_gates.map((item) => (
+                      <div
+                        key={item.key}
+                        className={`create-task-agent-list__item${item.status === "block" || item.status === "warn" ? " is-warning" : ""}`}
+                      >
+                        <div className="create-task-agent-list__row">
+                          <Text strong>{item.label}</Text>
+                          <Tag color={getAgentQualityGateStatusColor(item.status)}>
+                            {getAgentQualityGateStatusLabel(item.status)}
+                          </Tag>
+                        </div>
+                        <Text type="secondary">{item.detail}</Text>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {showOverviewSections && agentPayload.signals.length ? (
                 <div className="create-task-agent-section">
                   <Text strong className="create-task-agent-section__title">
@@ -1267,6 +1484,57 @@ export default function TaskCreate() {
                         </div>
                       </div>
                     ) : null}
+                  </div>
+                </div>
+              ) : null}
+              {showOverviewSections && agentPayload.scenario_blueprint?.length ? (
+                <div className="create-task-agent-section create-task-agent-section--wide">
+                  <Text strong className="create-task-agent-section__title">
+                    场景蓝图
+                  </Text>
+                  <div className="create-task-agent-list">
+                    {agentPayload.scenario_blueprint.map((item) => (
+                      <div key={item.key} className={`create-task-agent-list__item${item.status === "needs_context" ? " is-warning" : ""}`}>
+                        <div className="create-task-agent-list__row">
+                          <Text strong>{item.title}</Text>
+                          <Tag color={getAgentBlueprintStatusColor(item.status)}>{getAgentBlueprintStatusLabel(item.status)}</Tag>
+                        </div>
+                        <Text>{item.objective}</Text>
+                        <Text type="secondary">{item.dependency}</Text>
+                        {item.endpoints.length ? (
+                          <div className="create-task-agent-endpoint-list">
+                            {item.endpoints.map((endpoint) => (
+                              <span key={endpoint} className="surface-chip create-task-agent-endpoint-chip">
+                                {endpoint}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                        {item.gaps?.length ? (
+                          <div className="create-task-agent-endpoint-list">
+                            {item.gaps.map((gap) => (
+                              <Tag key={gap} color="warning">
+                                {gap}
+                              </Tag>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {showOverviewSections && agentPayload.coverage_gaps?.length ? (
+                <div className="create-task-agent-section">
+                  <Text strong className="create-task-agent-section__title">
+                    覆盖缺口
+                  </Text>
+                  <div className="create-task-agent-list">
+                    {agentPayload.coverage_gaps.map((item) => (
+                      <div key={item} className="create-task-agent-list__item is-warning">
+                        <Text>{item}</Text>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : null}
@@ -1592,7 +1860,7 @@ export default function TaskCreate() {
         ) : (
           <Text type="secondary">
             {isAgentStudio
-              ? "导入文档后会自动分析；这里更适合先处理追问、资源链路和场景预估，再决定是否创建任务。"
+              ? "导入文档后会自动分析；这里更适合先处理追问、资源链路和场景预估，再带回创建页。"
               : "导入文档后会自动分析；也可以手动生成建议，先识别任务草案，再判断风险和执行环境。"}
           </Text>
         )}
@@ -1615,7 +1883,7 @@ export default function TaskCreate() {
               文档诊断、追问与场景预估工作台
             </Typography.Title>
             <Text className="agent-studio-hero__desc">
-              在独立工作台里先把需求文档修到稳定可解析，再决定是否直接创建任务。
+              在独立工作台里先把需求文档修到稳定可解析，再带回创建页由工作流创建和执行。
             </Text>
           </div>
           <div className="agent-studio-hero__meta">
@@ -1680,12 +1948,12 @@ export default function TaskCreate() {
                   setAgentAutoAppliedLabels([]);
                 }
               }}
-              onFinish={handleSubmit}
+              onFinish={isAgentStudio ? undefined : handleSubmit}
             >
               {!isAgentStudio ? (
                 <div className="create-task-mode-hint">
-                  <span className="surface-chip">文档已成型：直接创建</span>
-                  <span className="surface-chip">接口或依赖不确定：先去 Agent 工作台</span>
+                  <span className="surface-chip">文档已成型：创建并进入工作流</span>
+                  <span className="surface-chip">文档不确定：Agent 诊断后回填</span>
                 </div>
               ) : null}
               {isAgentStudio ? (
@@ -1897,7 +2165,7 @@ export default function TaskCreate() {
                       <Button type="primary" htmlType="submit" loading={submitting}>
                         创建任务
                       </Button>
-                      <Button onClick={() => handleOpenAgentStudio()}>文档不确定，先去 Agent</Button>
+                      <Button onClick={() => handleOpenAgentStudio()}>先用 Agent 诊断文档</Button>
                       <Button onClick={() => navigate("/tasks")}>取消</Button>
                     </Space>
                   </Form.Item>
@@ -1909,67 +2177,34 @@ export default function TaskCreate() {
 
         <Col xs={24} xl={isAgentStudio ? 8 : 5} className="create-task-agent-column">
           {isAgentStudio ? (
-            <Card bordered={false} className="agent-studio-draft-card">
+            <Card bordered={false} className="agent-studio-draft-card agent-studio-handoff-card">
               <div className="agent-studio-draft-card__head">
                 <div>
-                  <Text type="secondary">Draft</Text>
+                  <Text type="secondary">Handoff</Text>
                   <Typography.Title level={4} className="agent-studio-draft-card__title">
-                    任务草案
+                    回到工作流创建
                   </Typography.Title>
                 </div>
-                <Tag color={agentPayload?.summary?.ready_to_create ? "success" : "warning"}>
-                  {agentPayload?.summary?.ready_to_create ? "可创建" : "待完善"}
+                <Tag color={getAgentVerdictColor(agentPayload?.diagnostic_verdict?.severity)}>
+                  {agentPayload?.diagnostic_verdict?.label || (agentPayload?.summary?.ready_to_create ? "可交付" : "待完善")}
                 </Tag>
               </div>
-              <div className="agent-studio-draft-form">
-                <div className="agent-studio-draft-form__item">
-                  <Text type="secondary">任务名称</Text>
-                  <Input
-                    value={String(watchedTaskName ?? "")}
-                    placeholder="例如：用户登录功能测试"
-                    onChange={(event) => form.setFieldValue("task_name", event.target.value)}
-                  />
+              <Text type="secondary" className="agent-studio-handoff-card__copy">
+                {agentPayload?.diagnostic_verdict?.summary ||
+                  "Agent 只负责诊断、补全和质量门禁；任务创建、执行、重试与报告沉淀统一交给工作流。"}
+              </Text>
+              <div className="agent-studio-handoff-flow">
+                <div className="agent-studio-handoff-flow__item">
+                  <span>1</span>
+                  <Text>导入或粘贴需求文档</Text>
                 </div>
-                <div className="agent-studio-draft-form__item">
-                  <Text type="secondary">所属项目</Text>
-                  <Select
-                    allowClear
-                    value={watchedProjectId || currentProjectId || undefined}
-                    placeholder={isAuthenticated ? "请选择项目" : "登录后可按项目归属"}
-                    disabled={!isAuthenticated}
-                    options={projects.map((project) => ({
-                      value: project.id,
-                      label: project.is_default ? `${project.name}（默认）` : project.name,
-                    }))}
-                    onChange={(value) => form.setFieldValue("project_id", value)}
-                  />
+                <div className="agent-studio-handoff-flow__item">
+                  <span>2</span>
+                  <Text>处理追问、补齐资源链路</Text>
                 </div>
-                <div className="agent-studio-draft-form__item">
-                  <Text type="secondary">目标系统</Text>
-                  <Input
-                    value={String(watchedTargetSystem ?? "")}
-                    placeholder="自动识别或手动填写"
-                    onChange={(event) => form.setFieldValue("target_system", event.target.value)}
-                  />
-                </div>
-                <div className="agent-studio-draft-form__row">
-                  <div className="agent-studio-draft-form__item">
-                    <Text type="secondary">执行环境</Text>
-                    <Select
-                      value={watchedEnvironment || undefined}
-                      options={environmentOptions}
-                      onChange={(value) => form.setFieldValue("environment", value)}
-                    />
-                  </div>
-                  <div className="agent-studio-draft-form__item">
-                    <Text type="secondary">RAG</Text>
-                    <Switch
-                      checked={Boolean(watchedRagEnabled)}
-                      checkedChildren="开"
-                      unCheckedChildren="关"
-                      onChange={(value) => form.setFieldValue("rag_enabled", value)}
-                    />
-                  </div>
+                <div className="agent-studio-handoff-flow__item">
+                  <span>3</span>
+                  <Text>带回创建页提交工作流</Text>
                 </div>
               </div>
               <div className="agent-studio-draft-grid">
@@ -1989,15 +2224,18 @@ export default function TaskCreate() {
                   <Text type="secondary">执行环境</Text>
                   <Text strong>{String(watchedEnvironment || "未选择")}</Text>
                 </div>
+                <div className="agent-studio-draft-item">
+                  <Text type="secondary">RAG</Text>
+                  <Text strong>{watchedRagEnabled ? "开启" : "关闭"}</Text>
+                </div>
               </div>
               <div className="agent-studio-draft-actions">
-                <Button type="primary" onClick={() => form.submit()} loading={submitting}>
-                  确认无误，创建任务
+                <Button type="primary" onClick={handleOpenCreateView}>
+                  带回创建页
                 </Button>
                 <Button onClick={() => void handleGenerateAgentSuggestion()} loading={agentLoading}>
                   {agentPayload ? "刷新 Agent" : "启动分析"}
                 </Button>
-                <Button onClick={handleOpenCreateView}>切回直接创建</Button>
               </div>
             </Card>
           ) : agentPanel}

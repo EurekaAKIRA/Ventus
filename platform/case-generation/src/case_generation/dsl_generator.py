@@ -504,6 +504,8 @@ def _infer_intent(text: str) -> str:
         if method == "GET":
             return "query"
         if method == "POST":
+            if "/refresh" in lowered:
+                return "create"
             if "/auth" in lowered or "/login" in lowered:
                 return "login"
             return "create"
@@ -549,12 +551,20 @@ def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[st
     lowered = text.lower()
     saved_context = scenario_state.get("saved_context", set())
     uses_context: list[str] = []
+    prefers_refresh_token = "refresh" in lowered or "refreshtoken" in lowered or "refresh_token" in lowered
+    prefers_access_token = (
+        "access_token" in lowered
+        or "accesstoken" in lowered
+        or "bearer" in lowered
+        or "auth/me" in lowered
+        or "当前用户" in text
+    )
     if any(keyword in lowered for keyword in PREVIOUS_CONTEXT_HINTS):
         if "task_id" in saved_context:
             uses_context.append("task_id")
-        if "access_token" in saved_context:
+        if "access_token" in saved_context and not prefers_refresh_token:
             uses_context.append("access_token")
-        if "refresh_token" in saved_context:
+        if "refresh_token" in saved_context and (prefers_refresh_token or not prefers_access_token):
             uses_context.append("refresh_token")
         if "token" in saved_context:
             uses_context.append("token")
@@ -578,7 +588,7 @@ def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[st
             uses_context.append("session_id")
     if "task_id" in saved_context and ("task_id" in lowered or "{task_id}" in text):
         uses_context.append("task_id")
-    if "access_token" in saved_context and ("access_token" in lowered or "bearer" in lowered or "auth/me" in lowered):
+    if "access_token" in saved_context and not prefers_refresh_token and ("access_token" in lowered or "bearer" in lowered or "auth/me" in lowered):
         uses_context.append("access_token")
     if "refresh_token" in saved_context and ("refresh_token" in lowered or "refresh" in lowered):
         uses_context.append("refresh_token")
@@ -602,7 +612,7 @@ def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[st
         uses_context.append("token")
     if "auth_token" in saved_context and ("auth_token" in lowered or "secret" in lowered or "token" in lowered):
         uses_context.append("auth_token")
-    if "access_token" in saved_context and ("token" in lowered or "bearer" in lowered):
+    if "access_token" in saved_context and not prefers_refresh_token and ("token" in lowered or "bearer" in lowered):
         uses_context.append("access_token")
     if "token" in saved_context and ("token" in lowered or "cookie" in lowered):
         uses_context.append("token")

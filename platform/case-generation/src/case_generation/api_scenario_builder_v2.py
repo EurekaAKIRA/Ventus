@@ -624,7 +624,12 @@ def _is_auth_endpoint(endpoint: dict) -> bool:
 
 def _is_auth_root_endpoint(endpoint: dict) -> bool:
     path = str(endpoint.get("path", "")).lower()
-    return any(token in path for token in ("/auth", "/login", "/session", "/challenger"))
+    normalized = _canonicalize_endpoint_path(path).lower()
+    if normalized in {"/auth", "/login", "/session", "/challenger", "/token"}:
+        return True
+    if normalized.endswith("/login") or normalized.endswith("/session"):
+        return True
+    return False
 
 
 def _is_unlikely_auth_root_variant(endpoint: dict, actions: list[str]) -> bool:

@@ -117,10 +117,25 @@ export interface TestCaseDSL {
 export interface ExecutionScenarioResult {
   scenario_id: string;
   scenario_name: string;
+  name?: string;
   status: string;
   duration_ms: number;
   passed_steps: number;
   failed_steps: number;
+  steps?: Array<{
+    step_id?: string;
+    step_type?: string;
+    text?: string;
+    status?: string;
+    message?: string;
+    error_category?: string;
+    request?: Record<string, unknown>;
+    request_summary?: Record<string, unknown>;
+    response?: Record<string, unknown>;
+    response_summary?: Record<string, unknown>;
+    assertion_summary?: Record<string, unknown>;
+    assertion_failures?: Array<Record<string, unknown>>;
+  }>;
 }
 
 export interface ExecutionLog {
@@ -136,6 +151,7 @@ export interface ExecutionResult {
   scenario_results: ExecutionScenarioResult[];
   metrics: Record<string, unknown>;
   logs: ExecutionLog[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface TaskArtifactItem {
@@ -536,6 +552,48 @@ export interface TaskDraftAgentFollowUpQuestion {
   answer_template?: string;
 }
 
+export interface TaskDraftAgentActionPlanItem {
+  key: string;
+  title: string;
+  detail: string;
+  status: "done" | "next" | "review" | "blocked" | string;
+  action_label?: string;
+  target_view?: "overview" | "followups" | "document" | "knowledge" | string;
+}
+
+export interface TaskDraftAgentScenarioBlueprint {
+  key: string;
+  title: string;
+  objective: string;
+  endpoints: string[];
+  dependency: string;
+  status: "ready" | "needs_context" | "read_only" | "single_step" | string;
+  gaps?: string[];
+}
+
+export interface TaskDraftAgentQualityGate {
+  key: string;
+  label: string;
+  status: "pass" | "warn" | "block" | string;
+  detail: string;
+}
+
+export interface TaskDraftAgentDiagnosticVerdict {
+  status: "pass" | "fixable" | "blocked" | string;
+  severity: "success" | "warning" | "error" | string;
+  label: string;
+  summary: string;
+  primary_action: string;
+  can_handoff: boolean;
+  can_execute: boolean;
+  blockers: string[];
+  auto_fix_count: number;
+  manual_action_count: number;
+  endpoint_count: number;
+  estimated_scenario_count: number;
+  blocked_endpoint_count: number;
+}
+
 export interface TaskDraftAgentPayload {
   reply: string;
   summary: {
@@ -549,6 +607,7 @@ export interface TaskDraftAgentPayload {
     confidence_score?: number;
     confidence_level?: "high" | "medium" | "low" | string;
   };
+  diagnostic_verdict?: TaskDraftAgentDiagnosticVerdict;
   suggested_task_name?: string;
   detected_base_url?: string;
   selected_environment?: string | null;
@@ -570,6 +629,10 @@ export interface TaskDraftAgentPayload {
     scenario_shape?: string;
   };
   resource_groups?: TaskDraftAgentResourceGroup[];
+  action_plan?: TaskDraftAgentActionPlanItem[];
+  scenario_blueprint?: TaskDraftAgentScenarioBlueprint[];
+  quality_gates?: TaskDraftAgentQualityGate[];
+  coverage_gaps?: string[];
   highlights: string[];
   risks: string[];
   document_fixes: string[];

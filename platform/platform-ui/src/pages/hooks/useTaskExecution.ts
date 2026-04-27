@@ -142,30 +142,32 @@ export function useTaskExecution(params: {
     }
 
     setExecuting(true);
+    setPollingError(null);
+    setStreamEvents([]);
+    setStreamStatus("idle");
+    setExecutionExplanations(null);
+    setExplanationsError(null);
+    setRegressionDiff(null);
+    setRegressionError(null);
     try {
-      await startExecution(taskId, { execution_mode: "api", environment: "test" });
+      const runningExecution = await startExecution(taskId, { execution_mode: "api", environment: "test", async_mode: true });
       setDetail((prev) =>
         prev
           ? {
               ...prev,
-              execution_result: prev.execution_result
-                ? {
-                    ...prev.execution_result,
-                    status: "running",
-                  }
-                : {
-                    task_id: prev.task_context.task_id,
-                    executor: "api-runner",
-                    status: "running",
-                    scenario_results: [],
-                    metrics: {},
-                    logs: [],
-                  },
+              execution_result: {
+                task_id: runningExecution.task_id || prev.task_context.task_id,
+                executor: runningExecution.executor || "api-runner",
+                status: "running",
+                scenario_results: [],
+                metrics: runningExecution.metrics || {},
+                logs: runningExecution.logs || [],
+                metadata: runningExecution.metadata,
+              },
               task_context: { ...prev.task_context, status: "running" },
             }
           : prev,
       );
-      setPollingError(null);
       message.success("执行任务已启动");
     } catch (error) {
       message.error((error as Error).message || "启动执行失败");
@@ -295,40 +297,39 @@ export function useTaskExecution(params: {
       return;
     }
     const source = new EventSource(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}/execution/stream`);
+    const appendStreamEvent = (eventName: string, data: string) => {
+      setStreamEvents((prev) => [
+        ...prev.slice(-79),
+        { event: eventName, data, at: new Date().toISOString() },
+      ]);
+    };
     source.onopen = () => setStreamStatus("connected");
     source.onerror = () => {
       setStreamStatus("fallback");
       source.close();
     };
     source.onmessage = (event) => {
-      setStreamEvents((prev) => [
-        ...prev.slice(-49),
-        { event: "message", data: event.data, at: new Date().toISOString() },
-      ]);
+      appendStreamEvent("message", event.data);
     };
-    source.addEventListener("step_start", (event) => {
-      setStreamEvents((prev) => [
-        ...prev.slice(-49),
-        { event: "step_start", data: (event as MessageEvent).data, at: new Date().toISOString() },
-      ]);
-    });
-    source.addEventListener("step_end", (event) => {
-      setStreamEvents((prev) => [
-        ...prev.slice(-49),
-        { event: "step_end", data: (event as MessageEvent).data, at: new Date().toISOString() },
-      ]);
-    });
-    source.addEventListener("assertion_failed", (event) => {
-      setStreamEvents((prev) => [
-        ...prev.slice(-49),
-        { event: "assertion_failed", data: (event as MessageEvent).data, at: new Date().toISOString() },
-      ]);
+    [
+      "status",
+      "step_start",
+      "request_prepared",
+      "response_received",
+      "context_saved",
+      "assertions_evaluated",
+      "step_result",
+      "step_end",
+      "scenario_result",
+      "assertion_failed",
+      "heartbeat",
+    ].forEach((eventName) => {
+      source.addEventListener(eventName, (event) => {
+        appendStreamEvent(eventName, (event as MessageEvent).data);
+      });
     });
     source.addEventListener("execution_done", (event) => {
-      setStreamEvents((prev) => [
-        ...prev.slice(-49),
-        { event: "execution_done", data: (event as MessageEvent).data, at: new Date().toISOString() },
-      ]);
+      appendStreamEvent("execution_done", (event as MessageEvent).data);
       source.close();
     });
     return () => source.close();

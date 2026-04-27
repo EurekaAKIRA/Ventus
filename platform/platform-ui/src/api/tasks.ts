@@ -228,6 +228,23 @@ export async function fetchTaskDraftAgent(payload: {
         confidence_score: 74,
         confidence_level: "medium",
       },
+      diagnostic_verdict: {
+        status: payload.target_system ? "fixable" : "blocked",
+        severity: payload.target_system ? "warning" : "error",
+        label: payload.target_system ? "可修复后交付" : "关键输入不足",
+        summary: payload.target_system
+          ? "当前草案可继续整理，建议先补齐 Request / Expected 后再交给工作流。"
+          : "未识别到目标系统与接口标识，暂不建议直接创建任务。",
+        primary_action: payload.target_system ? "优先应用自动修正，再带回创建页" : "先补齐目标系统和接口标识",
+        can_handoff: Boolean(payload.target_system),
+        can_execute: Boolean(payload.target_system && payload.environment),
+        blockers: payload.target_system ? [] : ["缺少目标系统或接口标识"],
+        auto_fix_count: 1,
+        manual_action_count: payload.target_system ? 1 : 2,
+        endpoint_count: payload.target_system ? 1 : 0,
+        estimated_scenario_count: payload.target_system ? 1 : 0,
+        blocked_endpoint_count: 0,
+      },
       suggested_task_name: payload.task_name || "示例任务",
       detected_base_url: payload.target_system || "",
       selected_environment: payload.environment || null,
@@ -289,6 +306,60 @@ export async function fetchTaskDraftAgent(payload: {
             },
           ]
         : [],
+      action_plan: [
+        {
+          key: "understand_input",
+          title: "识别任务输入",
+          detail: "已提取任务名称、目标系统、接口标识与环境候选",
+          status: "done",
+          action_label: "看概览",
+          target_view: "overview",
+        },
+        {
+          key: "normalize_document",
+          title: "修正文档结构",
+          detail: "补齐 Request / Expected 后，场景边界会更稳定",
+          status: "next",
+          action_label: "看修正",
+          target_view: "document",
+        },
+        {
+          key: "create_or_execute",
+          title: "创建并执行",
+          detail: "当前可创建任务，执行前建议确认目标环境",
+          status: payload.environment ? "done" : "next",
+          action_label: "回到创建",
+          target_view: "overview",
+        },
+      ],
+      scenario_blueprint: payload.target_system
+        ? [
+            {
+              key: "resource-readonly",
+              title: "resource 只读查询链路",
+              objective: "覆盖基础读取能力与响应结构",
+              endpoints: ["GET /demo/resource"],
+              dependency: "无需活资源创建，适合作为独立只读场景",
+              status: "read_only",
+              gaps: [],
+            },
+          ]
+        : [],
+      quality_gates: [
+        {
+          key: "parseability",
+          label: "解析稳定性",
+          status: payload.requirement_text ? "warn" : "block",
+          detail: payload.requirement_text ? "已提供需求文本，建议补齐结构锚点" : "缺少需求文本",
+        },
+        {
+          key: "execution_readiness",
+          label: "执行准备",
+          status: payload.target_system && payload.environment ? "pass" : "warn",
+          detail: payload.target_system && payload.environment ? "目标系统与环境已提供" : "仍需确认目标系统或执行环境",
+        },
+      ],
+      coverage_gaps: payload.target_system ? [] : ["未识别到接口标识，无法可靠估算接口覆盖率"],
       highlights: ["已生成基础草案", "可继续回填任务名称和目标系统"],
       risks: [],
       document_fixes: ["为关键步骤补充 `**Request:**` 和 `**Expected:**`，便于后续自动场景生成"],
@@ -523,13 +594,20 @@ export async function fetchFeatureText(taskId: string): Promise<string> {
 export async function startExecution(
   taskId: string,
   payload?: { execution_mode?: string; environment?: string; async_mode?: boolean },
-): Promise<void> {
+): Promise<ExecutionResult> {
   if (USE_MOCK_API) {
     await delay(500);
-    return;
+    return {
+      ...mockExecutionResult,
+      task_id: taskId,
+      status: "running",
+      scenario_results: [],
+      metrics: {},
+      logs: [],
+    };
   }
   try {
-    await requestApi(`${taskApiPath(taskId)}/execute`, {
+    return await requestApi<ExecutionResult>(`${taskApiPath(taskId)}/execute`, {
       method: "POST",
       body: JSON.stringify(payload ?? { execution_mode: "api", async_mode: true }),
     });

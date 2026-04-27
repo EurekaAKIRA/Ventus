@@ -1269,6 +1269,318 @@ def _build_task_draft_environment_candidates(
     return [item[1] for item in ranked_candidates]
 
 
+def _build_task_draft_quality_gates(
+    *,
+    requirement_ready: bool,
+    target_ready: bool,
+    environment_ready: bool,
+    environment_target_aligned: bool,
+    diagnostics: dict[str, Any],
+    knowledge_support: dict[str, Any],
+) -> list[dict[str, Any]]:
+    request_count = int(diagnostics.get("request_block_count", 0) or 0)
+    expected_count = int(diagnostics.get("expected_block_count", 0) or 0)
+    endpoint_count = len(diagnostics.get("recognized_endpoints") or [])
+    lifecycle_resource_risk = bool(diagnostics.get("lifecycle_resource_risk"))
+    has_context_flow = bool(diagnostics.get("has_context_flow"))
+    knowledge_hits = knowledge_support.get("knowledge_hits") or []
+
+    gates = [
+        {
+            "key": "parseability",
+            "label": "解析稳定性",
+            "status": "pass" if request_count and expected_count else "warn" if endpoint_count else "block",
+            "detail": (
+                f"已识别 {request_count} 个 Request 与 {expected_count} 个 Expected"
+                if request_count or expected_count
+                else "缺少 Request/Expected 锚点，场景边界会更依赖自然语言推断"
+            ),
+        },
+        {
+            "key": "coverage",
+            "label": "接口覆盖",
+            "status": "pass" if endpoint_count >= 3 else "warn" if endpoint_count else "block",
+            "detail": (
+                f"已识别 {endpoint_count} 个接口，可据此评估覆盖范围"
+                if endpoint_count
+                else "未识别到 METHOD /path，覆盖率无法可靠估算"
+            ),
+        },
+        {
+            "key": "dependency_integrity",
+            "label": "依赖完整性",
+            "status": "block" if lifecycle_resource_risk else "pass" if has_context_flow else "warn",
+            "detail": (
+                "存在需要活资源的接口但缺少资源来源"
+                if lifecycle_resource_risk
+                else "已显式声明上下文传递"
+                if has_context_flow
+                else "未发现明显跨步骤上下文，若包含 detail/update/delete 需再核对资源来源"
+            ),
+        },
+        {
+            "key": "execution_readiness",
+            "label": "执行准备",
+            "status": "pass" if requirement_ready and target_ready and environment_ready and environment_target_aligned else "warn",
+            "detail": (
+                "任务名、目标系统、执行环境已基本齐备"
+                if requirement_ready and target_ready and environment_ready and environment_target_aligned
+                else "创建或执行前仍需补齐目标系统、环境或环境对齐信息"
+            ),
+        },
+        {
+            "key": "knowledge_support",
+            "label": "知识依据",
+            "status": "pass" if knowledge_hits else "warn",
+            "detail": (
+                f"已匹配 {len(knowledge_hits)} 条知识片段，可解释当前建议来源"
+                if knowledge_hits
+                else "未命中知识片段，建议主要来自文档结构规则"
+            ),
+        },
+    ]
+    return gates
+
+
+def _build_task_draft_action_plan(
+    *,
+    ready_to_create: bool,
+    ready_to_execute: bool,
+    diagnostics: dict[str, Any],
+    document_preview: dict[str, Any] | None,
+    knowledge_support: dict[str, Any],
+) -> list[dict[str, Any]]:
+    has_followups = bool(diagnostics.get("follow_up_questions"))
+    has_document_actions = bool(diagnostics.get("document_actions"))
+    has_risks = bool(diagnostics.get("risks"))
+    has_knowledge = bool(knowledge_support.get("knowledge_hits"))
+    scenario_count = int((diagnostics.get("scenario_outlook") or {}).get("estimated_scenario_count", 0) or 0)
+
+    return [
+        {
+            "key": "understand_input",
+            "title": "识别任务输入",
+            "detail": "已提取任务名称、目标系统、接口标识、环境候选与文档结构信号",
+            "status": "done" if diagnostics.get("recognized_endpoints") or document_preview else "review",
+            "action_label": "看概览",
+            "target_view": "overview",
+        },
+        {
+            "key": "resolve_blockers",
+            "title": "处理阻断项",
+            "detail": (
+                "先回答高优先级追问，尤其是 Base URL、执行环境和资源来源"
+                if has_followups or has_risks
+                else "当前未发现明显阻断项"
+            ),
+            "status": "blocked" if has_risks else "next" if has_followups else "done",
+            "action_label": "处理追问",
+            "target_view": "followups",
+        },
+        {
+            "key": "normalize_document",
+            "title": "修正文档结构",
+            "detail": (
+                "可插入缺失的标题、Base URL、Request/Expected、上下文或资源来源片段"
+                if has_document_actions
+                else "文档结构暂不需要自动插入片段"
+            ),
+            "status": "next" if has_document_actions else "done",
+            "action_label": "看修正",
+            "target_view": "document",
+        },
+        {
+            "key": "review_scenarios",
+            "title": "审阅场景蓝图",
+            "detail": f"预计形成约 {scenario_count} 个场景，重点检查接口覆盖与资源生命周期",
+            "status": "next" if scenario_count else "review",
+            "action_label": "看链路",
+            "target_view": "overview",
+        },
+        {
+            "key": "create_or_execute",
+            "title": "创建并执行",
+            "detail": (
+                "当前可直接创建并进入执行链路"
+                if ready_to_execute
+                else "当前可创建任务，但执行前仍建议处理待确认项"
+                if ready_to_create
+                else "创建前仍需补齐关键输入"
+            ),
+            "status": "done" if ready_to_execute else "next" if ready_to_create else "blocked",
+            "action_label": "回到创建",
+            "target_view": "overview",
+        },
+        {
+            "key": "explain_with_knowledge",
+            "title": "查看知识依据",
+            "detail": (
+                f"已命中 {len(knowledge_support.get('knowledge_hits') or [])} 条知识片段，可辅助解释建议"
+                if has_knowledge
+                else "暂无知识命中，后续可继续补充规范库"
+            ),
+            "status": "done" if has_knowledge else "review",
+            "action_label": "看依据",
+            "target_view": "knowledge",
+        },
+    ]
+
+
+def _build_task_draft_scenario_blueprint(
+    *,
+    diagnostics: dict[str, Any],
+) -> list[dict[str, Any]]:
+    resource_groups = diagnostics.get("resource_groups") or []
+    recognized_endpoints = diagnostics.get("recognized_endpoints") or []
+    blueprints: list[dict[str, Any]] = []
+
+    for group in resource_groups[:6]:
+        status = str(group.get("status") or "")
+        resource_key = str(group.get("resource_key") or "resource")
+        endpoints = [str(item) for item in group.get("endpoints") or [] if str(item).strip()]
+        if status == "complete":
+            title = f"{resource_key} 生命周期链路"
+            objective = "覆盖创建/查询/修改/删除或同资源依赖链，验证资源状态流转"
+            dependency = "资源来源已具备，可按链路组织场景"
+            blueprint_status = "ready"
+            gaps: list[str] = []
+        elif status == "needs_source":
+            title = f"{resource_key} 活资源链路"
+            objective = "覆盖 detail/update/patch/delete 前，先确认可复用的资源 id"
+            dependency = "缺少 create、list/detail 保存 id 或预置资源说明"
+            blueprint_status = "needs_context"
+            gaps = ["补充资源来源", "声明 save_context / uses_context"]
+        elif status == "read_only":
+            title = f"{resource_key} 只读查询链路"
+            objective = "覆盖列表/查询类接口，验证读取能力与基础响应结构"
+            dependency = "无需活资源创建，适合作为独立只读场景"
+            blueprint_status = "read_only"
+            gaps = []
+        else:
+            title = f"{resource_key} 单接口场景"
+            objective = "覆盖单接口基础可用性，后续可并入更完整依赖链"
+            dependency = "暂无明确上下游依赖"
+            blueprint_status = "single_step"
+            gaps = []
+        blueprints.append(
+            {
+                "key": f"{resource_key}-{status}",
+                "title": title,
+                "objective": objective,
+                "endpoints": endpoints,
+                "dependency": dependency,
+                "status": blueprint_status,
+                "gaps": gaps,
+            }
+        )
+
+    if not blueprints and recognized_endpoints:
+        for index, endpoint in enumerate(recognized_endpoints[:4], start=1):
+            blueprints.append(
+                {
+                    "key": f"endpoint-{index}",
+                    "title": f"接口基础场景 {index}",
+                    "objective": "先验证单接口基础可达性，再根据响应数据补充链路关系",
+                    "endpoints": [str(endpoint)],
+                    "dependency": "暂无明确依赖",
+                    "status": "single_step",
+                    "gaps": [],
+                }
+            )
+    return blueprints
+
+
+def _build_task_draft_coverage_gaps(*, diagnostics: dict[str, Any]) -> list[str]:
+    gaps: list[str] = []
+    scenario_outlook = diagnostics.get("scenario_outlook") or {}
+    if not diagnostics.get("recognized_endpoints"):
+        gaps.append("未识别到接口标识，无法可靠估算接口覆盖率")
+    if int(diagnostics.get("request_block_count", 0) or 0) == 0:
+        gaps.append("缺少 Request 锚点，场景边界可能依赖自然语言推断")
+    if int(diagnostics.get("expected_block_count", 0) or 0) == 0:
+        gaps.append("缺少 Expected 锚点，自动断言信息会偏弱")
+    if diagnostics.get("lifecycle_resource_risk"):
+        gaps.append("存在需要活资源的接口，但资源来源尚未闭合")
+    uncovered = scenario_outlook.get("uncovered_live_resource_endpoints") or []
+    if uncovered:
+        gaps.append(f"仍有 {len(uncovered)} 个接口缺资源来源")
+    return _dedupe_strings(gaps)
+
+
+def _build_task_draft_diagnostic_verdict(
+    *,
+    ready_to_create: bool,
+    ready_to_execute: bool,
+    diagnostics: dict[str, Any],
+    quality_gates: list[dict[str, Any]],
+    coverage_gaps: list[str],
+) -> dict[str, Any]:
+    blocking_gates = [item for item in quality_gates if str(item.get("status") or "") == "block"]
+    warning_gates = [item for item in quality_gates if str(item.get("status") or "") == "warn"]
+    document_actions = diagnostics.get("document_actions") or []
+    follow_up_questions = diagnostics.get("follow_up_questions") or []
+    scenario_outlook = diagnostics.get("scenario_outlook") or {}
+    blockers = _dedupe_strings(
+        [
+            str(item.get("detail") or item.get("label") or "").strip()
+            for item in blocking_gates
+            if str(item.get("detail") or item.get("label") or "").strip()
+        ]
+        + [str(item).strip() for item in diagnostics.get("risks") or [] if str(item).strip()]
+    )[:5]
+
+    if blocking_gates:
+        status = "blocked"
+        severity = "error"
+        label = "存在阻断项"
+        primary_action = "先处理阻断门禁和高优先级追问"
+        summary = f"发现 {len(blocking_gates)} 个阻断门禁，暂不建议直接交给工作流生成。"
+    elif not ready_to_create:
+        status = "blocked"
+        severity = "error"
+        label = "关键输入不足"
+        primary_action = "先补齐任务名、需求文本和目标系统"
+        summary = "任务创建所需的关键输入还不完整，建议先补齐基础信息。"
+    elif warning_gates or coverage_gaps or document_actions or follow_up_questions:
+        status = "fixable"
+        severity = "warning"
+        label = "可修复后交付"
+        primary_action = "优先应用自动修正，再处理剩余追问"
+        summary = (
+            f"当前可继续整理，发现 {len(warning_gates)} 个待确认门禁、"
+            f"{len(document_actions)} 个可自动修正项。"
+        )
+    elif ready_to_execute:
+        status = "pass"
+        severity = "success"
+        label = "可交付工作流"
+        primary_action = "带回创建页提交执行"
+        summary = "输入质量、依赖链和执行准备均已通过，可交给工作流创建并执行。"
+    else:
+        status = "fixable"
+        severity = "warning"
+        label = "可创建但需核对执行"
+        primary_action = "回到创建页前核对执行环境"
+        summary = "文档基本可创建任务，但执行环境或环境对齐仍建议人工核对。"
+
+    blocked_endpoint_count = len(scenario_outlook.get("uncovered_live_resource_endpoints") or [])
+    return {
+        "status": status,
+        "severity": severity,
+        "label": label,
+        "summary": summary,
+        "primary_action": primary_action,
+        "can_handoff": status == "pass" or (status == "fixable" and ready_to_create),
+        "can_execute": bool(ready_to_execute and status == "pass"),
+        "blockers": blockers,
+        "auto_fix_count": len(document_actions),
+        "manual_action_count": len(follow_up_questions) + len(coverage_gaps) + len(warning_gates),
+        "endpoint_count": int(scenario_outlook.get("endpoint_count", 0) or 0),
+        "estimated_scenario_count": int(scenario_outlook.get("estimated_scenario_count", 0) or 0),
+        "blocked_endpoint_count": blocked_endpoint_count,
+    }
+
+
 def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_id: str | None = None) -> dict[str, Any]:
     normalized_project_id = str(project_id or payload.project_id or "").strip() or None
     requirement_text = str(payload.requirement_text or "")
@@ -1412,6 +1724,30 @@ def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_i
         recognized_endpoints=diagnostics["recognized_endpoints"],
         document_actions=diagnostics["document_actions"],
     )
+    quality_gates = _build_task_draft_quality_gates(
+        requirement_ready=requirement_ready,
+        target_ready=target_ready,
+        environment_ready=environment_ready,
+        environment_target_aligned=environment_target_aligned,
+        diagnostics=diagnostics,
+        knowledge_support=knowledge_support,
+    )
+    action_plan = _build_task_draft_action_plan(
+        ready_to_create=ready_to_create,
+        ready_to_execute=ready_to_execute,
+        diagnostics=diagnostics,
+        document_preview=document_preview,
+        knowledge_support=knowledge_support,
+    )
+    scenario_blueprint = _build_task_draft_scenario_blueprint(diagnostics=diagnostics)
+    coverage_gaps = _build_task_draft_coverage_gaps(diagnostics=diagnostics)
+    diagnostic_verdict = _build_task_draft_diagnostic_verdict(
+        ready_to_create=ready_to_create,
+        ready_to_execute=ready_to_execute,
+        diagnostics=diagnostics,
+        quality_gates=quality_gates,
+        coverage_gaps=coverage_gaps,
+    )
     checks = [
         {
             "key": "requirement_text",
@@ -1483,6 +1819,7 @@ def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_i
             "confidence_score": confidence_score,
             "confidence_level": confidence_level,
         },
+        "diagnostic_verdict": diagnostic_verdict,
         "suggested_task_name": suggested_task_name,
         "detected_base_url": detected_base_url,
         "selected_environment": selected_environment or None,
@@ -1494,6 +1831,10 @@ def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_i
         "recognized_endpoints": diagnostics["recognized_endpoints"],
         "scenario_outlook": diagnostics["scenario_outlook"],
         "resource_groups": diagnostics["resource_groups"],
+        "action_plan": action_plan,
+        "scenario_blueprint": scenario_blueprint,
+        "quality_gates": quality_gates,
+        "coverage_gaps": coverage_gaps,
         "highlights": diagnostics["highlights"],
         "risks": diagnostics["risks"],
         "document_fixes": diagnostics["document_fixes"],
@@ -1911,6 +2252,7 @@ def _run_async_execution_job(
         def _merge_scenario_snapshot(existing: list[dict[str, Any]], event: dict[str, Any]) -> list[dict[str, Any]]:
             scenario_id = str(event.get("scenario_id") or "")
             scenario_name = str(event.get("scenario_name") or "")
+            event_name = str(event.get("event") or "")
             status = str(event.get("status") or "").lower() or "running"
 
             copied = [dict(item) for item in existing]
@@ -1931,6 +2273,42 @@ def _run_async_execution_job(
             failed_steps = event.get("failed_steps")
             if isinstance(failed_steps, int):
                 merged_item["failed_steps"] = failed_steps
+
+            step_id = str(event.get("step_id") or "")
+            if step_id:
+                previous = copied[hit_index] if hit_index >= 0 else {}
+                steps = [dict(item) for item in (previous.get("steps") or []) if isinstance(item, dict)]
+                step_index = next((index for index, item in enumerate(steps) if str(item.get("step_id") or "") == step_id), -1)
+                step_status = {
+                    "step_start": "running",
+                    "request_prepared": "requesting",
+                    "response_received": "response_received",
+                    "context_saved": "context_saved",
+                    "assertions_evaluated": "asserting",
+                    "step_result": status if status in {"passed", "failed"} else "done",
+                }.get(event_name, status)
+                step_payload = {
+                    "step_id": step_id,
+                    "step_type": event.get("step_type"),
+                    "text": event.get("message") or step_id,
+                    "status": step_status,
+                    "message": event.get("message") or "",
+                    "error_category": event.get("error_category") or "",
+                    "request_summary": event.get("request_summary"),
+                    "response_summary": event.get("response_summary"),
+                    "assertion_summary": event.get("assertion_summary"),
+                    "updated_at": event.get("time") or _utc_now_iso(),
+                }
+                step_payload = {key: value for key, value in step_payload.items() if value not in (None, "")}
+                if step_index >= 0:
+                    steps[step_index] = {**steps[step_index], **step_payload}
+                else:
+                    steps.append(step_payload)
+                merged_item["steps"] = steps
+                merged_item["passed_steps"] = len([item for item in steps if item.get("status") == "passed"])
+                merged_item["failed_steps"] = len([item for item in steps if item.get("status") == "failed"])
+                if event_name != "scenario_result":
+                    merged_item["status"] = "failed" if step_status == "failed" else "running"
 
             if hit_index >= 0:
                 copied[hit_index] = {**copied[hit_index], **merged_item}
@@ -1957,7 +2335,7 @@ def _run_async_execution_job(
                 logs.append(normalized_event)
 
                 event_name = str(normalized_event.get("event") or "")
-                if event_name in {"step_start", "step_result", "scenario_result"}:
+                if event_name in {"step_start", "request_prepared", "response_received", "context_saved", "assertions_evaluated", "step_result", "scenario_result"}:
                     scenarios = _merge_scenario_snapshot(scenarios, normalized_event)
 
                 task.execution_result = {

@@ -21,7 +21,7 @@ _EXPLICIT_ENDPOINT_RE = re.compile(
 )
 _TABLE_ROW_RE = re.compile(r"^\s*\|.*\|")
 _INLINE_CODE_RE = re.compile(r"`([^`]+)`")
-_STEP_BLOCK_RE = re.compile(r"^####\s*Step[^\n]*\n(?P<body>.*?)(?=^####\s*Step|\Z)", re.MULTILINE | re.DOTALL)
+_STEP_BLOCK_RE = re.compile(r"^\s*####\s*Step[^\n]*\n(?P<body>.*?)(?=^\s*#{1,4}\s+|\Z)", re.MULTILINE | re.DOTALL)
 _JSON_BLOCK_RE = re.compile(r"```json\s*(\{.*?\})\s*```", re.IGNORECASE | re.DOTALL)
 _SAVE_CONTEXT_RE = re.compile(r"-\s*`?[a-zA-Z_][a-zA-Z0-9_]*`?\s*(?:<-|←)\s*`?(json\.[a-zA-Z0-9_.]+)`?")
 _NON_EXECUTABLE_ACTION_PATTERNS = (
@@ -92,6 +92,12 @@ def _extract_endpoint_pairs_from_interface_blocks(text: str) -> list[tuple[str, 
     current_name = ""
     current_method = ""
     current_path = ""
+    current_desc_parts: list[str] = []
+
+    def current_description() -> str:
+        parts = [part for part in [current_name, *current_desc_parts] if part]
+        return "；".join(_dedupe(parts))
+
     for raw_line in text.splitlines():
         stripped = raw_line.strip()
         heading_match = _LINE_HEADING_RE.match(stripped)
@@ -100,27 +106,30 @@ def _extract_endpoint_pairs_from_interface_blocks(text: str) -> list[tuple[str, 
             level = len(heading_match.group(1))
             if level == 2:
                 if in_interface_section and current_method and current_path:
-                    pairs.append((current_method.upper(), current_path, current_name))
+                    pairs.append((current_method.upper(), current_path, current_description()))
                 in_interface_section = title == "接口清单"
                 current_name = ""
                 current_method = ""
                 current_path = ""
+                current_desc_parts = []
                 continue
             if not in_interface_section:
                 continue
             if level == 3 and title.startswith("接口："):
                 if current_method and current_path:
-                    pairs.append((current_method.upper(), current_path, current_name))
+                    pairs.append((current_method.upper(), current_path, current_description()))
                 current_name = title.split("：", 1)[1].strip()
                 current_method = ""
                 current_path = ""
+                current_desc_parts = []
                 continue
             if in_interface_section and level <= 3:
                 if current_method and current_path:
-                    pairs.append((current_method.upper(), current_path, current_name))
+                    pairs.append((current_method.upper(), current_path, current_description()))
                 current_name = ""
                 current_method = ""
                 current_path = ""
+                current_desc_parts = []
             continue
         if not in_interface_section:
             continue
@@ -129,8 +138,12 @@ def _extract_endpoint_pairs_from_interface_blocks(text: str) -> list[tuple[str, 
             current_method = line.split("：", 1)[1].strip().strip("`").upper()
         elif line.startswith("路径："):
             current_path = line.split("：", 1)[1].strip().strip("`")
+        elif line.startswith(("功能：", "请求语义：", "结果语义：", "响应语义：")):
+            value = line.split("：", 1)[1].strip()
+            if value:
+                current_desc_parts.append(value)
     if in_interface_section and current_method and current_path:
-        pairs.append((current_method.upper(), current_path, current_name))
+        pairs.append((current_method.upper(), current_path, current_description()))
     return pairs
 
 
@@ -397,6 +410,35 @@ def _extract_expectation_text(text: str) -> str:
             if body:
                 blocks.append(body)
     return "\n".join(blocks)
+
+
+def _extract_step_expected_results(text: str) -> list[str]:
+    """Extract step-level Expected bullets and bind them to their Request endpoint."""
+    results: list[str] = []
+    for block_match in _STEP_BLOCK_RE.finditer(text):
+        block = block_match.group("body")
+        endpoint_match = _EXPLICIT_ENDPOINT_RE.search(block)
+        if not endpoint_match:
+            continue
+        method = endpoint_match.group(1).upper()
+        path = endpoint_match.group(2)
+        expected_match = re.search(r"\*\*Expected:\*\*", block, flags=re.IGNORECASE)
+        if not expected_match:
+            continue
+        expected_part = block[expected_match.end():]
+        for raw_line in expected_part.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+            if line.startswith("```"):
+                continue
+            if line.startswith("**") and not line.lower().startswith("**expected"):
+                break
+            cleaned = line.strip("-* ").strip()
+            if not cleaned:
+                continue
+            results.append(f"{method} {path} Expected: {cleaned}")
+    return _dedupe(results)
 
 
 def _extract_global_auth_injection(text: str) -> str:
@@ -858,6 +900,7 @@ def parse_requirement(
             for line in expectation_text.splitlines()
             if line.strip().startswith(("-", "*"))
         )
+    expectations.extend(_extract_step_expected_results(base_text))
     constraints = [sentence for sentence in re.split(r"[\n。；;]+", base_text) if any(cue in sentence.lower() for cue in CONSTRAINT_CUES)]
 
     if not actions:

@@ -35,6 +35,15 @@ def assertion_server():
                 self.end_headers()
                 self.wfile.write(encoded)
                 return
+            if self.path == "/posts":
+                payload = [{"id": 1, "title": "demo"}]
+                encoded = json.dumps(payload).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+                return
             self.send_error(404)
 
         def log_message(self, format: str, *args) -> None:  # noqa: A003
@@ -163,3 +172,155 @@ def test_executor_treats_empty_error_string_as_absent(assertion_server):
 
     result = execute_test_case_dsl(dsl)
     assert result["status"] == "passed"
+
+
+def test_executor_supports_json_type_assertions(assertion_server):
+    from api_runner.executor import execute_test_case_dsl
+
+    dsl = {
+        "task_id": "schema_type_demo",
+        "task_name": "schema_type_demo",
+        "feature_name": "schema_type_demo",
+        "execution_mode": "api",
+        "metadata": {"execution": {"base_url": assertion_server}},
+        "scenarios": [
+            {
+                "scenario_id": "scenario_001",
+                "name": "schema type",
+                "steps": [
+                    {
+                        "step_id": "step_001",
+                        "step_type": "when",
+                        "text": "query",
+                        "request": {"method": "GET", "url": "/profile", "retries": 0},
+                        "assertions": [
+                            {"assertion_id": "json_shape", "source": "json", "op": "type_in", "expected": ["object", "array"], "category": "schema", "severity": "major"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    result = execute_test_case_dsl(dsl)
+    assert result["status"] == "passed"
+
+
+def test_executor_reports_assertion_strength_metrics(assertion_server):
+    from api_runner.executor import execute_test_case_dsl
+
+    dsl = {
+        "task_id": "assertion_strength_demo",
+        "task_name": "assertion_strength_demo",
+        "feature_name": "assertion_strength_demo",
+        "execution_mode": "api",
+        "metadata": {"execution": {"base_url": assertion_server}},
+        "scenarios": [
+            {
+                "scenario_id": "scenario_001",
+                "name": "strong assertions",
+                "steps": [
+                    {
+                        "step_id": "step_001",
+                        "step_type": "when",
+                        "text": "query profile",
+                        "request": {"method": "GET", "url": "/profile", "retries": 0},
+                        "assertions": [
+                            {"assertion_id": "status_ok", "source": "status_code", "op": "eq", "expected": 200, "category": "status", "severity": "critical"},
+                            {"assertion_id": "nickname", "source": "json.user.nickname", "op": "eq", "expected": "demo", "category": "field_value", "severity": "major"},
+                            {"assertion_id": "items", "source": "json.items", "op": "len_gt", "expected": 0, "category": "collection", "severity": "major"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    result = execute_test_case_dsl(dsl)
+    summary = result["scenario_results"][0]["steps"][0]["assertion_summary"]
+
+    assert result["metrics"]["assertion_strength_level"] == "high"
+    assert result["metrics"]["weak_assertion_step_count"] == 0
+    assert summary["quality_level"] == "high"
+    assert summary["strength_score"] >= 75
+
+
+def test_executor_classifies_missing_collection_wrapper_as_shape_mismatch(assertion_server):
+    from api_runner.executor import execute_test_case_dsl
+
+    dsl = {
+        "task_id": "shape_mismatch_demo",
+        "task_name": "shape_mismatch_demo",
+        "feature_name": "shape_mismatch_demo",
+        "execution_mode": "api",
+        "metadata": {"execution": {"base_url": assertion_server}},
+        "scenarios": [
+            {
+                "scenario_id": "scenario_001",
+                "name": "top level array",
+                "steps": [
+                    {
+                        "step_id": "step_001",
+                        "step_type": "when",
+                        "text": "query posts",
+                        "request": {"method": "GET", "url": "/posts", "retries": 0},
+                        "assertions": [
+                            {"assertion_id": "posts_wrapper", "source": "json.posts", "op": "len_gt", "expected": 0, "category": "collection", "severity": "major"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    result = execute_test_case_dsl(dsl)
+    step = result["scenario_results"][0]["steps"][0]
+    failure = step["assertion_summary"]["failure_details"][0]
+
+    assert result["status"] == "failed"
+    assert step["error_category"] == "assertion_shape_mismatch"
+    assert step["response_profile"]["root_type"] == "array"
+    assert step["assertion_summary"]["shape_mismatch_count"] == 1
+    assert failure["failure_kind"] == "assertion_shape_mismatch"
+    assert failure["suggested_source"] == "json"
+    assert failure["suggested_op"] == "len_gt"
+    assert result["metrics"]["assertion_shape_mismatch_count"] == 1
+    assert result["metrics"]["response_profiles"]["GET /posts"]["root_type"] == "array"
+
+
+def test_executor_classifies_root_type_assertion_mismatch(assertion_server):
+    from api_runner.executor import execute_test_case_dsl
+
+    dsl = {
+        "task_id": "root_type_mismatch_demo",
+        "task_name": "root_type_mismatch_demo",
+        "feature_name": "root_type_mismatch_demo",
+        "execution_mode": "api",
+        "metadata": {"execution": {"base_url": assertion_server}},
+        "scenarios": [
+            {
+                "scenario_id": "scenario_001",
+                "name": "object response",
+                "steps": [
+                    {
+                        "step_id": "step_001",
+                        "step_type": "when",
+                        "text": "query profile",
+                        "request": {"method": "GET", "url": "/profile", "retries": 0},
+                        "assertions": [
+                            {"assertion_id": "wrong_root", "source": "json", "op": "type_is", "expected": "array", "category": "schema", "severity": "major"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    result = execute_test_case_dsl(dsl)
+    step = result["scenario_results"][0]["steps"][0]
+    failure = step["assertion_summary"]["failure_details"][0]
+
+    assert result["status"] == "failed"
+    assert step["error_category"] == "assertion_shape_mismatch"
+    assert step["response_profile"]["root_type"] == "object"
+    assert failure["failure_kind"] == "assertion_shape_mismatch"
+    assert failure["suggested_expected"] == "object"

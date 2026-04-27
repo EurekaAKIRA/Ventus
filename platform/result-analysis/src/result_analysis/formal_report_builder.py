@@ -27,7 +27,7 @@ def build_analysis_report(
     validation_errors = len(validation_report.errors)
     step_stats = _collect_step_stats(execution_result, test_case_dsl, validation_report)
     scenario_overview = _collect_scenario_overview(execution_result)
-    quality_status = _resolve_quality_status(validation_report, step_stats["failed_step_count"])
+    quality_status = _resolve_quality_status(validation_report, step_stats["failed_step_count"], step_stats["assertion_quality_summary"])
     failure_reasons = _merge_failure_reasons(step_stats["failure_reasons"], validation_report)
 
     summary = {
@@ -59,6 +59,9 @@ def build_analysis_report(
         "failure_count": step_stats["performance_stats"]["failure_count"],
         "throughput": step_stats["performance_stats"]["throughput"],
         "assertion_quality_summary": step_stats["assertion_quality_summary"],
+        "assertion_strength_score": step_stats["assertion_quality_summary"]["score"],
+        "assertion_strength_level": step_stats["assertion_quality_summary"]["level"],
+        "weak_assertion_step_count": step_stats["assertion_quality_summary"]["weak_assertion_step_count"],
         "scenario_quality_summary": step_stats["scenario_quality_summary"],
     }
     task_summary_text = _build_task_summary_text(task_context.task_name, quality_status, summary)
@@ -135,6 +138,8 @@ def build_analysis_report(
                 "passed": step_stats["assertion_stats"]["passed"],
                 "failed": step_stats["assertion_stats"]["failed"],
                 "pass_rate": step_stats["assertion_stats"]["pass_rate"],
+                "strength_score": step_stats["assertion_quality_summary"]["score"],
+                "strength_level": step_stats["assertion_quality_summary"]["level"],
             },
             "assertion_quality": step_stats["assertion_quality_summary"],
             "scenario_quality": step_stats["scenario_quality_summary"],
@@ -150,9 +155,11 @@ def build_analysis_report(
     return report.to_dict()
 
 
-def _resolve_quality_status(validation_report: ValidationReport, failed_step_count: int) -> str:
+def _resolve_quality_status(validation_report: ValidationReport, failed_step_count: int, assertion_quality_summary: dict[str, Any]) -> str:
     if failed_step_count or not validation_report.passed or validation_report.errors:
         return "failed"
+    if assertion_quality_summary.get("level") in {"low", "none"} and assertion_quality_summary.get("request_step_count", 0):
+        return "warning"
     if validation_report.warnings:
         return "warning"
     return "passed"
@@ -262,7 +269,7 @@ def _collect_step_stats(
     success_count = int(metrics.get("success_count", 0) or 0)
     failure_count = int(metrics.get("failure_count", 0) or 0)
     throughput = round(float(metrics.get("throughput", 0.0) or 0.0), 2)
-    assertion_quality_summary = _collect_assertion_quality_summary(dsl_steps)
+    assertion_quality_summary = _collect_assertion_quality_summary(dsl_steps, metrics)
     scenario_quality_summary = _collect_scenario_quality_summary(test_case_dsl)
 
     return {
@@ -363,6 +370,11 @@ def _has_execution_data(execution_result: dict[str, Any]) -> bool:
 
 
 def _categorize_failure(step: dict[str, Any]) -> str:
+    raw_category = str(step.get("error_category") or (step.get("response") or {}).get("error_category") or "").strip()
+    if raw_category == "assertion_shape_mismatch":
+        return "assertion_shape_mismatch"
+    if raw_category == "assertion_error":
+        return "assertion_failed"
     message = str(step.get("message", "")).lower()
     response = step.get("response") or {}
     status_code = response.get("status_code", 0) or 0
@@ -385,6 +397,7 @@ def _failure_category_label(category: str) -> str:
     labels = {
         "missing_context": "Context Missing",
         "assertion_failed": "Assertion Failed",
+        "assertion_shape_mismatch": "Assertion Shape Mismatch",
         "server_error": "Server Error",
         "client_error": "Client Error",
         "timeout": "Timeout",
@@ -474,7 +487,9 @@ def _build_findings(
     return findings
 
 
-def _collect_assertion_quality_summary(dsl_steps: list[dict[str, Any]]) -> dict[str, Any]:
+def _collect_assertion_quality_summary(dsl_steps: list[dict[str, Any]], metrics: dict[str, Any] | None = None) -> dict[str, Any]:
+    metrics = metrics or {}
+    metric_quality = metrics.get("assertion_quality")
     rule_count = 0
     llm_count = 0
     llm_repair_count = 0
@@ -482,7 +497,10 @@ def _collect_assertion_quality_summary(dsl_steps: list[dict[str, Any]]) -> dict[
     high_confidence_count = 0
     weak_assertion_step_count = 0
     steps: list[dict[str, Any]] = []
+    request_step_count = 0
     for step in dsl_steps:
+        if step.get("request"):
+            request_step_count += 1
         assertions = [item for item in (step.get("assertions") or []) if isinstance(item, dict)]
         generated_by_counts: dict[str, int] = {}
         categories: dict[str, int] = {}
@@ -513,6 +531,14 @@ def _collect_assertion_quality_summary(dsl_steps: list[dict[str, Any]]) -> dict[
                 "warning": step_quality.get("warning", ""),
             }
         )
+    if isinstance(metric_quality, dict):
+        score = float(metric_quality.get("score", 0) or 0)
+        level = str(metric_quality.get("level", "none") or "none")
+        weak_assertion_step_count = int(metric_quality.get("weak_step_count", weak_assertion_step_count) or 0)
+        request_step_count = int(metric_quality.get("request_step_count", request_step_count) or 0)
+    else:
+        score = _estimate_assertion_strength_score(steps)
+        level = _assertion_quality_level(score)
     return {
         "rule_count": rule_count,
         "llm_count": llm_count,
@@ -520,8 +546,45 @@ def _collect_assertion_quality_summary(dsl_steps: list[dict[str, Any]]) -> dict[
         "fallback_count": fallback_count,
         "high_confidence_count": high_confidence_count,
         "weak_assertion_step_count": weak_assertion_step_count,
+        "request_step_count": request_step_count,
+        "score": round(score, 2),
+        "level": level,
         "steps": steps,
     }
+
+
+def _estimate_assertion_strength_score(steps: list[dict[str, Any]]) -> float:
+    scored = [step for step in steps if step.get("assertion_count")]
+    if not scored:
+        return 0.0
+    total = 0.0
+    for step in scored:
+        categories = set((step.get("categories") or {}).keys())
+        score = 0
+        if "status" in categories:
+            score += 25
+        if categories.intersection({"field_value", "business"}):
+            score += 30
+        if "field_presence" in categories:
+            score += 18
+        if "schema" in categories:
+            score += 14
+        if "collection" in categories:
+            score += 10
+        if int(step.get("assertion_count", 0) or 0) >= 3:
+            score += 8
+        total += min(score, 100)
+    return round(total / len(scored), 2)
+
+
+def _assertion_quality_level(score: float) -> str:
+    if score >= 75:
+        return "high"
+    if score >= 55:
+        return "medium"
+    if score > 0:
+        return "low"
+    return "none"
 
 
 def _collect_scenario_quality_summary(test_case_dsl: dict[str, Any]) -> dict[str, Any]:
@@ -592,7 +655,9 @@ def _build_assertion_quality_warnings(assertion_quality_summary: dict[str, Any])
     warnings: list[str] = []
     weak_count = int(assertion_quality_summary.get("weak_assertion_step_count", 0) or 0)
     if weak_count:
-        warnings.append(f"存在 {weak_count} 个步骤仅包含状态码断言")
+        warnings.append(f"存在 {weak_count} 个步骤断言较弱，可能只能说明接口可达，不能充分证明业务正确")
+    if assertion_quality_summary.get("level") in {"low", "none"} and assertion_quality_summary.get("request_step_count", 0):
+        warnings.append("断言强度偏低，全量通过时也应视为低可信通过")
     fallback_count = int(assertion_quality_summary.get("fallback_count", 0) or 0)
     if fallback_count:
         warnings.append(f"有 {fallback_count} 条断言使用了规则兜底")
@@ -694,6 +759,8 @@ def _build_dashboard(
             "max_elapsed_ms": summary["max_elapsed_ms"],
             "assertion_total": assertion_stats["total"],
             "assertion_pass_rate": assertion_stats["pass_rate"],
+            "assertion_strength_score": summary["assertion_strength_score"],
+            "assertion_strength_level": summary["assertion_strength_level"],
             "context_defined_keys": context_stats["defined_key_count"],
             "context_used_keys": context_stats["used_key_count"],
             "context_extracted_keys": context_stats["extracted_key_count"],
@@ -720,6 +787,8 @@ def _build_dashboard(
             "passed": assertion_stats["passed"],
             "failed": assertion_stats["failed"],
             "pass_rate": assertion_stats["pass_rate"],
+            "strength_score": summary["assertion_strength_score"],
+            "strength_level": summary["assertion_strength_level"],
         },
         "assertion_quality_summary": assertion_quality_summary,
         "scenario_quality_summary": summary["scenario_quality_summary"],
@@ -753,7 +822,8 @@ def _build_task_summary_text(task_name: str, quality_status: str, summary: dict[
         f"共分析 {summary['scenario_count']} 个场景，执行 {summary['executed_steps']} 个步骤；"
         f"其中通过 {summary['passed_steps']} 个、失败 {summary['failed_steps']} 个，"
         f"成功率 {summary['success_rate']}%，平均耗时 {summary['avg_elapsed_ms']}ms，"
-        f"最大耗时 {summary['max_elapsed_ms']}ms。"
+        f"最大耗时 {summary['max_elapsed_ms']}ms；"
+        f"断言强度 {summary['assertion_strength_score']}（{summary['assertion_strength_level']}）。"
     )
 
 
@@ -780,6 +850,8 @@ def _build_dashboard_summary(
         "assertion_passed": assertion_stats["passed"],
         "assertion_failed": assertion_stats["failed"],
         "assertion_pass_rate": assertion_stats["pass_rate"],
+        "assertion_strength_score": summary["assertion_strength_score"],
+        "assertion_strength_level": summary["assertion_strength_level"],
         "context_defined_keys": context_stats["defined_key_count"],
         "context_used_keys": context_stats["used_key_count"],
         "context_extracted_keys": context_stats["extracted_key_count"],

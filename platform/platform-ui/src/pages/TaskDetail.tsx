@@ -22,6 +22,27 @@ const { Text } = Typography;
 /** 分析完成前：轻量 summary 轮询；完成后停。执行中由 useTaskExecution 轮询。 */
 const PRE_SETTLED_DETAIL_POLL_MS = 12000;
 
+function executionStatusColor(status: string) {
+  if (status === "passed") return "success";
+  if (status === "failed") return "error";
+  if (["running", "requesting", "response_received", "asserting"].includes(status)) return "processing";
+  return "default";
+}
+
+function executionStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    passed: "通过",
+    failed: "失败",
+    running: "执行中",
+    requesting: "请求中",
+    response_received: "已响应",
+    asserting: "断言中",
+    queued: "排队中",
+    pending: "待执行",
+  };
+  return labels[status] || status || "-";
+}
+
 const STAGE_LABELS: Record<StageKey, string> = {
   basic: "任务基础信息",
   artifacts: "任务产物索引",
@@ -288,6 +309,14 @@ export default function TaskDetail() {
     Boolean(analysisProgress) &&
     (analysisProgress?.status !== "completed" || stageState.dashboard !== "finish") &&
     !refreshing;
+  const shouldShowCreateFlowProgressPage =
+    showCreateFlowProgressCard ||
+    (fromCreateFlow &&
+      Boolean(analysisProgress) &&
+      (analysisProgress?.status !== "completed" ||
+        stageState.artifacts === "process" ||
+        stageState.dashboard === "process" ||
+        stageState.dashboard === "wait"));
   const hasSummaryOnlyDetail =
     !detail.parsed_requirement &&
     !detail.retrieved_context?.length &&
@@ -316,9 +345,7 @@ export default function TaskDetail() {
       key: "status",
       width: 120,
       render: (value: string) => (
-        <Tag color={value === "passed" ? "success" : value === "failed" ? "error" : value === "running" ? "processing" : "default"}>
-          {value}
-        </Tag>
+        <Tag color={executionStatusColor(value)}>{executionStatusLabel(value)}</Tag>
       ),
     },
     {
@@ -344,6 +371,19 @@ export default function TaskDetail() {
     { title: "失败步骤", dataIndex: "failedSteps", key: "failedSteps", width: 110 },
   ];
 
+  if (shouldShowCreateFlowProgressPage) {
+    return (
+      <Space direction="vertical" size={20} style={{ width: "100%" }} className="task-detail-page">
+        <TaskDetailCreateProgressCard
+          stageState={stageState}
+          stageError={stageError}
+          stageLabels={CREATE_FLOW_STAGE_LABELS}
+          analysisProgress={analysisProgress}
+        />
+      </Space>
+    );
+  }
+
   return (
     <Space direction="vertical" size={20} style={{ width: "100%" }} className="task-detail-page">
       {showTopRefreshBanner ? (
@@ -352,14 +392,6 @@ export default function TaskDetail() {
           refreshProgressPercent={refreshProgressPercent}
           hasStageError={hasStageError}
           stageError={stageError}
-        />
-      ) : null}
-      {showCreateFlowProgressCard ? (
-        <TaskDetailCreateProgressCard
-          stageState={stageState}
-          stageError={stageError}
-          stageLabels={CREATE_FLOW_STAGE_LABELS}
-          analysisProgress={analysisProgress}
         />
       ) : null}
       <TaskDetailTopSection

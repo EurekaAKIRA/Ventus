@@ -37,6 +37,8 @@ ALLOWED_ASSERTION_OPS = {
     "len_lt",
     "len_ge",
     "len_le",
+    "type_is",
+    "type_in",
     "in",
     "not_in",
     "is_true",

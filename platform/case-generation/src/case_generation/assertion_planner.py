@@ -21,7 +21,18 @@ from .assertion_llm import (
 
 FIELD_TOKEN_RE = re.compile(r"`([a-zA-Z_][a-zA-Z0-9_]*)`|\"([a-zA-Z_][a-zA-Z0-9_]*)\"|'([a-zA-Z_][a-zA-Z0-9_]*)'")
 FIELD_NAME_RE = re.compile(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\b")
-SUCCESS_STATUS_RE = re.compile(r"\b(200|201|202|204)\b")
+HTTP_METHOD_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+(`?/?[A-Za-z0-9_{}./?=&:-]+`?)", re.IGNORECASE)
+HTTP_STATUS_CONTEXT_RE = re.compile(r"\b(?:http|status(?:_code)?|返回|应返回|预期返回|状态码)\b", re.IGNORECASE)
+HTTP_STATUS_CODE_RE = re.compile(r"\b([1-5]\d{2})\b")
+EXPECTED_FIELD_VALUE_RE = re.compile(
+    r"`?(json\.[a-zA-Z0-9_.\[\]]+|data\.[a-zA-Z0-9_.\[\]]+|[a-zA-Z_][a-zA-Z0-9_.\[\]]*)`?\s*(?:=|==|为|应为|等于)\s*`?([^`\n，,；;]+)`?",
+    re.IGNORECASE,
+)
+EXPECTED_FIELD_EXISTS_RE = re.compile(
+    r"`?(json\.[a-zA-Z0-9_.\[\]]+|data\.[a-zA-Z0-9_.\[\]]+|[a-zA-Z_][a-zA-Z0-9_.\[\]]*)`?\s*(存在|非空|不为空|not\s+empty|exists)",
+    re.IGNORECASE,
+)
+ARRAY_EXPECTATION_RE = re.compile(r"(返回|response|body).{0,12}(数组|array)", re.IGNORECASE)
 ASSERTION_FIELD_STOPWORDS = {
     "api",
     "code",
@@ -436,8 +447,15 @@ class RuleAssertionBuilder:
                 assertions.append(_assertion("json", "exists", None, "major", "schema", 0.82, "query_response_present", "rules"))
                 if capability == "filter":
                     pass
-                elif capability == "list" or _looks_like_collection(self.request, self.step):
-                    assertions.append(_assertion(_infer_collection_source(self.request, self.step), "len_gt", 0, "major", "collection", 0.86, "collection_not_empty", "rules"))
+                elif _mentions_collection_semantics(
+                    lowered_text,
+                    capability,
+                    _canonicalize_path(url).lower(),
+                    self.request,
+                    self.step,
+                    self.parsed_requirement,
+                ):
+                    assertions.append(_assertion(_infer_collection_source(self.request, self.step, self.parsed_requirement), "len_gt", 0, "major", "collection", 0.86, "collection_not_empty", "rules"))
                     identifier_source = _infer_collection_identifier_source(self.request, self.parsed_requirement)
                     if identifier_source:
                         assertions.append(_assertion(identifier_source, "exists", None, "major", "field_presence", 0.81, "collection_identifier_present", "rules"))
@@ -445,6 +463,12 @@ class RuleAssertionBuilder:
             assertions.append(_assertion("json", "exists", None, "major", "schema", 0.76, "update_response_present", "rules"))
         if self.intent == "delete":
             assertions.append(_assertion("error", "not_exists", None, "major", "business", 0.68, "delete_no_runtime_error", "rules"))
+
+        assertions.extend(_infer_expected_result_assertions(self.request, self.parsed_requirement, self.step))
+        assertions.extend(_infer_semantic_expected_assertions(self.request, self.parsed_requirement, self.step, capability))
+
+        if not non_json_response:
+            assertions.extend(_infer_schema_shape_assertions(self.request, self.intent, capability, self.parsed_requirement, self.step))
 
         for field in _extract_known_fields(self.parsed_requirement, self.step, self.request):
             if field.lower() in {"token", "task_id", "order_id", "pet_id", "username", "session_id", "booking_id", "bookingid", "resource_id", "id", "user"}:
@@ -560,7 +584,7 @@ def _assertion(
         "reasoning": reasoning,
         "fallback_used": False,
     }
-    if expected is not None or op in {"eq", "ne", "in", "not_in", "gt", "lt", "ge", "le", "len_eq", "len_gt", "len_lt", "len_ge", "len_le", "contains", "not_contains", "matches"}:
+    if expected is not None or op in {"eq", "ne", "in", "not_in", "gt", "lt", "ge", "le", "len_eq", "len_gt", "len_lt", "len_ge", "len_le", "contains", "not_contains", "matches", "type_is", "type_in"}:
         payload["expected"] = expected
     return payload
 
@@ -578,7 +602,7 @@ def _resolve_expected_statuses(intent: str, request: dict[str, Any], step: dict[
             for item in (parsed_requirement.get("constraints", []) or [])
             if request_method.lower() in str(item).lower() and endpoint_path.lower() in str(item).lower()
         ]
-        explicit = [int(match.group(1)) for item in matched_constraints for match in SUCCESS_STATUS_RE.finditer(str(item))]
+        explicit = _extract_status_codes_from_texts(matched_constraints)
         if explicit:
             return list(dict.fromkeys(explicit))
         status_hints.extend(matched_constraints)
@@ -586,7 +610,7 @@ def _resolve_expected_statuses(intent: str, request: dict[str, Any], step: dict[
     else:
         status_hints.extend(parsed_requirement.get("expected_results", []))
     request_text = " ".join(status_hints)
-    explicit = [int(match.group(1)) for match in SUCCESS_STATUS_RE.finditer(request_text)]
+    explicit = _extract_status_codes_from_texts([request_text])
     if explicit:
         return list(dict.fromkeys(explicit))
     if request_method == "GET" and canonical_path == "/heartbeat":
@@ -594,12 +618,28 @@ def _resolve_expected_statuses(intent: str, request: dict[str, Any], step: dict[
     if intent == "create":
         if request_url.endswith("/tasks"):
             return [201]
+        if canonical_path.endswith("/auth/refresh") or canonical_path.endswith("/refresh"):
+            return [200]
         return [200, 201]
     if intent == "delete":
         if request_method == "DELETE" and (request_url.endswith("/booking") or "/booking/" in request_url):
             return [201]
         return [200, 204]
     return [200]
+
+
+def _extract_status_codes_from_texts(items: list[str]) -> list[int]:
+    codes: list[int] = []
+    for item in items:
+        text = str(item or "")
+        for line in re.split(r"[\n。；;]+", text):
+            if not HTTP_STATUS_CONTEXT_RE.search(line):
+                continue
+            for match in HTTP_STATUS_CODE_RE.finditer(line):
+                code = int(match.group(1))
+                if code not in codes:
+                    codes.append(code)
+    return codes
 
 
 def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, Any], request: dict[str, Any] | None = None) -> list[str]:
@@ -691,7 +731,7 @@ def _is_allowed_source_for_request(source: str, request: dict[str, Any]) -> bool
         if url_lower.endswith(suffix):
             return normalized_source in allowed
     if _is_simple_endpoint(url_lower):
-        return normalized_source in {"status_code", "json", "elapsed_ms", "error"}
+        return normalized_source in {"status_code", "json", "elapsed_ms", "error"} or normalized_source.startswith("json.")
     if normalized_source.startswith("json."):
         return True
     return False
@@ -761,9 +801,17 @@ def _looks_like_collection(request: dict[str, Any], step: dict[str, Any]) -> boo
     return any(keyword in text for keyword in ("list", "items", "search", "query", "filter", "firstname", "lastname", "checkin", "checkout")) or url.endswith("/items") or url.endswith("/orders") or ("?" in url and "=" in url)
 
 
-def _infer_collection_source(request: dict[str, Any], step: dict[str, Any]) -> str:
+def _infer_collection_source(
+    request: dict[str, Any],
+    step: dict[str, Any],
+    parsed_requirement: dict[str, Any] | None = None,
+) -> str:
     text = str(step.get("text", "")).lower()
     url = str(request.get("url", "")).lower()
+    evidence = _response_shape_evidence(request, step, parsed_requirement or {})
+    field = _explicit_collection_field_from_text(evidence)
+    if field:
+        return f"json.{field}"
     if "items" in text or url.endswith("/items"):
         return "json.items"
     if "orders" in text or url.endswith("/orders"):
@@ -799,6 +847,7 @@ def _canonicalize_path(path: str) -> str:
     if normalized != "/" and normalized.endswith("/"):
         normalized = normalized[:-1]
     normalized = re.sub(r"/\d+(?=/|$)", "/{id}", normalized)
+    normalized = re.sub(r"([?&][^=&]+)=\d+(?=&|$)", r"\1={id}", normalized)
     normalized = PLACEHOLDER_SEGMENT_RE.sub(lambda m: "{" + _canonical_placeholder_name(m.group(1)) + "}", normalized)
     normalized = normalized.replace("/booking/{resource_id}", "/booking/{booking_id}")
     normalized = normalized.replace("/todos/{resource_id}", "/todos/{todo_id}")
@@ -818,7 +867,7 @@ def _paths_match(request_path: str, endpoint_path: str) -> bool:
     for left_part, right_part in zip(left_parts, right_parts):
         if left_part == right_part:
             continue
-        if left_part.startswith("{") and right_part.startswith("{"):
+        if right_part.startswith("{") and right_part.endswith("}"):
             continue
         return False
     return True
@@ -877,11 +926,16 @@ def _relevant_expected_results(parsed_requirement: dict[str, Any], request: dict
     method = str(endpoint.get("method", "")).upper().strip()
     path = str(endpoint.get("path", "")).strip()
     segments = [segment for segment in _canonicalize_path(path).lower().split("/") if segment and not segment.startswith("{")]
-    require_explicit_surface = ("{" in _canonicalize_path(path) and "}" in _canonicalize_path(path)) or len(segments) <= 1
+    require_explicit_surface = (
+        method != "GET"
+        or ("{" in _canonicalize_path(path) and "}" in _canonicalize_path(path))
+        or len(segments) <= 1
+        or _canonicalize_path(path).lower().startswith("/auth/")
+    )
     matched: list[str] = []
     for item in parsed_requirement.get("expected_results", []) or []:
         lowered = str(item).lower()
-        if method and method.lower() in lowered and _canonicalize_path(path).lower() in lowered:
+        if _text_references_endpoint(str(item), method, path):
             matched.append(str(item))
             continue
         if not require_explicit_surface and segments and any(segment in lowered for segment in segments):
@@ -897,10 +951,22 @@ def _relevant_constraints(parsed_requirement: dict[str, Any], request: dict[str,
     path = _canonicalize_path(str(endpoint.get("path", "")).strip()).lower()
     matched: list[str] = []
     for item in parsed_requirement.get("constraints", []) or []:
-        lowered = str(item).lower()
-        if method and method.lower() in lowered and path in lowered:
+        if _text_references_endpoint(str(item), method, path):
             matched.append(str(item))
     return matched
+
+
+def _text_references_endpoint(text: str, method: str, path: str) -> bool:
+    expected_method = str(method or "").upper().strip()
+    expected_path = _canonicalize_path(path).lower()
+    if not expected_method or not expected_path:
+        return False
+    for match in HTTP_METHOD_PATH_RE.finditer(str(text or "")):
+        found_method = match.group(1).upper().strip()
+        found_path = _canonicalize_path(match.group(2).strip().strip("`")).lower()
+        if found_method == expected_method and found_path == expected_path:
+            return True
+    return False
 
 
 def _endpoint_response_fields(parsed_requirement: dict[str, Any], request: dict[str, Any]) -> list[str]:
@@ -1053,3 +1119,322 @@ def _infer_echo_assertions(request: dict[str, Any]) -> list[dict[str, Any]]:
                 )
             )
     return assertions
+
+
+def _infer_expected_result_assertions(
+    request: dict[str, Any],
+    parsed_requirement: dict[str, Any],
+    step: dict[str, Any],
+) -> list[dict[str, Any]]:
+    assertions: list[dict[str, Any]] = []
+    texts = _relevant_expected_results(parsed_requirement, request, step) + _relevant_constraints(parsed_requirement, request, step)
+    for text in texts:
+        for line in re.split(r"[\n。；;]+", str(text or "")):
+            lowered = line.lower()
+            if "http" in lowered or "status_code" in lowered or "状态码" in line:
+                continue
+            for match in EXPECTED_FIELD_VALUE_RE.finditer(line):
+                source = _normalize_expected_field_source(match.group(1))
+                if not source:
+                    continue
+                expected = _parse_expected_literal(match.group(2))
+                assertions.append(
+                    _assertion(
+                        source,
+                        "eq",
+                        expected,
+                        "major",
+                        "field_value",
+                        0.88,
+                        "explicit_expected_field_value",
+                        "rules",
+                    )
+                )
+            for match in EXPECTED_FIELD_EXISTS_RE.finditer(line):
+                source = _normalize_expected_field_source(match.group(1))
+                if not source:
+                    continue
+                cue = str(match.group(2)).lower()
+                if "非空" in cue or "不为空" in cue or "not" in cue:
+                    assertions.append(
+                        _assertion(
+                            source,
+                            "len_gt",
+                            0,
+                            "major",
+                            "field_presence",
+                            0.84,
+                            "explicit_expected_field_not_empty",
+                            "rules",
+                        )
+                    )
+                else:
+                    assertions.append(
+                        _assertion(
+                            source,
+                            "exists",
+                            None,
+                            "major",
+                            "field_presence",
+                            0.86,
+                            "explicit_expected_field_exists",
+                            "rules",
+                        )
+                    )
+            if ARRAY_EXPECTATION_RE.search(line) and not _mentions_specific_json_field(line):
+                assertions.append(
+                    _assertion(
+                        "json",
+                        "type_is",
+                        "array",
+                        "major",
+                        "schema",
+                        0.76,
+                        "explicit_expected_array_response",
+                        "rules",
+                    )
+                )
+    return assertions
+
+
+def _infer_semantic_expected_assertions(
+    request: dict[str, Any],
+    parsed_requirement: dict[str, Any],
+    step: dict[str, Any],
+    capability: str,
+) -> list[dict[str, Any]]:
+    """Turn common business result wording into concrete, high-value checks."""
+    assertions: list[dict[str, Any]] = []
+    texts = _relevant_expected_results(parsed_requirement, request, step) + _relevant_constraints(parsed_requirement, request, step)
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    haystack = " ".join(
+        [
+            str(step.get("text", "")),
+            str((endpoint or {}).get("description", "")),
+            " ".join(texts),
+        ]
+    )
+    lowered = haystack.lower()
+    path = _canonicalize_path(str((endpoint or {}).get("path") or request.get("url", ""))).lower()
+    method = str((endpoint or {}).get("method") or request.get("method", "")).upper().strip()
+
+    token_fields = {
+        "accessToken": ("accesstoken", "access_token", "access token"),
+        "refreshToken": ("refreshtoken", "refresh_token", "refresh token"),
+    }
+    for field, markers in token_fields.items():
+        if any(marker in lowered for marker in markers):
+            source = f"json.{field}"
+            assertions.append(_assertion(source, "exists", None, "major", "field_presence", 0.88, "semantic_token_present", "rules"))
+            if any(marker in lowered for marker in ("非空", "不为空", "not empty", "non-empty", "有效", "valid")):
+                assertions.append(_assertion(source, "len_gt", 0, "major", "field_presence", 0.86, "semantic_token_not_empty", "rules"))
+
+    if _mentions_pagination_semantics(lowered, path):
+        for field in ("total", "skip", "limit"):
+            assertions.append(
+                _assertion(
+                    f"json.{field}",
+                    "exists",
+                    None,
+                    "major",
+                    "field_presence",
+                    0.82,
+                    "semantic_pagination_field",
+                    "rules",
+                )
+            )
+    collection_source = _infer_collection_source(request, step, parsed_requirement)
+    if _mentions_collection_semantics(lowered, capability, path, request, step, parsed_requirement):
+        assertions.append(
+            _assertion(
+                collection_source,
+                "type_is",
+                "array",
+                "major",
+                "schema",
+                0.82,
+                "semantic_collection_array",
+                "rules",
+            )
+        )
+
+    if method == "POST" and any(marker in lowered for marker in ("新 id", "新id", "new id", "返回 id", "返回新 id", "返回新id")):
+        assertions.append(_assertion("json.id", "exists", None, "major", "field_presence", 0.84, "semantic_created_identifier", "rules"))
+
+    if method == "DELETE" and any(marker in lowered for marker in ("删除标记", "删除结果", "isdeleted", "deletedon", "delete flag", "deleted flag")):
+        assertions.append(_assertion("json.isDeleted", "eq", True, "major", "field_value", 0.86, "semantic_delete_marker", "rules"))
+        assertions.append(_assertion("json.deletedOn", "exists", None, "major", "field_presence", 0.82, "semantic_delete_timestamp", "rules"))
+
+    if path.endswith("/auth/me") or any(marker in lowered for marker in ("当前用户", "current user", "user profile", "用户信息")):
+        assertions.append(_assertion("json.id", "exists", None, "major", "field_presence", 0.78, "semantic_current_user_identifier", "rules"))
+
+    return assertions
+
+
+def _mentions_collection_semantics(
+    text: str,
+    capability: str,
+    path: str,
+    request: dict[str, Any] | None = None,
+    step: dict[str, Any] | None = None,
+    parsed_requirement: dict[str, Any] | None = None,
+) -> bool:
+    evidence = " ".join([text, _response_shape_evidence(request or {}, step or {}, parsed_requirement or {})]).lower()
+    if any(marker in evidence for marker in ("列表", "集合", "数组", "list", "array", "items")):
+        return True
+    if _mentions_pagination_semantics(evidence, path):
+        return True
+    return False
+
+
+def _mentions_pagination_semantics(text: str, path: str) -> bool:
+    return any(marker in text for marker in ("分页", "pagination", "limit", "skip", "total")) or path.endswith("/todos")
+
+
+def _response_shape_evidence(
+    request: dict[str, Any],
+    step: dict[str, Any],
+    parsed_requirement: dict[str, Any],
+) -> str:
+    endpoint = _matched_endpoint(parsed_requirement, request)
+    fields = " ".join(_endpoint_response_fields(parsed_requirement, request))
+    return " ".join(
+        [
+            str(step.get("text", "")),
+            str((endpoint or {}).get("description", "")),
+            " ".join(_relevant_expected_results(parsed_requirement, request, step)),
+            " ".join(_relevant_constraints(parsed_requirement, request, step)),
+            fields,
+        ]
+    )
+
+
+def _explicit_collection_field_from_text(text: str) -> str:
+    raw = str(text or "")
+    lowered = raw.lower()
+    if re.search(r"`?json\.([a-zA-Z_][a-zA-Z0-9_]*)`?", raw):
+        for match in re.finditer(r"`?json\.([a-zA-Z_][a-zA-Z0-9_]*)`?", raw):
+            candidate = match.group(1)
+            if _is_collection_field_name(candidate):
+                return candidate
+
+    # Only infer envelope fields when there is structural evidence, usually pagination metadata.
+    if not any(marker in lowered for marker in ("分页", "pagination", "total", "skip", "limit", "page", "size", "结构")):
+        return ""
+    tokens = _INLINE_FIELD_TOKENS(raw) + FIELD_NAME_RE.findall(raw)
+    for token in tokens:
+        candidate = str(token or "").strip().strip("`")
+        if _is_collection_field_name(candidate):
+            return candidate
+    return ""
+
+
+def _INLINE_FIELD_TOKENS(text: str) -> list[str]:
+    tokens: list[str] = []
+    for groups in FIELD_TOKEN_RE.findall(text):
+        token = next((item for item in groups if item), "").strip()
+        if token:
+            tokens.append(token)
+    return tokens
+
+
+def _is_collection_field_name(name: str) -> bool:
+    lowered = str(name or "").strip().lower()
+    if not lowered or lowered in ASSERTION_FIELD_STOPWORDS:
+        return False
+    if lowered in {"total", "skip", "limit", "page", "size", "count", "offset", "id"}:
+        return False
+    return lowered.endswith("s") or lowered in {"items", "records", "results", "list", "data"}
+
+
+def _normalize_expected_field_source(field: str) -> str:
+    token = str(field or "").strip().strip("`").strip()
+    if not token:
+        return ""
+    lowered = token.lower()
+    if lowered in {"http", "status", "status_code", "返回", "expected"}:
+        return ""
+    if any(ch in token for ch in ("/", "{", "}")):
+        return ""
+    if lowered.startswith("json."):
+        return "json." + token[5:]
+    if lowered.startswith("data."):
+        return "json." + token
+    if "." in token or lowered in {"code", "success", "message", "status", "token", "id"}:
+        return f"json.{token}"
+    return ""
+
+
+def _parse_expected_literal(raw: str) -> Any:
+    value = str(raw or "").strip().strip("`").strip().strip("\"'")
+    lowered = value.lower()
+    if lowered in {"true", "false"}:
+        return lowered == "true"
+    if lowered in {"null", "none"}:
+        return None
+    try:
+        if re.fullmatch(r"-?\d+", value):
+            return int(value)
+        if re.fullmatch(r"-?\d+\.\d+", value):
+            return float(value)
+    except ValueError:
+        pass
+    return value
+
+
+def _mentions_specific_json_field(text: str) -> bool:
+    return bool(re.search(r"`?(json|data)\.[a-zA-Z0-9_.\[\]]+`?", text, flags=re.IGNORECASE))
+
+
+def _infer_schema_shape_assertions(
+    request: dict[str, Any],
+    intent: str,
+    capability: str,
+    parsed_requirement: dict[str, Any],
+    step: dict[str, Any],
+) -> list[dict[str, Any]]:
+    url = str(request.get("url", ""))
+    if _is_simple_endpoint(url):
+        return []
+    if intent in {"create", "update", "login"}:
+        return [
+            _assertion(
+                "json",
+                "type_is",
+                "object",
+                "major",
+                "schema",
+                0.78,
+                "json_object_response_shape",
+                "rules",
+            )
+        ]
+    if intent == "query":
+        expected = ["object", "array"]
+        assertions = [
+            _assertion(
+                "json",
+                "type_in",
+                expected,
+                "major",
+                "schema",
+                0.74,
+                "json_query_response_shape",
+                "rules",
+            )
+        ]
+        if _mentions_collection_semantics("", capability, _canonicalize_path(str(request.get("url", ""))).lower(), request, step, parsed_requirement):
+            assertions.append(
+                _assertion(
+                    _infer_collection_source(request, step, parsed_requirement),
+                    "type_in",
+                    ["array", "object"],
+                    "minor",
+                    "schema",
+                    0.66,
+                    "collection_shape_check",
+                    "rules",
+                )
+            )
+        return assertions
+    return []

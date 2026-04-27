@@ -1,9 +1,143 @@
-import { Alert, Button, Card, Input, List, Space, Table, Tag, Typography } from "antd";
+import { type Key, useEffect, useMemo, useState } from "react";
+import { Alert, Button, Card, Input, List, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { TableProps } from "antd";
 import type { ExecutionExplanationPayload, PreflightCheckPayload } from "../../types";
+import { createDefect } from "../../api/defects";
 import LogPanel from "../../components/LogPanel";
-import type { ExecutionCaseRow } from "../hooks/useExecutionCaseRows";
+import type { ExecutionCaseRow, ExecutionCaseStepRow } from "../hooks/useExecutionCaseRows";
 import type { ExtendedTaskDetail } from "../hooks/useTaskDetailData";
+
+type FailedExecutionStepRow = {
+  key: string;
+  scenarioId: string;
+  scenarioName: string;
+  stepId: string;
+  stepText: string;
+  message: string;
+  category: string;
+  statusCode: string;
+  requestText: string;
+  expectedText: string;
+  actualText: string;
+};
+
+const SEVERITY_OPTIONS = [
+  { value: "medium", label: "中" },
+  { value: "high", label: "高" },
+  { value: "critical", label: "严重" },
+  { value: "low", label: "低" },
+];
+
+function stringifyCompact(input: unknown) {
+  if (input === undefined || input === null || input === "") {
+    return "-";
+  }
+  if (typeof input === "string") {
+    return input;
+  }
+  try {
+    return JSON.stringify(input, null, 2);
+  } catch {
+    return String(input);
+  }
+}
+
+function severityFromCategory(category: string) {
+  if (["server_error", "upstream_error", "auth_error", "tls_error"].includes(category)) {
+    return "high";
+  }
+  if (["timeout", "network_error", "missing_context"].includes(category)) {
+    return "high";
+  }
+  if (["request_validation_error", "client_error"].includes(category)) {
+    return "medium";
+  }
+  return "medium";
+}
+
+function executionStatusColor(status: string) {
+  if (status === "passed") return "success";
+  if (status === "failed") return "error";
+  if (["running", "requesting", "response_received", "asserting"].includes(status)) return "processing";
+  if (status === "queued") return "default";
+  return "default";
+}
+
+function executionStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    passed: "通过",
+    failed: "失败",
+    running: "执行中",
+    requesting: "请求中",
+    response_received: "已响应",
+    asserting: "断言中",
+    context_saved: "上下文已保存",
+    queued: "排队中",
+    pending: "待执行",
+  };
+  return labels[status] || status || "-";
+}
+
+function buildFailedStepRows(detail: ExtendedTaskDetail): FailedExecutionStepRow[] {
+  const rows: FailedExecutionStepRow[] = [];
+  const scenarios = detail.execution_result?.scenario_results ?? [];
+  scenarios.forEach((scenario) => {
+    const scenarioName = scenario.name || scenario.scenario_name || scenario.scenario_id || "未命名场景";
+    const steps = scenario.steps ?? [];
+    steps
+      .filter((step) => step.status && step.status !== "passed")
+      .forEach((step, index) => {
+        const response = step.response ?? {};
+        const request = step.request ?? {};
+        const assertionFailures = step.assertion_failures ?? [];
+        const category = String(step.error_category || response.error_category || "execution_error");
+        const statusCode = String(response.status_code ?? "-");
+        const method = String(request.method ?? "");
+        const url = String(request.url ?? "");
+        const requestText = [method, url].filter(Boolean).join(" ") || stringifyCompact(step.request_summary || request);
+        rows.push({
+          key: `${scenario.scenario_id || "scenario"}::${step.step_id || index}`,
+          scenarioId: scenario.scenario_id || "-",
+          scenarioName,
+          stepId: step.step_id || `step_${index + 1}`,
+          stepText: step.text || "-",
+          message: step.message || "-",
+          category,
+          statusCode,
+          requestText,
+          expectedText:
+            assertionFailures.length > 0
+              ? assertionFailures.map((item) => `${item.source ?? "assertion"} ${item.op ?? ""} ${stringifyCompact(item.expected)}`).join("\n")
+              : "接口按用例断言返回预期状态、结构和业务值",
+          actualText: [
+            `失败信息：${step.message || "-"}`,
+            `失败类别：${category}`,
+            `HTTP 状态：${statusCode}`,
+            response.error ? `响应错误：${response.error}` : "",
+            assertionFailures.length ? `断言失败：${assertionFailures.map((item) => item.message).filter(Boolean).join("；")}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        });
+      });
+    if (!steps.length && scenario.status === "failed") {
+      rows.push({
+        key: `${scenario.scenario_id || "scenario"}::scenario_failed`,
+        scenarioId: scenario.scenario_id || "-",
+        scenarioName,
+        stepId: "-",
+        stepText: "场景执行失败，缺少步骤明细",
+        message: "场景执行失败",
+        category: "execution_error",
+        statusCode: "-",
+        requestText: "-",
+        expectedText: "场景应全部通过",
+        actualText: `场景 ${scenarioName} 执行失败`,
+      });
+    }
+  });
+  return rows;
+}
 
 export function TaskDetailExecutionTab(props: {
   pollingError: string | null;
@@ -51,6 +185,98 @@ export function TaskDetailExecutionTab(props: {
     executionExplanations,
     onLoadExecutionExplanations,
   } = props;
+  const [selectedFailedStepKeys, setSelectedFailedStepKeys] = useState<Key[]>([]);
+  const [defectSeverity, setDefectSeverity] = useState("medium");
+  const [exportingDefects, setExportingDefects] = useState(false);
+  const failedStepRows = useMemo(() => buildFailedStepRows(detail), [detail]);
+  const selectedFailedStepRows = useMemo(
+    () => failedStepRows.filter((item) => selectedFailedStepKeys.includes(item.key)),
+    [failedStepRows, selectedFailedStepKeys],
+  );
+  const exportFailedStepRows = selectedFailedStepRows.length ? selectedFailedStepRows : failedStepRows;
+
+  useEffect(() => {
+    setSelectedFailedStepKeys(failedStepRows.map((item) => item.key));
+  }, [failedStepRows]);
+
+  const handleExportSelectedDefects = async () => {
+    if (!exportFailedStepRows.length) {
+      message.warning("当前没有可导出的失败步骤");
+      return;
+    }
+    setExportingDefects(true);
+    try {
+      await Promise.all(
+        exportFailedStepRows.map((row) =>
+          createDefect({
+            project_id: detail.task_context.project_id,
+            task_id: detail.task_context.task_id,
+            title: `[${row.category}] ${row.scenarioName} / ${row.stepText}`.slice(0, 180),
+            description: [
+              `来源任务：${detail.task_context.task_name}`,
+              `任务 ID：${detail.task_context.task_id}`,
+              `场景：${row.scenarioName} (${row.scenarioId})`,
+              `步骤：${row.stepText} (${row.stepId})`,
+              `失败类别：${row.category}`,
+              `HTTP 状态：${row.statusCode}`,
+              "",
+              "失败信息：",
+              row.message,
+            ].join("\n"),
+            severity: defectSeverity || severityFromCategory(row.category),
+            status: "open",
+            source: "execution_export",
+            reproduction_steps: [
+              "1. 打开任务详情页并进入执行页签",
+              "2. 使用当前任务 DSL 与环境执行接口测试",
+              `3. 执行场景：${row.scenarioName}`,
+              `4. 执行步骤：${row.stepText}`,
+              `5. 请求：${row.requestText}`,
+            ].join("\n"),
+            expected_result: row.expectedText,
+            actual_result: row.actualText,
+          }),
+        ),
+      );
+      message.success(`已导出 ${exportFailedStepRows.length} 条缺陷`);
+      setSelectedFailedStepKeys([]);
+    } catch (error) {
+      message.error((error as Error).message || "导出缺陷失败");
+    } finally {
+      setExportingDefects(false);
+    }
+  };
+
+  const failedStepColumns: TableProps<FailedExecutionStepRow>["columns"] = [
+    { title: "场景", dataIndex: "scenarioName", key: "scenarioName", ellipsis: true },
+    { title: "步骤", dataIndex: "stepText", key: "stepText", ellipsis: true },
+    {
+      title: "类别",
+      dataIndex: "category",
+      key: "category",
+      width: 150,
+      render: (value: string) => (
+        <Tag color={["assertion_error", "assertion_failed", "assertion_shape_mismatch"].includes(value) ? "gold" : "error"}>{value}</Tag>
+      ),
+    },
+    { title: "HTTP", dataIndex: "statusCode", key: "statusCode", width: 90 },
+    { title: "失败信息", dataIndex: "message", key: "message", ellipsis: true },
+  ];
+
+  const executionStepColumns: TableProps<ExecutionCaseStepRow>["columns"] = [
+    { title: "步骤", dataIndex: "stepId", key: "stepId", width: 130 },
+    { title: "说明", dataIndex: "text", key: "text", ellipsis: true },
+    {
+      title: "状态",
+      dataIndex: "status",
+      key: "status",
+      width: 110,
+      render: (value: string) => <Tag color={executionStatusColor(value)}>{executionStatusLabel(value)}</Tag>,
+    },
+    { title: "请求", dataIndex: "requestText", key: "requestText", ellipsis: true, width: 260 },
+    { title: "响应", dataIndex: "responseText", key: "responseText", ellipsis: true, width: 180 },
+    { title: "信息", dataIndex: "message", key: "message", ellipsis: true, width: 260 },
+  ];
 
   return (
     <Space direction="vertical" style={{ width: "100%" }}>
@@ -159,6 +385,19 @@ export function TaskDetailExecutionTab(props: {
                 dataSource={filteredExecutionCaseRows}
                 pagination={{ pageSize: 8, showSizeChanger: false }}
                 scroll={{ x: 1200 }}
+                expandable={{
+                  expandedRowRender: (record) => (
+                    <Table<ExecutionCaseStepRow>
+                      rowKey="key"
+                      size="small"
+                      columns={executionStepColumns}
+                      dataSource={record.steps}
+                      pagination={false}
+                      scroll={{ x: 1100 }}
+                    />
+                  ),
+                  rowExpandable: (record) => record.steps.length > 0,
+                }}
                 locale={{ emptyText: "暂无可展示的执行用例" }}
               />
             </div>
@@ -187,6 +426,60 @@ export function TaskDetailExecutionTab(props: {
           </Space>
         ) : (
           <Alert type="info" showIcon message="暂无执行结果" />
+        )}
+      </Card>
+
+      <Card
+        className="panel-card"
+        bordered={false}
+        title="缺陷导出"
+        extra={
+          <Space>
+            <Select
+              size="small"
+              value={defectSeverity}
+              style={{ width: 120 }}
+              options={SEVERITY_OPTIONS}
+              onChange={setDefectSeverity}
+            />
+            <Button
+              size="small"
+              type="primary"
+              loading={exportingDefects}
+              disabled={!failedStepRows.length}
+              onClick={() => void handleExportSelectedDefects()}
+            >
+              {selectedFailedStepRows.length ? "导出选中缺陷" : "导出全部缺陷"}
+            </Button>
+          </Space>
+        }
+      >
+        {detail.execution_result ? (
+          failedStepRows.length ? (
+            <Space direction="vertical" size={10} style={{ width: "100%" }}>
+              <Alert
+                type="info"
+                showIcon
+                message={`已发现 ${failedStepRows.length} 个失败步骤，默认全选；也可以取消勾选后只导出部分缺陷。`}
+              />
+              <Table<FailedExecutionStepRow>
+                rowKey="key"
+                size="small"
+                columns={failedStepColumns}
+                dataSource={failedStepRows}
+                pagination={{ pageSize: 6, showSizeChanger: false }}
+                rowSelection={{
+                  selectedRowKeys: selectedFailedStepKeys,
+                  onChange: setSelectedFailedStepKeys,
+                }}
+                scroll={{ x: 900 }}
+              />
+            </Space>
+          ) : (
+            <Alert type="success" showIcon message="当前执行结果未发现失败步骤，暂不需要导出缺陷。" />
+          )
+        ) : (
+          <Alert type="info" showIcon message="执行完成后，可在这里选择失败步骤导出为缺陷。" />
         )}
       </Card>
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import re
 import socket
@@ -46,6 +47,10 @@ def execute_test_case_dsl(
     context = ContextBus()
     runtime_state = _build_runtime_state(test_case_dsl)
     assertion_inventory = _collect_assertion_inventory(test_case_dsl)
+    assertion_quality = _build_assertion_quality_metrics(assertion_inventory)
+    coverage_tracker = _init_api_coverage_tracker(test_case_dsl, runtime_state)
+    runtime_state["response_profiles"] = {}
+    runtime_state["assertion_shape_mismatch_count"] = 0
     for key, value in (runtime_state.get("context_seed") or {}).items():
         context.set(str(key), value)
 
@@ -62,7 +67,15 @@ def execute_test_case_dsl(
             _emit_progress(progress_callback, start_log)
             try:
                 if step.get("request"):
-                    step_result = _execute_request_step(step, context, runtime_state, logs)
+                    step_result = _execute_request_step(
+                        step,
+                        context,
+                        runtime_state,
+                        logs,
+                        progress_callback,
+                        scenario_id=scenario_id,
+                        scenario_name=scenario_name,
+                    )
                 else:
                     step_result = _execute_non_request_step(step, context)
             except Exception as exc:  # pragma: no cover - defensive top-level guard
@@ -79,6 +92,7 @@ def execute_test_case_dsl(
                 passed_steps += 1
             else:
                 scenario_failed = True
+            _record_api_coverage_step(coverage_tracker, step_result)
             response = step_result.get("response") or {}
             if isinstance(response.get("elapsed_ms"), (int, float)):
                 elapsed_samples.append(float(response["elapsed_ms"]))
@@ -110,6 +124,7 @@ def execute_test_case_dsl(
         )
 
     overall_status = "passed" if passed_steps == total_steps else "failed"
+    api_coverage = _finalize_api_coverage(coverage_tracker)
     result = ExecutionResult(
         task_id=test_case_dsl.get("task_id", "unknown_task"),
         executor="api-runner",
@@ -127,6 +142,18 @@ def execute_test_case_dsl(
             "assertion_category_counts": assertion_inventory["category_counts"],
             "assertion_generated_by_counts": assertion_inventory["generated_by_counts"],
             "fallback_assertion_count": assertion_inventory["fallback_count"],
+            "assertion_strength_score": assertion_quality["score"],
+            "assertion_strength_level": assertion_quality["level"],
+            "weak_assertion_step_count": assertion_quality["weak_step_count"],
+            "high_value_assertion_step_count": assertion_quality["high_value_step_count"],
+            "assertion_quality": assertion_quality,
+            "api_coverage": api_coverage,
+            "api_coverage_ratio": api_coverage["coverage_ratio"],
+            "api_endpoint_count": api_coverage["total_endpoints"],
+            "api_passed_endpoint_count": api_coverage["passed_endpoints"],
+            "api_failed_endpoint_count": api_coverage["failed_endpoints"],
+            "response_profiles": runtime_state.get("response_profiles", {}),
+            "assertion_shape_mismatch_count": runtime_state.get("assertion_shape_mismatch_count", 0),
         },
         logs=logs,
     )
@@ -178,6 +205,10 @@ def _execute_request_step(
     context: ContextBus,
     runtime_state: dict[str, Any],
     logs: list[dict],
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    *,
+    scenario_id: str | None = None,
+    scenario_name: str | None = None,
 ) -> dict:
     missing_context = context.require(step.get("uses_context") or [])
     if missing_context:
@@ -195,13 +226,19 @@ def _execute_request_step(
         request_spec["timeout"] = float(runtime_state.get("default_step_timeout", 30))
     if "retries" not in request_spec:
         request_spec["retries"] = int(runtime_state.get("default_step_retries", 2))
-    logs.append(_build_request_log(step, request_spec))
+    request_log = _build_request_log(step, request_spec, scenario_id=scenario_id, scenario_name=scenario_name)
+    logs.append(request_log)
+    _emit_progress(progress_callback, request_log)
     response_payload = _perform_http_request(request_spec, runtime_state["opener"])
-    logs.append(_build_response_log(step, response_payload))
+    response_log = _build_response_log(step, response_payload, scenario_id=scenario_id, scenario_name=scenario_name)
+    logs.append(response_log)
+    _emit_progress(progress_callback, response_log)
     context.set("last_response", response_payload)
     context.set("last_status_code", response_payload.get("status_code"))
     context.set("last_request", _summarize_request(request_spec))
     context.set("last_request_payload", request_spec)
+    response_profile = _build_response_profile(request_spec, response_payload)
+    _record_response_profile(runtime_state, request_spec, response_profile)
 
     save_context = step.get("save_context") or {}
     saved_context: dict[str, Any] = {}
@@ -215,16 +252,27 @@ def _execute_request_step(
             context.set(key, value)
             saved_context[key] = value
     if saved_context:
-        logs.append(_build_context_log(step, saved_context))
+        context_log = _build_context_log(step, saved_context, scenario_id=scenario_id, scenario_name=scenario_name)
+        logs.append(context_log)
+        _emit_progress(progress_callback, context_log)
 
     assertions = step.get("assertions") or []
     assertion_failures = _evaluate_assertions(assertions, response_payload, context)
     assertion_summary = _build_assertion_summary(assertions, assertion_failures)
-    logs.append(_build_assertion_log(step, assertion_summary))
+    runtime_state["assertion_shape_mismatch_count"] = int(runtime_state.get("assertion_shape_mismatch_count", 0)) + int(
+        assertion_summary.get("shape_mismatch_count", 0) or 0
+    )
+    assertion_log = _build_assertion_log(step, assertion_summary, scenario_id=scenario_id, scenario_name=scenario_name)
+    logs.append(assertion_log)
+    _emit_progress(progress_callback, assertion_log)
     status = "failed" if assertion_failures else "passed"
     error_category = response_payload.get("error_category", "")
     if assertion_failures:
-        error_category = error_category or "assertion_error"
+        error_category = error_category or (
+            "assertion_shape_mismatch"
+            if assertion_summary.get("shape_mismatch_count") == assertion_summary.get("failed")
+            else "assertion_error"
+        )
     message = (
         f"{request_spec.get('method', 'GET')} {request_spec.get('url')} -> {response_payload['status_code']}"
         if not assertion_failures
@@ -255,6 +303,7 @@ def _execute_request_step(
             "error_category": response_payload["error_category"],
         },
         "response_summary": _summarize_response(response_payload),
+        "response_profile": response_profile,
         "context_snapshot": context.snapshot(),
         "saved_context": saved_context,
         "assertion_summary": assertion_summary,
@@ -424,8 +473,131 @@ def _count_runtime_cookies(runtime_state: dict[str, Any]) -> int:
         return 0
 
 
+def _init_api_coverage_tracker(test_case_dsl: dict, runtime_state: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    tracker: dict[str, dict[str, Any]] = {}
+    for scenario in test_case_dsl.get("scenarios", []):
+        for step in scenario.get("steps", []):
+            request_spec = step.get("request")
+            if not isinstance(request_spec, dict):
+                continue
+            endpoint_key = _endpoint_key_from_request_spec(request_spec, runtime_state)
+            if not endpoint_key:
+                continue
+            item = tracker.setdefault(endpoint_key, _new_coverage_item(endpoint_key))
+            item["planned_steps"] += 1
+            item["scenario_ids"].add(str(scenario.get("scenario_id") or ""))
+            item["scenario_names"].add(str(scenario.get("name") or ""))
+    return tracker
+
+
+def _new_coverage_item(endpoint_key: str) -> dict[str, Any]:
+    method, _, path = endpoint_key.partition(" ")
+    return {
+        "endpoint": endpoint_key,
+        "method": method,
+        "path": path,
+        "planned_steps": 0,
+        "executed_steps": 0,
+        "passed_steps": 0,
+        "failed_steps": 0,
+        "status_codes": {},
+        "failure_categories": {},
+        "scenario_ids": set(),
+        "scenario_names": set(),
+    }
+
+
+def _record_api_coverage_step(tracker: dict[str, dict[str, Any]], step_result: dict[str, Any]) -> None:
+    request_payload = step_result.get("request") or {}
+    if not request_payload:
+        return
+    endpoint_key = _endpoint_key_from_request_payload(request_payload)
+    if not endpoint_key:
+        return
+    item = tracker.setdefault(endpoint_key, _new_coverage_item(endpoint_key))
+    item["executed_steps"] += 1
+    if step_result.get("status") == "passed":
+        item["passed_steps"] += 1
+    else:
+        item["failed_steps"] += 1
+        category = str(step_result.get("error_category") or "execution_error")
+        item["failure_categories"][category] = item["failure_categories"].get(category, 0) + 1
+    response = step_result.get("response") or {}
+    status_code = response.get("status_code")
+    if status_code not in (None, ""):
+        key = str(status_code)
+        item["status_codes"][key] = item["status_codes"].get(key, 0) + 1
+
+
+def _finalize_api_coverage(tracker: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    endpoints: list[dict[str, Any]] = []
+    for item in tracker.values():
+        executed = int(item.get("executed_steps", 0) or 0)
+        failed = int(item.get("failed_steps", 0) or 0)
+        passed = int(item.get("passed_steps", 0) or 0)
+        status = "not_executed" if executed == 0 else "failed" if failed else "passed" if passed else "unknown"
+        endpoints.append(
+            {
+                "endpoint": item["endpoint"],
+                "method": item["method"],
+                "path": item["path"],
+                "status": status,
+                "planned_steps": int(item.get("planned_steps", 0) or 0),
+                "executed_steps": executed,
+                "passed_steps": passed,
+                "failed_steps": failed,
+                "status_codes": dict(sorted(item.get("status_codes", {}).items())),
+                "failure_categories": dict(sorted(item.get("failure_categories", {}).items())),
+                "scenario_ids": sorted(value for value in item.get("scenario_ids", set()) if value),
+                "scenario_names": sorted(value for value in item.get("scenario_names", set()) if value),
+            }
+        )
+    endpoints.sort(key=lambda value: (value["path"], value["method"]))
+    total = len(endpoints)
+    executed_count = len([item for item in endpoints if item["executed_steps"] > 0])
+    passed_count = len([item for item in endpoints if item["status"] == "passed"])
+    failed_count = len([item for item in endpoints if item["status"] == "failed"])
+    return {
+        "total_endpoints": total,
+        "executed_endpoints": executed_count,
+        "passed_endpoints": passed_count,
+        "failed_endpoints": failed_count,
+        "not_executed_endpoints": max(total - executed_count, 0),
+        "coverage_ratio": round((executed_count / total) * 100, 2) if total else 0.0,
+        "pass_ratio": round((passed_count / executed_count) * 100, 2) if executed_count else 0.0,
+        "endpoints": endpoints,
+    }
+
+
+def _endpoint_key_from_request_spec(request_spec: dict[str, Any], runtime_state: dict[str, Any]) -> str:
+    method = str(request_spec.get("method", "GET") or "GET").upper()
+    url = str(request_spec.get("url", "") or "")
+    base_url = str(runtime_state.get("base_url", "") or "")
+    if base_url and url:
+        if url.startswith("/"):
+            url = base_url.rstrip("/") + url
+        elif not _is_absolute_http_url(url):
+            url = base_url.rstrip("/") + "/" + url.lstrip("/")
+    return _endpoint_key(method, url)
+
+
+def _endpoint_key_from_request_payload(request_payload: dict[str, Any]) -> str:
+    return _endpoint_key(str(request_payload.get("method", "GET") or "GET").upper(), str(request_payload.get("url", "") or ""))
+
+
+def _endpoint_key(method: str, url: str) -> str:
+    if not url:
+        return ""
+    parsed = parse.urlparse(url)
+    path = parsed.path or url
+    if not path.startswith("/"):
+        path = "/" + path
+    return f"{method} {path}"
+
+
 def _evaluate_assertions(assertions: list[Any], response_payload: dict, context: ContextBus) -> list[dict[str, Any]]:
     errors: list[dict[str, Any]] = []
+    response_profile = _build_response_profile(context.get("last_request_payload") or {}, response_payload)
     for assertion in assertions:
         if isinstance(assertion, str):
             continue
@@ -436,6 +608,7 @@ def _evaluate_assertions(assertions: list[Any], response_payload: dict, context:
         expected = _render_templates(normalized.get("expected"), context)
         if not _compare(actual, op, expected):
             short_actual = _short_repr(actual)
+            shape_hint = _classify_assertion_shape_mismatch(normalized, actual, expected, response_payload, response_profile)
             errors.append(
                 {
                     "assertion_id": normalized["assertion_id"],
@@ -448,10 +621,66 @@ def _evaluate_assertions(assertions: list[Any], response_payload: dict, context:
                     "confidence": normalized["confidence"],
                     "generated_by": normalized["generated_by"],
                     "fallback_used": normalized["fallback_used"],
+                    "failure_kind": shape_hint.get("failure_kind", "assertion_failed"),
+                    "suggested_source": shape_hint.get("suggested_source", ""),
+                    "suggested_op": shape_hint.get("suggested_op", ""),
+                    "suggested_expected": shape_hint.get("suggested_expected"),
+                    "response_profile": response_profile,
                     "message": f"Assertion failed [{normalized['assertion_id']}]: {source} {op} {expected!r}, actual={short_actual}",
                 }
             )
     return errors
+
+
+def _classify_assertion_shape_mismatch(
+    assertion: dict[str, Any],
+    actual: Any,
+    expected: Any,
+    response_payload: dict[str, Any],
+    response_profile: dict[str, Any],
+) -> dict[str, Any]:
+    source = str(assertion.get("source", ""))
+    op = str(assertion.get("op", ""))
+    root_type = str(response_profile.get("root_type", "unknown"))
+    body_json = response_payload.get("json")
+    hint: dict[str, Any] = {"failure_kind": "assertion_failed"}
+    if not source.startswith("json"):
+        return hint
+    if source.startswith("json.") and actual is None and root_type == "array":
+        hint.update(
+            {
+                "failure_kind": "assertion_shape_mismatch",
+                "suggested_source": "json",
+                "suggested_op": "len_gt" if op.startswith("len_") or op == "exists" else "type_is",
+                "suggested_expected": 0 if op.startswith("len_") or op == "exists" else "array",
+            }
+        )
+        return hint
+    if source == "json" and op == "type_is":
+        expected_type = str(expected).strip().lower()
+        if root_type in {"array", "object"} and expected_type in {"array", "object"} and root_type != expected_type:
+            hint.update(
+                {
+                    "failure_kind": "assertion_shape_mismatch",
+                    "suggested_source": "json",
+                    "suggested_op": "type_is",
+                    "suggested_expected": root_type,
+                }
+            )
+            return hint
+    if source.startswith("json.") and actual is None and isinstance(body_json, dict):
+        field = source[5:].split(".", 1)[0].split("[", 1)[0]
+        fields = set(response_profile.get("fields") or [])
+        if field not in fields:
+            hint.update(
+                {
+                    "failure_kind": "assertion_shape_mismatch",
+                    "suggested_source": "json",
+                    "suggested_op": "type_is",
+                    "suggested_expected": root_type or "object",
+                }
+            )
+    return hint
 
 
 def _compare(actual: Any, op: str, expected: Any) -> bool:
@@ -496,6 +725,12 @@ def _compare(actual: Any, op: str, expected: Any) -> bool:
         return _safe_len(actual) >= expected
     if op == "len_le":
         return _safe_len(actual) <= expected
+    if op == "type_is":
+        return _json_type_name(actual) == str(expected).strip().lower()
+    if op == "type_in":
+        if not isinstance(expected, (list, tuple, set)):
+            return False
+        return _json_type_name(actual) in {str(item).strip().lower() for item in expected}
     if op == "is_true":
         return _coerce_bool(actual) is True
     if op == "is_false":
@@ -683,6 +918,22 @@ def _safe_order_compare(left: Any, right: Any, comparator) -> bool:
         return False
 
 
+def _json_type_name(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, dict):
+        return "object"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, (int, float)):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    return type(value).__name__.lower()
+
+
 def _build_runtime_state(test_case_dsl: dict) -> dict[str, Any]:
     metadata = test_case_dsl.get("metadata") or {}
     execution = metadata.get("execution") or {}
@@ -796,6 +1047,73 @@ def _summarize_response(response_payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _build_response_profile(request_spec: dict[str, Any], response_payload: dict[str, Any]) -> dict[str, Any]:
+    body_json = response_payload.get("json")
+    root_type = _json_type_name(body_json)
+    fields: list[str] = []
+    array_item_fields: list[str] = []
+    collection_path = ""
+    if isinstance(body_json, dict):
+        fields = sorted(str(key) for key in body_json.keys())[:30]
+        collection_path = _infer_collection_path_from_object(body_json)
+    elif isinstance(body_json, list):
+        collection_path = "json"
+        first_object = next((item for item in body_json if isinstance(item, dict)), None)
+        if isinstance(first_object, dict):
+            array_item_fields = sorted(str(key) for key in first_object.keys())[:30]
+    sample = json.dumps(body_json, ensure_ascii=False, sort_keys=True, default=str)[:4000]
+    return {
+        "endpoint": _profile_endpoint_key(request_spec),
+        "method": str(request_spec.get("method", "GET")).upper(),
+        "path": parse.urlparse(str(request_spec.get("url", ""))).path or str(request_spec.get("url", "")),
+        "status_code": response_payload.get("status_code", 0),
+        "root_type": root_type,
+        "fields": fields,
+        "array_item_fields": array_item_fields,
+        "collection_path": collection_path,
+        "content_type": _read_header(response_payload.get("headers", {}), "Content-Type", ""),
+        "body_size": len(response_payload.get("body_text", "")),
+        "sample_hash": hashlib.sha256(sample.encode("utf-8")).hexdigest()[:16] if sample else "",
+    }
+
+
+def _infer_collection_path_from_object(body_json: dict[str, Any]) -> str:
+    pagination_markers = {"total", "skip", "limit", "page", "size", "count", "offset"}
+    keys = set(str(key) for key in body_json.keys())
+    for key, value in body_json.items():
+        if isinstance(value, list) and (keys & pagination_markers or str(key).lower() in {"items", "records", "results", "data"}):
+            return f"json.{key}"
+    for key, value in body_json.items():
+        if isinstance(value, list):
+            return f"json.{key}"
+    return ""
+
+
+def _profile_endpoint_key(request_spec: dict[str, Any]) -> str:
+    method = str(request_spec.get("method", "GET")).upper()
+    url = str(request_spec.get("url", ""))
+    parsed_url = parse.urlparse(url)
+    path = parsed_url.path or url
+    query_pairs = parse.parse_qsl(parsed_url.query, keep_blank_values=True)
+    query_keys = sorted({key for key, _ in query_pairs})
+    suffix = f"?{'&'.join(query_keys)}" if query_keys else ""
+    return f"{method} {path}{suffix}"
+
+
+def _record_response_profile(runtime_state: dict[str, Any], request_spec: dict[str, Any], profile: dict[str, Any]) -> None:
+    key = _profile_endpoint_key(request_spec)
+    if not key:
+        return
+    profiles = runtime_state.setdefault("response_profiles", {})
+    existing = profiles.get(key)
+    if existing and existing.get("sample_hash") == profile.get("sample_hash"):
+        existing["observed_count"] = int(existing.get("observed_count", 1) or 1) + 1
+        return
+    payload = dict(profile)
+    payload["observed_count"] = 1
+    profiles[key] = payload
+
+
 def _sanitize_headers(headers: dict[str, Any]) -> dict[str, Any]:
     return {
         key: ("***" if str(key).lower() in SENSITIVE_HEADER_KEYS else value)
@@ -824,6 +1142,8 @@ def _build_step_log(
         payload["request_summary"] = step_result["request_summary"]
     if step_result.get("response_summary"):
         payload["response_summary"] = step_result["response_summary"]
+    if step_result.get("response_profile"):
+        payload["response_profile"] = step_result["response_profile"]
     if step_result.get("assertion_summary"):
         payload["assertion_summary"] = step_result["assertion_summary"]
     return payload
@@ -847,41 +1167,79 @@ def _build_step_event_log(
     }
 
 
-def _build_request_log(step: dict[str, Any], request_spec: dict[str, Any]) -> dict[str, Any]:
+def _build_request_log(
+    step: dict[str, Any],
+    request_spec: dict[str, Any],
+    *,
+    scenario_id: str | None = None,
+    scenario_name: str | None = None,
+) -> dict[str, Any]:
     return {
         "level": "info",
         "event": "request_prepared",
         "step_id": step.get("step_id"),
+        "step_type": step.get("step_type"),
+        "scenario_id": scenario_id,
+        "scenario_name": scenario_name,
         "message": f"Dispatching {request_spec.get('method', 'GET')} {request_spec.get('url', '')}",
         "request_summary": _summarize_request(request_spec),
     }
 
 
-def _build_response_log(step: dict[str, Any], response_payload: dict[str, Any]) -> dict[str, Any]:
+def _build_response_log(
+    step: dict[str, Any],
+    response_payload: dict[str, Any],
+    *,
+    scenario_id: str | None = None,
+    scenario_name: str | None = None,
+) -> dict[str, Any]:
+    request_spec = step.get("request") if isinstance(step.get("request"), dict) else {}
     return {
         "level": "info" if not response_payload.get("error_category") else "error",
         "event": "response_received",
         "step_id": step.get("step_id"),
+        "step_type": step.get("step_type"),
+        "scenario_id": scenario_id,
+        "scenario_name": scenario_name,
         "message": f"Received {response_payload.get('status_code', 0)}",
         "response_summary": _summarize_response(response_payload),
+        "response_profile": _build_response_profile(request_spec or {}, response_payload),
     }
 
 
-def _build_context_log(step: dict[str, Any], saved_context: dict[str, Any]) -> dict[str, Any]:
+def _build_context_log(
+    step: dict[str, Any],
+    saved_context: dict[str, Any],
+    *,
+    scenario_id: str | None = None,
+    scenario_name: str | None = None,
+) -> dict[str, Any]:
     return {
         "level": "info",
         "event": "context_saved",
         "step_id": step.get("step_id"),
+        "step_type": step.get("step_type"),
+        "scenario_id": scenario_id,
+        "scenario_name": scenario_name,
         "message": f"Saved context keys: {', '.join(sorted(saved_context.keys()))}",
         "saved_context": saved_context,
     }
 
 
-def _build_assertion_log(step: dict[str, Any], assertion_summary: dict[str, Any]) -> dict[str, Any]:
+def _build_assertion_log(
+    step: dict[str, Any],
+    assertion_summary: dict[str, Any],
+    *,
+    scenario_id: str | None = None,
+    scenario_name: str | None = None,
+) -> dict[str, Any]:
     return {
         "level": "info" if assertion_summary["failed"] == 0 else "error",
         "event": "assertions_evaluated",
         "step_id": step.get("step_id"),
+        "step_type": step.get("step_type"),
+        "scenario_id": scenario_id,
+        "scenario_name": scenario_name,
         "message": f"Assertions passed={assertion_summary['passed']} failed={assertion_summary['failed']}",
         "assertion_summary": assertion_summary,
     }
@@ -891,8 +1249,10 @@ def _build_assertion_summary(assertions: list[Any], assertion_errors: list[dict[
     normalized = [_normalize_assertion(item) for item in assertions if not isinstance(item, str)]
     total = len(normalized)
     failed = len(assertion_errors)
+    strength = _score_assertion_set(normalized)
     category_counts: dict[str, int] = {}
     generated_by_counts: dict[str, int] = {}
+    failure_kind_counts: dict[str, int] = {}
     fallback_count = 0
     for item in normalized:
         category = item["category"]
@@ -901,16 +1261,24 @@ def _build_assertion_summary(assertions: list[Any], assertion_errors: list[dict[
         generated_by_counts[generated_by] = generated_by_counts.get(generated_by, 0) + 1
         if item["fallback_used"]:
             fallback_count += 1
+    for error in assertion_errors:
+        kind = str(error.get("failure_kind") or "assertion_failed")
+        failure_kind_counts[kind] = failure_kind_counts.get(kind, 0) + 1
     return {
         "total": total,
         "passed": max(total - failed, 0),
         "failed": failed,
         "failures": [item["message"] for item in assertion_errors],
         "failure_details": assertion_errors,
+        "failure_kind_counts": failure_kind_counts,
+        "shape_mismatch_count": failure_kind_counts.get("assertion_shape_mismatch", 0),
         "category_counts": category_counts,
         "generated_by_counts": generated_by_counts,
         "fallback_count": fallback_count,
-        "weak_assertion": bool(normalized) and all(item["source"] == "status_code" for item in normalized),
+        "weak_assertion": strength["weak"],
+        "strength_score": strength["score"],
+        "quality_level": strength["level"],
+        "quality_reasons": strength["reasons"],
     }
 
 
@@ -945,23 +1313,107 @@ def _collect_assertion_inventory(test_case_dsl: dict[str, Any]) -> dict[str, Any
     category_counts: dict[str, int] = {}
     generated_by_counts: dict[str, int] = {}
     fallback_count = 0
+    step_scores: list[dict[str, Any]] = []
     for scenario in test_case_dsl.get("scenarios", []):
         for step in scenario.get("steps", []):
+            step_assertions: list[dict[str, Any]] = []
             for assertion in step.get("assertions") or []:
                 if isinstance(assertion, str):
                     continue
                 normalized = _normalize_assertion(assertion)
+                step_assertions.append(normalized)
                 category = normalized["category"]
                 generated_by = normalized["generated_by"]
                 category_counts[category] = category_counts.get(category, 0) + 1
                 generated_by_counts[generated_by] = generated_by_counts.get(generated_by, 0) + 1
                 if normalized["fallback_used"]:
                     fallback_count += 1
+            if step.get("request"):
+                step_scores.append(_score_assertion_set(step_assertions))
     return {
         "category_counts": category_counts,
         "generated_by_counts": generated_by_counts,
         "fallback_count": fallback_count,
+        "step_scores": step_scores,
     }
+
+
+def _build_assertion_quality_metrics(assertion_inventory: dict[str, Any]) -> dict[str, Any]:
+    step_scores = list(assertion_inventory.get("step_scores") or [])
+    if not step_scores:
+        return {
+            "score": 0,
+            "level": "none",
+            "request_step_count": 0,
+            "weak_step_count": 0,
+            "high_value_step_count": 0,
+            "reasons": ["no_request_assertions"],
+        }
+    avg_score = round(sum(float(item.get("score", 0) or 0) for item in step_scores) / len(step_scores), 2)
+    weak_count = len([item for item in step_scores if item.get("weak")])
+    high_value_count = len([item for item in step_scores if item.get("level") == "high"])
+    reasons = sorted({reason for item in step_scores for reason in item.get("reasons", [])})
+    return {
+        "score": avg_score,
+        "level": _assertion_quality_level(avg_score),
+        "request_step_count": len(step_scores),
+        "weak_step_count": weak_count,
+        "high_value_step_count": high_value_count,
+        "reasons": reasons,
+    }
+
+
+def _score_assertion_set(assertions: list[dict[str, Any]]) -> dict[str, Any]:
+    if not assertions:
+        return {"score": 0, "level": "none", "weak": True, "reasons": ["no_assertions"]}
+    categories = {str(item.get("category", "")) for item in assertions}
+    sources = {str(item.get("source", "")) for item in assertions}
+    ops = {str(item.get("op", "")) for item in assertions}
+    score = 0
+    reasons: list[str] = []
+    if "status" in categories or "status_code" in sources:
+        score += 25
+        reasons.append("status_assertion")
+    if categories.intersection({"field_value", "business"}):
+        score += 30
+        reasons.append("business_value_assertion")
+    if "field_presence" in categories:
+        score += 18
+        reasons.append("field_presence_assertion")
+    if "schema" in categories or ops.intersection({"type_is", "type_in"}):
+        score += 14
+        reasons.append("schema_assertion")
+    if "collection" in categories or any(op.startswith("len_") for op in ops):
+        score += 10
+        reasons.append("collection_assertion")
+    if any(source.startswith("json.") or source.startswith("json[") for source in sources):
+        score += 10
+        reasons.append("json_path_assertion")
+    if len(assertions) >= 3:
+        score += 8
+        reasons.append("multi_assertion")
+    fallback_count = len([item for item in assertions if item.get("fallback_used")])
+    if fallback_count:
+        score -= min(20, fallback_count * 5)
+        reasons.append("fallback_assertion_penalty")
+    score = max(0, min(score, 100))
+    weak = score < 55 or all(source == "status_code" for source in sources)
+    return {
+        "score": score,
+        "level": _assertion_quality_level(score),
+        "weak": weak,
+        "reasons": reasons,
+    }
+
+
+def _assertion_quality_level(score: float) -> str:
+    if score >= 75:
+        return "high"
+    if score >= 55:
+        return "medium"
+    if score > 0:
+        return "low"
+    return "none"
 
 
 def _classify_http_error(status_code: int) -> str:

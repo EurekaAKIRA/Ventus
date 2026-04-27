@@ -171,3 +171,38 @@ def test_save_context_reads_request_payload(envelope_server):
     assert result["status"] == "passed"
     step1 = result["scenario_results"][0]["steps"][0]
     assert step1["saved_context"]["username"] == "demo_user"
+
+
+def test_api_coverage_matrix_counts_endpoint_status(envelope_server):
+    from api_runner.executor import execute_test_case_dsl
+
+    dsl = {
+        "dsl_version": "0.2.0",
+        "task_id": "coverage",
+        "task_name": "coverage",
+        "feature_name": "coverage",
+        "execution_mode": "api",
+        "metadata": {"execution": {"base_url": envelope_server}},
+        "scenarios": [
+            {
+                "scenario_id": "s1",
+                "name": "coverage",
+                "steps": [
+                    {
+                        "step_id": "s1_1",
+                        "step_type": "when",
+                        "text": "get",
+                        "request": {"method": "GET", "url": "/x", "retries": 0},
+                        "assertions": [{"source": "status_code", "op": "eq", "expected": 200}],
+                    }
+                ],
+            }
+        ],
+    }
+    result = execute_test_case_dsl(dsl)
+    coverage = result["metrics"]["api_coverage"]
+    assert coverage["total_endpoints"] == 1
+    assert coverage["executed_endpoints"] == 1
+    assert coverage["passed_endpoints"] == 1
+    assert coverage["coverage_ratio"] == 100.0
+    assert coverage["endpoints"][0]["endpoint"] == "GET /x"
