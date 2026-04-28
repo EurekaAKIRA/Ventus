@@ -2234,129 +2234,123 @@ a:hover {
   background: linear-gradient(90deg, rgba(245, 185, 76, 0.08), transparent 62%) !important;
 }
 
-.user-center-hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 22px;
-  padding: 28px;
-  border: 1px solid var(--theme-border);
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 8% 18%, rgba(62, 207, 142, 0.22), transparent 34%),
-    linear-gradient(135deg, rgba(15, 23, 34, 0.94), rgba(8, 14, 22, 0.92));
-  box-shadow: var(--theme-shadow);
+.github-settings {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 24px;
+  max-width: 1180px;
 }
 
-.user-center-hero__identity {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  min-width: 0;
-}
-
-.user-center-hero__avatar {
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 24px 60px rgba(3, 8, 18, 0.36);
-}
-
-.user-center-hero__copy {
+.github-settings__sidebar {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+  gap: 16px;
 }
 
-.user-center-hero__subtitle {
-  color: var(--theme-text-secondary) !important;
+.github-profile-card {
+  padding: 18px 0 12px;
 }
 
-.project-focus-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 20px;
-  border: 1px solid rgba(62, 207, 142, 0.22);
-  border-radius: 22px;
-  background:
-    linear-gradient(135deg, rgba(62, 207, 142, 0.09), rgba(79, 140, 255, 0.06)),
-    rgba(9, 16, 24, 0.62);
+.github-profile-card__name {
+  margin-top: 12px;
+  color: #f0f6fc;
+  font-size: 20px;
+  font-weight: 700;
 }
 
-.project-focus-card__label {
-  color: var(--theme-text-secondary) !important;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.github-profile-card__handle {
+  color: #8b949e;
+  font-size: 15px;
 }
 
-.project-focus-card__title.ant-typography {
-  margin: 6px 0 4px !important;
-  color: #f5fbff;
-}
-
-.project-focus-card__desc {
-  color: var(--theme-text-secondary) !important;
-}
-
-.project-focus-card__badges {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.project-pill-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
+.github-profile-card__tag {
   margin-top: 12px;
 }
 
-.project-pill {
-  padding: 14px 16px;
-  border-radius: 18px;
-  border: 1px solid var(--theme-border);
-  background: rgba(9, 16, 24, 0.48);
+.github-settings-nav {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: rgba(13, 17, 23, 0.78);
 }
 
-.project-pill.is-active {
-  border-color: rgba(62, 207, 142, 0.34);
-  background: rgba(62, 207, 142, 0.08);
+.github-settings-nav__item {
+  padding: 10px 14px;
+  color: #c9d1d9;
+  border-bottom: 1px solid #30363d;
+  cursor: default;
 }
 
-.project-pill__name {
-  display: block;
-  color: #f5fbff;
-  font-weight: 600;
+.github-settings-nav__item:last-child {
+  border-bottom: 0;
 }
 
-.project-pill__meta {
-  display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--theme-text-secondary);
+.github-settings-nav__item.is-active {
+  color: #f0f6fc;
+  background: rgba(88, 166, 255, 0.12);
+  box-shadow: inset 3px 0 0 #f78166;
 }
 
-.member-list .ant-list-item {
-  padding-block: 14px !important;
+.github-settings__main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
 
-.member-inline-editor {
-  margin-bottom: 18px;
-  padding: 18px;
-  border: 1px solid rgba(62, 207, 142, 0.18);
-  border-radius: 20px;
-  background: rgba(9, 16, 24, 0.5);
+.github-settings__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #30363d;
 }
 
-.member-inline-editor .ant-form-item {
-  margin-bottom: 0;
+.github-settings__title.ant-typography {
+  margin-bottom: 4px !important;
+  color: #f0f6fc;
 }
 
-.member-row {
+.github-settings-card.ant-card {
+  border: 1px solid #30363d !important;
+  border-radius: 8px !important;
+  background: rgba(13, 17, 23, 0.82) !important;
+  box-shadow: none !important;
+}
+
+.github-settings-card .ant-card-head {
+  min-height: 46px;
+  border-bottom: 1px solid #30363d !important;
+  background: rgba(22, 27, 34, 0.82);
+}
+
+.github-settings-card .ant-card-head-title {
+  color: #f0f6fc;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.github-settings-card .ant-card-body {
+  padding: 18px !important;
+}
+
+.github-profile-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: rgba(22, 27, 34, 0.48);
+  text-align: center;
+}
+
+.github-project-current,
+.github-project-row,
+.github-member-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2364,19 +2358,58 @@ a:hover {
   width: 100%;
 }
 
-.member-row__identity {
+.github-project-current {
+  padding: 14px;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: rgba(22, 27, 34, 0.48);
+}
+
+.github-project-current__desc {
+  margin-top: 4px;
+  color: #8b949e;
+}
+
+.github-project-list {
+  overflow: hidden;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+}
+
+.github-project-row {
+  padding: 12px 14px;
+  border-bottom: 1px solid #30363d;
+}
+
+.github-project-row:last-child {
+  border-bottom: 0;
+}
+
+.github-project-row.is-active {
+  background: rgba(35, 134, 54, 0.12);
+}
+
+.github-inline-editor {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: rgba(22, 27, 34, 0.48);
+}
+
+.github-inline-editor .ant-form-item {
+  margin-bottom: 0;
+}
+
+.github-member-list .ant-list-item {
+  padding: 12px 0 !important;
+}
+
+.github-member-row__identity {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
-}
-
-.member-row__name {
-  color: #f5fbff !important;
-}
-
-.member-row__actions {
-  flex-shrink: 0;
 }
 
 .dashboard-view-switch,
@@ -2573,10 +2606,8 @@ a:hover {
     flex-direction: column;
   }
 
-  .user-center-hero,
-  .project-focus-card {
-    flex-direction: column;
-    align-items: stretch;
+  .github-settings {
+    grid-template-columns: 1fr;
   }
 
   .page-hero__actions,
@@ -2660,13 +2691,14 @@ a:hover {
 
   .page-toolbar,
   .page-toolbar__group,
-  .user-center-hero__identity,
-  .member-row {
+  .github-project-current,
+  .github-project-row,
+  .github-member-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .member-inline-editor .ant-form-item {
+  .github-inline-editor .ant-form-item {
     margin-bottom: 16px;
   }
 
