@@ -167,15 +167,6 @@ export default function UserCenter() {
       <Row gutter={16}>
         <Col xs={24} xl={9}>
           <Card bordered={false} className="panel-card panel-card--form" title="个人资料" extra={<UserOutlined />}>
-            <div className="account-settings-summary">
-              <Avatar size={42} src={user?.avatar_url || undefined} icon={<UserOutlined />} />
-              <div>
-                <Text strong>{user?.display_name || user?.username || "当前用户"}</Text>
-                <div className="account-settings-summary__meta">
-                  @{user?.username || "-"} · {user?.is_platform_admin ? "平台管理员" : "普通用户"}
-                </div>
-              </div>
-            </div>
             <Form form={profileForm} layout="vertical" onFinish={handleSaveProfile}>
               <Form.Item name="username" label="用户名">
                 <Input disabled />
