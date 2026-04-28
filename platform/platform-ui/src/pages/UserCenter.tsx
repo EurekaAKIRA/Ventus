@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Avatar,
   AutoComplete,
   Button,
@@ -17,7 +16,14 @@ import {
   Typography,
   message,
 } from "antd";
-import { TeamOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  CrownOutlined,
+  MailOutlined,
+  ProjectOutlined,
+  SafetyCertificateOutlined,
+  UserAddOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { useAuth } from "../auth/AuthContext";
 import { addProjectMember, fetchProject, searchUsers, updateMyProfile } from "../api/auth";
 import type { ProjectMemberPayload, UserProfile } from "../types";
@@ -32,6 +38,7 @@ export default function UserCenter() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
+  const [memberEditorOpen, setMemberEditorOpen] = useState(false);
   const [members, setMembers] = useState<ProjectMemberPayload[]>([]);
   const [userOptions, setUserOptions] = useState<Array<{ value: string; label: string }>>([]);
 
@@ -70,6 +77,10 @@ export default function UserCenter() {
     [projects, currentProjectId],
   );
   const ownerCount = useMemo(() => members.filter((member) => member.role === "owner").length, [members]);
+  const currentMembership = useMemo(
+    () => members.find((member) => member.user_id === user?.id || member.username === user?.username) ?? null,
+    [members, user?.id, user?.username],
+  );
 
   const handleSaveProfile = async (values: { display_name?: string; email?: string; avatar_url?: string }) => {
     setSavingProfile(true);
@@ -112,6 +123,7 @@ export default function UserCenter() {
     try {
       await addProjectMember(currentProjectId, values);
       memberForm.resetFields();
+      setMemberEditorOpen(false);
       await loadMembers();
       message.success("项目成员已保存");
     } catch (error) {
@@ -123,9 +135,14 @@ export default function UserCenter() {
 
   return (
     <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div className="page-hero">
-        <div className="page-hero__copy">
-          <Title level={3} className="page-hero__title">用户中心</Title>
+      <div className="user-center-hero">
+        <div className="user-center-hero__identity">
+          <Avatar size={72} src={user?.avatar_url || undefined} icon={<UserOutlined />} className="user-center-hero__avatar" />
+          <div className="user-center-hero__copy">
+            <Text className="page-hero__eyebrow">Account Center</Text>
+            <Title level={3} className="page-hero__title">用户中心</Title>
+            <Text className="user-center-hero__subtitle">管理个人资料、项目成员和当前账号的协作权限。</Text>
+          </div>
         </div>
         <div className="page-hero__meta">
           <div className="page-meta-chip">
@@ -136,6 +153,10 @@ export default function UserCenter() {
             <span className="page-meta-chip__label">当前项目</span>
             <span className="page-meta-chip__value">{currentProject?.name || "未选择"}</span>
           </div>
+          <div className="page-meta-chip">
+            <span className="page-meta-chip__label">平台角色</span>
+            <span className="page-meta-chip__value">{user?.is_platform_admin ? "管理员" : "普通用户"}</span>
+          </div>
         </div>
       </div>
 
@@ -143,11 +164,11 @@ export default function UserCenter() {
         <MetricCard title="可访问项目" value={projects.length} />
         <MetricCard title="当前项目成员" value={members.length} color="#4f8cff" />
         <MetricCard title="Owner 数量" value={ownerCount} color="#f5b94c" />
-        <MetricCard title="当前账号" value={user?.username || "-"} color="#3ecf8e" />
+        <MetricCard title="当前项目角色" value={currentMembership?.role || "-"} color="#3ecf8e" />
       </div>
 
       <Row gutter={16}>
-        <Col xs={24} xl={10}>
+        <Col xs={24} xl={9}>
           <Card bordered={false} className="panel-card panel-card--form" title="个人资料" extra={<UserOutlined />}>
             <div className="profile-spotlight">
               <Avatar size={56} src={user?.avatar_url || undefined} icon={<UserOutlined />} className="profile-spotlight__avatar" />
@@ -157,11 +178,12 @@ export default function UserCenter() {
                 </Text>
                 <Text type="secondary">@{user?.username || "-"}</Text>
                 <div className="profile-spotlight__chips">
-                  <span className="surface-chip">
-                    邮箱 <strong>{user?.email || "未填写"}</strong>
+                  <span className={`surface-chip ${user?.is_platform_admin ? "surface-chip--gold" : ""}`}>
+                    {user?.is_platform_admin ? <CrownOutlined /> : <SafetyCertificateOutlined />}{" "}
+                    <strong>{user?.is_platform_admin ? "平台管理员" : "普通用户"}</strong>
                   </span>
                   <span className="surface-chip">
-                    项目 <strong>{projects.length}</strong>
+                    <MailOutlined /> <strong>{user?.email || "未填写邮箱"}</strong>
                   </span>
                 </div>
               </div>
@@ -186,34 +208,30 @@ export default function UserCenter() {
           </Card>
         </Col>
 
-        <Col xs={24} xl={14}>
-          <Card
-            className="panel-card"
-            bordered={false}
-            title="当前项目"
-            extra={<TeamOutlined />}
-          >
+        <Col xs={24} xl={15}>
+          <Card className="panel-card" bordered={false} title="当前项目" extra={<ProjectOutlined />}>
             {currentProject ? (
               <Space direction="vertical" size={16} style={{ width: "100%" }}>
-                <Alert
-                  type="info"
-                  showIcon
-                  message={currentProject.name}
-                  description={currentProject.description || "当前项目暂无描述"}
-                />
-                <div>
-                  <Text type="secondary">你可访问的项目</Text>
-                  <div className="project-pill-grid">
-                    {projects.map((project) => (
-                      <div
-                        key={project.id}
-                        className={`project-pill${project.id === currentProjectId ? " is-active" : ""}`}
-                      >
-                        <span className="project-pill__name">{project.name}</span>
-                        <span className="project-pill__meta">{project.is_default ? "默认" : "项目"}</span>
-                      </div>
-                    ))}
+                <div className="project-focus-card">
+                  <div>
+                    <Text className="project-focus-card__label">当前协作空间</Text>
+                    <Title level={4} className="project-focus-card__title">
+                      {currentProject.name}
+                    </Title>
+                    <Text className="project-focus-card__desc">{currentProject.description || "当前项目暂无描述"}</Text>
                   </div>
+                  <div className="project-focus-card__badges">
+                    <Tag color={currentMembership?.role === "owner" ? "gold" : "processing"}>{currentMembership?.role || "member"}</Tag>
+                    {currentProject.is_default ? <Tag color="green">默认项目</Tag> : null}
+                  </div>
+                </div>
+                <div className="project-pill-grid">
+                  {projects.map((project) => (
+                    <div key={project.id} className={`project-pill${project.id === currentProjectId ? " is-active" : ""}`}>
+                      <span className="project-pill__name">{project.name}</span>
+                      <span className="project-pill__meta">{project.is_default ? "默认" : "项目"}</span>
+                    </div>
+                  ))}
                 </div>
               </Space>
             ) : (
@@ -223,70 +241,83 @@ export default function UserCenter() {
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col xs={24} xl={9}>
-          <Card bordered={false} className="panel-card panel-card--form" title="添加项目成员">
+      <Card
+        bordered={false}
+        className="panel-card"
+        title="项目成员"
+        extra={
+          <Space>
+            <Button onClick={() => void loadMembers()} loading={loadingMembers}>
+              刷新
+            </Button>
+            <Button
+              type={memberEditorOpen ? "default" : "primary"}
+              icon={<UserAddOutlined />}
+              disabled={!currentProjectId}
+              onClick={() => setMemberEditorOpen((value) => !value)}
+            >
+              {memberEditorOpen ? "收起添加" : "添加成员"}
+            </Button>
+          </Space>
+        }
+      >
+        {memberEditorOpen ? (
+          <div className="member-inline-editor">
             <Form form={memberForm} layout="vertical" onFinish={handleAddMember}>
-              <Form.Item
-                name="username"
-                label="用户名"
-                rules={[{ required: true, message: "请输入或选择用户名" }]}
-              >
-                <AutoComplete
-                  options={userOptions}
-                  onSearch={handleUserSearch}
-                  placeholder="输入用户名进行搜索"
-                  filterOption={false}
-                />
-              </Form.Item>
-              <Form.Item
-                name="role"
-                label="项目角色"
-                initialValue="viewer"
-                rules={[{ required: true, message: "请选择角色" }]}
-              >
-                <Select
-                  options={[
-                    { value: "owner", label: "owner" },
-                    { value: "editor", label: "editor" },
-                    { value: "runner", label: "runner" },
-                    { value: "viewer", label: "viewer" },
-                  ]}
-                />
-              </Form.Item>
-              <Button type="primary" htmlType="submit" loading={addingMember} disabled={!currentProjectId}>
-                保存成员
-              </Button>
+              <Row gutter={16} align="bottom">
+                <Col xs={24} lg={12}>
+                  <Form.Item name="username" label="用户名" rules={[{ required: true, message: "请输入或选择用户名" }]}>
+                    <AutoComplete options={userOptions} onSearch={handleUserSearch} placeholder="输入用户名进行搜索" filterOption={false} />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} lg={8}>
+                  <Form.Item name="role" label="项目角色" initialValue="viewer" rules={[{ required: true, message: "请选择角色" }]}>
+                    <Select
+                      options={[
+                        { value: "owner", label: "owner · 项目管理" },
+                        { value: "editor", label: "editor · 编辑协作" },
+                        { value: "runner", label: "runner · 执行任务" },
+                        { value: "viewer", label: "viewer · 只读查看" },
+                      ]}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} lg={4}>
+                  <Form.Item>
+                    <Button type="primary" htmlType="submit" loading={addingMember} block>
+                      保存成员
+                    </Button>
+                  </Form.Item>
+                </Col>
+              </Row>
             </Form>
-          </Card>
-        </Col>
-
-        <Col xs={24} xl={15}>
-          <Card bordered={false} className="panel-card" title="项目成员">
-            <List
-              className="member-list"
-              loading={loadingMembers}
-              locale={{ emptyText: "当前项目暂无成员数据" }}
-              dataSource={members}
-              renderItem={(item) => (
-                <List.Item>
-                  <div className="member-row">
-                    <Space direction="vertical" size={2}>
-                      <Text strong className="member-row__name">{item.display_name || item.username || item.user_id}</Text>
-                      <Text type="secondary">{item.username}</Text>
-                    </Space>
-                    <Space className="member-row__actions">
-                      <Tag color={item.role === "owner" ? "gold" : item.role === "editor" ? "processing" : "default"}>
-                        {item.role}
-                      </Tag>
-                    </Space>
-                  </div>
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
+          </div>
+        ) : null}
+        <List
+          className="member-list"
+          loading={loadingMembers}
+          locale={{ emptyText: "当前项目暂无成员数据" }}
+          dataSource={members}
+          renderItem={(item) => (
+            <List.Item>
+              <div className="member-row">
+                <div className="member-row__identity">
+                  <Avatar size={36} icon={<UserOutlined />} />
+                  <Space direction="vertical" size={2}>
+                    <Text strong className="member-row__name">
+                      {item.display_name || item.username || item.user_id}
+                    </Text>
+                    <Text type="secondary">{item.username}</Text>
+                  </Space>
+                </div>
+                <Space className="member-row__actions">
+                  <Tag color={item.role === "owner" ? "gold" : item.role === "editor" ? "processing" : "default"}>{item.role}</Tag>
+                </Space>
+              </div>
+            </List.Item>
+          )}
+        />
+      </Card>
     </Space>
   );
 }
