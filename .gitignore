@@ -86,3 +86,9 @@ venv/
 tests/*.py
 tests/**/*.ipynb
 platform/task-center/data/*.db
+platform/task-center/api_artifacts/
+platform/task-center/scripts/_e2e_llm_rag_stderr.txt
+platform/platform-ui/*.tsbuildinfo
+platform/platform-ui/tmp_*.png
+platform/delivery_reports/
+platform/requirement-analysis/benchmark_results/

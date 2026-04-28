@@ -36,3 +36,10 @@
 1. 先在当前仓库内建立新架构骨架，不破坏现有历史目录。
 2. 旧目录暂时保留，逐步迁移能力到 `platform/`。
 3. 新功能优先落到 `platform/`，避免继续在历史目录上扩散。
+
+## 交付与实验
+
+- 交付验收脚本：`python platform/task-center/scripts/run_delivery_acceptance.py`
+- 交付验收说明：`docs/delivery_acceptance_guide.md`
+- 论文实验流程：`docs/thesis_experiment_protocol.md`
+- Agent/RAG 闭环设计：`docs/agent_rag_closed_loop.md`

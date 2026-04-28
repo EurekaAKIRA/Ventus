@@ -237,6 +237,69 @@ def test_explanations_with_stored_execution(api_client):
     assert "field_mapping" in data["top_reasons"]
 
 
+def test_explanations_classifies_assertion_shape_mismatch(api_client):
+    client, registry = api_client
+    r = client.post(
+        "/api/tasks",
+        json={
+            "task_name": "expl_assertion_shape",
+            "source_type": "text",
+            "requirement_text": "demo",
+            "target_system": "http://127.0.0.1:8001",
+            "environment": "test",
+        },
+    )
+    task_id = r.json()["data"]["task_id"]
+    task = registry.get(task_id)
+    task.execution_result = {
+        "task_id": task_id,
+        "executor": "api-runner",
+        "status": "failed",
+        "scenario_results": [
+            {
+                "scenario_id": "s1",
+                "name": "posts list",
+                "status": "failed",
+                "steps": [
+                    {
+                        "step_id": "s1_1",
+                        "status": "failed",
+                        "message": "Assertion failed [posts_wrapper]: json.posts len_gt 0, actual=None",
+                        "error_category": "assertion_shape_mismatch",
+                        "assertion_failures": [
+                            {
+                                "assertion_id": "posts_wrapper",
+                                "source": "json.posts",
+                                "op": "len_gt",
+                                "expected": 0,
+                                "failure_kind": "assertion_shape_mismatch",
+                                "suggested_source": "json",
+                                "suggested_op": "len_gt",
+                                "suggested_expected": 0,
+                                "response_profile": {
+                                    "root_type": "array",
+                                    "collection_path": "json",
+                                },
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+        "metrics": {},
+        "logs": [],
+    }
+    registry.save(task)
+
+    ex = client.get(f"/api/tasks/{task_id}/execution/explanations?top_n=3")
+    assert ex.status_code == 200
+    data = ex.json()["data"]
+    assert "assertion_shape_mismatch" in data["top_reasons"]
+    group = next(item for item in data["failure_groups"] if item["category"] == "assertion_shape_mismatch")
+    assert group["repair_hints"][0]["suggested_source"] == "json"
+    assert group["repair_hints"][0]["response_root_type"] == "array"
+
+
 def test_execution_stream_with_stored_execution(api_client):
     client, registry = api_client
     r = client.post(
