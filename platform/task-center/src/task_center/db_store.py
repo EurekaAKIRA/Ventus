@@ -18,11 +18,14 @@ from task_center.db import (
     Base,
     Defect,
     Environment,
+    InterfaceAsset,
     Project,
     ProjectMember,
     Task,
     TaskInput,
     TaskRun,
+    TestCaseAsset,
+    TestSuiteAsset,
     User,
     UserCredential,
     UserSession,
@@ -40,6 +43,12 @@ def _ensure_json_dict(payload: Any) -> dict[str, Any]:
     if isinstance(payload, dict):
         return dict(payload)
     return {}
+
+
+def _ensure_json_list(payload: Any) -> list[Any]:
+    if isinstance(payload, list):
+        return list(payload)
+    return []
 
 
 class DatabaseTaskStore:
@@ -282,6 +291,425 @@ class DatabaseTaskStore:
             if row is None:
                 return False
             session.delete(row)
+
+    def _interface_asset_to_payload(self, row: InterfaceAsset) -> dict[str, Any]:
+        return {
+            "id": str(row.id),
+            "project_id": str(row.project_id),
+            "method": row.method,
+            "path": row.path,
+            "name": row.name or "",
+            "description": row.description or "",
+            "source": row.source,
+            "status": row.status,
+            "version": row.version,
+            "tags": _ensure_json_list(row.tags_json),
+            "request_example": row.request_example_json if row.request_example_json is not None else None,
+            "response_example": row.response_example_json if row.response_example_json is not None else None,
+            "schema": row.schema_json if row.schema_json is not None else None,
+            "last_seen_task_id": row.last_seen_task_uid,
+            "created_by": str(row.created_by) if row.created_by else None,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        }
+
+    def list_interface_assets(
+        self,
+        *,
+        project_id: str,
+        method: str | None = None,
+        status: str | None = None,
+        keyword: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> dict[str, Any]:
+        with self.session() as session:
+            stmt = select(InterfaceAsset).where(InterfaceAsset.project_id == self._parse_uuid(project_id))
+            if method:
+                stmt = stmt.where(InterfaceAsset.method == method)
+            if status:
+                stmt = stmt.where(InterfaceAsset.status == status)
+            rows = session.scalars(stmt.order_by(InterfaceAsset.updated_at.desc(), InterfaceAsset.path.asc())).all()
+            if keyword:
+                needle = keyword.lower()
+                rows = [
+                    row
+                    for row in rows
+                    if needle in row.path.lower()
+                    or needle in row.method.lower()
+                    or needle in (row.name or "").lower()
+                    or needle in (row.description or "").lower()
+                ]
+            total = len(rows)
+            start = max(page - 1, 0) * page_size
+            end = start + page_size
+            return {
+                "items": [self._interface_asset_to_payload(row) for row in rows[start:end]],
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+            }
+
+    def get_interface_asset(self, asset_id: str) -> dict[str, Any] | None:
+        with self.session() as session:
+            row = session.scalar(select(InterfaceAsset).where(InterfaceAsset.id == self._parse_uuid(asset_id)))
+            return self._interface_asset_to_payload(row) if row is not None else None
+
+    def get_interface_asset_by_signature(
+        self,
+        *,
+        project_id: str,
+        method: str,
+        path: str,
+        version: str = "default",
+    ) -> dict[str, Any] | None:
+        with self.session() as session:
+            row = session.scalar(
+                select(InterfaceAsset).where(
+                    InterfaceAsset.project_id == self._parse_uuid(project_id),
+                    InterfaceAsset.method == method,
+                    InterfaceAsset.path == path,
+                    InterfaceAsset.version == version,
+                )
+            )
+            if row is None and version != "default":
+                row = session.scalar(
+                    select(InterfaceAsset).where(
+                        InterfaceAsset.project_id == self._parse_uuid(project_id),
+                        InterfaceAsset.method == method,
+                        InterfaceAsset.path == path,
+                        InterfaceAsset.version == "default",
+                    )
+                )
+            return self._interface_asset_to_payload(row) if row is not None else None
+
+    def upsert_interface_asset(
+        self,
+        *,
+        project_id: str,
+        method: str,
+        path: str,
+        name: str | None = None,
+        description: str | None = None,
+        source: str = "manual",
+        status: str = "active",
+        version: str = "default",
+        tags: list[Any] | None = None,
+        request_example: Any = None,
+        response_example: Any = None,
+        schema: Any = None,
+        last_seen_task_id: str | None = None,
+        created_by: str | None = None,
+    ) -> dict[str, Any]:
+        project_uuid = self._parse_uuid(project_id)
+        with self.session() as session:
+            row = session.scalar(
+                select(InterfaceAsset).where(
+                    InterfaceAsset.project_id == project_uuid,
+                    InterfaceAsset.method == method,
+                    InterfaceAsset.path == path,
+                    InterfaceAsset.version == version,
+                )
+            )
+            if row is None:
+                row = InterfaceAsset(
+                    project_id=project_uuid,
+                    method=method,
+                    path=path,
+                    version=version,
+                    created_by=self._parse_uuid(created_by),
+                    created_at=_utc_now(),
+                    updated_at=_utc_now(),
+                )
+                session.add(row)
+            row.name = name if name is not None else row.name
+            row.description = description if description is not None else row.description
+            row.source = source or row.source or "manual"
+            row.status = status or row.status or "active"
+            row.tags_json = list(tags or [])
+            if request_example is not None:
+                row.request_example_json = request_example
+            if response_example is not None:
+                row.response_example_json = response_example
+            if schema is not None:
+                row.schema_json = schema
+            if last_seen_task_id:
+                row.last_seen_task_uid = last_seen_task_id
+            row.updated_at = _utc_now()
+            session.flush()
+            return self._interface_asset_to_payload(row)
+
+    def update_interface_asset(self, asset_id: str, **changes: Any) -> dict[str, Any] | None:
+        with self.session() as session:
+            row = session.scalar(select(InterfaceAsset).where(InterfaceAsset.id == self._parse_uuid(asset_id)))
+            if row is None:
+                return None
+            for key, attr in (
+                ("name", "name"),
+                ("description", "description"),
+                ("source", "source"),
+                ("status", "status"),
+                ("version", "version"),
+                ("tags", "tags_json"),
+                ("request_example", "request_example_json"),
+                ("response_example", "response_example_json"),
+                ("schema", "schema_json"),
+                ("last_seen_task_id", "last_seen_task_uid"),
+            ):
+                if key in changes:
+                    setattr(row, attr, changes[key])
+            row.updated_at = _utc_now()
+            session.flush()
+            return self._interface_asset_to_payload(row)
+
+    def delete_interface_asset(self, asset_id: str) -> bool:
+        with self.session() as session:
+            row = session.scalar(select(InterfaceAsset).where(InterfaceAsset.id == self._parse_uuid(asset_id)))
+            if row is None:
+                return False
+            session.delete(row)
+            return True
+
+    def _test_case_asset_to_payload(self, row: TestCaseAsset) -> dict[str, Any]:
+        return {
+            "id": str(row.id),
+            "project_id": str(row.project_id),
+            "case_key": row.case_key,
+            "name": row.name,
+            "description": row.description or "",
+            "priority": row.priority,
+            "status": row.status,
+            "source": row.source,
+            "source_task_id": row.source_task_uid,
+            "tags": _ensure_json_list(row.tags_json),
+            "dsl_scenario": row.dsl_scenario_json if row.dsl_scenario_json is not None else {},
+            "assertions": _ensure_json_list(row.assertions_json),
+            "created_by": str(row.created_by) if row.created_by else None,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        }
+
+    def list_test_case_assets(
+        self,
+        *,
+        project_id: str,
+        status: str | None = None,
+        keyword: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> dict[str, Any]:
+        with self.session() as session:
+            stmt = select(TestCaseAsset).where(TestCaseAsset.project_id == self._parse_uuid(project_id))
+            if status:
+                stmt = stmt.where(TestCaseAsset.status == status)
+            rows = session.scalars(stmt.order_by(TestCaseAsset.updated_at.desc(), TestCaseAsset.name.asc())).all()
+            if keyword:
+                needle = keyword.lower()
+                rows = [
+                    row
+                    for row in rows
+                    if needle in row.case_key.lower()
+                    or needle in row.name.lower()
+                    or needle in (row.description or "").lower()
+                    or needle in (row.source_task_uid or "").lower()
+                ]
+            total = len(rows)
+            start = max(page - 1, 0) * page_size
+            return {
+                "items": [self._test_case_asset_to_payload(row) for row in rows[start:start + page_size]],
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+            }
+
+    def get_test_case_asset(self, case_id: str) -> dict[str, Any] | None:
+        with self.session() as session:
+            row = session.scalar(select(TestCaseAsset).where(TestCaseAsset.id == self._parse_uuid(case_id)))
+            return self._test_case_asset_to_payload(row) if row is not None else None
+
+    def upsert_test_case_asset(
+        self,
+        *,
+        project_id: str,
+        case_key: str,
+        name: str,
+        description: str | None = None,
+        priority: str = "P1",
+        status: str = "active",
+        source: str = "manual",
+        source_task_id: str | None = None,
+        tags: list[Any] | None = None,
+        dsl_scenario: Any = None,
+        assertions: Any = None,
+        created_by: str | None = None,
+    ) -> dict[str, Any]:
+        project_uuid = self._parse_uuid(project_id)
+        with self.session() as session:
+            row = session.scalar(
+                select(TestCaseAsset).where(
+                    TestCaseAsset.project_id == project_uuid,
+                    TestCaseAsset.case_key == case_key,
+                )
+            )
+            if row is None:
+                row = TestCaseAsset(
+                    project_id=project_uuid,
+                    case_key=case_key,
+                    name=name,
+                    created_by=self._parse_uuid(created_by),
+                    created_at=_utc_now(),
+                    updated_at=_utc_now(),
+                )
+                session.add(row)
+            row.name = name or row.name
+            row.description = description
+            row.priority = priority or "P1"
+            row.status = status or "active"
+            row.source = source or "manual"
+            row.source_task_uid = source_task_id
+            row.tags_json = list(tags or [])
+            row.dsl_scenario_json = dsl_scenario if dsl_scenario is not None else {}
+            row.assertions_json = assertions if assertions is not None else []
+            row.updated_at = _utc_now()
+            session.flush()
+            return self._test_case_asset_to_payload(row)
+
+    def update_test_case_asset(self, case_id: str, **changes: Any) -> dict[str, Any] | None:
+        with self.session() as session:
+            row = session.scalar(select(TestCaseAsset).where(TestCaseAsset.id == self._parse_uuid(case_id)))
+            if row is None:
+                return None
+            for key, attr in (
+                ("name", "name"),
+                ("description", "description"),
+                ("priority", "priority"),
+                ("status", "status"),
+                ("source", "source"),
+                ("source_task_id", "source_task_uid"),
+                ("tags", "tags_json"),
+                ("dsl_scenario", "dsl_scenario_json"),
+                ("assertions", "assertions_json"),
+            ):
+                if key in changes:
+                    setattr(row, attr, changes[key])
+            row.updated_at = _utc_now()
+            session.flush()
+            return self._test_case_asset_to_payload(row)
+
+    def delete_test_case_asset(self, case_id: str) -> bool:
+        with self.session() as session:
+            row = session.scalar(select(TestCaseAsset).where(TestCaseAsset.id == self._parse_uuid(case_id)))
+            if row is None:
+                return False
+            session.delete(row)
+            return True
+
+    def _test_suite_asset_to_payload(self, row: TestSuiteAsset) -> dict[str, Any]:
+        return {
+            "id": str(row.id),
+            "project_id": str(row.project_id),
+            "name": row.name,
+            "description": row.description or "",
+            "status": row.status,
+            "source": row.source,
+            "case_ids": [str(item) for item in _ensure_json_list(row.case_ids_json)],
+            "tags": _ensure_json_list(row.tags_json),
+            "created_by": str(row.created_by) if row.created_by else None,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        }
+
+    def list_test_suite_assets(
+        self,
+        *,
+        project_id: str,
+        status: str | None = None,
+        keyword: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> dict[str, Any]:
+        with self.session() as session:
+            stmt = select(TestSuiteAsset).where(TestSuiteAsset.project_id == self._parse_uuid(project_id))
+            if status:
+                stmt = stmt.where(TestSuiteAsset.status == status)
+            rows = session.scalars(stmt.order_by(TestSuiteAsset.updated_at.desc(), TestSuiteAsset.name.asc())).all()
+            if keyword:
+                needle = keyword.lower()
+                rows = [
+                    row
+                    for row in rows
+                    if needle in row.name.lower()
+                    or needle in (row.description or "").lower()
+                ]
+            total = len(rows)
+            start = max(page - 1, 0) * page_size
+            return {
+                "items": [self._test_suite_asset_to_payload(row) for row in rows[start:start + page_size]],
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+            }
+
+    def get_test_suite_asset(self, suite_id: str) -> dict[str, Any] | None:
+        with self.session() as session:
+            row = session.scalar(select(TestSuiteAsset).where(TestSuiteAsset.id == self._parse_uuid(suite_id)))
+            return self._test_suite_asset_to_payload(row) if row is not None else None
+
+    def create_test_suite_asset(
+        self,
+        *,
+        project_id: str,
+        name: str,
+        description: str | None = None,
+        status: str = "active",
+        source: str = "manual",
+        case_ids: list[str] | None = None,
+        tags: list[Any] | None = None,
+        created_by: str | None = None,
+    ) -> dict[str, Any]:
+        with self.session() as session:
+            row = TestSuiteAsset(
+                project_id=self._parse_uuid(project_id),
+                name=name,
+                description=description,
+                status=status or "active",
+                source=source or "manual",
+                case_ids_json=list(case_ids or []),
+                tags_json=list(tags or []),
+                created_by=self._parse_uuid(created_by),
+                created_at=_utc_now(),
+                updated_at=_utc_now(),
+            )
+            session.add(row)
+            session.flush()
+            return self._test_suite_asset_to_payload(row)
+
+    def update_test_suite_asset(self, suite_id: str, **changes: Any) -> dict[str, Any] | None:
+        with self.session() as session:
+            row = session.scalar(select(TestSuiteAsset).where(TestSuiteAsset.id == self._parse_uuid(suite_id)))
+            if row is None:
+                return None
+            for key, attr in (
+                ("name", "name"),
+                ("description", "description"),
+                ("status", "status"),
+                ("source", "source"),
+                ("case_ids", "case_ids_json"),
+                ("tags", "tags_json"),
+            ):
+                if key in changes:
+                    setattr(row, attr, changes[key])
+            row.updated_at = _utc_now()
+            session.flush()
+            return self._test_suite_asset_to_payload(row)
+
+    def delete_test_suite_asset(self, suite_id: str) -> bool:
+        with self.session() as session:
+            row = session.scalar(select(TestSuiteAsset).where(TestSuiteAsset.id == self._parse_uuid(suite_id)))
+            if row is None:
+                return False
+            session.delete(row)
+            return True
             return True
 
     def append_execution_history(self, record: dict[str, Any]) -> dict[str, Any]:

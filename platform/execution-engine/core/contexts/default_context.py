@@ -114,7 +114,6 @@ class DeepSeekOpenAICompatibleMultiModal(OpenAIMultiModal):
             base_kwargs["max_tokens"] = self.max_new_tokens
         return {**base_kwargs, **self.additional_kwargs}
 
-# declare the token counter before any LLMs are initialized
 token_counter = TokenCounter()
 
 llm_api_key = os.getenv("DEEPSEEK_API_KEY", os.getenv("OPENAI_API_KEY"))
@@ -138,7 +137,6 @@ embedding_api_base = os.getenv(
     os.getenv("DOUBAO_API_BASE", "https://ark.cn-beijing.volces.com/api/v3"),
 )
 
-# init models
 llm = DeepSeekOpenAICompatibleLLM(
     model=llm_name, api_key=llm_api_key, api_base=llm_api_base
 )
@@ -151,5 +149,4 @@ embedding = DeepSeekOpenAICompatibleEmbedding(
     api_base=embedding_api_base,
 )
 
-# init context
 context = Context(llm, mm_llm, embedding)

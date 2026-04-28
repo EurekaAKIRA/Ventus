@@ -115,7 +115,6 @@ def _build_action_for_endpoint(endpoint: dict, actions: list[str]) -> str:
             has_path_match = True
             break
     if has_path_match and method and path:
-        # Avoid mapping GET endpoint to a PUT action when path is shared.
         return f"调用 {method} {path}"
 
     for action in actions:
@@ -496,8 +495,6 @@ def _build_narrative_scenarios(
     narrative_actions = [a for a in actions if _is_narrative_action(a)]
     if not narrative_actions:
         return []
-    # If only some lines are "narrative" (e.g. 登录… + concrete 查询…), keep the full ordered
-    # action list so auth + 上一步 follow-ups are not dropped.
     if len(narrative_actions) < len(actions):
         working_actions = list(actions[:8])
     else:
@@ -582,7 +579,6 @@ def build_scenarios(parsed_requirement: dict, use_llm: bool = False) -> list[dic
 
     chained_start = len(endpoint_scenarios) + 1
     chained_scenarios = _build_chained_scenarios(parsed_requirement, actions, expectations, chained_start)
-    # Per-endpoint scenarios already cover each HTTP surface; omit duplicate e2e chain of the same endpoints.
     if endpoint_scenarios:
         chained_scenarios = []
 

@@ -10,13 +10,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 
-# Constants
 BASE_URL = '{url}'
 
-# Scenarios
 scenarios('{feature_file_name}')
 
-# Fixtures
 @pytest.fixture
 def browser():
     driver = webdriver.Chrome()
@@ -24,7 +21,6 @@ def browser():
     yield driver
     driver.quit()
 
-# Steps
 """
 )
 
@@ -134,13 +130,10 @@ from selenium.common.exceptions import ElementClickInterceptedException
 import time
 import random
 
-# Constants
 BASE_URL = 'https://example.com'
 
-# Scenarios
 scenarios('complex_example.feature')
 
-# Fixtures
 @pytest.fixture
 def browser():
     driver = webdriver.Chrome()
@@ -148,7 +141,6 @@ def browser():
     yield driver
     driver.quit()
 
-# Steps
 @given('I am on the example website')
 def go_to_homepage(browser):
     browser.get(BASE_URL)
@@ -169,7 +161,7 @@ def filter_products(browser):
         EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/main/div/div[1]/aside/div[3]/select"))
     )
     options = category_dropdown.find_elements(By.TAG_NAME, "option")
-    random_option = random.choice(options[1:])  # Exclude the first option if it's a placeholder
+    random_option = random.choice(options[1:])
     random_option.click()
 
 @when('I sort products by price')

@@ -479,6 +479,145 @@ export interface DefectListPayload {
   page_size: number;
 }
 
+export interface InterfaceAssetPayload {
+  id: string;
+  project_id: string;
+  method: string;
+  path: string;
+  name?: string;
+  description?: string;
+  source: string;
+  status: "active" | "deprecated" | "draft" | string;
+  version: string;
+  tags: string[];
+  request_example?: unknown;
+  response_example?: unknown;
+  schema?: unknown;
+  last_seen_task_id?: string | null;
+  created_by?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface InterfaceAssetListPayload {
+  items: InterfaceAssetPayload[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface InterfaceAssetImportPayload {
+  task_id: string;
+  project_id: string;
+  items: InterfaceAssetPayload[];
+  imported_count: number;
+}
+
+export interface InterfaceAssetOpenApiImportPayload {
+  project_id: string;
+  source_name: string;
+  items: InterfaceAssetPayload[];
+  imported_count: number;
+  endpoint_count: number;
+}
+
+export interface InterfaceAssetDebugPayload {
+  asset: InterfaceAssetPayload;
+  request: {
+    method: string;
+    url: string;
+    headers: Record<string, string>;
+    has_auth: boolean;
+  };
+  response: {
+    status_code: number;
+    headers: Record<string, string>;
+    json?: unknown;
+    body_preview: string;
+    elapsed_ms: number;
+    error: string;
+    ok: boolean;
+  };
+}
+
+export interface TestCaseAssetPayload {
+  id: string;
+  project_id: string;
+  case_key: string;
+  name: string;
+  description?: string;
+  priority: string;
+  status: "active" | "draft" | "disabled" | "archived" | string;
+  source: string;
+  source_task_id?: string | null;
+  tags: string[];
+  dsl_scenario: TestCaseDslScenario | Record<string, unknown>;
+  assertions: unknown[];
+  created_by?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface TestCaseAssetListPayload {
+  items: TestCaseAssetPayload[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface TestCaseAssetImportPayload {
+  task_id: string;
+  project_id: string;
+  items: TestCaseAssetPayload[];
+  imported_count: number;
+}
+
+export interface TestCaseAssetExecutionPayload {
+  case: TestCaseAssetPayload;
+  execution_result: ExecutionResult;
+  executed_at: string;
+}
+
+export interface TestSuiteAssetPayload {
+  id: string;
+  project_id: string;
+  name: string;
+  description?: string;
+  status: "active" | "draft" | "disabled" | "archived" | string;
+  source: string;
+  case_ids: string[];
+  tags: string[];
+  created_by?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface TestSuiteAssetListPayload {
+  items: TestSuiteAssetPayload[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface TestSuiteAssetExecutionPayload {
+  suite: TestSuiteAssetPayload;
+  status: string;
+  case_results: Array<{
+    case?: TestCaseAssetPayload;
+    case_id?: string;
+    status: string;
+    execution_result?: ExecutionResult;
+    error?: unknown;
+  }>;
+  metrics: {
+    case_count: number;
+    passed: number;
+    failed: number;
+    duration_ms: number;
+  };
+  executed_at: string;
+}
+
 export interface TaskDraftAgentSuggestion {
   field: string;
   value: string;

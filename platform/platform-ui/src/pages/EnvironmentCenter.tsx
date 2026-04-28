@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Button, Card, Col, Empty, Form, Input, List, Popconfirm, Row, Space, Table, Tag, Typography, message } from "antd";
 import type { EnvironmentPayload, PreflightCheckPayload } from "../types";
 import { deleteEnvironment, fetchEnvironments, probeEnvironment, saveEnvironment, updateEnvironment } from "../api/system";
-import MetricCard from "../components/MetricCard";
+import { MetricGrid, PageHero, PageStack } from "../components/PageLayout";
 import { useAuth } from "../auth/AuthContext";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 type EnvironmentFormValues = {
@@ -158,12 +158,13 @@ export default function EnvironmentCenter() {
   );
 
   return (
-    <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div className="page-hero">
-        <div className="page-hero__copy">
-          <Title level={3} className="page-hero__title">环境管理</Title>
-        </div>
-        <div className="page-hero__meta">
+    <PageStack>
+      <PageHero
+        eyebrow="Environment"
+        title="环境管理"
+        subtitle="集中维护 Base URL、默认请求头、鉴权与 Cookie，执行前可快速探测连通性。"
+        meta={
+          <>
           <div className="page-meta-chip">
             <span className="page-meta-chip__label">当前项目</span>
             <span className="page-meta-chip__value">{currentProject?.name || "未选择"}</span>
@@ -172,15 +173,18 @@ export default function EnvironmentCenter() {
             <span className="page-meta-chip__label">环境数量</span>
             <span className="page-meta-chip__value">{items.length}</span>
           </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      <div className="metric-row">
-        <MetricCard title="环境总数" value={items.length} />
-        <MetricCard title="鉴权已配置" value={authEnabled} color="#4f8cff" />
-        <MetricCard title="Cookies 已配置" value={cookieEnabled} color="#3ecf8e" />
-        <MetricCard title="受保护配置" value={maskedConfigs} color="#f5b94c" />
-      </div>
+      <MetricGrid
+        items={[
+          { title: "环境总数", value: items.length },
+          { title: "鉴权已配置", value: authEnabled, color: "#2f81f7" },
+          { title: "Cookies 已配置", value: cookieEnabled, color: "#5865f2" },
+          { title: "受保护配置", value: maskedConfigs, color: "#f5b94c" },
+        ]}
+      />
 
       <Card bordered={false} className="panel-card panel-card--form" title={editingName ? `编辑环境：${editingName}` : "新增环境"}>
         <Form form={form} layout="vertical" onFinish={handleSave}>
@@ -344,6 +348,6 @@ export default function EnvironmentCenter() {
           ]}
         />
       </Card>
-    </Space>
+    </PageStack>
   );
 }

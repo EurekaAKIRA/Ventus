@@ -200,6 +200,116 @@ class UpdateDefectRequest(BaseModel):
     actual_result: str | None = None
 
 
+class CreateInterfaceAssetRequest(BaseModel):
+    project_id: str
+    method: str
+    path: str
+    name: str = ""
+    description: str = ""
+    source: str = "manual"
+    status: str = "active"
+    version: str = "default"
+    tags: list[str] = Field(default_factory=list)
+    request_example: Any = None
+    response_example: Any = None
+    schema: Any = None
+
+
+class UpdateInterfaceAssetRequest(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    source: str | None = None
+    status: str | None = None
+    version: str | None = None
+    tags: list[str] | None = None
+    request_example: Any = None
+    response_example: Any = None
+    schema: Any = None
+
+
+class ImportInterfaceAssetsFromTaskRequest(BaseModel):
+    project_id: str | None = None
+
+
+class ImportOpenApiInterfaceAssetsRequest(BaseModel):
+    project_id: str
+    content: str
+    source_name: str = "openapi"
+    version: str = "default"
+    overwrite_examples: bool = True
+
+
+class CreateTestCaseAssetRequest(BaseModel):
+    project_id: str
+    case_key: str = ""
+    name: str
+    description: str = ""
+    priority: str = "P1"
+    status: str = "active"
+    source: str = "manual"
+    tags: list[str] = Field(default_factory=list)
+    dsl_scenario: Any = Field(default_factory=dict)
+    assertions: list[Any] = Field(default_factory=list)
+
+
+class UpdateTestCaseAssetRequest(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    priority: str | None = None
+    status: str | None = None
+    source: str | None = None
+    tags: list[str] | None = None
+    dsl_scenario: Any = None
+    assertions: list[Any] | None = None
+
+
+class ImportTestCaseAssetsFromTaskRequest(BaseModel):
+    project_id: str | None = None
+
+
+class ExecuteTestCaseAssetRequest(BaseModel):
+    execution_mode: str = "api"
+    environment: str | None = None
+    base_url: str | None = None
+
+
+class CreateTestSuiteAssetRequest(BaseModel):
+    project_id: str
+    name: str
+    description: str = ""
+    status: str = "active"
+    source: str = "manual"
+    case_ids: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+
+
+class UpdateTestSuiteAssetRequest(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    status: str | None = None
+    source: str | None = None
+    case_ids: list[str] | None = None
+    tags: list[str] | None = None
+
+
+class ExecuteTestSuiteAssetRequest(BaseModel):
+    execution_mode: str = "api"
+    environment: str | None = None
+    base_url: str | None = None
+    stop_on_failure: bool = False
+
+
+class DebugInterfaceAssetRequest(BaseModel):
+    project_id: str | None = None
+    environment: str | None = None
+    base_url: str | None = None
+    headers: dict[str, str] = Field(default_factory=dict)
+    params: dict[str, Any] = Field(default_factory=dict)
+    json_body: Any = None
+    raw_body: str | None = None
+    timeout: float = Field(default=15.0, ge=0.1, le=120.0)
+
+
 class ApiResponse(BaseModel):
     success: bool = True
     code: str = "OK"

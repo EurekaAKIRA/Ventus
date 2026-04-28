@@ -67,17 +67,12 @@ export function deriveExecutionStatus(detail?: ExtendedTaskDetail | null): strin
   return "not_started";
 }
 
-/** 执行已终态：分析报告与看板数据已稳定，无需再静默轮询详情。 */
 function isExecutionTerminal(detail: ExtendedTaskDetail | null): boolean {
   if (!detail) return false;
   const exec = deriveExecutionStatus(detail);
   return exec === "passed" || exec === "failed" || exec === "stopped";
 }
 
-/**
- * 流水线已产出场景且尚未启动执行：解析/生成阶段结束，无需再为等 DSL 轮询。
- * （用户若之后点执行，由执行轮询负责。）
- */
 function isPipelineIdleWithScenarios(detail: ExtendedTaskDetail | null): boolean {
   if (!detail) return false;
   if (deriveExecutionStatus(detail) !== "not_started") return false;
@@ -85,12 +80,10 @@ function isPipelineIdleWithScenarios(detail: ExtendedTaskDetail | null): boolean
   return life === "generated" && (detail.scenarios?.length ?? 0) > 0;
 }
 
-/** 详情页静默轮询是否应停止（分析/生成阶段已结束或执行已终态）。 */
 export function isTaskDetailPollingSettled(detail: ExtendedTaskDetail | null): boolean {
   return isExecutionTerminal(detail) || isPipelineIdleWithScenarios(detail);
 }
 
-/** 用于 summary 轮询：仅当这些字段变化时才值得拉 full / 产物。 */
 export function fingerprintFromSummaryPayload(summary: ExtendedTaskDetail): string {
   const life = normalizeStatus(summary.task_context?.status);
   const exec = normalizeStatus(summary.execution_result?.status || "");
@@ -100,7 +93,6 @@ export function fingerprintFromSummaryPayload(summary: ExtendedTaskDetail): stri
   return `${life}|${exec}|${pm}|${rm}|${fr}`;
 }
 
-/** 大字段内容指纹：相同时跳过 setState，避免重复渲染相同 DSL/场景。 */
 export function heavyContentSnapshot(d: ExtendedTaskDetail): string {
   const sc = d.scenarios?.length ?? 0;
   const dsl = d.test_case_dsl?.scenarios?.length ?? 0;
@@ -120,9 +112,6 @@ export function shallowVisibleTaskDetailEqual(a: ExtendedTaskDetail, b: Extended
   );
 }
 
-/**
- * summary 接口会把大字段置 null；合并时保留上一份 full 中的实体，避免轮询闪空再补全。
- */
 export function mergeTaskDetailFromSummaryPreserveHeavy(
   prev: ExtendedTaskDetail | null,
   summary: ExtendedTaskDetail,

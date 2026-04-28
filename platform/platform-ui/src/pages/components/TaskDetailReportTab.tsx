@@ -193,7 +193,7 @@ export function TaskDetailReportTab(props: {
                   <Text>{item.label}</Text>
                   <Text strong>{item.value}</Text>
                 </div>
-                <Progress percent={Math.round((item.value / chartMax) * 100)} strokeColor="#722ed1" showInfo={false} />
+                <Progress percent={Math.round((item.value / chartMax) * 100)} strokeColor="#5865f2" showInfo={false} />
               </div>
             ))}
             <Button size="small" onClick={() => onOpenRawData("chart_data JSON", analysisChartData)}>

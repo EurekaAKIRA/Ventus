@@ -117,10 +117,10 @@ export function TaskDetailTopSection(props: {
       </div>
 
       <div className="metric-row task-detail-metrics">
-        <MetricCard title="当前状态" value={activeStatus} color="#3ecf8e" />
-        <MetricCard title="解析状态" value={hasParsedResult ? "已完成" : "待生成"} color={hasParsedResult ? "#3ecf8e" : "#f5b94c"} />
+        <MetricCard title="当前状态" value={activeStatus} color="#5865f2" />
+        <MetricCard title="解析状态" value={hasParsedResult ? "已完成" : "待生成"} color={hasParsedResult ? "#5865f2" : "#f5b94c"} />
         <MetricCard title="场景数量" value={detail.scenarios?.length ?? 0} color={hasScenarios ? "#4f8cff" : "#8da2b8"} />
-        <MetricCard title="执行门槛" value={preflightBlocking ? "阻断" : canExecute ? "可执行" : "待配置"} color={preflightBlocking ? "#ff6b6b" : canExecute ? "#3ecf8e" : "#f5b94c"} />
+        <MetricCard title="执行门槛" value={preflightBlocking ? "阻断" : canExecute ? "可执行" : "待配置"} color={preflightBlocking ? "#ff6b6b" : canExecute ? "#5865f2" : "#f5b94c"} />
       </div>
 
       {showTopOverview ? (

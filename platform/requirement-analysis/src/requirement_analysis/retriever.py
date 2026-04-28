@@ -97,7 +97,7 @@ def retrieve_relevant_chunks(
     index: dict,
     query: str | list[str],
     top_k: int = 5,
-    use_vector_rag: bool = False,  # same flag as AnalysisParseOptions.rag_enabled
+    use_vector_rag: bool = False,
     embedding_config: OpenAIEnhancementConfig | None = None,
     rerank: bool = False,
     rerank_window: int = 12,

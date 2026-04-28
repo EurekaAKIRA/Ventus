@@ -232,7 +232,6 @@ HIGH_VALUE_ASSERTION_ENDPOINT_SUFFIXES = (
     "/api/tasks/{task_id}/analysis-report",
     "/api/tasks/{task_id}/validation-report",
 )
-# Hostnames (exact, no port) for external APIs where LLM assertion enhancement is allowed.
 LLM_ASSERTION_ALLOWED_API_HOSTS: frozenset[str] = frozenset(
     {
         "restful-booker.herokuapp.com",
@@ -440,7 +439,6 @@ class RuleAssertionBuilder:
             elif url.endswith("/booking"):
                 assertions.append(_assertion("json.bookingid", "exists", None, "critical", "field_presence", 0.94, "booking_create_identifier", "rules"))
             elif not header_only_save and not non_json_response:
-                # Avoid unsafe generic json.id assumptions for external APIs.
                 assertions.append(_assertion("json", "exists", None, "major", "schema", 0.72, "create_response_present", "rules"))
         if self.intent == "query":
             if not _is_simple_endpoint(url) and expects_json_envelope(url) and not non_json_response:
@@ -1318,7 +1316,6 @@ def _explicit_collection_field_from_text(text: str) -> str:
             if _is_collection_field_name(candidate):
                 return candidate
 
-    # Only infer envelope fields when there is structural evidence, usually pagination metadata.
     if not any(marker in lowered for marker in ("分页", "pagination", "total", "skip", "limit", "page", "size", "结构")):
         return ""
     tokens = _INLINE_FIELD_TOKENS(raw) + FIELD_NAME_RE.findall(raw)

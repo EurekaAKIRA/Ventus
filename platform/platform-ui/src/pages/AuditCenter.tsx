@@ -3,9 +3,9 @@ import dayjs, { type Dayjs } from "dayjs";
 import { Button, Card, DatePicker, Input, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { AuditLogPayload } from "../types";
 import { fetchAuditLogs } from "../api/system";
-import MetricCard from "../components/MetricCard";
+import { MetricGrid, PageHero, PageStack } from "../components/PageLayout";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
 function toCsv(rows: AuditLogPayload[]): string {
@@ -96,12 +96,13 @@ export default function AuditCenter() {
   };
 
   return (
-    <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div className="page-hero">
-        <div className="page-hero__copy">
-          <Title level={3} className="page-hero__title">审计日志</Title>
-        </div>
-        <div className="page-hero__meta">
+    <PageStack>
+      <PageHero
+        eyebrow="Audit Trail"
+        title="审计日志"
+        subtitle="追踪平台关键操作、资源变更与用户行为，便于安全审计和问题回放。"
+        meta={
+          <>
           <div className="page-meta-chip">
             <span className="page-meta-chip__label">当前筛选总数</span>
             <span className="page-meta-chip__value">{total}</span>
@@ -114,15 +115,18 @@ export default function AuditCenter() {
             <span className="page-meta-chip__label">时间范围</span>
             <span className="page-meta-chip__value">{rangeLabel}</span>
           </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      <div className="metric-row">
-        <MetricCard title="当前页记录" value={items.length} />
-        <MetricCard title="总记录" value={total} color="#4f8cff" />
-        <MetricCard title="按操作人筛选" value={actor || "未设置"} color="#3ecf8e" />
-        <MetricCard title="关键词筛选" value={keyword || "未设置"} color="#f5b94c" />
-      </div>
+      <MetricGrid
+        items={[
+          { title: "当前页记录", value: items.length },
+          { title: "总记录", value: total, color: "#2f81f7" },
+          { title: "按操作人筛选", value: actor || "未设置", color: "#5865f2" },
+          { title: "关键词筛选", value: keyword || "未设置", color: "#f5b94c" },
+        ]}
+      />
 
       <Card bordered={false} className="panel-card">
         <div className="page-toolbar">
@@ -241,6 +245,6 @@ export default function AuditCenter() {
           ]}
         />
       </Card>
-    </Space>
+    </PageStack>
   );
 }

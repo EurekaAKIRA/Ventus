@@ -1,5 +1,4 @@
 import re
-from lavague.core.utilities.pricing_util import build_summary_table
 
 
 INDENT = "    "
@@ -39,15 +38,11 @@ def build_run_summary(logs, final_feature_path, final_pytest_path, execution_tim
     summary += f"\nFinished generating tests in {execution_time:.1f}s\n\n"
     summary += f"   Feature file: {final_feature_path}\n"
     summary += f"   Pytest file:  {final_pytest_path}\n"
-    # turn off TokenCounter output as it counts only the LaVague run and not the pytest generation
-    # summary += build_summary_table(token_summary, verbose=False)
-
     summary += f"\nRun the following command to execute your tests:\n\n   pytest {final_pytest_path}\n"
 
     return summary
 
 
-# all utils below are used for building the pytest file without LLMs
 def to_snake_case(s: str):
     s = s.lower()
     s = re.sub(r"[^\w\s]", "_", s)

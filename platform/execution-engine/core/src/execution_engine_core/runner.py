@@ -150,7 +150,6 @@ class TestRunner:
         )
         agent.get(task.url)
 
-        # run agent and measure execution time
         start_time = time.time()
         agent.run(task.prompt, user_data=task.user_data, log_to_db=self.log_to_db)
         end_time = time.time()

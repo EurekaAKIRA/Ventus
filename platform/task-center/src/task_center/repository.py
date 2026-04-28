@@ -26,7 +26,6 @@ class JsonRepository:
             return {}
         raw = self.path.read_text(encoding="utf-8").strip()
         if not raw:
-            # self-heal empty files to avoid repeated recovery warnings
             self.save({})
             return {}
         try:

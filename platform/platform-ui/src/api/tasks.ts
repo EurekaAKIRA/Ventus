@@ -39,7 +39,6 @@ import { getStoredCurrentProjectId, requestApi } from "./client";
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 
-/** Matches `platform/shared/config/runtime_config.json` → `requirement_analysis.defaults.rag_enabled`. */
 export const DEFAULT_REQUIREMENT_RAG_ENABLED = false;
 const USE_MOCK_API = String(import.meta.env.VITE_USE_MOCK_API ?? "").toLowerCase() === "true";
 const HISTORY_PAGE_SIZE_MAX = 200;

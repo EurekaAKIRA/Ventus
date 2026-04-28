@@ -5,11 +5,11 @@
 }
 
 :root {
-  --theme-primary: #722ed1;
-  --theme-primary-hover: #9254de;
-  --theme-primary-active: #531dab;
-  --theme-primary-soft: #b37feb;
-  --theme-primary-bg: rgba(114, 46, 209, 0.08);
+  --theme-primary: #5865f2;
+  --theme-primary-hover: #6f7dfb;
+  --theme-primary-active: #3f4dcc;
+  --theme-primary-soft: #9aa8ff;
+  --theme-primary-bg: rgba(88, 101, 242, 0.12);
 }
 
 body {
@@ -460,7 +460,7 @@ body {
 .dashboard-line-svg {
   width: 100%;
   height: 120px;
-  background: linear-gradient(180deg, var(--theme-primary-bg), rgba(114, 46, 209, 0));
+  background: linear-gradient(180deg, var(--theme-primary-bg), rgba(88, 101, 242, 0));
   border: 1px solid #f0f0f0;
   border-radius: 10px;
 }
@@ -647,7 +647,7 @@ body {
 }
 
 .execution-plan-side-item.active {
-  background: rgba(114, 46, 209, 0.12);
+  background: rgba(88, 101, 242, 0.14);
 }
 
 .execution-plan-main .ant-table-wrapper {
@@ -673,11 +673,11 @@ body,
 }
 
 :root {
-  --theme-primary: #3ecf8e;
-  --theme-primary-hover: #5dd39e;
-  --theme-primary-active: #2aa871;
-  --theme-primary-soft: #8bf0bc;
-  --theme-primary-bg: rgba(62, 207, 142, 0.12);
+  --theme-primary: #5865f2;
+  --theme-primary-hover: #6f7dfb;
+  --theme-primary-active: #3f4dcc;
+  --theme-primary-soft: #9aa8ff;
+  --theme-primary-bg: rgba(88, 101, 242, 0.14);
   --theme-surface-strong: rgba(9, 16, 24, 0.92);
   --theme-surface: rgba(15, 23, 34, 0.84);
   --theme-surface-soft: rgba(20, 31, 45, 0.72);
@@ -688,7 +688,7 @@ body,
   --theme-text-soft: #61758a;
   --theme-danger: #ff6b6b;
   --theme-warning: #f5b94c;
-  --theme-info: #4f8cff;
+  --theme-info: #2f81f7;
   --theme-shadow: 0 24px 80px rgba(3, 8, 18, 0.38);
 }
 
@@ -696,18 +696,18 @@ body {
   font-family: "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   color: var(--theme-text);
   background:
-    radial-gradient(circle at top left, rgba(62, 207, 142, 0.12), transparent 24%),
-    radial-gradient(circle at top right, rgba(79, 140, 255, 0.12), transparent 22%),
+    radial-gradient(circle at top left, rgba(88, 101, 242, 0.18), transparent 24%),
+    radial-gradient(circle at top right, rgba(137, 87, 229, 0.14), transparent 22%),
     linear-gradient(180deg, #0a1119 0%, #091018 42%, #070d15 100%);
   background-attachment: fixed;
 }
 
 a {
-  color: #b6f7d3;
+  color: #b7c2ff;
 }
 
 a:hover {
-  color: #ecfff6;
+  color: #eef2ff;
 }
 
 .app-shell {
@@ -758,9 +758,9 @@ a:hover {
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  color: #ecfff6;
+  color: #eef2ff;
   font-size: 18px;
-  background: linear-gradient(135deg, rgba(62, 207, 142, 0.24), rgba(79, 140, 255, 0.22));
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.34), rgba(137, 87, 229, 0.22));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -791,9 +791,9 @@ a:hover {
 }
 
 .app-shell__menu .ant-menu-item-selected {
-  background: rgba(62, 207, 142, 0.12) !important;
+  background: rgba(88, 101, 242, 0.18) !important;
   color: #f5fbff !important;
-  box-shadow: inset 0 0 0 1px rgba(62, 207, 142, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(88, 101, 242, 0.18);
 }
 
 .app-shell__menu .ant-menu-item:hover {
@@ -822,12 +822,12 @@ a:hover {
 
 .app-shell__header {
   height: auto !important;
-  min-height: 76px;
+  min-height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 16px 24px !important;
+  padding: 10px 24px !important;
   background: rgba(9, 16, 24, 0.58) !important;
   border-bottom: 1px solid var(--theme-border);
   backdrop-filter: blur(20px);
@@ -838,13 +838,14 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 720px;
+  min-width: 260px;
+  max-width: 520px;
 }
 
 .app-shell__header-title.ant-typography {
   margin: 0 !important;
   color: #f5fbff;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.1;
 }
 
@@ -855,13 +856,15 @@ a:hover {
 
 .app-shell__toolbar {
   justify-content: flex-end;
+  flex: 1;
 }
 
 .app-shell__project-switch {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 240px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .app-shell__project-label {
@@ -887,8 +890,8 @@ a:hover {
 }
 
 .page-container {
-  padding: 28px;
-  min-height: calc(100vh - 76px - 60px);
+  padding: 16px 24px 24px;
+  min-height: calc(100vh - 64px - 60px);
 }
 
 .page-hero {
@@ -913,6 +916,9 @@ a:hover {
 }
 
 .page-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--theme-primary-soft);
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -925,6 +931,15 @@ a:hover {
   color: #f5fbff;
   font-size: clamp(24px, 3vw, 30px);
   line-height: 1.08;
+}
+
+.page-hero__heading {
+  margin: 0;
+  color: #f5fbff;
+  font-size: clamp(24px, 3vw, 30px);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 .page-hero__subtitle {
@@ -1052,7 +1067,7 @@ a:hover {
 .dashboard-panel-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 28px 70px rgba(3, 8, 18, 0.42);
-  border-color: rgba(62, 207, 142, 0.2) !important;
+  border-color: rgba(88, 101, 242, 0.28) !important;
 }
 
 .panel-card .ant-card-body {
@@ -1066,9 +1081,9 @@ a:hover {
 
 .defect-inline-editor {
   margin: 18px 0 22px;
-  border-color: rgba(62, 207, 142, 0.22) !important;
+  border-color: rgba(88, 101, 242, 0.3) !important;
   background:
-    linear-gradient(135deg, rgba(62, 207, 142, 0.08), rgba(79, 140, 255, 0.05)),
+    linear-gradient(135deg, rgba(88, 101, 242, 0.12), rgba(47, 129, 247, 0.07)),
     rgba(11, 18, 28, 0.84) !important;
 }
 
@@ -1199,7 +1214,7 @@ a:hover {
   border: 1px solid var(--theme-border);
   border-radius: 28px !important;
   background:
-    linear-gradient(135deg, rgba(62, 207, 142, 0.08), rgba(79, 140, 255, 0.06) 54%, transparent),
+    linear-gradient(135deg, rgba(88, 101, 242, 0.12), rgba(47, 129, 247, 0.08) 54%, transparent),
     rgba(15, 23, 34, 0.76) !important;
   box-shadow: var(--theme-shadow);
 }
@@ -1287,7 +1302,7 @@ a:hover {
   border: 1px solid var(--theme-border);
   border-radius: 24px;
   background:
-    linear-gradient(135deg, rgba(62, 207, 142, 0.12), rgba(79, 140, 255, 0.08) 62%, transparent),
+    linear-gradient(135deg, rgba(88, 101, 242, 0.16), rgba(47, 129, 247, 0.1) 62%, transparent),
     rgba(15, 23, 34, 0.82);
   box-shadow: var(--theme-shadow);
 }
@@ -1383,8 +1398,8 @@ a:hover {
   width: 24px;
   height: 24px;
   border-radius: 999px;
-  background: rgba(62, 207, 142, 0.14);
-  color: #7ef0b7;
+  background: rgba(88, 101, 242, 0.18);
+  color: #b7c2ff;
   font-size: 12px;
   font-weight: 800;
 }
@@ -1481,7 +1496,7 @@ a:hover {
 .create-task-uploader.ant-upload-wrapper .ant-upload-drag {
   border-radius: 22px !important;
   background: rgba(9, 16, 24, 0.62) !important;
-  border-color: rgba(62, 207, 142, 0.26) !important;
+  border-color: rgba(88, 101, 242, 0.34) !important;
   min-height: 220px;
 }
 
@@ -1510,7 +1525,7 @@ a:hover {
 
 .create-task-uploader:hover,
 .create-task-uploader.ant-upload-wrapper .ant-upload-drag:hover {
-  border-color: rgba(62, 207, 142, 0.5) !important;
+  border-color: rgba(88, 101, 242, 0.62) !important;
 }
 
 .create-task-upload-title {
@@ -1524,9 +1539,9 @@ a:hover {
   margin-top: 12px;
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(62, 207, 142, 0.2);
-  background: rgba(62, 207, 142, 0.08);
-  color: #dff9eb;
+  border: 1px solid rgba(88, 101, 242, 0.28);
+  background: rgba(88, 101, 242, 0.1);
+  color: #dfe4ff;
   font-size: 12px;
 }
 
@@ -1546,8 +1561,8 @@ a:hover {
 .create-task-field.is-agent-focused .ant-input-affix-wrapper,
 .create-task-field.is-agent-focused .ant-select-selector,
 .create-task-field.is-agent-focused textarea {
-  border-color: rgba(62, 207, 142, 0.72) !important;
-  box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.14) !important;
+  border-color: rgba(88, 101, 242, 0.76) !important;
+  box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.18) !important;
 }
 
 .create-task-actions {
@@ -1613,8 +1628,8 @@ a:hover {
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(62, 207, 142, 0.16);
-  color: #dff9eb;
+  background: rgba(88, 101, 242, 0.18);
+  color: #dfe4ff;
   font-size: 11px;
   line-height: 1;
 }
@@ -1658,9 +1673,9 @@ a:hover {
 }
 
 .create-task-agent-verdict.is-success {
-  border-color: rgba(62, 207, 142, 0.24);
+  border-color: rgba(88, 101, 242, 0.28);
   background:
-    linear-gradient(135deg, rgba(62, 207, 142, 0.13), transparent 70%),
+    linear-gradient(135deg, rgba(88, 101, 242, 0.14), transparent 70%),
     rgba(255, 255, 255, 0.03);
 }
 
@@ -1738,8 +1753,8 @@ a:hover {
 }
 
 .create-task-agent-decision.is-success {
-  border-color: rgba(62, 207, 142, 0.24);
-  background: rgba(62, 207, 142, 0.08);
+  border-color: rgba(88, 101, 242, 0.28);
+  background: rgba(88, 101, 242, 0.1);
 }
 
 .create-task-agent-decision.is-warning {
@@ -1855,8 +1870,8 @@ a:hover {
 }
 
 .create-task-agent-plan__item.is-done {
-  border-color: rgba(62, 207, 142, 0.18);
-  background: rgba(62, 207, 142, 0.07);
+  border-color: rgba(88, 101, 242, 0.22);
+  background: rgba(88, 101, 242, 0.09);
 }
 
 .create-task-agent-plan__item.is-next {
@@ -1942,8 +1957,8 @@ a:hover {
 }
 
 .create-task-agent-signal-card.is-success {
-  border-color: rgba(62, 207, 142, 0.18);
-  background: rgba(62, 207, 142, 0.08);
+  border-color: rgba(88, 101, 242, 0.22);
+  background: rgba(88, 101, 242, 0.1);
 }
 
 .create-task-agent-signal-card.is-warning {
@@ -2079,7 +2094,7 @@ a:hover {
   border: 1px solid var(--theme-border);
   border-radius: 26px;
   background:
-    linear-gradient(135deg, rgba(79, 140, 255, 0.12), rgba(62, 207, 142, 0.06) 58%, transparent),
+    linear-gradient(135deg, rgba(47, 129, 247, 0.16), rgba(88, 101, 242, 0.1) 58%, transparent),
     rgba(15, 23, 34, 0.78);
   box-shadow: var(--theme-shadow);
 }
@@ -2169,8 +2184,8 @@ a:hover {
   justify-content: center;
   padding-inline: 8px;
   border-radius: 999px;
-  background: rgba(62, 207, 142, 0.12);
-  color: #c9ffe1;
+  background: rgba(88, 101, 242, 0.18);
+  color: #dfe4ff;
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -2442,7 +2457,7 @@ a:hover {
 
 .dashboard-line-svg {
   background:
-    linear-gradient(180deg, rgba(62, 207, 142, 0.16), rgba(62, 207, 142, 0.02)),
+    linear-gradient(180deg, rgba(88, 101, 242, 0.18), rgba(88, 101, 242, 0.03)),
     rgba(9, 16, 24, 0.64);
   border-color: var(--theme-border);
 }
@@ -2528,16 +2543,16 @@ a:hover {
 }
 
 .ant-btn-default:hover {
-  border-color: rgba(62, 207, 142, 0.5) !important;
+  border-color: rgba(88, 101, 242, 0.62) !important;
   color: #f5fbff !important;
 }
 
 .ant-btn-link {
-  color: #b6f7d3 !important;
+  color: #b7c2ff !important;
 }
 
 .ant-btn-link:hover {
-  color: #ecfff6 !important;
+  color: #eef2ff !important;
 }
 
 .ant-tag {
@@ -2555,7 +2570,7 @@ a:hover {
 }
 
 .ant-table-tbody > tr.ant-table-row:hover > td {
-  background: rgba(62, 207, 142, 0.04) !important;
+  background: rgba(88, 101, 242, 0.06) !important;
 }
 
 .ant-empty-description,
@@ -2577,7 +2592,7 @@ a:hover {
 }
 
 .ant-switch.ant-switch-checked {
-  background: rgba(62, 207, 142, 0.8) !important;
+  background: rgba(88, 101, 242, 0.86) !important;
 }
 
 @media (max-width: 1280px) {

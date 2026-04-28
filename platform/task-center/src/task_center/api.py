@@ -16,8 +16,9 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urljoin, urlparse
 
+import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,12 +45,21 @@ from .api_models import (
     AnalysisParseRequest,
     ApiResponse,
     CreateDefectRequest,
+    CreateInterfaceAssetRequest,
     CreateProjectRequest,
     CreateTaskRequest,
+    CreateTestCaseAssetRequest,
+    CreateTestSuiteAssetRequest,
+    DebugInterfaceAssetRequest,
+    ExecuteTestCaseAssetRequest,
+    ExecuteTestSuiteAssetRequest,
     TaskDraftAgentRequest,
     ErrorResponse,
     ExecuteTaskRequest,
     HealthInfo,
+    ImportInterfaceAssetsFromTaskRequest,
+    ImportOpenApiInterfaceAssetsRequest,
+    ImportTestCaseAssetsFromTaskRequest,
     LoginRequest,
     ParseMetadata,
     PreflightCheckRequest,
@@ -60,6 +70,9 @@ from .api_models import (
     TaskListResponse,
     TaskStatus,
     UpdateDefectRequest,
+    UpdateInterfaceAssetRequest,
+    UpdateTestCaseAssetRequest,
+    UpdateTestSuiteAssetRequest,
     UpsertEnvironmentRequest,
     UpdateProfileRequest,
     VersionInfo,
@@ -88,6 +101,11 @@ AVATAR_UPLOAD_ROOT = PUBLIC_STATIC_ROOT / "avatars"
 APP_VERSION = "0.2.0"
 VALID_DEFECT_STATUSES = {"open", "in_progress", "resolved", "closed"}
 VALID_DEFECT_SEVERITIES = {"low", "medium", "high", "critical"}
+VALID_INTERFACE_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+VALID_INTERFACE_STATUSES = {"active", "deprecated", "draft"}
+VALID_TEST_CASE_STATUSES = {"active", "draft", "disabled", "archived"}
+VALID_TEST_CASE_PRIORITIES = {"P0", "P1", "P2", "P3"}
+VALID_TEST_SUITE_STATUSES = {"active", "draft", "disabled", "archived"}
 AVATAR_ALLOWED_CONTENT_TYPES = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
@@ -95,7 +113,7 @@ AVATAR_ALLOWED_CONTENT_TYPES = {
     "image/gif": ".gif",
 }
 AVATAR_MAX_BYTES = 2 * 1024 * 1024
-EXECUTION_TIMEOUT_SECONDS = 300  # 5 分钟执行上限，防止慢接口挂起
+EXECUTION_TIMEOUT_SECONDS = 300
 _EXECUTION_MAX_WORKERS = max(1, int(str(os.getenv("TASK_CENTER_EXECUTION_WORKERS", "4")).strip() or "4"))
 _ANALYSIS_MAX_WORKERS = max(1, int(str(os.getenv("TASK_CENTER_ANALYSIS_WORKERS", "4")).strip() or "4"))
 registry = TaskRegistry(ARTIFACTS_ROOT)
@@ -112,11 +130,9 @@ _RUNNING_EXECUTION_LOCK = threading.Lock()
 _RUNNING_ANALYSIS_FUTURES: dict[str, concurrent.futures.Future] = {}
 _RUNNING_ANALYSIS_LOCK = threading.Lock()
 
-# Frontend (Vite) runs on a different origin (port), so browser requests may trigger
-# CORS preflight (`OPTIONS`). Without this middleware, preflight can fail with 405.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # dev/MVP: allow all origins
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1992,6 +2008,16 @@ def _resolve_environment_config(task, environment_name: str | None) -> Environme
     return environment_config
 
 
+def _resolve_project_environment_config(project_id: str, environment_name: str | None) -> EnvironmentConfig | None:
+    selected_name = str(environment_name or "").strip()
+    if not selected_name:
+        return None
+    environment_config = registry.get_environment(selected_name, project_id=project_id)
+    if environment_config is None:
+        raise HTTPException(status_code=404, detail=f"Environment not found: {selected_name}")
+    return environment_config
+
+
 def _inject_environment_into_dsl(
     dsl: dict[str, Any],
     environment_name: str | None,
@@ -3345,6 +3371,734 @@ def update_defect(
     return _success_response(defect, code="DEFECT_UPDATED", message="defect updated")
 
 
+@app.get("/api/interface-assets", response_model=ApiResponse)
+def list_interface_assets(
+    project_id: str,
+    method: str | None = None,
+    status: str | None = None,
+    keyword: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    _ensure_project_access(project_id, current_user)
+    store = _db_store_or_503()
+    payload = store.list_interface_assets(
+        project_id=project_id,
+        method=_normalize_interface_method(method) if method else None,
+        status=_normalize_interface_status(status) if status else None,
+        keyword=keyword,
+        page=page,
+        page_size=page_size,
+    )
+    return _success_response(payload, code="INTERFACE_ASSETS_OK", message="interface assets listed")
+
+
+@app.post("/api/interface-assets", response_model=ApiResponse)
+def create_interface_asset(
+    payload: CreateInterfaceAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    _ensure_project_editor(payload.project_id, current_user)
+    store = _db_store_or_503()
+    asset = store.upsert_interface_asset(
+        project_id=payload.project_id,
+        method=_normalize_interface_method(payload.method),
+        path=_normalize_interface_path(payload.path),
+        name=payload.name.strip() or None,
+        description=payload.description.strip() or None,
+        source=str(payload.source or "manual").strip() or "manual",
+        status=_normalize_interface_status(payload.status),
+        version=str(payload.version or "default").strip() or "default",
+        tags=_clean_interface_tags(payload.tags),
+        request_example=payload.request_example,
+        response_example=payload.response_example,
+        schema=payload.schema,
+        created_by=str(current_user["user"]["id"]),
+    )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="interface_asset.upsert",
+        resource_type="interface_asset",
+        resource_id=str(asset["id"]),
+        detail_json={"project_id": payload.project_id, "method": asset["method"], "path": asset["path"]},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(asset, code="INTERFACE_ASSET_SAVED", message="interface asset saved", status_code=201)
+
+
+@app.patch("/api/interface-assets/{asset_id}", response_model=ApiResponse)
+def update_interface_asset(
+    asset_id: str,
+    payload: UpdateInterfaceAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    existing = store.get_interface_asset(asset_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Interface asset not found: {asset_id}")
+    _ensure_project_editor(str(existing["project_id"]), current_user)
+    changes: dict[str, Any] = {}
+    if payload.name is not None:
+        changes["name"] = payload.name.strip()
+    if payload.description is not None:
+        changes["description"] = payload.description.strip()
+    if payload.source is not None:
+        changes["source"] = str(payload.source or "manual").strip() or "manual"
+    if payload.status is not None:
+        changes["status"] = _normalize_interface_status(payload.status)
+    if payload.version is not None:
+        changes["version"] = str(payload.version or "default").strip() or "default"
+    if payload.tags is not None:
+        changes["tags"] = _clean_interface_tags(payload.tags)
+    explicit_fields = getattr(payload, "model_fields_set", getattr(payload, "__fields_set__", set()))
+    for key in ("request_example", "response_example", "schema"):
+        if key in explicit_fields:
+            changes[key] = getattr(payload, key)
+    asset = store.update_interface_asset(asset_id, **changes)
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="interface_asset.update",
+        resource_type="interface_asset",
+        resource_id=asset_id,
+        detail_json={"project_id": existing["project_id"], "changed": sorted(changes.keys())},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(asset, code="INTERFACE_ASSET_UPDATED", message="interface asset updated")
+
+
+@app.get("/api/test-case-assets", response_model=ApiResponse)
+def list_test_case_assets(
+    project_id: str,
+    status: str | None = None,
+    keyword: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    _ensure_project_access(project_id, current_user)
+    store = _db_store_or_503()
+    payload = store.list_test_case_assets(
+        project_id=project_id,
+        status=_normalize_test_case_status(status) if status else None,
+        keyword=keyword,
+        page=page,
+        page_size=page_size,
+    )
+    return _success_response(payload, code="TEST_CASE_ASSETS_OK", message="test case assets listed")
+
+
+@app.post("/api/test-case-assets", response_model=ApiResponse)
+def create_test_case_asset(
+    payload: CreateTestCaseAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    _ensure_project_editor(payload.project_id, current_user)
+    store = _db_store_or_503()
+    case_key = _normalize_test_case_key(payload.case_key, f"case-{int(time.time())}")
+    dsl_scenario = payload.dsl_scenario if isinstance(payload.dsl_scenario, dict) else {}
+    assertions = payload.assertions or _assertions_from_dsl_scenario(dsl_scenario)
+    asset = store.upsert_test_case_asset(
+        project_id=payload.project_id,
+        case_key=case_key,
+        name=payload.name.strip(),
+        description=payload.description.strip() or None,
+        priority=_normalize_test_case_priority(payload.priority),
+        status=_normalize_test_case_status(payload.status),
+        source=str(payload.source or "manual").strip() or "manual",
+        tags=_clean_test_case_tags(payload.tags),
+        dsl_scenario=dsl_scenario,
+        assertions=assertions,
+        created_by=str(current_user["user"]["id"]),
+    )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_case_asset.upsert",
+        resource_type="test_case_asset",
+        resource_id=str(asset["id"]),
+        detail_json={"project_id": payload.project_id, "case_key": asset["case_key"]},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(asset, code="TEST_CASE_ASSET_SAVED", message="test case asset saved", status_code=201)
+
+
+@app.patch("/api/test-case-assets/{case_id}", response_model=ApiResponse)
+def update_test_case_asset(
+    case_id: str,
+    payload: UpdateTestCaseAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    existing = store.get_test_case_asset(case_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Test case asset not found: {case_id}")
+    _ensure_project_editor(str(existing["project_id"]), current_user)
+    changes: dict[str, Any] = {}
+    if payload.name is not None:
+        changes["name"] = payload.name.strip()
+    if payload.description is not None:
+        changes["description"] = payload.description.strip()
+    if payload.priority is not None:
+        changes["priority"] = _normalize_test_case_priority(payload.priority)
+    if payload.status is not None:
+        changes["status"] = _normalize_test_case_status(payload.status)
+    if payload.source is not None:
+        changes["source"] = str(payload.source or "manual").strip() or "manual"
+    if payload.tags is not None:
+        changes["tags"] = _clean_test_case_tags(payload.tags)
+    explicit_fields = getattr(payload, "model_fields_set", getattr(payload, "__fields_set__", set()))
+    if "dsl_scenario" in explicit_fields:
+        changes["dsl_scenario"] = payload.dsl_scenario if isinstance(payload.dsl_scenario, dict) else {}
+    if payload.assertions is not None:
+        changes["assertions"] = payload.assertions
+    asset = store.update_test_case_asset(case_id, **changes)
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_case_asset.update",
+        resource_type="test_case_asset",
+        resource_id=case_id,
+        detail_json={"project_id": existing["project_id"], "changed": sorted(changes.keys())},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(asset, code="TEST_CASE_ASSET_UPDATED", message="test case asset updated")
+
+
+@app.delete("/api/test-case-assets/{case_id}", response_model=ApiResponse)
+def delete_test_case_asset(
+    case_id: str,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    existing = store.get_test_case_asset(case_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Test case asset not found: {case_id}")
+    _ensure_project_editor(str(existing["project_id"]), current_user)
+    deleted = store.delete_test_case_asset(case_id)
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_case_asset.delete",
+        resource_type="test_case_asset",
+        resource_id=case_id,
+        detail_json={"project_id": existing["project_id"], "case_key": existing["case_key"]},
+        ip_address=_request_ip(request),
+    )
+    return _success_response({"id": case_id, "deleted": deleted}, code="TEST_CASE_ASSET_DELETED", message="test case asset deleted")
+
+
+@app.post("/api/tasks/{task_id}/test-case-assets/import", response_model=ApiResponse)
+def import_test_case_assets_from_task(
+    task_id: str,
+    payload: ImportTestCaseAssetsFromTaskRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    task = _must_get_task(task_id)
+    _ensure_task_visible_to_user(task, current_user)
+    project_id = str(payload.project_id or task.project_id or "").strip()
+    if not project_id:
+        raise HTTPException(status_code=400, detail="project_id is required")
+    _ensure_project_editor(project_id, current_user)
+    dsl = (task.pipeline_result or {}).get("test_case_dsl") or {}
+    scenarios = dsl.get("scenarios") if isinstance(dsl, dict) else []
+    if not isinstance(scenarios, list):
+        scenarios = []
+    store = _db_store_or_503()
+    imported: list[dict[str, Any]] = []
+    for index, scenario in enumerate(scenarios, start=1):
+        if not isinstance(scenario, dict):
+            continue
+        scenario_id = str(scenario.get("scenario_id") or f"scenario-{index:03d}")
+        case_key = _normalize_test_case_key(f"{task.task_id}:{scenario_id}", f"{task.task_id}-{index:03d}")
+        imported.append(
+            store.upsert_test_case_asset(
+                project_id=project_id,
+                case_key=case_key,
+                name=str(scenario.get("name") or scenario_id),
+                description=str(scenario.get("goal") or ""),
+                priority=_normalize_test_case_priority(str(scenario.get("priority") or "P1")),
+                status="active",
+                source="task_import",
+                source_task_id=task.task_id,
+                tags=["task-import"],
+                dsl_scenario=scenario,
+                assertions=_assertions_from_dsl_scenario(scenario),
+                created_by=str(current_user["user"]["id"]),
+            )
+        )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_case_asset.import_from_task",
+        resource_type="task",
+        resource_id=task.task_id,
+        detail_json={"project_id": project_id, "imported_count": len(imported)},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(
+        {"task_id": task.task_id, "project_id": project_id, "items": imported, "imported_count": len(imported)},
+        code="TEST_CASE_ASSETS_IMPORTED",
+        message="test case assets imported",
+    )
+
+
+@app.post("/api/test-case-assets/{case_id}/execute", response_model=ApiResponse)
+def execute_test_case_asset(
+    case_id: str,
+    payload: ExecuteTestCaseAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    asset = store.get_test_case_asset(case_id)
+    if asset is None:
+        raise HTTPException(status_code=404, detail=f"Test case asset not found: {case_id}")
+    _ensure_project_access(str(asset["project_id"]), current_user)
+    execution_result = _execute_case_asset_payload(
+        asset,
+        execution_mode=payload.execution_mode,
+        environment=payload.environment,
+        base_url=payload.base_url,
+    )
+    result = {
+        "case": asset,
+        "execution_result": execution_result,
+        "executed_at": _utc_now_iso(),
+    }
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_case_asset.execute",
+        resource_type="test_case_asset",
+        resource_id=case_id,
+        detail_json={
+            "project_id": asset["project_id"],
+            "case_key": asset["case_key"],
+            "status": execution_result.get("status"),
+            "environment": payload.environment,
+        },
+        ip_address=_request_ip(request),
+    )
+    return _success_response(result, code="TEST_CASE_ASSET_EXECUTED", message="test case asset executed")
+
+
+@app.get("/api/test-suite-assets", response_model=ApiResponse)
+def list_test_suite_assets(
+    project_id: str,
+    status: str | None = None,
+    keyword: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    _ensure_project_access(project_id, current_user)
+    store = _db_store_or_503()
+    payload = store.list_test_suite_assets(
+        project_id=project_id,
+        status=_normalize_test_suite_status(status) if status else None,
+        keyword=keyword,
+        page=page,
+        page_size=page_size,
+    )
+    return _success_response(payload, code="TEST_SUITE_ASSETS_OK", message="test suite assets listed")
+
+
+@app.post("/api/test-suite-assets", response_model=ApiResponse)
+def create_test_suite_asset(
+    payload: CreateTestSuiteAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    _ensure_project_editor(payload.project_id, current_user)
+    store = _db_store_or_503()
+    case_ids = _clean_case_ids(payload.case_ids)
+    for case_id in case_ids:
+        case = store.get_test_case_asset(case_id)
+        if case is None or str(case["project_id"]) != str(payload.project_id):
+            raise HTTPException(status_code=400, detail=f"invalid case_id for this project: {case_id}")
+    suite = store.create_test_suite_asset(
+        project_id=payload.project_id,
+        name=payload.name.strip(),
+        description=payload.description.strip() or None,
+        status=_normalize_test_suite_status(payload.status),
+        source=str(payload.source or "manual").strip() or "manual",
+        case_ids=case_ids,
+        tags=_clean_test_case_tags(payload.tags),
+        created_by=str(current_user["user"]["id"]),
+    )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_suite_asset.create",
+        resource_type="test_suite_asset",
+        resource_id=str(suite["id"]),
+        detail_json={"project_id": payload.project_id, "case_count": len(case_ids)},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(suite, code="TEST_SUITE_ASSET_CREATED", message="test suite asset created", status_code=201)
+
+
+@app.patch("/api/test-suite-assets/{suite_id}", response_model=ApiResponse)
+def update_test_suite_asset(
+    suite_id: str,
+    payload: UpdateTestSuiteAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    existing = store.get_test_suite_asset(suite_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Test suite asset not found: {suite_id}")
+    _ensure_project_editor(str(existing["project_id"]), current_user)
+    changes: dict[str, Any] = {}
+    if payload.name is not None:
+        changes["name"] = payload.name.strip()
+    if payload.description is not None:
+        changes["description"] = payload.description.strip()
+    if payload.status is not None:
+        changes["status"] = _normalize_test_suite_status(payload.status)
+    if payload.source is not None:
+        changes["source"] = str(payload.source or "manual").strip() or "manual"
+    if payload.tags is not None:
+        changes["tags"] = _clean_test_case_tags(payload.tags)
+    if payload.case_ids is not None:
+        case_ids = _clean_case_ids(payload.case_ids)
+        for case_id in case_ids:
+            case = store.get_test_case_asset(case_id)
+            if case is None or str(case["project_id"]) != str(existing["project_id"]):
+                raise HTTPException(status_code=400, detail=f"invalid case_id for this project: {case_id}")
+        changes["case_ids"] = case_ids
+    suite = store.update_test_suite_asset(suite_id, **changes)
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_suite_asset.update",
+        resource_type="test_suite_asset",
+        resource_id=suite_id,
+        detail_json={"project_id": existing["project_id"], "changed": sorted(changes.keys())},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(suite, code="TEST_SUITE_ASSET_UPDATED", message="test suite asset updated")
+
+
+@app.delete("/api/test-suite-assets/{suite_id}", response_model=ApiResponse)
+def delete_test_suite_asset(
+    suite_id: str,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    existing = store.get_test_suite_asset(suite_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Test suite asset not found: {suite_id}")
+    _ensure_project_editor(str(existing["project_id"]), current_user)
+    deleted = store.delete_test_suite_asset(suite_id)
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_suite_asset.delete",
+        resource_type="test_suite_asset",
+        resource_id=suite_id,
+        detail_json={"project_id": existing["project_id"], "name": existing["name"]},
+        ip_address=_request_ip(request),
+    )
+    return _success_response({"id": suite_id, "deleted": deleted}, code="TEST_SUITE_ASSET_DELETED", message="test suite asset deleted")
+
+
+@app.post("/api/test-suite-assets/{suite_id}/execute", response_model=ApiResponse)
+def execute_test_suite_asset(
+    suite_id: str,
+    payload: ExecuteTestSuiteAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    suite = store.get_test_suite_asset(suite_id)
+    if suite is None:
+        raise HTTPException(status_code=404, detail=f"Test suite asset not found: {suite_id}")
+    _ensure_project_access(str(suite["project_id"]), current_user)
+    case_results: list[dict[str, Any]] = []
+    overall_status = "passed"
+    started_at = time.perf_counter()
+    for case_id in suite.get("case_ids") or []:
+        case = store.get_test_case_asset(str(case_id))
+        if case is None:
+            case_results.append({"case_id": case_id, "status": "failed", "error": "case not found"})
+            overall_status = "failed"
+            if payload.stop_on_failure:
+                break
+            continue
+        try:
+            execution_result = _execute_case_asset_payload(
+                case,
+                execution_mode=payload.execution_mode,
+                environment=payload.environment,
+                base_url=payload.base_url,
+            )
+            status = str(execution_result.get("status") or "failed")
+            if status != "passed":
+                overall_status = "failed"
+            case_results.append({"case": case, "status": status, "execution_result": execution_result})
+            if status != "passed" and payload.stop_on_failure:
+                break
+        except HTTPException as exc:
+            overall_status = "failed"
+            case_results.append({"case": case, "status": "failed", "error": exc.detail})
+            if payload.stop_on_failure:
+                break
+    result = {
+        "suite": suite,
+        "status": overall_status,
+        "case_results": case_results,
+        "metrics": {
+            "case_count": len(case_results),
+            "passed": len([item for item in case_results if item.get("status") == "passed"]),
+            "failed": len([item for item in case_results if item.get("status") != "passed"]),
+            "duration_ms": round((time.perf_counter() - started_at) * 1000, 2),
+        },
+        "executed_at": _utc_now_iso(),
+    }
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="test_suite_asset.execute",
+        resource_type="test_suite_asset",
+        resource_id=suite_id,
+        detail_json={"project_id": suite["project_id"], "status": overall_status, "case_count": len(case_results)},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(result, code="TEST_SUITE_ASSET_EXECUTED", message="test suite asset executed")
+
+
+@app.post("/api/interface-assets/{asset_id}/debug", response_model=ApiResponse)
+def debug_interface_asset(
+    asset_id: str,
+    payload: DebugInterfaceAssetRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    asset = store.get_interface_asset(asset_id)
+    if asset is None:
+        raise HTTPException(status_code=404, detail=f"Interface asset not found: {asset_id}")
+    _ensure_project_access(str(asset["project_id"]), current_user)
+
+    env_config: EnvironmentConfig | None = None
+    if payload.environment:
+        env_config = registry.get_environment(str(payload.environment), project_id=str(asset["project_id"]))
+        if env_config is None:
+            raise HTTPException(status_code=404, detail=f"Environment not found: {payload.environment}")
+
+    base_url = str(payload.base_url or "").strip() or (env_config.base_url if env_config else "")
+    headers = _safe_debug_headers(env_config.default_headers if env_config else {})
+    headers.update(_safe_debug_headers(payload.headers))
+    auth_obj = _ensure_json_dict(env_config.auth if env_config else {})
+    cookies = _ensure_json_dict(env_config.cookies if env_config else {})
+    headers, request_auth = _apply_debug_auth(headers, auth_obj)
+    url = _resolve_interface_debug_url(asset, base_url=base_url, params=_ensure_json_dict(payload.params))
+    method = str(asset["method"]).upper()
+    started = time.perf_counter()
+    error = ""
+    status_code = 0
+    response_headers: dict[str, str] = {}
+    body_preview = ""
+    response_json: Any = None
+    try:
+        response = requests.request(
+            method,
+            url,
+            headers=headers,
+            cookies=cookies,
+            json=payload.json_body if payload.json_body is not None else None,
+            data=payload.raw_body if payload.json_body is None else None,
+            timeout=(min(float(payload.timeout), 5.0), float(payload.timeout)),
+            allow_redirects=True,
+            auth=request_auth,
+        )
+        status_code = int(response.status_code)
+        response_headers = dict(response.headers)
+        body_preview = response.text[:4000]
+        try:
+            response_json = response.json()
+        except ValueError:
+            response_json = None
+    except requests.RequestException as exc:
+        error = str(exc)
+    elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
+    result = {
+        "asset": asset,
+        "request": {
+            "method": method,
+            "url": url,
+            "headers": {key: value for key, value in headers.items() if key.lower() != "authorization"},
+            "has_auth": bool(request_auth or any(key.lower() == "authorization" for key in headers)),
+        },
+        "response": {
+            "status_code": status_code,
+            "headers": response_headers,
+            "json": response_json,
+            "body_preview": body_preview,
+            "elapsed_ms": elapsed_ms,
+            "error": error,
+            "ok": bool(status_code and status_code < 400 and not error),
+        },
+    }
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="interface_asset.debug",
+        resource_type="interface_asset",
+        resource_id=asset_id,
+        detail_json={"project_id": asset["project_id"], "status_code": status_code, "elapsed_ms": elapsed_ms, "error": bool(error)},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(result, code="INTERFACE_ASSET_DEBUG_OK", message="interface asset debug completed")
+
+
+@app.delete("/api/interface-assets/{asset_id}", response_model=ApiResponse)
+def delete_interface_asset(
+    asset_id: str,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    store = _db_store_or_503()
+    existing = store.get_interface_asset(asset_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Interface asset not found: {asset_id}")
+    _ensure_project_editor(str(existing["project_id"]), current_user)
+    deleted = store.delete_interface_asset(asset_id)
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="interface_asset.delete",
+        resource_type="interface_asset",
+        resource_id=asset_id,
+        detail_json={"project_id": existing["project_id"], "method": existing["method"], "path": existing["path"]},
+        ip_address=_request_ip(request),
+    )
+    return _success_response({"id": asset_id, "deleted": deleted}, code="INTERFACE_ASSET_DELETED", message="interface asset deleted")
+
+
+@app.post("/api/tasks/{task_id}/interface-assets/import", response_model=ApiResponse)
+def import_interface_assets_from_task(
+    task_id: str,
+    payload: ImportInterfaceAssetsFromTaskRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    task = _must_get_task(task_id)
+    _ensure_task_visible_to_user(task, current_user)
+    project_id = str(payload.project_id or task.project_id or "").strip()
+    if not project_id:
+        raise HTTPException(status_code=400, detail="project_id is required")
+    _ensure_project_editor(project_id, current_user)
+    store = _db_store_or_503()
+    imported: list[dict[str, Any]] = []
+    for method, path in _extract_interface_signatures_from_task(task):
+        imported.append(
+            store.upsert_interface_asset(
+                project_id=project_id,
+                method=method,
+                path=path,
+                name=f"{method} {path}",
+                source="task_import",
+                status="active",
+                version="default",
+                tags=["task-import"],
+                last_seen_task_id=task.task_id,
+                created_by=str(current_user["user"]["id"]),
+            )
+        )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="interface_asset.import_from_task",
+        resource_type="task",
+        resource_id=task.task_id,
+        detail_json={"project_id": project_id, "imported_count": len(imported)},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(
+        {"task_id": task.task_id, "project_id": project_id, "items": imported, "imported_count": len(imported)},
+        code="INTERFACE_ASSETS_IMPORTED",
+        message="interface assets imported",
+    )
+
+
+@app.post("/api/interface-assets/import/openapi", response_model=ApiResponse)
+def import_interface_assets_from_openapi(
+    payload: ImportOpenApiInterfaceAssetsRequest,
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    _ensure_project_editor(payload.project_id, current_user)
+    document = _parse_openapi_content(payload.content)
+    candidates = _extract_openapi_interface_assets(document)
+    store = _db_store_or_503()
+    imported: list[dict[str, Any]] = []
+    for item in candidates:
+        existing = store.get_interface_asset_by_signature(
+            project_id=payload.project_id,
+            method=item["method"],
+            path=item["path"],
+            version=str(payload.version or "default").strip() or "default",
+        )
+        request_example = item.get("request_example") if payload.overwrite_examples or existing is None else None
+        response_example = item.get("response_example") if payload.overwrite_examples or existing is None else None
+        imported.append(
+            store.upsert_interface_asset(
+                project_id=payload.project_id,
+                method=item["method"],
+                path=item["path"],
+                name=item.get("name"),
+                description=item.get("description"),
+                source=str(payload.source_name or "openapi").strip() or "openapi",
+                status="active",
+                version=str(payload.version or "default").strip() or "default",
+                tags=item.get("tags") or ["openapi"],
+                request_example=request_example,
+                response_example=response_example,
+                schema=item.get("schema") if payload.overwrite_examples or existing is None else None,
+                created_by=str(current_user["user"]["id"]),
+            )
+        )
+    _append_audit_log_safe(
+        user_id=str(current_user["user"]["id"]),
+        action="interface_asset.import_openapi",
+        resource_type="interface_asset",
+        resource_id=payload.project_id,
+        detail_json={"project_id": payload.project_id, "source_name": payload.source_name, "imported_count": len(imported)},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(
+        {
+            "project_id": payload.project_id,
+            "source_name": payload.source_name,
+            "items": imported,
+            "imported_count": len(imported),
+            "endpoint_count": len(candidates),
+        },
+        code="INTERFACE_ASSETS_OPENAPI_IMPORTED",
+        message="openapi interface assets imported",
+    )
+
+
+@app.api_route("/mock/{project_id}/{mock_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
+def serve_interface_asset_mock(project_id: str, mock_path: str, request: Request):
+    method = _normalize_interface_method(request.method)
+    path = _normalize_interface_path(mock_path)
+    store = _db_store_or_503()
+    asset = store.get_interface_asset_by_signature(project_id=project_id, method=method, path=path)
+    if asset is None:
+        return JSONResponse(
+            {
+                "mock": True,
+                "matched": False,
+                "method": method,
+                "path": path,
+                "message": "No interface asset matched this mock request.",
+            },
+            status_code=404,
+        )
+    payload, status_code = _build_mock_payload(asset)
+    return JSONResponse(payload, status_code=max(100, min(int(status_code), 599)))
+
+
 @app.post("/api/tasks", response_model=ApiResponse)
 def create_task(
     payload: CreateTaskRequest,
@@ -4107,6 +4861,363 @@ def _normalize_defect_severity(raw_severity: str | None) -> str:
     if normalized not in VALID_DEFECT_SEVERITIES:
         raise HTTPException(status_code=400, detail=f"invalid defect severity: {normalized}")
     return normalized
+
+
+def _normalize_interface_method(raw_method: str | None) -> str:
+    normalized = str(raw_method or "").strip().upper()
+    if normalized not in VALID_INTERFACE_METHODS:
+        raise HTTPException(status_code=400, detail=f"invalid interface method: {normalized}")
+    return normalized
+
+
+def _normalize_interface_status(raw_status: str | None) -> str:
+    normalized = str(raw_status or "").strip().lower() or "active"
+    if normalized not in VALID_INTERFACE_STATUSES:
+        raise HTTPException(status_code=400, detail=f"invalid interface status: {normalized}")
+    return normalized
+
+
+def _normalize_interface_path(raw_path: str | None) -> str:
+    normalized = _normalize_endpoint_token(str(raw_path or ""))
+    if not normalized:
+        raise HTTPException(status_code=400, detail="path is required")
+    parsed = urlparse(normalized)
+    if parsed.scheme and parsed.netloc:
+        normalized = parsed.path or "/"
+        if parsed.query:
+            normalized = f"{normalized}?{parsed.query}"
+    if not normalized.startswith("/"):
+        normalized = f"/{normalized}"
+    return normalized
+
+
+def _clean_interface_tags(tags: list[str] | None) -> list[str]:
+    output: list[str] = []
+    for item in tags or []:
+        normalized = str(item or "").strip()
+        if normalized and normalized not in output:
+            output.append(normalized[:64])
+    return output[:20]
+
+
+def _ensure_project_editor(project_id: str, current_user: dict[str, Any]) -> dict[str, Any]:
+    project = _ensure_project_access(project_id, current_user)
+    if project.get("role") not in {"owner", "editor"}:
+        raise HTTPException(status_code=403, detail="Only owner/editor can manage interface assets")
+    return project
+
+
+def _extract_interface_signatures_from_task(task) -> list[tuple[str, str]]:
+    signatures = list(_extract_requirement_endpoint_signatures(task.requirement_text or ""))
+    pipeline = task.pipeline_result or {}
+    dsl = pipeline.get("test_case_dsl") or {}
+    for scenario in dsl.get("scenarios") or []:
+        if not isinstance(scenario, dict):
+            continue
+        for step in scenario.get("steps") or []:
+            if not isinstance(step, dict):
+                continue
+            request_spec = step.get("request") or {}
+            if not isinstance(request_spec, dict):
+                continue
+            method = str(request_spec.get("method") or "").strip().upper()
+            raw_url = str(request_spec.get("url") or "").strip()
+            if not method or not raw_url:
+                continue
+            try:
+                signatures.append((_normalize_interface_method(method), _normalize_interface_path(raw_url)))
+            except HTTPException:
+                continue
+    seen: set[tuple[str, str]] = set()
+    output: list[tuple[str, str]] = []
+    for method, path in signatures:
+        key = (method, path)
+        if key in seen:
+            continue
+        seen.add(key)
+        output.append(key)
+    return output
+
+
+def _resolve_interface_debug_url(asset: dict[str, Any], *, base_url: str | None, params: dict[str, Any]) -> str:
+    raw_base = str(base_url or "").strip()
+    raw_path = str(asset.get("path") or "").strip()
+    if not raw_base:
+        raise HTTPException(status_code=400, detail="base_url or environment is required")
+    if urlparse(raw_path).scheme:
+        url = raw_path
+    else:
+        url = urljoin(raw_base.rstrip("/") + "/", raw_path.lstrip("/"))
+    if params:
+        query = urlencode(params, doseq=True)
+        url = f"{url}{'&' if '?' in url else '?'}{query}"
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="resolved request URL is not a valid http(s) URL")
+    return url
+
+
+def _apply_debug_auth(headers: dict[str, str], auth: dict[str, Any]) -> tuple[dict[str, str], Any]:
+    auth_type = str(auth.get("type") or "").strip().lower()
+    if not auth_type:
+        return headers, None
+    if auth_type in {"bearer", "token"}:
+        token = str(auth.get("token") or auth.get("access_token") or "").strip()
+        if token and "authorization" not in {key.lower() for key in headers}:
+            headers["Authorization"] = f"Bearer {token}"
+        return headers, None
+    if auth_type in {"api_key", "apikey"}:
+        key = str(auth.get("key") or auth.get("name") or "X-API-Key").strip()
+        value = str(auth.get("value") or auth.get("token") or "").strip()
+        location = str(auth.get("in") or "header").strip().lower()
+        if key and value and location == "header":
+            headers.setdefault(key, value)
+        return headers, None
+    if auth_type == "basic":
+        username = str(auth.get("username") or "").strip()
+        password = str(auth.get("password") or "")
+        if username:
+            return headers, (username, password)
+    return headers, None
+
+
+def _safe_debug_headers(headers: dict[str, Any]) -> dict[str, str]:
+    blocked = {"host", "content-length", "connection"}
+    output: dict[str, str] = {}
+    for key, value in headers.items():
+        normalized_key = str(key or "").strip()
+        if not normalized_key or normalized_key.lower() in blocked:
+            continue
+        output[normalized_key] = str(value)
+    return output
+
+
+def _build_mock_payload(asset: dict[str, Any]) -> tuple[Any, int]:
+    example = asset.get("response_example")
+    if isinstance(example, dict):
+        status_code = int(example.get("status_code") or example.get("status") or 200)
+        if "body" in example:
+            return example["body"], status_code
+        if "json" in example:
+            return example["json"], status_code
+        return example, status_code
+    if example is not None:
+        return example, 200
+    return {
+        "mock": True,
+        "method": asset.get("method"),
+        "path": asset.get("path"),
+        "name": asset.get("name") or "",
+        "message": "No response example configured; returning generated mock payload.",
+    }, 200
+
+
+def _parse_openapi_content(content: str) -> dict[str, Any]:
+    text = str(content or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="OpenAPI content is empty")
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        try:
+            import yaml  # type: ignore
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail="OpenAPI content is not valid JSON; YAML support requires PyYAML") from exc
+        try:
+            parsed = yaml.safe_load(text)
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"OpenAPI YAML parse failed: {exc}") from exc
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=400, detail="OpenAPI content must be an object")
+    return parsed
+
+
+def _openapi_example_from_media(media: Any) -> Any:
+    if not isinstance(media, dict):
+        return None
+    if "example" in media:
+        return media.get("example")
+    examples = media.get("examples")
+    if isinstance(examples, dict):
+        for item in examples.values():
+            if isinstance(item, dict) and "value" in item:
+                return item.get("value")
+            if item is not None:
+                return item
+    schema = media.get("schema")
+    if isinstance(schema, dict):
+        return {"schema": schema}
+    return None
+
+
+def _openapi_request_example(operation: dict[str, Any]) -> Any:
+    request_body = operation.get("requestBody")
+    if not isinstance(request_body, dict):
+        return None
+    content = request_body.get("content")
+    if not isinstance(content, dict):
+        return None
+    for media_type in ("application/json", "application/*+json"):
+        example = _openapi_example_from_media(content.get(media_type))
+        if example is not None:
+            return example
+    for media in content.values():
+        example = _openapi_example_from_media(media)
+        if example is not None:
+            return example
+    return None
+
+
+def _openapi_response_example(operation: dict[str, Any]) -> Any:
+    responses = operation.get("responses")
+    if not isinstance(responses, dict):
+        return None
+    for status_key in ("200", "201", "202", "204", "default"):
+        response = responses.get(status_key)
+        if not isinstance(response, dict):
+            continue
+        content = response.get("content")
+        if isinstance(content, dict):
+            for media_type in ("application/json", "application/*+json"):
+                example = _openapi_example_from_media(content.get(media_type))
+                if example is not None:
+                    return {"status_code": int(status_key) if status_key.isdigit() else 200, "body": example}
+            for media in content.values():
+                example = _openapi_example_from_media(media)
+                if example is not None:
+                    return {"status_code": int(status_key) if status_key.isdigit() else 200, "body": example}
+        description = str(response.get("description") or "").strip()
+        if description:
+            return {"status_code": int(status_key) if status_key.isdigit() else 200, "body": {"description": description}}
+    return None
+
+
+def _extract_openapi_interface_assets(openapi_doc: dict[str, Any]) -> list[dict[str, Any]]:
+    paths = openapi_doc.get("paths")
+    if not isinstance(paths, dict):
+        raise HTTPException(status_code=400, detail="OpenAPI paths object is required")
+    assets: list[dict[str, Any]] = []
+    for raw_path, path_item in paths.items():
+        if not isinstance(path_item, dict):
+            continue
+        path_tags = path_item.get("tags") if isinstance(path_item.get("tags"), list) else []
+        for raw_method, operation in path_item.items():
+            method = str(raw_method or "").strip().upper()
+            if method not in VALID_INTERFACE_METHODS:
+                continue
+            if not isinstance(operation, dict):
+                continue
+            operation_tags = operation.get("tags") if isinstance(operation.get("tags"), list) else []
+            name = str(operation.get("summary") or operation.get("operationId") or f"{method} {raw_path}").strip()
+            description = str(operation.get("description") or "").strip()
+            assets.append(
+                {
+                    "method": method,
+                    "path": _normalize_interface_path(str(raw_path)),
+                    "name": name,
+                    "description": description,
+                    "tags": _clean_interface_tags([str(item) for item in [*path_tags, *operation_tags]]),
+                    "request_example": _openapi_request_example(operation),
+                    "response_example": _openapi_response_example(operation),
+                    "schema": operation,
+                }
+            )
+    return assets
+
+
+def _normalize_test_case_status(raw_status: str | None) -> str:
+    normalized = str(raw_status or "").strip().lower() or "active"
+    if normalized not in VALID_TEST_CASE_STATUSES:
+        raise HTTPException(status_code=400, detail=f"invalid test case status: {normalized}")
+    return normalized
+
+
+def _normalize_test_case_priority(raw_priority: str | None) -> str:
+    normalized = str(raw_priority or "").strip().upper() or "P1"
+    if normalized not in VALID_TEST_CASE_PRIORITIES:
+        raise HTTPException(status_code=400, detail=f"invalid test case priority: {normalized}")
+    return normalized
+
+
+def _normalize_test_case_key(raw_key: str | None, fallback: str) -> str:
+    value = str(raw_key or "").strip() or fallback
+    value = re.sub(r"[^A-Za-z0-9_.:-]+", "-", value).strip("-_.:")
+    return value[:120] or fallback
+
+
+def _assertions_from_dsl_scenario(scenario: dict[str, Any]) -> list[Any]:
+    assertions: list[Any] = []
+    for step in scenario.get("steps") or []:
+        if not isinstance(step, dict):
+            continue
+        for assertion in step.get("assertions") or []:
+            assertions.append(assertion)
+    return assertions
+
+
+def _clean_test_case_tags(tags: list[str] | None) -> list[str]:
+    return _clean_interface_tags(tags)
+
+
+def _normalize_test_suite_status(raw_status: str | None) -> str:
+    normalized = str(raw_status or "").strip().lower() or "active"
+    if normalized not in VALID_TEST_SUITE_STATUSES:
+        raise HTTPException(status_code=400, detail=f"invalid test suite status: {normalized}")
+    return normalized
+
+
+def _clean_case_ids(raw_case_ids: list[str] | None) -> list[str]:
+    output: list[str] = []
+    for item in raw_case_ids or []:
+        normalized = str(item or "").strip()
+        if normalized and normalized not in output:
+            output.append(normalized)
+    return output
+
+
+def _execute_case_asset_payload(
+    asset: dict[str, Any],
+    *,
+    execution_mode: str,
+    environment: str | None,
+    base_url: str | None,
+) -> dict[str, Any]:
+    scenario = asset.get("dsl_scenario")
+    if not isinstance(scenario, dict) or not scenario:
+        raise HTTPException(status_code=400, detail="test case asset has no executable dsl_scenario")
+    environment_config = _resolve_project_environment_config(str(asset["project_id"]), environment)
+    dsl = {
+        "dsl_version": "1.0",
+        "task_id": f"case_asset:{asset['id']}",
+        "task_name": asset["name"],
+        "feature_name": asset["name"],
+        "execution_mode": execution_mode,
+        "scenarios": [scenario],
+        "metadata": {
+            "execution": {
+                "base_url": str(base_url or "").strip(),
+                "environment": environment or "",
+                "context": {"case_id": asset["id"], "case_key": asset["case_key"]},
+            }
+        },
+    }
+    dsl = _inject_environment_into_dsl(
+        dsl,
+        environment,
+        environment_config,
+        fallback_base_url=str(base_url or "").strip(),
+    )
+    resolved_base_url = str((dsl.get("metadata") or {}).get("execution", {}).get("base_url", "")).strip()
+    if execution_mode == "api" and not resolved_base_url:
+        raise HTTPException(status_code=400, detail="Missing base_url. Select an environment or provide base_url.")
+    execution_result = _run_dsl_with_timeout(dsl, execution_mode)
+    return _apply_execution_metadata(
+        execution_result,
+        selected_environment=environment or "",
+        execution_mode=execution_mode,
+        environment_config=environment_config,
+        dsl=dsl,
+    )
 
 
 def _validate_defect_task_reference(task_id: str | None, *, project_id: str) -> str | None:

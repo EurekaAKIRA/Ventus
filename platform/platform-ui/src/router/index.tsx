@@ -11,6 +11,9 @@ const TaskCreate = lazy(() => import("../pages/TaskCreate"));
 const AgentStudio = lazy(() => import("../pages/AgentStudio"));
 const TaskDetail = lazy(() => import("../pages/TaskDetail"));
 const TaskHistory = lazy(() => import("../pages/TaskHistory"));
+const InterfaceAssetCenter = lazy(() => import("../pages/InterfaceAssetCenter"));
+const TestCaseAssetCenter = lazy(() => import("../pages/TestCaseAssetCenter"));
+const TestSuiteAssetCenter = lazy(() => import("../pages/TestSuiteAssetCenter"));
 const DefectCenter = lazy(() => import("../pages/DefectCenter"));
 const UserCenter = lazy(() => import("../pages/UserCenter"));
 const EnvironmentCenter = lazy(() => import("../pages/EnvironmentCenter"));
@@ -97,6 +100,9 @@ const router = createBrowserRouter([
           { path: "dashboard", element: withSuspense(<Dashboard />) },
           { path: "tasks", element: withSuspense(<TaskList />) },
           { path: "tasks/history", element: withSuspense(<TaskHistory />) },
+          { path: "interfaces", element: withSuspense(<InterfaceAssetCenter />) },
+          { path: "test-cases", element: withSuspense(<TestCaseAssetCenter />) },
+          { path: "test-suites", element: withSuspense(<TestSuiteAssetCenter />) },
           { path: "defects", element: withSuspense(<DefectCenter />) },
           { path: "agent", element: withSuspense(<AgentStudio />) },
           { path: "tasks/create", element: withSuspense(<TaskCreate />) },

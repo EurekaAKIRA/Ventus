@@ -19,7 +19,6 @@ const FEATURE_PREVIEW_LINES = 18;
 const DSL_PREVIEW_SCENARIOS = 4;
 const { Text } = Typography;
 
-/** 分析完成前：轻量 summary 轮询；完成后停。执行中由 useTaskExecution 轮询。 */
 const PRE_SETTLED_DETAIL_POLL_MS = 12000;
 
 function executionStatusColor(status: string) {
@@ -149,7 +148,6 @@ export default function TaskDetail() {
     setSearchParams(nextParams, { replace: true });
   };
 
-  /** 分析完成前且非执行中：分段轮询（summary 优先，按需 full/产物）。 */
   const shouldPollDetailBeforeSettled =
     detail !== null && !isTaskDetailPollingSettled(detail) && executionStatus !== "running";
 

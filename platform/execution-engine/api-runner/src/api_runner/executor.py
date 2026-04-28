@@ -169,7 +169,6 @@ def _emit_progress(
     try:
         callback(dict(payload))
     except Exception:
-        # Progress callback must not interrupt core execution.
         return
 
 
@@ -331,7 +330,6 @@ def _perform_http_request(request_spec: dict, opener: OpenerDirector | requests.
     encoded_data = None
     if body is not None:
         encoded_data = json.dumps(body).encode("utf-8")
-        # Apifox-like behavior: auto add JSON headers unless user already specified.
         if not _has_header_case_insensitive(headers, "Content-Type"):
             headers["Content-Type"] = "application/json"
         if not _has_header_case_insensitive(headers, "Accept"):

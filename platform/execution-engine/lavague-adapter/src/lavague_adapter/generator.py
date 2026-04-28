@@ -70,17 +70,14 @@ class TestGenerator:
         self.headless = headless
         self.log_to_db = log_to_db
 
-        # parse feature
         self.scenarios, self.feature_file_content = self._read_scenarios(
             feature_file_path
         )
         self.scenario = self.scenarios[0]
 
-        # setup target directory and file paths
         self.generated_dir = "./generated_tests"
         self._setup_file_paths()
 
-        # instantiate LLMs for Pytest generation from context
         self.llm = self.context.llm
         self.mm_llm = self.context.mm_llm
         self.mm_llm.max_new_tokens = 2000
@@ -102,7 +99,6 @@ class TestGenerator:
         logs, html = self._run_lavague_agent()
         html_chunks = self.retriever.retrieve(self.scenario.expect[0], [html])
 
-        # start timer and spinner for pytest generation
         spinner = yaspin(Spinners.arc, text="Generating pytest...")
         spinner.start()
         if self.full_llm:
@@ -119,7 +115,6 @@ class TestGenerator:
 
         self._write_files(code)
 
-        # end timer and spinner
         spinner.stop()
         end_time = time.time()
         execution_time = end_time - start_time

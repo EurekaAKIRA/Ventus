@@ -3,10 +3,6 @@ import { useMemo } from "react";
 
 const { Paragraph, Text } = Typography;
 
-/**
- * JMeter HTML 报告嵌入：默认加载 public/loadtest-report/index.html；
- * 生产可将整包静态资源部署到任意源，并设置 VITE_JMETER_REPORT_URL（完整 URL，含 path 至 index.html 或目录以 / 结尾由网关处理）。
- */
 export default function LoadTestReport() {
   const src = useMemo(() => {
     const override = (import.meta.env.VITE_JMETER_REPORT_URL || "").trim();

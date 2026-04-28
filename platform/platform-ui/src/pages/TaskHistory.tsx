@@ -16,9 +16,10 @@ import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import type { HistoryTaskItem } from "../types";
 import { fetchHistoryTasks } from "../api/tasks";
 import StatusTag from "../components/StatusTag";
+import { PageHero, PageStack } from "../components/PageLayout";
 import { useAuth } from "../auth/AuthContext";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const statusOptions = [
@@ -164,12 +165,13 @@ export default function TaskHistory() {
   }, [tasks]);
 
   return (
-    <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div className="page-hero">
-        <div className="page-hero__copy">
-          <Title level={3} className="page-hero__title">历史任务</Title>
-        </div>
-        <div className="page-hero__meta">
+    <PageStack>
+      <PageHero
+        eyebrow="History"
+        title="历史任务"
+        subtitle="查看已完成、失败、停止和归档任务，支持按时间窗口回溯报告。"
+        meta={
+          <>
           <div className="page-meta-chip">
             <span className="page-meta-chip__label">总任务</span>
             <span className="page-meta-chip__value">{summary.total}</span>
@@ -182,8 +184,9 @@ export default function TaskHistory() {
             <span className="page-meta-chip__label">通过</span>
             <span className="page-meta-chip__value">{summary.passed}</span>
           </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <Card bordered={false} className="panel-card">
         <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }} wrap>
@@ -221,6 +224,7 @@ export default function TaskHistory() {
         </Space>
 
         <Table
+          className="platform-table"
           dataSource={tasks}
           columns={columns}
           rowKey="task_id"
@@ -228,6 +232,6 @@ export default function TaskHistory() {
           pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 条` }}
         />
       </Card>
-    </Space>
+    </PageStack>
   );
 }

@@ -28,6 +28,7 @@ import type { TaskListItem } from "../types";
 import { fetchTaskList, deleteTask } from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
 import StatusTag from "../components/StatusTag";
+import { PageHero, PageStack } from "../components/PageLayout";
 import {
   isFailedStatus,
   isPendingStatus,
@@ -37,7 +38,7 @@ import {
   progressByTaskStatus,
 } from "../utils/taskFlow";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const statusOptions = [
   { value: "", label: "全部状态" },
@@ -295,12 +296,13 @@ export default function TaskList() {
   ];
 
   return (
-    <Space direction="vertical" size={24} style={{ width: "100%" }}>
-      <div className="page-hero">
-        <div className="page-hero__copy">
-          <Title level={3} className="page-hero__title">任务列表</Title>
-        </div>
-        <div className="page-hero__actions">
+    <PageStack>
+      <PageHero
+        eyebrow="Task Workspace"
+        title="任务列表"
+        subtitle="聚焦失败、执行中和待推进任务，快速进入详情、重跑或归档。"
+        actions={
+          <>
           <Segmented<FocusMode>
             value={focusMode}
             onChange={(value) => setFocusMode(value as FocusMode)}
@@ -337,8 +339,9 @@ export default function TaskList() {
           </Button>
           <Button icon={<HistoryOutlined />} onClick={() => navigate("/tasks/history")}>历史任务</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/tasks/create")}>创建任务</Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="compact-stats">
         <span className="compact-stats__item">
@@ -438,6 +441,6 @@ export default function TaskList() {
           pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
         />
       </Card>
-    </Space>
+    </PageStack>
   );
 }

@@ -48,7 +48,6 @@ def cli(
     context, token_counter = _load_context(context)
     sites_to_test = _load_sites(directory, site)
 
-    # add methods, extract site loading as well.
     runner = TestRunner(
         context=context,
         sites=sites_to_test,
@@ -81,13 +80,11 @@ def _load_sites(directory, site):
 
 def _load_context(context):
     if context:
-        # read context file and execute it
         with open(context, "r") as file:
             file_content = file.read()
         local_namespace = {}
         exec(file_content, {}, local_namespace)
 
-        # ensure variables are defined
         if "context" in local_namespace and "token_counter" in local_namespace:
             return local_namespace["context"], local_namespace["token_counter"]
         else:

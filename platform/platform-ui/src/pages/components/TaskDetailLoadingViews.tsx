@@ -145,7 +145,7 @@ export function TaskDetailRefreshingBanner(props: {
           showInfo={false}
           size="small"
           status={hasStageError ? "exception" : "active"}
-          strokeColor="#722ed1"
+          strokeColor="#5865f2"
         />
         {stageError ? <Text type="danger">{stageError}</Text> : null}
       </Space>

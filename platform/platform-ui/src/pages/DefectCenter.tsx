@@ -4,7 +4,7 @@ import type { DefectPayload, ProjectMemberPayload, TaskListItem } from "../types
 import { createDefect, fetchDefects, updateDefect } from "../api/defects";
 import { fetchProject } from "../api/auth";
 import { fetchTaskList } from "../api/tasks";
-import MetricCard from "../components/MetricCard";
+import { MetricGrid, PageHero, PageStack } from "../components/PageLayout";
 import { useAuth } from "../auth/AuthContext";
 
 const { TextArea } = Input;
@@ -225,17 +225,37 @@ export default function DefectCenter() {
   );
 
   return (
-    <Space direction="vertical" size={24} style={{ width: "100%" }}>
+    <PageStack>
+      <PageHero
+        eyebrow="Defect Tracking"
+        title="缺陷管理"
+        subtitle="从执行结果沉淀问题、跟踪处理状态，并与任务和项目成员形成闭环。"
+        meta={
+          <>
+            <div className="page-meta-chip">
+              <span className="page-meta-chip__label">当前项目</span>
+              <span className="page-meta-chip__value">{currentProject?.name || "未选择"}</span>
+            </div>
+            <div className="page-meta-chip">
+              <span className="page-meta-chip__label">筛选总数</span>
+              <span className="page-meta-chip__value">{total}</span>
+            </div>
+          </>
+        }
+      />
+
       {!currentProjectId ? (
         <Alert type="warning" showIcon message="请先在顶部选择项目，缺陷管理按项目维度工作。" />
       ) : null}
 
-      <div className="metric-row">
-        <MetricCard title="当前筛选总数" value={total} />
-        <MetricCard title="待处理" value={statusCounts.open} color="#f5b94c" />
-        <MetricCard title="处理中" value={statusCounts.inProgress} color="#4f8cff" />
-        <MetricCard title="已收口" value={statusCounts.resolved} color="#3ecf8e" />
-      </div>
+      <MetricGrid
+        items={[
+          { title: "当前筛选总数", value: total },
+          { title: "待处理", value: statusCounts.open, color: "#f5b94c" },
+          { title: "处理中", value: statusCounts.inProgress, color: "#2f81f7" },
+          { title: "已收口", value: statusCounts.resolved, color: "#5865f2" },
+        ]}
+      />
 
       <Card bordered={false} className="panel-card" title={`缺陷列表${currentProject ? ` · ${currentProject.name}` : ""}`}>
         <div className="page-toolbar">
@@ -500,6 +520,6 @@ export default function DefectCenter() {
           ]}
         />
       </Card>
-    </Space>
+    </PageStack>
   );
 }

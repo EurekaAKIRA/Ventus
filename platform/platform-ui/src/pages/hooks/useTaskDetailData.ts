@@ -333,9 +333,7 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
           }
           setDetail((prev) => ({ ...(prev ?? {}), ...full }) as ExtendedTaskDetail);
         })
-        .catch(() => {
-          /* 首屏已可用；全量字段失败时保留 summary，各 Tab 可能缺数据 */
-        });
+        .catch(() => undefined);
 
       if (mode !== "silent") {
         updateStage("dashboard", "process");
@@ -399,10 +397,6 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
     }
   }, [taskId, fromCreateFlow, resetSilentPollRefs]);
 
-  /**
-   * 分析完成前：仅轮询轻量 summary；指纹未变则不拉 full/产物/看板。
-   * 指纹或流水线阶段需要时拉 full，并在内容快照未变时跳过 setState。
-   */
   const silentPollBeforeSettled = useCallback(async () => {
     if (!taskId) {
       return;
@@ -463,7 +457,6 @@ export function useTaskDetailData(params: { taskId: string; fromCreateFlow: bool
         setArtifacts(arts);
       }
     } catch {
-      /* 静默失败，保留旧产物列表 */
     }
   }, [taskId]);
 

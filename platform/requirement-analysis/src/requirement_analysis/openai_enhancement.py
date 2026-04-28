@@ -126,7 +126,6 @@ def _env_int_bounded(name: str, *, default: int, min_value: int, max_value: int)
 
 
 def _llm_parse_max_requirement_chars() -> int:
-    # Keep default prompts compact enough to avoid provider-side latency spikes on long specs.
     return _env_int_bounded("LLM_PARSE_MAX_REQUIREMENT_CHARS", default=8_000, min_value=1_500, max_value=100_000)
 
 

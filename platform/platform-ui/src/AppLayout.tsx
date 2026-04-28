@@ -15,6 +15,9 @@ import {
   DatabaseOutlined,
   UserOutlined,
   RobotOutlined,
+  ApiOutlined,
+  FileDoneOutlined,
+  ScheduleOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "./auth/AuthContext";
 
@@ -25,6 +28,9 @@ const menuItems = [
   { key: "/dashboard", icon: <DashboardOutlined />, label: "仪表盘" },
   { key: "/tasks", icon: <UnorderedListOutlined />, label: "任务列表" },
   { key: "/tasks/history", icon: <HistoryOutlined />, label: "历史任务" },
+  { key: "/interfaces", icon: <ApiOutlined />, label: "接口资产" },
+  { key: "/test-cases", icon: <FileDoneOutlined />, label: "用例资产" },
+  { key: "/test-suites", icon: <ScheduleOutlined />, label: "用例套件" },
   { key: "/defects", icon: <BugOutlined />, label: "缺陷管理" },
   { key: "/agent", icon: <RobotOutlined />, label: "Agent 诊断" },
   { key: "/tasks/create", icon: <PlusCircleOutlined />, label: "创建任务" },
@@ -37,6 +43,9 @@ const pageMeta: Record<string, { title: string }> = {
   "/dashboard": { title: "测试运营总览" },
   "/tasks": { title: "任务与执行工作台" },
   "/tasks/history": { title: "历史与回归追踪" },
+  "/interfaces": { title: "接口资产中心" },
+  "/test-cases": { title: "用例资产中心" },
+  "/test-suites": { title: "用例套件与回归计划" },
   "/defects": { title: "缺陷与修复协同" },
   "/agent": { title: "文档诊断 Agent" },
   "/tasks/create": { title: "新建测试任务" },
@@ -55,7 +64,6 @@ export default function AppLayout() {
     [user?.is_platform_admin],
   );
 
-  // Prefer the most specific match so `/tasks/create` doesn't get overridden by `/tasks`.
   const selectedKey =
     visibleMenuItems
       .filter((m) => location.pathname.startsWith(m.key))
