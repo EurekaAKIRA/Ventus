@@ -120,6 +120,19 @@ def _default_checks(root: Path, *, skip_frontend: bool) -> list[dict[str, Any]]:
             "timeout_s": 240,
         },
         {
+            "name": "defect_management_regression",
+            "command": [
+                sys.executable,
+                "-m",
+                "pytest",
+                "platform/task-center/tests/api_auth_project_test.py",
+                "-k",
+                "project_defect_management_flow",
+            ],
+            "cwd": root,
+            "timeout_s": 180,
+        },
+        {
             "name": "rag_benchmark_report",
             "command": [sys.executable, "platform/requirement-analysis/scripts/run_rag_benchmark.py"],
             "cwd": root,
