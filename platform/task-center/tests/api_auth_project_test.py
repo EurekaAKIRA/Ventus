@@ -97,6 +97,20 @@ def test_auth_profile_and_refresh_flow(tmp_path, monkeypatch) -> None:
     assert refreshed.json()["code"] == "AUTH_REFRESHED"
     assert refreshed.json()["data"]["user"]["avatar_url"] == "https://example.com/alice.png"
 
+    uploaded_avatar = client.post(
+        "/api/users/me/avatar",
+        content=b"\x89PNG\r\n\x1a\navatar-demo",
+        headers={**_auth_headers(access_token), "Content-Type": "image/png"},
+    )
+    assert uploaded_avatar.status_code == 200
+    uploaded_user = uploaded_avatar.json()["data"]
+    assert "/static/avatars/" in uploaded_user["avatar_url"]
+
+    import task_center.api as api_module
+
+    avatar_filename = uploaded_user["avatar_url"].rsplit("/", 1)[-1]
+    assert (Path(api_module.AVATAR_UPLOAD_ROOT) / avatar_filename).exists()
+
     logout = client.post("/api/auth/logout", headers=_auth_headers(access_token))
     assert logout.status_code == 200
 

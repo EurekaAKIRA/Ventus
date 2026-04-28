@@ -14,14 +14,16 @@ import {
   Space,
   Tag,
   Typography,
+  Upload,
   message,
 } from "antd";
 import {
   UserAddOutlined,
   UserOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../auth/AuthContext";
-import { addProjectMember, fetchProject, searchUsers, updateMyProfile } from "../api/auth";
+import { addProjectMember, fetchProject, searchUsers, updateMyProfile, uploadMyAvatar } from "../api/auth";
 import type { ProjectMemberPayload, UserProfile } from "../types";
 
 const { Title, Text } = Typography;
@@ -33,6 +35,7 @@ export default function UserCenter() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [memberEditorOpen, setMemberEditorOpen] = useState(false);
   const [members, setMembers] = useState<ProjectMemberPayload[]>([]);
   const [userOptions, setUserOptions] = useState<Array<{ value: string; label: string }>>([]);
@@ -108,6 +111,29 @@ export default function UserCenter() {
     }
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      message.warning("请选择图片文件");
+      return Upload.LIST_IGNORE;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      message.warning("头像图片不能超过 2MB");
+      return Upload.LIST_IGNORE;
+    }
+    setUploadingAvatar(true);
+    try {
+      const updated = await uploadMyAvatar(file);
+      profileForm.setFieldsValue({ avatar_url: updated.avatar_url ?? "" });
+      await reloadProfile();
+      message.success("头像已更新");
+    } catch (error) {
+      message.error((error as Error).message || "上传头像失败");
+    } finally {
+      setUploadingAvatar(false);
+    }
+    return Upload.LIST_IGNORE;
+  };
+
   const handleAddMember = async (values: { username: string; role: string }) => {
     if (!currentProjectId) {
       message.warning("请先选择项目");
@@ -175,6 +201,11 @@ export default function UserCenter() {
             <Col xs={24} lg={8}>
               <div className="github-profile-preview">
                 <Avatar size={96} src={user?.avatar_url || undefined} icon={<UserOutlined />} />
+                <Upload showUploadList={false} beforeUpload={(file) => handleAvatarUpload(file)}>
+                  <Button icon={<UploadOutlined />} loading={uploadingAvatar}>
+                    上传头像
+                  </Button>
+                </Upload>
                 <Text type="secondary">头像地址可选；未填写时显示默认头像。</Text>
               </div>
             </Col>

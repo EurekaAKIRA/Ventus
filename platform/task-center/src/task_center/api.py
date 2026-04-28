@@ -8,6 +8,7 @@ import hashlib
 import inspect
 import os
 import re
+import uuid
 from dataclasses import replace
 import json
 import threading
@@ -22,6 +23,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from execution_engine_core import run_dsl
@@ -81,9 +83,18 @@ from result_analysis import build_analysis_report
 
 APP_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS_ROOT = str(Path(os.getenv("TASK_CENTER_ARTIFACTS_ROOT", str(APP_ROOT / "api_artifacts"))))
+PUBLIC_STATIC_ROOT = Path(ARTIFACTS_ROOT) / "public"
+AVATAR_UPLOAD_ROOT = PUBLIC_STATIC_ROOT / "avatars"
 APP_VERSION = "0.2.0"
 VALID_DEFECT_STATUSES = {"open", "in_progress", "resolved", "closed"}
 VALID_DEFECT_SEVERITIES = {"low", "medium", "high", "critical"}
+AVATAR_ALLOWED_CONTENT_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+AVATAR_MAX_BYTES = 2 * 1024 * 1024
 EXECUTION_TIMEOUT_SECONDS = 300  # 5 分钟执行上限，防止慢接口挂起
 _EXECUTION_MAX_WORKERS = max(1, int(str(os.getenv("TASK_CENTER_EXECUTION_WORKERS", "4")).strip() or "4"))
 _ANALYSIS_MAX_WORKERS = max(1, int(str(os.getenv("TASK_CENTER_ANALYSIS_WORKERS", "4")).strip() or "4"))
@@ -92,6 +103,8 @@ runtime_state_store = build_runtime_state_store()
 session_state_store = build_session_state_store()
 auth_config = load_auth_config()
 app = FastAPI(title="Platform Task Center API", version=APP_VERSION)
+AVATAR_UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(PUBLIC_STATIC_ROOT)), name="static")
 _EXECUTION_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=_EXECUTION_MAX_WORKERS)
 _ANALYSIS_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=_ANALYSIS_MAX_WORKERS)
 _RUNNING_EXECUTION_FUTURES: dict[str, concurrent.futures.Future] = {}
@@ -320,6 +333,13 @@ def _decorate_user_payload(user: dict[str, Any] | None) -> dict[str, Any] | None
     payload["is_platform_admin"] = is_admin
     payload["platform_role"] = "admin" if is_admin else str(payload.get("platform_role") or "user")
     return payload
+
+
+def _safe_avatar_extension(content_type: str) -> str:
+    normalized = content_type.split(";")[0].strip().lower()
+    if normalized not in AVATAR_ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=415, detail="Avatar must be a jpg, png, webp, or gif image")
+    return AVATAR_ALLOWED_CONTENT_TYPES[normalized]
 
 
 def _current_user_project_ids(user_id: str) -> list[str]:
@@ -3074,6 +3094,37 @@ def update_my_profile(
         ip_address=_request_ip(request),
     )
     return _success_response(updated, code="USER_ME_UPDATED", message="user profile updated")
+
+
+@app.post("/api/users/me/avatar", response_model=ApiResponse)
+async def upload_my_avatar(
+    request: Request,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    content_type = str(request.headers.get("content-type") or "")
+    extension = _safe_avatar_extension(content_type)
+    body = await request.body()
+    if not body:
+        raise HTTPException(status_code=400, detail="Avatar image is empty")
+    if len(body) > AVATAR_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="Avatar image must be <= 2MB")
+
+    store = _db_store_or_503()
+    user_id = str(current_user["user"]["id"])
+    filename = f"{user_id}_{uuid.uuid4().hex}{extension}"
+    avatar_path = AVATAR_UPLOAD_ROOT / filename
+    avatar_path.write_bytes(body)
+    avatar_url = str(request.url_for("static", path=f"avatars/{filename}"))
+    updated = store.update_user_profile(user_id=user_id, avatar_url=avatar_url)
+    _append_audit_log_safe(
+        user_id=user_id,
+        action="user.avatar.upload",
+        resource_type="user",
+        resource_id=user_id,
+        detail_json={"avatar_url": avatar_url, "content_type": content_type.split(";")[0].strip().lower(), "size": len(body)},
+        ip_address=_request_ip(request),
+    )
+    return _success_response(_decorate_user_payload(updated), code="USER_AVATAR_UPLOADED", message="avatar uploaded")
 
 
 @app.get("/api/projects", response_model=ApiResponse)

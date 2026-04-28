@@ -53,6 +53,16 @@ export async function updateMyProfile(payload: {
   });
 }
 
+export async function uploadMyAvatar(file: File): Promise<UserProfile> {
+  return await requestApi<UserProfile>("/api/users/me/avatar", {
+    method: "POST",
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+    },
+    body: file,
+  });
+}
+
 export async function searchUsers(params?: { keyword?: string; limit?: number }): Promise<UserProfile[]> {
   const qp = new URLSearchParams();
   const keyword = String(params?.keyword ?? "").trim();
