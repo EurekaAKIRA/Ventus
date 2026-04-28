@@ -29,7 +29,7 @@ const menuItems = [
   { key: "/agent", icon: <RobotOutlined />, label: "Agent 诊断" },
   { key: "/tasks/create", icon: <PlusCircleOutlined />, label: "创建任务" },
   { key: "/environments", icon: <DeploymentUnitOutlined />, label: "环境管理" },
-  { key: "/audit", icon: <DatabaseOutlined />, label: "审计日志" },
+  { key: "/audit", icon: <DatabaseOutlined />, label: "审计日志", adminOnly: true },
   { key: "/users/me", icon: <UserOutlined />, label: "用户中心" },
 ];
 
@@ -50,10 +50,14 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { ready, isAuthenticated, user, projects, currentProjectId, setCurrentProjectId, logout, createProject } = useAuth();
+  const visibleMenuItems = useMemo(
+    () => menuItems.filter((item) => !item.adminOnly || Boolean(user?.is_platform_admin)),
+    [user?.is_platform_admin],
+  );
 
   // Prefer the most specific match so `/tasks/create` doesn't get overridden by `/tasks`.
   const selectedKey =
-    menuItems
+    visibleMenuItems
       .filter((m) => location.pathname.startsWith(m.key))
       .sort((a, b) => b.key.length - a.key.length)[0]?.key ?? "/dashboard";
   const currentPageMeta = pageMeta[selectedKey] ?? pageMeta["/dashboard"];
@@ -126,7 +130,7 @@ export default function AppLayout() {
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
-          items={menuItems}
+          items={visibleMenuItems}
           onClick={({ key }) => navigate(key)}
         />
       </Sider>

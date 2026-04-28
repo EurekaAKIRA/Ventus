@@ -61,6 +61,21 @@ function GuestOnly() {
   return <Outlet />;
 }
 
+function RequireAdmin() {
+  const { ready, isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  if (!ready) {
+    return <RouteLoading />;
+  }
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  if (!user?.is_platform_admin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <Outlet />;
+}
+
 const router = createBrowserRouter([
   {
     element: <GuestOnly />,
@@ -87,7 +102,10 @@ const router = createBrowserRouter([
           { path: "tasks/create", element: withSuspense(<TaskCreate />) },
           { path: "tasks/:taskId", element: withSuspense(<TaskDetail />) },
           { path: "environments", element: withSuspense(<EnvironmentCenter />) },
-          { path: "audit", element: withSuspense(<AuditCenter />) },
+          {
+            element: <RequireAdmin />,
+            children: [{ path: "audit", element: withSuspense(<AuditCenter />) }],
+          },
           { path: "users/me", element: withSuspense(<UserCenter />) },
         ],
       },

@@ -362,6 +362,8 @@ export interface UserProfile {
   avatar_url?: string | null;
   workspace_id?: string | null;
   last_login_at?: string | null;
+  is_platform_admin?: boolean;
+  platform_role?: "admin" | "user" | string;
 }
 
 export interface ProjectSummary {

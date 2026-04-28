@@ -62,6 +62,7 @@ def test_auth_profile_and_refresh_flow(tmp_path, monkeypatch) -> None:
     admin_login = client.post("/api/auth/login", json={"username": "admin", "password": "123456"})
     assert admin_login.status_code == 200
     assert admin_login.json()["data"]["user"]["username"] == "admin"
+    assert admin_login.json()["data"]["user"]["is_platform_admin"] is True
 
     register = client.post(
         "/api/auth/register",
@@ -75,6 +76,7 @@ def test_auth_profile_and_refresh_flow(tmp_path, monkeypatch) -> None:
     login_data = login.json()["data"]
     access_token = login_data["access_token"]
     refresh_token = login_data["refresh_token"]
+    assert login_data["user"]["is_platform_admin"] is False
 
     me = client.get("/api/auth/me", headers=_auth_headers(access_token))
     assert me.status_code == 200
@@ -179,6 +181,7 @@ def test_project_scoped_environment_crud(tmp_path, monkeypatch) -> None:
         json={"username": "alice", "password": "password123", "email": "alice@example.com"},
     )
     alice_login = client.post("/api/auth/login", json={"username": "alice", "password": "password123"}).json()["data"]
+    admin_login = client.post("/api/auth/login", json={"username": "admin", "password": "123456"}).json()["data"]
     project_id = alice_login["projects"][0]["id"]
 
     create_env = client.post(
@@ -249,7 +252,7 @@ def test_project_scoped_environment_crud(tmp_path, monkeypatch) -> None:
     audit_logs = client.get(
         "/api/audit/logs",
         params={"resource_type": "environment"},
-        headers=_auth_headers(alice_login["access_token"]),
+        headers=_auth_headers(admin_login["access_token"]),
     )
     assert audit_logs.status_code == 200
     logged_actions = [item["action"] for item in audit_logs.json()["data"]["items"]]
@@ -266,11 +269,18 @@ def test_project_scoped_environment_crud(tmp_path, monkeypatch) -> None:
     audit_logs_after_delete = client.get(
         "/api/audit/logs",
         params={"resource_type": "environment"},
-        headers=_auth_headers(alice_login["access_token"]),
+        headers=_auth_headers(admin_login["access_token"]),
     )
     assert audit_logs_after_delete.status_code == 200
     logged_actions_after_delete = [item["action"] for item in audit_logs_after_delete.json()["data"]["items"]]
     assert "environment.delete" in logged_actions_after_delete
+
+    denied_audit = client.get(
+        "/api/audit/logs",
+        params={"resource_type": "environment"},
+        headers=_auth_headers(alice_login["access_token"]),
+    )
+    assert denied_audit.status_code == 403
 
 
 def test_environment_probe_and_audit_filters(tmp_path, monkeypatch) -> None:
@@ -281,6 +291,7 @@ def test_environment_probe_and_audit_filters(tmp_path, monkeypatch) -> None:
         json={"username": "alice", "password": "password123", "email": "alice@example.com"},
     )
     alice_login = client.post("/api/auth/login", json={"username": "alice", "password": "password123"}).json()["data"]
+    admin_login = client.post("/api/auth/login", json={"username": "admin", "password": "123456"}).json()["data"]
     project_id = alice_login["projects"][0]["id"]
 
     import task_center.api as api_module
@@ -322,7 +333,7 @@ def test_environment_probe_and_audit_filters(tmp_path, monkeypatch) -> None:
     audit_logs = client.get(
         "/api/audit/logs",
         params={"resource_type": "environment", "actor": "alice", "page": 1, "page_size": 10},
-        headers=_auth_headers(alice_login["access_token"]),
+        headers=_auth_headers(admin_login["access_token"]),
     )
     assert audit_logs.status_code == 200
     payload = audit_logs.json()["data"]

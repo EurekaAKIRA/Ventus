@@ -292,6 +292,31 @@ def _append_audit_log_safe(
         return
 
 
+def _platform_admin_usernames() -> set[str]:
+    default_admin = str(os.getenv("TASK_CENTER_DEFAULT_ADMIN_USERNAME", "admin")).strip() or "admin"
+    configured = str(os.getenv("TASK_CENTER_PLATFORM_ADMIN_USERNAMES", "")).strip()
+    names = {default_admin}
+    if configured:
+        names.update(item.strip() for item in configured.split(",") if item.strip())
+    return names
+
+
+def _is_platform_admin_user(user: dict[str, Any] | None) -> bool:
+    if not user:
+        return False
+    return str(user.get("username") or "").strip() in _platform_admin_usernames()
+
+
+def _decorate_user_payload(user: dict[str, Any] | None) -> dict[str, Any] | None:
+    if user is None:
+        return None
+    payload = dict(user)
+    is_admin = _is_platform_admin_user(payload)
+    payload["is_platform_admin"] = is_admin
+    payload["platform_role"] = "admin" if is_admin else "user"
+    return payload
+
+
 def _current_user_project_ids(user_id: str) -> list[str]:
     store = _db_store_or_503()
     return [item["id"] for item in store.list_projects_for_user(user_id)]
@@ -324,6 +349,7 @@ def _require_current_user(authorization: str | None = Header(default=None)) -> d
     user = store.get_user_by_id(str(claims.get("sub") or ""))
     if user is None or user.get("status") != "active":
         raise HTTPException(status_code=401, detail="User not found or inactive")
+    user = _decorate_user_payload(user)
     session_id = str(claims.get("session_id") or "")
     if session_id:
         cached_session = session_state_store.get_session(session_id)
@@ -362,6 +388,12 @@ def _ensure_project_access(project_id: str, current_user: dict[str, Any]) -> dic
     if project is None:
         raise HTTPException(status_code=403, detail="You do not have access to this project")
     return project
+
+
+def _require_platform_admin(current_user: dict[str, Any] = Depends(_require_current_user)) -> dict[str, Any]:
+    if not _is_platform_admin_user(current_user.get("user")):
+        raise HTTPException(status_code=403, detail="Platform administrator permission is required")
+    return current_user
 
 
 def _dedupe_strings(items: list[str]) -> list[str]:
@@ -2856,7 +2888,7 @@ def register_user(payload: RegisterRequest, request: Request):
         ip_address=_request_ip(request),
     )
     return _success_response(
-        {"user": user, "default_project": default_project},
+        {"user": _decorate_user_payload(user), "default_project": default_project},
         code="AUTH_REGISTERED",
         message="user registered",
         status_code=201,
@@ -2911,7 +2943,7 @@ def login_user(payload: LoginRequest, request: Request):
             "token_type": "bearer",
             "expires_in": auth_config.access_token_ttl_minutes * 60,
             "refresh_token": refresh_token,
-            "user": store.get_user_by_id(str(identity["id"])),
+            "user": _decorate_user_payload(store.get_user_by_id(str(identity["id"]))),
             "projects": store.list_projects_for_user(str(identity["id"])),
             "claims": claims,
         },
@@ -2950,7 +2982,7 @@ def refresh_login(payload: RefreshTokenRequest):
             "access_token": access_token,
             "token_type": "bearer",
             "expires_in": auth_config.access_token_ttl_minutes * 60,
-            "user": user,
+            "user": _decorate_user_payload(user),
             "projects": store.list_projects_for_user(str(user["id"])),
             "claims": claims,
         },
@@ -4241,7 +4273,7 @@ def get_audit_logs(
     end_time: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    current_user: dict[str, Any] = Depends(_require_current_user),
+    current_user: dict[str, Any] = Depends(_require_platform_admin),
 ):
     store = _db_store_or_503()
     payload = store.list_audit_logs(
