@@ -275,6 +275,13 @@ export function TaskDetailExecutionTab(props: {
     },
     { title: "请求", dataIndex: "requestText", key: "requestText", ellipsis: true, width: 260 },
     { title: "响应", dataIndex: "responseText", key: "responseText", ellipsis: true, width: 180 },
+    {
+      title: "断言",
+      dataIndex: "assertionsText",
+      key: "assertionsText",
+      width: 320,
+      render: (value: string) => <pre className="execution-assertions-cell">{value}</pre>,
+    },
     { title: "信息", dataIndex: "message", key: "message", ellipsis: true, width: 260 },
   ];
 
@@ -393,7 +400,7 @@ export function TaskDetailExecutionTab(props: {
                       columns={executionStepColumns}
                       dataSource={record.steps}
                       pagination={false}
-                      scroll={{ x: 1100 }}
+                      scroll={{ x: 1400 }}
                     />
                   ),
                   rowExpandable: (record) => record.steps.length > 0,

@@ -10,6 +10,7 @@ export type ExecutionCaseStepRow = {
   message: string;
   requestText: string;
   responseText: string;
+  assertionsText: string;
 };
 
 export type ExecutionCaseRow = {
@@ -75,6 +76,21 @@ function stringifySummary(input: unknown) {
   }
 }
 
+function stringifyAssertion(assertion: unknown) {
+  if (typeof assertion === "string") {
+    return assertion;
+  }
+  if (!assertion || typeof assertion !== "object") {
+    return "-";
+  }
+  const item = assertion as Record<string, unknown>;
+  const source = String(item.source ?? "assertion");
+  const op = String(item.op ?? "");
+  const expected = item.expected === undefined ? "" : ` ${JSON.stringify(item.expected)}`;
+  const category = item.category ? ` · ${String(item.category)}` : "";
+  return `${source} ${op}${expected}${category}`.trim();
+}
+
 function buildStepRows(
   scenario: TestCaseDslScenario,
   result: ExecutionScenarioResult | undefined,
@@ -99,6 +115,7 @@ function buildStepRows(
       message: message || "-",
       requestText: stringifySummary(resultStep?.request_summary || resultStep?.request || step.request),
       responseText: stringifySummary(resultStep?.response_summary || resultStep?.response),
+      assertionsText: (step.assertions ?? []).map(stringifyAssertion).filter(Boolean).join("\n") || "-",
     };
   });
 }

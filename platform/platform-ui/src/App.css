@@ -137,6 +137,38 @@ body {
   flex-shrink: 0;
 }
 
+.dsl-step-assertions {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dsl-step-assertion-item {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.18);
+  padding: 10px 12px;
+}
+
+.dsl-assertion-line {
+  display: block;
+  font-family: "Fira Code", "Consolas", monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.execution-assertions-cell {
+  margin: 0;
+  max-height: 120px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: inherit;
+  background: transparent;
+  font-family: "Fira Code", "Consolas", monospace;
+  font-size: 12px;
+}
+
 .raw-text-viewer {
   max-height: 72vh;
   overflow-y: auto;

@@ -70,6 +70,22 @@ function parseFeatureLine(rawLine: string): ParsedFeatureLine {
   return { content: line };
 }
 
+function formatDslAssertion(assertion: unknown) {
+  if (typeof assertion === "string") {
+    return assertion;
+  }
+  if (!assertion || typeof assertion !== "object") {
+    return "-";
+  }
+  const item = assertion as Record<string, unknown>;
+  const source = String(item.source ?? "assertion");
+  const op = String(item.op ?? "");
+  const expected = item.expected === undefined ? "" : ` ${JSON.stringify(item.expected)}`;
+  const category = item.category ? ` · ${String(item.category)}` : "";
+  const generatedBy = item.generated_by ? ` · ${String(item.generated_by)}` : "";
+  return `${source} ${op}${expected}${category}${generatedBy}`.trim();
+}
+
 export function TaskDetailDslTab(props: {
   detail: ExtendedTaskDetail;
   dslDisplayScenarios: NonNullable<ExtendedTaskDetail["test_case_dsl"]>["scenarios"];
@@ -127,6 +143,33 @@ export function TaskDetailDslTab(props: {
                         步骤数：{scenario.steps?.length ?? 0}
                         {scenario.preconditions?.length ? `，前置条件：${scenario.preconditions.length}` : ""}
                       </Text>
+                      {scenario.steps?.length ? (
+                        <div className="dsl-step-assertions">
+                          {scenario.steps.map((step) => {
+                            const assertions = (step.assertions ?? []).map(formatDslAssertion).filter(Boolean);
+                            return (
+                              <div key={`${scenario.scenario_id}_${step.step_id}`} className="dsl-step-assertion-item">
+                                <Space align="start" size={8}>
+                                  <Tag color={assertions.length ? "success" : "default"}>{step.step_id}</Tag>
+                                  <Space direction="vertical" size={2}>
+                                    <Text>{step.text}</Text>
+                                    {assertions.length ? (
+                                      assertions.slice(0, 4).map((item, index) => (
+                                        <Text key={`${step.step_id}_assertion_${index}`} type="secondary" className="dsl-assertion-line">
+                                          {item}
+                                        </Text>
+                                      ))
+                                    ) : (
+                                      <Text type="secondary">暂无显式断言</Text>
+                                    )}
+                                    {assertions.length > 4 ? <Text type="secondary">还有 {assertions.length - 4} 条断言，可查看原始 DSL。</Text> : null}
+                                  </Space>
+                                </Space>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                     </Space>
                   </List.Item>
                 )}
@@ -206,4 +249,3 @@ export function TaskDetailDslTab(props: {
     </Space>
   );
 }
-
