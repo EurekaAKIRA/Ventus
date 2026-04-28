@@ -17,10 +17,7 @@ import {
   message,
 } from "antd";
 import {
-  CrownOutlined,
-  MailOutlined,
   ProjectOutlined,
-  SafetyCertificateOutlined,
   UserAddOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -170,21 +167,12 @@ export default function UserCenter() {
       <Row gutter={16}>
         <Col xs={24} xl={9}>
           <Card bordered={false} className="panel-card panel-card--form" title="个人资料" extra={<UserOutlined />}>
-            <div className="profile-spotlight">
-              <Avatar size={56} src={user?.avatar_url || undefined} icon={<UserOutlined />} className="profile-spotlight__avatar" />
-              <div className="profile-spotlight__meta">
-                <Text strong className="profile-spotlight__name">
-                  {user?.display_name || user?.username || "当前用户"}
-                </Text>
-                <Text type="secondary">@{user?.username || "-"}</Text>
-                <div className="profile-spotlight__chips">
-                  <span className={`surface-chip ${user?.is_platform_admin ? "surface-chip--gold" : ""}`}>
-                    {user?.is_platform_admin ? <CrownOutlined /> : <SafetyCertificateOutlined />}{" "}
-                    <strong>{user?.is_platform_admin ? "平台管理员" : "普通用户"}</strong>
-                  </span>
-                  <span className="surface-chip">
-                    <MailOutlined /> <strong>{user?.email || "未填写邮箱"}</strong>
-                  </span>
+            <div className="account-settings-summary">
+              <Avatar size={42} src={user?.avatar_url || undefined} icon={<UserOutlined />} />
+              <div>
+                <Text strong>{user?.display_name || user?.username || "当前用户"}</Text>
+                <div className="account-settings-summary__meta">
+                  @{user?.username || "-"} · {user?.is_platform_admin ? "平台管理员" : "普通用户"}
                 </div>
               </div>
             </div>

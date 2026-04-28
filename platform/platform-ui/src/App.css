@@ -2272,44 +2272,19 @@ a:hover {
   color: var(--theme-text-secondary) !important;
 }
 
-.profile-spotlight {
+.account-settings-summary {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 18px;
-  margin-bottom: 22px;
-  border: 1px solid var(--theme-border);
-  border-radius: 20px;
-  background: rgba(9, 16, 24, 0.52);
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--theme-border);
 }
 
-.profile-spotlight__avatar {
-  flex-shrink: 0;
-  box-shadow: 0 14px 36px rgba(3, 8, 18, 0.26);
-}
-
-.profile-spotlight__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.profile-spotlight__name {
-  font-size: 18px;
-  color: #f5fbff !important;
-}
-
-.profile-spotlight__chips {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.surface-chip--gold {
-  border-color: rgba(245, 185, 76, 0.38);
-  background: rgba(245, 185, 76, 0.12);
-  color: #ffe0a0;
+.account-settings-summary__meta {
+  margin-top: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
 }
 
 .project-focus-card {
@@ -2701,7 +2676,7 @@ a:hover {
   .page-toolbar,
   .page-toolbar__group,
   .user-center-hero__identity,
-  .profile-spotlight,
+  .account-settings-summary,
   .member-row {
     flex-direction: column;
     align-items: stretch;
