@@ -126,6 +126,8 @@ def _ensure_default_admin_account() -> None:
 
     existing = store.get_user_by_username(username)
     if existing is not None:
+        if existing.get("platform_role") != "admin":
+            existing = store.set_user_platform_role(user_id=str(existing["id"]), platform_role="admin")
         store.ensure_default_workspace_and_project(user_id=str(existing["id"]), username=str(existing["username"]))
         return
 
@@ -134,6 +136,7 @@ def _ensure_default_admin_account() -> None:
         email=email,
         display_name=display_name,
         password_hash=hash_password(password),
+        platform_role="admin",
     )
     store.ensure_default_workspace_and_project(user_id=str(created["id"]), username=str(created["username"]))
 
@@ -304,6 +307,8 @@ def _platform_admin_usernames() -> set[str]:
 def _is_platform_admin_user(user: dict[str, Any] | None) -> bool:
     if not user:
         return False
+    if str(user.get("platform_role") or "").strip().lower() == "admin":
+        return True
     return str(user.get("username") or "").strip() in _platform_admin_usernames()
 
 
@@ -313,7 +318,7 @@ def _decorate_user_payload(user: dict[str, Any] | None) -> dict[str, Any] | None
     payload = dict(user)
     is_admin = _is_platform_admin_user(payload)
     payload["is_platform_admin"] = is_admin
-    payload["platform_role"] = "admin" if is_admin else "user"
+    payload["platform_role"] = "admin" if is_admin else str(payload.get("platform_role") or "user")
     return payload
 
 

@@ -383,6 +383,7 @@ export interface ProjectMemberPayload {
   user_id?: string;
   username?: string;
   display_name?: string;
+  avatar_url?: string | null;
   role: string;
   created_at?: string;
   joined_at?: string;

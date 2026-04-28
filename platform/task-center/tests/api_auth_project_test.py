@@ -63,6 +63,7 @@ def test_auth_profile_and_refresh_flow(tmp_path, monkeypatch) -> None:
     assert admin_login.status_code == 200
     assert admin_login.json()["data"]["user"]["username"] == "admin"
     assert admin_login.json()["data"]["user"]["is_platform_admin"] is True
+    assert admin_login.json()["data"]["user"]["platform_role"] == "admin"
 
     register = client.post(
         "/api/auth/register",
@@ -84,15 +85,17 @@ def test_auth_profile_and_refresh_flow(tmp_path, monkeypatch) -> None:
 
     updated = client.patch(
         "/api/users/me",
-        json={"display_name": "Alice QA"},
+        json={"display_name": "Alice QA", "avatar_url": "https://example.com/alice.png"},
         headers=_auth_headers(access_token),
     )
     assert updated.status_code == 200
     assert updated.json()["data"]["display_name"] == "Alice QA"
+    assert updated.json()["data"]["avatar_url"] == "https://example.com/alice.png"
 
     refreshed = client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
     assert refreshed.status_code == 200
     assert refreshed.json()["code"] == "AUTH_REFRESHED"
+    assert refreshed.json()["data"]["user"]["avatar_url"] == "https://example.com/alice.png"
 
     logout = client.post("/api/auth/logout", headers=_auth_headers(access_token))
     assert logout.status_code == 200
@@ -780,6 +783,12 @@ def test_project_defect_management_flow(tmp_path, monkeypatch) -> None:
     charlie_headers = _auth_headers(charlie_login["access_token"])
     project_id = alice_login["projects"][0]["id"]
     bob_user_id = bob_login["user"]["id"]
+    profile_update = client.patch(
+        "/api/users/me",
+        json={"avatar_url": "https://example.com/bob.png"},
+        headers=bob_headers,
+    )
+    assert profile_update.status_code == 200
 
     add_member = client.post(
         f"/api/projects/{project_id}/members",
@@ -853,6 +862,11 @@ def test_project_defect_management_flow(tmp_path, monkeypatch) -> None:
     detail = client.get(f"/api/defects/{defect_id}", headers=alice_headers)
     assert detail.status_code == 200
     assert detail.json()["data"]["task_name"] == "Checkout Task"
+
+    project_detail = client.get(f"/api/projects/{project_id}", headers=alice_headers)
+    assert project_detail.status_code == 200
+    bob_member = next(item for item in project_detail.json()["data"]["members"] if item["username"] == "bob")
+    assert bob_member["avatar_url"] == "https://example.com/bob.png"
 
     denied = client.get(
         "/api/defects",

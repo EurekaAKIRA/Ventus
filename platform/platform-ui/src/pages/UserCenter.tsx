@@ -269,7 +269,7 @@ export default function UserCenter() {
               <List.Item>
                 <div className="github-member-row">
                   <div className="github-member-row__identity">
-                    <Avatar size={32} icon={<UserOutlined />} />
+                    <Avatar size={32} src={item.avatar_url || undefined} icon={<UserOutlined />} />
                     <Space direction="vertical" size={0}>
                       <Text strong>{item.display_name || item.username || item.user_id}</Text>
                       <Text type="secondary">{item.username}</Text>

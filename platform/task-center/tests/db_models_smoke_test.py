@@ -63,3 +63,17 @@ def test_task_runs_table_contains_snapshot_columns() -> None:
 
     assert "progress_snapshot_json" in columns
     assert "runtime_context_snapshot_path" in columns
+
+
+def test_users_table_contains_profile_and_role_columns() -> None:
+    from sqlalchemy import inspect
+
+    from task_center.db import Base, create_task_center_engine
+
+    engine = create_task_center_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    inspector = inspect(engine)
+    columns = {column["name"] for column in inspector.get_columns("users")}
+
+    assert "avatar_url" in columns
+    assert "platform_role" in columns

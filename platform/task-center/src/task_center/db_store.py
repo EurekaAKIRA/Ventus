@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from platform_shared.models import EnvironmentConfig
-from sqlalchemy import select
+from sqlalchemy import inspect, select, text
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, aliased, sessionmaker
 
@@ -48,7 +48,26 @@ class DatabaseTaskStore:
     def __init__(self, database_url: str | None = None):
         self.engine = create_task_center_engine(database_url=database_url)
         Base.metadata.create_all(self.engine)
+        self._ensure_schema_compatibility()
         self.session_factory = sessionmaker(bind=self.engine, autoflush=False, autocommit=False, future=True)
+
+    def _ensure_schema_compatibility(self) -> None:
+        """Apply additive compatibility fixes for DBs created before Alembic was used."""
+        inspector = inspect(self.engine)
+        if "users" not in inspector.get_table_names():
+            return
+        user_columns = {column["name"] for column in inspector.get_columns("users")}
+        statements: list[str] = []
+        if "avatar_url" not in user_columns:
+            statements.append("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(512)")
+        if "platform_role" not in user_columns:
+            statements.append("ALTER TABLE users ADD COLUMN platform_role VARCHAR(32) NOT NULL DEFAULT 'user'")
+        if not statements:
+            return
+        with self.engine.begin() as connection:
+            for statement in statements:
+                connection.execute(text(statement))
+            connection.execute(text("UPDATE users SET platform_role = 'admin' WHERE username = 'admin'"))
 
     @contextmanager
     def session(self) -> Iterator[Session]:
@@ -358,6 +377,7 @@ class DatabaseTaskStore:
         display_name: str,
         password_hash: str,
         password_algo: str = "bcrypt",
+        platform_role: str = "user",
     ) -> dict[str, Any]:
         with self.session() as session:
             if session.scalar(select(User).where(User.username == username)) is not None:
@@ -368,6 +388,7 @@ class DatabaseTaskStore:
                 username=username,
                 email=email,
                 display_name=display_name,
+                platform_role=platform_role,
                 status="active",
                 created_at=_utc_now(),
                 updated_at=_utc_now(),
@@ -385,6 +406,16 @@ class DatabaseTaskStore:
             session.add(cred)
             session.flush()
             return self._user_to_payload(user)
+
+    def set_user_platform_role(self, *, user_id: str, platform_role: str) -> dict[str, Any]:
+        with self.session() as session:
+            row = session.scalar(select(User).where(User.id == self._parse_uuid(user_id)))
+            if row is None:
+                raise KeyError(f"unknown user_id: {user_id}")
+            row.platform_role = platform_role
+            row.updated_at = _utc_now()
+            session.flush()
+            return self._user_to_payload(row)
 
     def update_user_profile(
         self,
@@ -654,6 +685,7 @@ class DatabaseTaskStore:
                     "user_id": str(member.user_id),
                     "username": user.username,
                     "display_name": user.display_name,
+                    "avatar_url": user.avatar_url,
                     "role": member.role,
                     "joined_at": member.joined_at.isoformat() if member.joined_at else None,
                 }
@@ -967,6 +999,7 @@ class DatabaseTaskStore:
             "email": row.email,
             "display_name": row.display_name,
             "avatar_url": row.avatar_url,
+            "platform_role": row.platform_role,
             "status": row.status,
             "last_login_at": row.last_login_at.isoformat() if row.last_login_at else None,
             "created_at": row.created_at.isoformat() if row.created_at else None,

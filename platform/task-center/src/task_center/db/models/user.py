@@ -19,6 +19,7 @@ class User(IdMixin, TimestampMixin, Base):
     email: Mapped[str | None] = mapped_column(String(128), unique=True)
     display_name: Mapped[str] = mapped_column(String(128), nullable=False)
     avatar_url: Mapped[str | None] = mapped_column(String(512))
+    platform_role: Mapped[str] = mapped_column(String(32), nullable=False, default="user")
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
     last_login_at: Mapped[datetime | None]
 
