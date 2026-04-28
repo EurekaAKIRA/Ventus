@@ -1064,6 +1064,14 @@ a:hover {
   font-weight: 600;
 }
 
+.defect-inline-editor {
+  margin: 18px 0 22px;
+  border-color: rgba(62, 207, 142, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(62, 207, 142, 0.08), rgba(79, 140, 255, 0.05)),
+    rgba(11, 18, 28, 0.84) !important;
+}
+
 .metric-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

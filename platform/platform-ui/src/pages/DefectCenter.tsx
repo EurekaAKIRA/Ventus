@@ -73,6 +73,7 @@ export default function DefectCenter() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<DefectPayload | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [severityFilter, setSeverityFilter] = useState("");
@@ -145,6 +146,14 @@ export default function DefectCenter() {
 
   const resetEditor = () => {
     setEditing(null);
+    setEditorOpen(false);
+    form.resetFields();
+    form.setFieldsValue({ severity: "medium", status: "open" });
+  };
+
+  const openCreateEditor = () => {
+    setEditing(null);
+    setEditorOpen(true);
     form.resetFields();
     form.setFieldsValue({ severity: "medium", status: "open" });
   };
@@ -192,6 +201,7 @@ export default function DefectCenter() {
 
   const handleEdit = (record: DefectPayload) => {
     setEditing(record);
+    setEditorOpen(true);
     form.setFieldsValue({
       title: record.title,
       task_id: record.task_id ?? undefined,
@@ -226,89 +236,6 @@ export default function DefectCenter() {
         <MetricCard title="处理中" value={statusCounts.inProgress} color="#4f8cff" />
         <MetricCard title="已收口" value={statusCounts.resolved} color="#3ecf8e" />
       </div>
-
-      <Card bordered={false} className="panel-card panel-card--form" title={editing ? `编辑缺陷：${editing.defect_key}` : "新建缺陷"}>
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{ severity: "medium", status: "open" }}
-          onFinish={handleSave}
-        >
-          <Row gutter={16}>
-            <Col xs={24} xl={16}>
-              <Form.Item name="title" label="缺陷标题" rules={[{ required: true, message: "请输入缺陷标题" }]}>
-                <Input placeholder="例如：订单结算失败时返回 500" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} xl={8}>
-              <Form.Item name="task_id" label="关联任务">
-                <Select
-                  allowClear
-                  showSearch
-                  optionFilterProp="label"
-                  placeholder="可选"
-                  options={tasks.map((task) => ({
-                    value: task.task_id,
-                    label: `${task.task_name} · ${task.task_id}`,
-                  }))}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item name="severity" label="严重级别">
-                <Select options={SEVERITY_OPTIONS} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="status" label="状态">
-                <Select options={STATUS_OPTIONS} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="assignee_user_id" label="指派给">
-                <Select
-                  allowClear
-                  showSearch
-                  optionFilterProp="label"
-                  placeholder="可选"
-                  options={members.map((member) => ({
-                    value: member.user_id,
-                    label: member.display_name ? `${member.display_name} · ${member.username}` : member.username || member.user_id || "",
-                  }))}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item name="description" label="问题描述">
-            <TextArea rows={4} placeholder="描述缺陷现象、影响范围和上下文。" />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col xs={24} xl={8}>
-              <Form.Item name="reproduction_steps" label="复现步骤">
-                <TextArea rows={5} placeholder="描述复现步骤" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} xl={8}>
-              <Form.Item name="expected_result" label="预期结果">
-                <TextArea rows={5} placeholder="预期系统表现" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} xl={8}>
-              <Form.Item name="actual_result" label="实际结果">
-                <TextArea rows={5} placeholder="实际观察到的问题" />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Space wrap>
-            <Button type="primary" htmlType="submit" loading={saving} disabled={!currentProjectId || !isAuthenticated}>
-              {editing ? "更新缺陷" : "创建缺陷"}
-            </Button>
-            {editing ? <Button onClick={resetEditor}>取消编辑</Button> : null}
-          </Space>
-        </Form>
-      </Card>
 
       <Card bordered={false} className="panel-card" title={`缺陷列表${currentProject ? ` · ${currentProject.name}` : ""}`}>
         <div className="page-toolbar">
@@ -380,8 +307,104 @@ export default function DefectCenter() {
           </div>
           <div className="page-toolbar__group">
             <Button onClick={() => void loadDefects()}>刷新</Button>
+            <Button
+              type={editorOpen && !editing ? "default" : "primary"}
+              disabled={!currentProjectId || !isAuthenticated}
+              onClick={editorOpen && !editing ? resetEditor : openCreateEditor}
+            >
+              {editorOpen && !editing ? "收起新建" : "新建缺陷"}
+            </Button>
           </div>
         </div>
+        {editorOpen ? (
+          <Card
+            bordered={false}
+            className="panel-card panel-card--form defect-inline-editor"
+            title={editing ? `编辑缺陷：${editing.defect_key}` : "新建缺陷"}
+            extra={<Button onClick={resetEditor}>收起</Button>}
+          >
+            <Form
+              form={form}
+              layout="vertical"
+              initialValues={{ severity: "medium", status: "open" }}
+              onFinish={handleSave}
+            >
+              <Row gutter={16}>
+                <Col xs={24} xl={16}>
+                  <Form.Item name="title" label="缺陷标题" rules={[{ required: true, message: "请输入缺陷标题" }]}>
+                    <Input placeholder="例如：订单结算失败时返回 500" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} xl={8}>
+                  <Form.Item name="task_id" label="关联任务">
+                    <Select
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      placeholder="可选"
+                      options={tasks.map((task) => ({
+                        value: task.task_id,
+                        label: `${task.task_name} · ${task.task_id}`,
+                      }))}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col xs={24} md={8}>
+                  <Form.Item name="severity" label="严重级别">
+                    <Select options={SEVERITY_OPTIONS} />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item name="status" label="状态">
+                    <Select options={STATUS_OPTIONS} />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item name="assignee_user_id" label="指派给">
+                    <Select
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      placeholder="可选"
+                      options={members.map((member) => ({
+                        value: member.user_id,
+                        label: member.display_name ? `${member.display_name} · ${member.username}` : member.username || member.user_id || "",
+                      }))}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item name="description" label="问题描述">
+                <TextArea rows={4} placeholder="描述缺陷现象、影响范围和上下文。" />
+              </Form.Item>
+              <Row gutter={16}>
+                <Col xs={24} xl={8}>
+                  <Form.Item name="reproduction_steps" label="复现步骤">
+                    <TextArea rows={5} placeholder="描述复现步骤" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} xl={8}>
+                  <Form.Item name="expected_result" label="预期结果">
+                    <TextArea rows={5} placeholder="预期系统表现" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} xl={8}>
+                  <Form.Item name="actual_result" label="实际结果">
+                    <TextArea rows={5} placeholder="实际观察到的问题" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Space wrap>
+                <Button type="primary" htmlType="submit" loading={saving} disabled={!currentProjectId || !isAuthenticated}>
+                  {editing ? "更新缺陷" : "创建缺陷"}
+                </Button>
+                <Button onClick={resetEditor}>{editing ? "取消编辑" : "取消新建"}</Button>
+              </Space>
+            </Form>
+          </Card>
+        ) : null}
         <Table
           className="platform-table"
           rowKey="id"
