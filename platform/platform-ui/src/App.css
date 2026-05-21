@@ -367,14 +367,15 @@ body {
 
 .vue-agent-dialogue {
   box-sizing: border-box;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   min-width: 0;
   gap: 12px;
   min-height: 680px;
   max-height: calc(100vh - 112px);
   padding: 14px;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 8px;
   background: rgba(9, 16, 24, 0.92);
@@ -539,24 +540,33 @@ body {
 }
 
 .vue-agent-dialogue__thread {
-  display: grid;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: 8px;
-  max-height: 260px;
+  min-height: 0;
   overflow: auto;
+  padding-right: 4px;
 }
 
 .vue-agent-dialogue__message {
+  display: block;
+  width: fit-content;
+  max-width: min(88%, 560px);
   padding: 10px 12px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.025);
+  white-space: pre-wrap;
 }
 
 .vue-agent-dialogue__message.is-user {
+  align-self: flex-end;
   margin-left: 36px;
   background: rgba(88, 101, 242, 0.14);
 }
 
 .vue-agent-dialogue__message.is-bot {
+  align-self: flex-start;
   margin-right: 24px;
 }
 
@@ -627,13 +637,16 @@ body {
 }
 
 .vue-agent-dialogue__composer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 64px;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
   gap: 8px;
 }
 
 .vue-agent-dialogue__composer input {
+  flex: 1;
   min-width: 0;
+  height: 42px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 8px;
   padding: 9px 10px;
@@ -647,6 +660,9 @@ body {
 }
 
 .vue-agent-dialogue__composer button {
+  width: 64px;
+  height: 42px;
+  flex: 0 0 64px;
   border: 0;
   border-radius: 8px;
   background: #5865f2;

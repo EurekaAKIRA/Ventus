@@ -11,10 +11,40 @@ type ChatMessage = {
   meta?: string;
 };
 
+function includesAny(text: string, keywords: string[]) {
+  return keywords.some((keyword) => text.includes(keyword));
+}
+
+function buildGeneralHelp() {
+  return [
+    "我可以帮你做这些事：",
+    "1. 把需求拆成正向、异常、边界和权限类测试场景。",
+    "2. 给接口补状态码、字段、业务状态和上下文变量断言。",
+    "3. 提醒文档里缺失的路径、方法、鉴权、参数和依赖关系。",
+    "4. 根据 RAG 命中情况判断知识依据是否够用。",
+  ].join("\n");
+}
+
+function buildFallbackReply(question: string) {
+  if (includesAny(question, ["你好", "您好", "hello", "hi", "在吗"])) {
+    return "你好，我在。你可以把接口需求、文档片段或想测的功能发给我，我会帮你拆测试场景和断言。";
+  }
+  if (includesAny(question, ["你会", "能做", "功能", "帮助", "怎么用"])) {
+    return buildGeneralHelp();
+  }
+  if (includesAny(question, ["登录", "注册", "订单", "支付", "用户", "查询", "创建", "删除", "修改"])) {
+    return "可以按业务流程来拆：先测主流程成功，再测参数缺失、参数非法、未登录、权限不足、重复提交、资源不存在和状态流转异常。多步骤接口还要检查前一步返回的 Token、ID 或订单号能否被后续步骤正确使用。";
+  }
+  return "可以。你把具体接口、业务流程或文档片段发我，我会继续帮你拆成测试场景、断言点和风险点。";
+}
+
 function buildSuggestionReply(payload: TaskDraftAgentPayload | null, question: string) {
   const lowerQuestion = question.toLowerCase();
+  if (includesAny(lowerQuestion, ["你好", "您好", "hello", "hi", "在吗", "你会", "能做", "功能", "帮助", "怎么用"])) {
+    return buildFallbackReply(lowerQuestion);
+  }
   if (!payload) {
-    return "你可以先在左侧填写需求或导入接口文档。我会按你写的内容，帮你整理测试场景、断言和风险。";
+    return buildFallbackReply(lowerQuestion);
   }
   if (lowerQuestion.includes("断言") || question.includes("校验")) {
     const gates = payload.quality_gates?.filter((item) => item.status !== "pass").map((item) => item.label) ?? [];
