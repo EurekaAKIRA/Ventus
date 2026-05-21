@@ -3,6 +3,7 @@ import type { TaskDraftAgentPayload } from "../types";
 
 export type TaskAgentPanelProps = {
   payload: TaskDraftAgentPayload | null;
+  onSendMessage: (message: string) => Promise<{ reply: string; payload?: TaskDraftAgentPayload | null }>;
 };
 
 type ChatMessage = {
@@ -75,8 +76,16 @@ function buildSuggestionReply(payload: TaskDraftAgentPayload | null, question: s
     : "建议先确认接口路径、方法、鉴权、请求参数和上下游变量，再生成 DSL 并执行冒烟测试。";
 }
 
-export default function TaskAgentPanel({ payload }: TaskAgentPanelProps) {
+function formatChatError(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return "Agent 后端暂时不可用，请检查后端服务。";
+}
+
+export default function TaskAgentPanel({ payload, onSendMessage }: TaskAgentPanelProps) {
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "bot",
@@ -85,18 +94,38 @@ export default function TaskAgentPanel({ payload }: TaskAgentPanelProps) {
     },
   ]);
 
-  const sendMessage = (text?: string) => {
+  const sendMessage = async (text?: string) => {
     const nextText = String(text ?? draft).trim();
-    if (!nextText) return;
+    if (!nextText || sending) return;
     setDraft("");
     setMessages((current) => {
       const nextMessages: ChatMessage[] = [
         ...current,
         { role: "user", text: nextText },
-        { role: "bot", meta: "建议", text: buildSuggestionReply(payload, nextText) },
       ];
       return nextMessages.slice(-10);
     });
+    setSending(true);
+    try {
+      const result = await onSendMessage(nextText);
+      setMessages((current) => {
+        const nextMessages: ChatMessage[] = [
+          ...current,
+          { role: "bot", meta: "后端 Agent", text: result.reply || buildSuggestionReply(result.payload ?? payload, nextText) },
+        ];
+        return nextMessages.slice(-10);
+      });
+    } catch (error) {
+      setMessages((current) => {
+        const nextMessages: ChatMessage[] = [
+          ...current,
+          { role: "bot", meta: "后端 Agent", text: formatChatError(error) },
+        ];
+        return nextMessages.slice(-10);
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -122,15 +151,18 @@ export default function TaskAgentPanel({ payload }: TaskAgentPanelProps) {
           className="vue-agent-dialogue__composer"
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
-            sendMessage();
+            void sendMessage();
           }}
         >
           <input
             value={draft}
-            placeholder="问我：场景、断言、风险、RAG依据..."
+            placeholder={sending ? "正在请求后端 Agent..." : "问我：场景、断言、风险、RAG依据..."}
+            disabled={sending}
             onChange={(event) => setDraft(event.target.value)}
           />
-          <button type="submit">发送</button>
+          <button type="submit" disabled={sending}>
+            {sending ? "等待" : "发送"}
+          </button>
         </form>
       </aside>
     </div>

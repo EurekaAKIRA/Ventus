@@ -15,6 +15,7 @@ import type {
   TaskContext,
   TaskDashboardPayload,
   TaskDetailPayload,
+  TaskAgentChatPayload,
   TaskDraftAgentPayload,
   TaskListItem,
   TestCaseDSL,
@@ -437,6 +438,35 @@ export async function fetchTaskDraftAgent(payload: {
     });
   } catch (error) {
     throw new Error(`获取 Agent 建议失败: ${(error as Error).message}`);
+  }
+}
+
+export async function chatWithTaskAgent(payload: {
+  message: string;
+  task_name?: string;
+  requirement_text?: string;
+  source_path?: string;
+  target_system?: string;
+  environment?: string;
+  project_id?: string;
+}): Promise<TaskAgentChatPayload> {
+  if (USE_MOCK_API) {
+    await delay(240);
+    return {
+      reply: "后端 Agent 已收到消息。可以继续补充接口、参数、业务流程或预期结果。",
+      agent_payload: await fetchTaskDraftAgent(payload),
+    };
+  }
+  try {
+    return await requestApi<TaskAgentChatPayload>("/api/tasks/agent/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        ...payload,
+        project_id: payload.project_id ?? (getStoredCurrentProjectId() || undefined),
+      }),
+    });
+  } catch (error) {
+    throw new Error(`Agent 聊天失败: ${(error as Error).message}`);
   }
 }
 

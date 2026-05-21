@@ -806,3 +806,8 @@ export interface TaskDraftAgentPayload {
     knowledge_rag_supported?: boolean;
   };
 }
+
+export interface TaskAgentChatPayload {
+  reply: string;
+  agent_payload: TaskDraftAgentPayload;
+}

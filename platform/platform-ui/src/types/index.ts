@@ -69,4 +69,5 @@ export type {
   TaskDraftAgentSignal,
   TaskDraftAgentSuggestion,
   TaskDraftAgentPayload,
+  TaskAgentChatPayload,
 } from "../../api-contract";

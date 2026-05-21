@@ -19,6 +19,7 @@ import {
 } from "antd";
 import { RobotOutlined, UploadOutlined } from "@ant-design/icons";
 import {
+  chatWithTaskAgent,
   createTask,
   DEFAULT_REQUIREMENT_RAG_ENABLED,
   fetchTaskDraftAgent,
@@ -683,6 +684,33 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
 
   const handleGenerateAgentSuggestion = async () => {
     await generateAgentSuggestion();
+  };
+
+  const handleTaskAgentChat = async (messageText: string) => {
+    const values = form.getFieldsValue(["task_name", "requirement_text", "target_system", "environment", "project_id"]);
+    const result = await chatWithTaskAgent({
+      message: messageText,
+      task_name: values.task_name,
+      requirement_text: values.requirement_text,
+      source_path: uploadedFileName || undefined,
+      target_system: values.target_system,
+      environment: values.environment,
+      project_id: values.project_id || currentProjectId || undefined,
+    });
+    if (result.agent_payload) {
+      setAgentPayload(result.agent_payload);
+      setAgentSnapshotKey(
+        buildAgentSnapshotKey({
+          task_name: values.task_name,
+          requirement_text: values.requirement_text,
+          target_system: values.target_system,
+          environment: values.environment,
+          project_id: values.project_id || currentProjectId || undefined,
+          source_path: uploadedFileName || undefined,
+        }),
+      );
+    }
+    return { reply: result.reply, payload: result.agent_payload };
   };
 
   const applyAgentPatch = (patch: Record<string, string>) => {
@@ -2244,7 +2272,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
               </div>
             </Card>
           ) : (
-            <TaskAgentPanel payload={agentPayload} />
+            <TaskAgentPanel payload={agentPayload} onSendMessage={handleTaskAgentChat} />
           )}
         </Col>
       </Row>

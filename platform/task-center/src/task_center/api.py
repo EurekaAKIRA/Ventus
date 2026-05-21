@@ -54,6 +54,7 @@ from .api_models import (
     ExecuteTestCaseAssetRequest,
     ExecuteTestSuiteAssetRequest,
     TaskDraftAgentRequest,
+    TaskAgentChatRequest,
     ErrorResponse,
     ExecuteTaskRequest,
     HealthInfo,
@@ -1930,6 +1931,53 @@ def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_i
             "knowledge_rag_supported": True,
         },
     }
+
+
+def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) -> str:
+    normalized = str(message or "").strip().lower()
+    reply = str(agent_payload.get("reply") or "").strip()
+    next_actions = [str(item).strip() for item in agent_payload.get("next_actions") or [] if str(item).strip()]
+    risks = [str(item).strip() for item in agent_payload.get("risks") or [] if str(item).strip()]
+    warnings = [str(item).strip() for item in agent_payload.get("warnings") or [] if str(item).strip()]
+    coverage_gaps = [str(item).strip() for item in agent_payload.get("coverage_gaps") or [] if str(item).strip()]
+    quality_gates = [item for item in agent_payload.get("quality_gates") or [] if isinstance(item, dict)]
+    scenario_outlook = agent_payload.get("scenario_outlook") if isinstance(agent_payload.get("scenario_outlook"), dict) else {}
+    knowledge_hits = agent_payload.get("knowledge_hits") if isinstance(agent_payload.get("knowledge_hits"), list) else []
+    knowledge_summary = str(agent_payload.get("knowledge_summary") or "").strip()
+
+    if any(token in normalized for token in ("你好", "您好", "hello", "hi", "在吗")):
+        return "你好，我在。你可以把接口需求、文档片段或要测试的业务流程发给我，我会结合当前草稿帮你拆测试场景、断言和风险点。"
+    if any(token in normalized for token in ("你会", "能做", "功能", "帮助", "怎么用")):
+        return "\n".join(
+            [
+                "我可以帮你做这些事：",
+                "1. 根据当前任务草稿整理正向、异常、边界和权限类测试场景。",
+                "2. 检查状态码、字段、业务状态、上下文变量和跨步骤一致性断言。",
+                "3. 提醒文档缺失的路径、方法、鉴权、参数和接口依赖。",
+                "4. 结合 RAG 命中结果判断知识依据是否足够。",
+            ]
+        )
+    if any(token in normalized for token in ("断言", "校验", "检查点")):
+        pending_gates = [str(item.get("label") or "").strip() for item in quality_gates if item.get("status") != "pass" and str(item.get("label") or "").strip()]
+        if pending_gates:
+            return "建议优先补这些断言：" + "、".join(pending_gates[:4]) + "。同时保留状态码、关键字段、上下文变量和错误分支校验。"
+        return "当前没有明显阻断门禁。建议继续补充状态码、业务状态、资源 ID 传递、权限边界、重复提交和失败重试断言。"
+    if any(token in normalized for token in ("场景", "用例", "测试点")):
+        estimated_count = int(scenario_outlook.get("estimated_scenario_count") or 0)
+        base = f"当前预计可设计 {estimated_count} 个测试场景。" if estimated_count else "建议先按业务流程设计测试场景。"
+        gaps = coverage_gaps[:3]
+        suffix = "还要注意：" + "；".join(gaps) if gaps else "优先覆盖主链路、异常参数、鉴权失败、资源不存在和状态流转异常。"
+        return f"{base}{suffix}"
+    if any(token in normalized for token in ("风险", "问题", "缺陷", "隐患")):
+        points = (risks + warnings + coverage_gaps)[:4]
+        return "目前最需要关注：" + "；".join(points) if points else "当前没有明显高风险提示。建议继续检查鉴权、跨接口变量、异步回调和幂等重试。"
+    if any(token in normalized for token in ("rag", "知识", "依据", "检索")):
+        if knowledge_hits:
+            return f"RAG 当前命中 {len(knowledge_hits)} 条知识依据。{knowledge_summary or '建议核对知识来源是否覆盖接口约束、错误码和业务规则。'}"
+        return "当前没有知识命中。建议补充接口规范、错误码说明、业务规则文档后重新分析。"
+    if next_actions:
+        return f"{reply} 下一步建议：" + "；".join(next_actions[:3])
+    return reply or "我已经收到。你可以继续补充接口、参数、业务流程或预期结果，我会帮你拆成测试场景、断言点和风险点。"
 
 
 def _parse_iso_timestamp(raw: str | None) -> datetime | None:
@@ -4191,6 +4239,28 @@ def suggest_task_draft(
         _ensure_project_access(project_id, current_user)
     result = _build_task_draft_agent_payload(payload, project_id=project_id)
     return _success_response(result, code="TASK_DRAFT_AGENT_OK", message="task draft suggestions ready")
+
+
+@app.post("/api/tasks/agent/chat", response_model=ApiResponse)
+def chat_with_task_agent(
+    payload: TaskAgentChatRequest,
+    current_user: dict[str, Any] | None = Depends(_optional_current_user),
+):
+    project_id = str(payload.project_id or "").strip() or None
+    if project_id:
+        if current_user is None:
+            raise HTTPException(status_code=401, detail="project-scoped task agent chat requires authenticated access")
+        _ensure_project_access(project_id, current_user)
+    agent_payload = _build_task_draft_agent_payload(payload, project_id=project_id)
+    reply = _build_task_agent_chat_reply(payload.message, agent_payload)
+    return _success_response(
+        {
+            "reply": reply,
+            "agent_payload": agent_payload,
+        },
+        code="TASK_AGENT_CHAT_OK",
+        message="task agent chat reply ready",
+    )
 
 
 @app.get("/api/tasks", response_model=ApiResponse)

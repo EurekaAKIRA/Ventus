@@ -38,6 +38,10 @@ class TaskDraftAgentRequest(BaseModel):
     project_id: str | None = None
 
 
+class TaskAgentChatRequest(TaskDraftAgentRequest):
+    message: str = ""
+
+
 class ExecuteTaskRequest(BaseModel):
     execution_mode: str = "api"
     environment: str | None = None
