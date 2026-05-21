@@ -362,11 +362,14 @@ body {
   position: sticky;
   top: 88px;
   width: 100%;
-  min-width: 440px;
+  min-width: 0;
 }
 
 .vue-agent-dialogue {
+  box-sizing: border-box;
   display: grid;
+  width: 100%;
+  min-width: 0;
   gap: 12px;
   min-height: 680px;
   max-height: calc(100vh - 112px);
@@ -509,11 +512,12 @@ body {
 
 .vue-agent-dialogue__actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .vue-agent-dialogue__actions button {
+  min-width: 0;
   min-height: 34px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 8px;
@@ -572,9 +576,8 @@ body {
 .vue-agent-dialogue__tips,
 .vue-agent-dialogue__quick {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
 }
 
 .vue-agent-dialogue__tip,
@@ -584,7 +587,7 @@ body {
   background: rgba(255, 255, 255, 0.04);
   color: #dbeafe;
   cursor: pointer;
-  white-space: nowrap;
+  min-width: 0;
 }
 
 .vue-agent-dialogue__tip {
@@ -620,6 +623,7 @@ body {
 .vue-agent-dialogue__quick button {
   padding: 7px 10px;
   font-size: 12px;
+  white-space: normal;
 }
 
 .vue-agent-dialogue__composer {
@@ -1911,7 +1915,7 @@ a:hover {
 .create-task-layout.is-agent-studio .create-task-agent-column {
   display: flex;
   align-self: stretch;
-  min-width: 440px;
+  min-width: 0;
 }
 
 .create-task-layout.is-agent-studio .create-task-agent-card {
