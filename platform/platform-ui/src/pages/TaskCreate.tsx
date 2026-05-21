@@ -20,7 +20,7 @@ import {
 import { RobotOutlined, UploadOutlined } from "@ant-design/icons";
 import { createTask, DEFAULT_REQUIREMENT_RAG_ENABLED, fetchTaskDraftAgent, generateTaskScenarios } from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
-import VueAgentDialogueMount from "../components/VueAgentDialogueMount";
+import TaskAgentPanel from "../components/TaskAgentPanel";
 import type { TaskDraftAgentPayload } from "../types";
 
 const { Text } = Typography;
@@ -2292,7 +2292,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
               </div>
             </Card>
           ) : (
-            <VueAgentDialogueMount
+            <TaskAgentPanel
               payload={agentPayload}
               loading={agentLoading}
               stale={agentSuggestionStale}
