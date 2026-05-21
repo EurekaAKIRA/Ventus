@@ -21,9 +21,7 @@ import { RobotOutlined, UploadOutlined } from "@ant-design/icons";
 import {
   createTask,
   DEFAULT_REQUIREMENT_RAG_ENABLED,
-  fetchTaskAnalysisProgress,
   fetchTaskDraftAgent,
-  generateTaskScenarios,
 } from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
 import TaskAgentPanel from "../components/TaskAgentPanel";
@@ -368,32 +366,6 @@ function buildAgentSnapshotKey(values: {
   });
 }
 
-function extractFormValidationMessage(error: unknown) {
-  const validationError = error as { errorFields?: Array<{ errors?: string[] }> };
-  return validationError.errorFields?.[0]?.errors?.[0] || "请先补全任务名称、需求描述等必填项后再生成测试。";
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
-}
-
-async function waitForTaskAnalysisReady(taskId: string) {
-  const maxAttempts = 30;
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const progress = await fetchTaskAnalysisProgress(taskId);
-    if (progress.status === "completed" || progress.percent >= 100) {
-      return progress;
-    }
-    if (progress.status === "failed") {
-      throw new Error(progress.message || "任务解析失败，暂时无法生成测试场景。");
-    }
-    await wait(attempt < 4 ? 500 : 1000);
-  }
-  throw new Error("任务解析仍在进行中，请稍后再让 Agent 生成测试。");
-}
-
 type TaskCreateProps = {
   mode?: "create" | "agent";
 };
@@ -408,7 +380,6 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
   const [agentLoading, setAgentLoading] = useState(false);
   const [agentPayload, setAgentPayload] = useState<TaskDraftAgentPayload | null>(null);
   const [agentSnapshotKey, setAgentSnapshotKey] = useState("");
-  const [agentGeneratedTask, setAgentGeneratedTask] = useState<{ taskId: string; snapshotKey: string } | null>(null);
   const [agentAutoAppliedLabels, setAgentAutoAppliedLabels] = useState<string[]>([]);
   const [agentFocusedField, setAgentFocusedField] = useState("");
   const [agentFollowUpAnswers, setAgentFollowUpAnswers] = useState<Record<string, string>>({});
@@ -712,75 +683,6 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
 
   const handleGenerateAgentSuggestion = async () => {
     await generateAgentSuggestion();
-  };
-
-  const handleGenerateTestsFromAgent = async (prompt: string) => {
-    let values: {
-      task_name?: string;
-      requirement_text?: string;
-      target_system?: string;
-      environment?: string;
-      project_id?: string;
-      rag_enabled?: boolean;
-    };
-    try {
-      values = await form.validateFields();
-    } catch (error) {
-      throw new Error(extractFormValidationMessage(error));
-    }
-    const targetSystem = String(values.target_system ?? "").trim();
-    if (targetSystem) {
-      try {
-        const parsed = new URL(targetSystem);
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-          throw new Error("target_system must start with http:// or https://");
-        }
-      } catch {
-        throw new Error("目标系统地址不合法，请填写 http:// 或 https:// 开头的 URL。");
-      }
-    }
-
-    const snapshotKey = buildAgentSnapshotKey({
-      task_name: values.task_name,
-      requirement_text: values.requirement_text,
-      target_system: values.target_system,
-      environment: values.environment,
-      project_id: values.project_id || currentProjectId || undefined,
-      source_path: uploadedFileName || undefined,
-    });
-    setAgentLoading(true);
-    try {
-      let taskId = agentGeneratedTask?.snapshotKey === snapshotKey ? agentGeneratedTask.taskId : "";
-      if (!taskId) {
-        const normalizedTaskName = String(values.task_name ?? "").trim();
-        const sourcePath = uploadedFileName || undefined;
-        const created = await createTask({
-          task_name: normalizedTaskName,
-          source_type: sourcePath ? "file" : "text",
-          requirement_text: values.requirement_text,
-          source_path: sourcePath,
-          target_system: targetSystem || undefined,
-          environment: values.environment || undefined,
-          rag_enabled: Boolean(values.rag_enabled),
-          project_id: values.project_id || currentProjectId || undefined,
-        });
-        taskId = created.task_id;
-        setAgentGeneratedTask({ taskId, snapshotKey });
-        message.loading({ content: "任务已创建，正在等待解析完成...", key: "agent-generate-tests" });
-        await waitForTaskAnalysisReady(taskId);
-      }
-      const generated = await generateTaskScenarios(taskId);
-      const count = Number(generated.scenario_count ?? generated.scenarios?.length ?? 0);
-      message.success({ content: `已生成 ${count} 个测试场景`, key: "agent-generate-tests" });
-      const intent = prompt ? `你刚才的指令是“${prompt}”。` : "";
-      return `${intent}已调用生成测试 API，任务 ${taskId} 已生成 ${count} 个测试场景。可进入任务详情查看场景、DSL 和后续执行结果。`;
-    } catch (error) {
-      const errorMessage = error instanceof Error && error.message ? error.message : "生成测试失败，请检查后端服务和当前表单内容。";
-      message.error({ content: errorMessage, key: "agent-generate-tests" });
-      throw error;
-    } finally {
-      setAgentLoading(false);
-    }
   };
 
   const applyAgentPatch = (patch: Record<string, string>) => {
@@ -2346,11 +2248,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
               payload={agentPayload}
               loading={agentLoading}
               stale={agentSuggestionStale}
-              activeView={agentStudioView}
               onAnalyze={() => void handleGenerateAgentSuggestion()}
-              onApply={handleApplyAgentSuggestion}
-              onGenerateTests={handleGenerateTestsFromAgent}
-              canApply={Boolean(agentPayload && Object.keys(agentPayload.form_patch ?? {}).length && !agentSuggestionStale)}
             />
           )}
         </Col>
