@@ -1214,14 +1214,6 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
               <Alert type="warning" showIcon message="表单内容已变化，Agent 将自动刷新分析，请稍候。" />
             ) : null}
             <Alert type="info" showIcon message={agentPayload.reply} />
-            {isAgentStudio ? (
-              <VueAgentDialogueMount
-                payload={agentPayload}
-                loading={agentLoading}
-                stale={agentSuggestionStale}
-                activeView={agentStudioView}
-              />
-            ) : null}
             {agentPayload.diagnostic_verdict ? (
               <div className={`create-task-agent-verdict is-${agentPayload.diagnostic_verdict.severity || "default"}`}>
                 <div className="create-task-agent-verdict__head">
@@ -2251,6 +2243,14 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
         </Col>
       </Row>
       {isAgentStudio ? <div className="agent-studio-agent-panel">{agentPanel}</div> : null}
+      {isAgentStudio ? (
+        <VueAgentDialogueMount
+          payload={agentPayload}
+          loading={agentLoading}
+          stale={agentSuggestionStale}
+          activeView={agentStudioView}
+        />
+      ) : null}
     </Space>
   );
 }

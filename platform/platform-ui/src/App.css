@@ -359,16 +359,26 @@ body {
 }
 
 .vue-agent-dialogue-mount {
-  width: 100%;
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
 }
 
 .vue-agent-dialogue {
   display: grid;
-  gap: 14px;
-  padding: 16px;
-  border: 1px solid var(--theme-border);
-  border-radius: 18px;
-  background: rgba(9, 16, 24, 0.58);
+  gap: 12px;
+  max-height: min(760px, calc(100vh - 48px));
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: rgba(9, 16, 24, 0.92);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  pointer-events: auto;
+  backdrop-filter: blur(18px);
 }
 
 .vue-agent-dialogue.is-success {
@@ -386,7 +396,8 @@ body {
 .vue-agent-dialogue__head,
 .vue-agent-dialogue__metrics div,
 .vue-agent-dialogue__gates,
-.vue-agent-dialogue__message {
+.vue-agent-dialogue__message,
+.vue-agent-bot-fab {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -403,8 +414,14 @@ body {
 .vue-agent-dialogue h3 {
   margin: 0;
   color: #f5fbff;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
+}
+
+.vue-agent-dialogue__head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .vue-agent-dialogue__state {
@@ -428,24 +445,35 @@ body {
   color: #ffd58a;
 }
 
+.vue-agent-dialogue__minimize {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f8fafc;
+  cursor: pointer;
+}
+
 .vue-agent-dialogue__reply,
-.vue-agent-dialogue__empty,
 .vue-agent-dialogue__message p {
   margin: 0;
   color: var(--theme-text-secondary);
   line-height: 1.6;
 }
 
-.vue-agent-dialogue__meter {
+.vue-agent-dialogue__snapshot {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 14px;
   align-items: center;
 }
 
 .vue-agent-dialogue__meter-ring {
-  width: 88px;
-  height: 88px;
+  width: 74px;
+  height: 74px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -456,12 +484,12 @@ body {
 
 .vue-agent-dialogue__meter-ring strong {
   color: #eef2ff;
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1;
 }
 
 .vue-agent-dialogue__meter-ring span {
-  margin-top: -20px;
+  margin-top: -16px;
   color: var(--theme-text-secondary);
   font-size: 11px;
 }
@@ -485,7 +513,7 @@ body {
 .vue-agent-dialogue__gates {
   padding: 10px 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.02);
 }
 
@@ -497,12 +525,23 @@ body {
 .vue-agent-dialogue__thread {
   display: grid;
   gap: 8px;
+  max-height: 220px;
+  overflow: auto;
 }
 
 .vue-agent-dialogue__message {
   padding: 10px 12px;
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.025);
+}
+
+.vue-agent-dialogue__message.is-user {
+  margin-left: 36px;
+  background: rgba(88, 101, 242, 0.14);
+}
+
+.vue-agent-dialogue__message.is-bot {
+  margin-right: 24px;
 }
 
 .vue-agent-dialogue__message span {
@@ -518,10 +557,134 @@ body {
   background: rgba(245, 185, 76, 0.08);
 }
 
-.vue-agent-dialogue__empty {
+.vue-agent-dialogue__tips,
+.vue-agent-dialogue__quick {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.vue-agent-dialogue__tip,
+.vue-agent-dialogue__quick button {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #dbeafe;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vue-agent-dialogue__tip {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  max-width: 260px;
+  padding: 8px 10px;
+  text-align: left;
+  white-space: normal;
+}
+
+.vue-agent-dialogue__tip span {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.vue-agent-dialogue__tip strong {
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.vue-agent-dialogue__tip.is-high {
+  border-color: rgba(255, 107, 107, 0.28);
+}
+
+.vue-agent-dialogue__tip.is-medium {
+  border-color: rgba(245, 185, 76, 0.3);
+}
+
+.vue-agent-dialogue__quick button {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.vue-agent-dialogue__composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px;
+  gap: 8px;
+}
+
+.vue-agent-dialogue__composer input {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  outline: none;
+}
+
+.vue-agent-dialogue__composer input::placeholder {
+  color: rgba(203, 213, 225, 0.58);
+}
+
+.vue-agent-dialogue__composer button {
+  border: 0;
+  border-radius: 8px;
+  background: #5865f2;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.vue-agent-bot-fab {
+  align-items: center;
+  width: auto;
+  min-width: 168px;
   padding: 10px 12px;
-  border: 1px dashed var(--theme-border);
-  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: rgba(9, 16, 24, 0.92);
+  color: #f8fafc;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.vue-agent-bot-fab__icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 8px;
+  background: #5865f2;
+  color: #fff;
+  font-weight: 800;
+}
+
+.vue-agent-bot-fab strong,
+.vue-agent-bot-fab small {
+  display: block;
+  text-align: left;
+}
+
+.vue-agent-bot-fab small {
+  margin-top: 2px;
+  color: var(--theme-text-secondary);
+}
+
+@media (max-width: 720px) {
+  .vue-agent-dialogue-mount {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+  }
+
+  .vue-agent-dialogue {
+    max-height: calc(100vh - 24px);
+  }
 }
 
 .step-item {
