@@ -362,6 +362,7 @@ body {
   position: sticky;
   top: 88px;
   width: 100%;
+  min-width: 440px;
 }
 
 .vue-agent-dialogue {
@@ -653,6 +654,7 @@ body {
 @media (max-width: 720px) {
   .vue-agent-dialogue-mount {
     position: static;
+    min-width: 0;
   }
 
   .vue-agent-dialogue {
@@ -1909,6 +1911,7 @@ a:hover {
 .create-task-layout.is-agent-studio .create-task-agent-column {
   display: flex;
   align-self: stretch;
+  min-width: 440px;
 }
 
 .create-task-layout.is-agent-studio .create-task-agent-card {
