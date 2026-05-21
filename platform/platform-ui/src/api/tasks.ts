@@ -565,6 +565,32 @@ export async function fetchScenarios(taskId: string): Promise<ScenarioModel[]> {
   }
 }
 
+export async function generateTaskScenarios(taskId: string): Promise<{
+  task_id: string;
+  scenario_count: number;
+  scenarios: ScenarioModel[];
+}> {
+  if (USE_MOCK_API) {
+    await delay(600);
+    return {
+      task_id: taskId,
+      scenario_count: mockScenarios.length,
+      scenarios: [...mockScenarios],
+    };
+  }
+  try {
+    return await requestApi<{
+      task_id: string;
+      scenario_count: number;
+      scenarios: ScenarioModel[];
+    }>(`${taskApiPath(taskId)}/scenarios/generate`, {
+      method: "POST",
+    });
+  } catch (error) {
+    throw new Error(`生成测试场景失败: ${(error as Error).message}`);
+  }
+}
+
 export async function fetchDsl(taskId: string): Promise<TestCaseDSL> {
   if (USE_MOCK_API) {
     await delay();
@@ -855,7 +881,8 @@ export async function fetchTaskDashboard(taskId: string): Promise<TaskDashboardP
       summary: mockAnalysisReport.summary,
       chart_data: mockAnalysisReport.chart_data,
       findings: mockAnalysisReport.findings,
-      task_summary_text: "当前为 mock 单任务看板摘要。",
+      task_summary_text:
+        "Restful Booker 最小闭环任务已完成：2 个场景、6 个步骤和 15 条断言全部通过，token 与 booking_id 上下文变量均完成提取和传递。",
       failure_reasons: [],
     };
   }
@@ -907,14 +934,20 @@ export async function fetchExecutionExplanations(
     await delay();
     return {
       task_id: taskId,
-      summary: { failed_scenarios: 1, failed_steps: 2 },
-      top_reasons: ["field_mapping"],
+      summary: { failed_scenarios: 0, failed_steps: 0, passed_scenarios: 2, passed_steps: 6 },
+      top_reasons: [],
+      llm_diagnosis: {
+        summary: "本次执行未发现失败步骤，主链路通过。建议保留该任务作为 Restful Booker 回归测试基线。",
+        root_cause: "无失败根因",
+        confidence: 0.92,
+        next_actions: ["归档本次 DSL 与报告", "后续可补充价格边界值和日期非法值负向用例"],
+      },
       failure_groups: [
         {
-          category: "field_mapping",
-          count: 1,
-          examples: ["json.id not found"],
-          recommended_actions: ["调整 save_context 字段路径映射"],
+          category: "passed_baseline",
+          count: 2,
+          examples: ["booking 生命周期场景通过", "booking 只读查询场景通过"],
+          recommended_actions: ["可作为后续回归对比基线"],
         },
       ],
     };

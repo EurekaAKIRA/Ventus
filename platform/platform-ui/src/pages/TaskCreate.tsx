@@ -18,7 +18,7 @@ import {
   Segmented,
 } from "antd";
 import { RobotOutlined, UploadOutlined } from "@ant-design/icons";
-import { createTask, DEFAULT_REQUIREMENT_RAG_ENABLED, fetchTaskDraftAgent } from "../api/tasks";
+import { createTask, DEFAULT_REQUIREMENT_RAG_ENABLED, fetchTaskDraftAgent, generateTaskScenarios } from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
 import VueAgentDialogueMount from "../components/VueAgentDialogueMount";
 import type { TaskDraftAgentPayload } from "../types";
@@ -376,6 +376,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
   const [agentLoading, setAgentLoading] = useState(false);
   const [agentPayload, setAgentPayload] = useState<TaskDraftAgentPayload | null>(null);
   const [agentSnapshotKey, setAgentSnapshotKey] = useState("");
+  const [agentGeneratedTask, setAgentGeneratedTask] = useState<{ taskId: string; snapshotKey: string } | null>(null);
   const [agentAutoAppliedLabels, setAgentAutoAppliedLabels] = useState<string[]>([]);
   const [agentFocusedField, setAgentFocusedField] = useState("");
   const [agentFollowUpAnswers, setAgentFollowUpAnswers] = useState<Record<string, string>>({});
@@ -679,6 +680,57 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
 
   const handleGenerateAgentSuggestion = async () => {
     await generateAgentSuggestion();
+  };
+
+  const handleGenerateTestsFromAgent = async (prompt: string) => {
+    const values = await form.validateFields();
+    const targetSystem = String(values.target_system ?? "").trim();
+    if (targetSystem) {
+      try {
+        const parsed = new URL(targetSystem);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          throw new Error("target_system must start with http:// or https://");
+        }
+      } catch {
+        throw new Error("目标系统地址不合法，请填写 http:// 或 https:// 开头的 URL。");
+      }
+    }
+
+    const snapshotKey = buildAgentSnapshotKey({
+      task_name: values.task_name,
+      requirement_text: values.requirement_text,
+      target_system: values.target_system,
+      environment: values.environment,
+      project_id: values.project_id || currentProjectId || undefined,
+      source_path: uploadedFileName || undefined,
+    });
+    setAgentLoading(true);
+    try {
+      let taskId = agentGeneratedTask?.snapshotKey === snapshotKey ? agentGeneratedTask.taskId : "";
+      if (!taskId) {
+        const normalizedTaskName = String(values.task_name ?? "").trim();
+        const sourcePath = uploadedFileName || undefined;
+        const created = await createTask({
+          task_name: normalizedTaskName,
+          source_type: sourcePath ? "file" : "text",
+          requirement_text: values.requirement_text,
+          source_path: sourcePath,
+          target_system: targetSystem || undefined,
+          environment: values.environment || undefined,
+          rag_enabled: Boolean(values.rag_enabled),
+          project_id: values.project_id || currentProjectId || undefined,
+        });
+        taskId = created.task_id;
+        setAgentGeneratedTask({ taskId, snapshotKey });
+      }
+      const generated = await generateTaskScenarios(taskId);
+      const count = Number(generated.scenario_count ?? generated.scenarios?.length ?? 0);
+      message.success(`已生成 ${count} 个测试场景`);
+      const intent = prompt ? `你刚才的指令是“${prompt}”。` : "";
+      return `${intent}已调用生成测试 API，任务 ${taskId} 已生成 ${count} 个测试场景。可进入任务详情查看场景、DSL 和后续执行结果。`;
+    } finally {
+      setAgentLoading(false);
+    }
   };
 
   const applyAgentPatch = (patch: Record<string, string>) => {
@@ -2247,6 +2299,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
               activeView={agentStudioView}
               onAnalyze={() => void handleGenerateAgentSuggestion()}
               onApply={handleApplyAgentSuggestion}
+              onGenerateTests={handleGenerateTestsFromAgent}
               canApply={Boolean(agentPayload && Object.keys(agentPayload.form_patch ?? {}).length && !agentSuggestionStale)}
             />
           )}

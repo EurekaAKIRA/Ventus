@@ -9,6 +9,7 @@ export type VueAgentDialogueProps = {
   activeView: string;
   onAnalyze?: () => void;
   onApply?: () => void;
+  onGenerateTests?: (prompt: string) => Promise<string>;
   canApply?: boolean;
 };
 
@@ -93,6 +94,10 @@ const VueAgentDialogue = defineComponent({
       type: Function as PropType<() => void>,
       default: undefined,
     },
+    onGenerateTests: {
+      type: Function as PropType<(prompt: string) => Promise<string>>,
+      default: undefined,
+    },
     canApply: {
       type: Boolean,
       default: false,
@@ -100,6 +105,7 @@ const VueAgentDialogue = defineComponent({
   },
   setup(props) {
     const draft = ref("");
+    const chatLoading = ref(false);
     const messages = ref<ChatMessage[]>([
       {
         role: "bot",
@@ -140,16 +146,28 @@ const VueAgentDialogue = defineComponent({
       props.payload?.knowledge_hits?.length ? "RAG依据够不够" : "如何补充知识依据",
     ]);
 
-    const sendMessage = (text?: string) => {
+    const sendMessage = async (text?: string) => {
       const nextText = String(text ?? draft.value).trim();
-      if (!nextText) return;
+      if (!nextText || chatLoading.value) return;
+      draft.value = "";
+      const userMessages: ChatMessage[] = [...messages.value, { role: "user", text: nextText }];
+      messages.value = userMessages.slice(-8);
+      chatLoading.value = true;
+      let reply = "";
+      try {
+        reply = props.onGenerateTests
+          ? await props.onGenerateTests(nextText)
+          : buildSuggestionReply(props.payload, nextText);
+      } catch (error) {
+        reply = `生成测试失败：${(error as Error).message || "请检查后端服务和当前表单内容。"}`;
+      } finally {
+        chatLoading.value = false;
+      }
       const nextMessages: ChatMessage[] = [
         ...messages.value,
-        { role: "user", text: nextText },
-        { role: "bot", meta: "建议", text: buildSuggestionReply(props.payload, nextText) },
+        { role: "bot", meta: props.onGenerateTests ? "生成测试 API" : "建议", text: reply },
       ];
       messages.value = nextMessages.slice(-8);
-      draft.value = "";
     };
 
     return () => {
@@ -169,7 +187,7 @@ const VueAgentDialogue = defineComponent({
           ]),
         ]),
         h("div", { class: "vue-agent-dialogue__actions" }, [
-          h("button", { type: "button", onClick: () => props.onAnalyze?.(), disabled: props.loading }, props.payload ? "重新分析" : "生成建议"),
+          h("button", { type: "button", onClick: () => props.onAnalyze?.(), disabled: props.loading || chatLoading.value }, props.payload ? "重新分析" : "生成建议"),
           h("button", { type: "button", class: "is-primary", onClick: () => props.onApply?.(), disabled: !props.canApply || props.stale }, "一键回填"),
         ]),
         h("div", { class: "vue-agent-dialogue__snapshot" }, [
@@ -205,7 +223,7 @@ const VueAgentDialogue = defineComponent({
               "div",
               { class: "vue-agent-dialogue__tips" },
               openItems.value.map((item) =>
-                h("button", { key: `${item.type}-${item.text}`, class: [`vue-agent-dialogue__tip`, `is-${item.level}`], onClick: () => sendMessage(item.text) }, [
+                h("button", { key: `${item.type}-${item.text}`, class: [`vue-agent-dialogue__tip`, `is-${item.level}`], disabled: chatLoading.value, onClick: () => void sendMessage(item.text) }, [
                   h("span", item.type),
                   h("strong", item.text),
                 ]),
@@ -216,18 +234,19 @@ const VueAgentDialogue = defineComponent({
           "div",
           { class: "vue-agent-dialogue__quick" },
           quickPrompts.value.map((item) =>
-            h("button", { key: item, onClick: () => sendMessage(item) }, item),
+            h("button", { key: item, disabled: chatLoading.value, onClick: () => void sendMessage(item) }, item),
           ),
         ),
-        h("form", { class: "vue-agent-dialogue__composer", onSubmit: (event: Event) => { event.preventDefault(); sendMessage(); } }, [
+        h("form", { class: "vue-agent-dialogue__composer", onSubmit: (event: Event) => { event.preventDefault(); void sendMessage(); } }, [
           h("input", {
             value: draft.value,
-            placeholder: "问我：场景、断言、风险、RAG依据...",
+            placeholder: chatLoading.value ? "正在调用生成测试 API..." : "问我：生成场景、断言、风险、RAG依据...",
+            disabled: chatLoading.value,
             onInput: (event: Event) => {
               draft.value = (event.target as HTMLInputElement).value;
             },
           }),
-          h("button", { type: "submit" }, "发送"),
+          h("button", { type: "submit", disabled: chatLoading.value }, chatLoading.value ? "生成中" : "发送"),
         ]),
       ]);
     };
