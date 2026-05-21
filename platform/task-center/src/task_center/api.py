@@ -87,6 +87,7 @@ from .registry import DEFAULT_ARTIFACT_TYPES, TaskRegistry
 from .runtime_store import build_runtime_state_store
 from .secure_config import mask_environment_config, merge_masked_environment_config
 from .session_store import build_session_state_store
+from .task_agent_chat import build_llm_task_agent_chat_reply
 from requirement_analysis import AnalysisParseOptions, parse_requirement_bundle
 from requirement_analysis.knowledge_index import build_index as build_requirement_knowledge_index
 from requirement_analysis.knowledge_library import load_curated_knowledge_chunks
@@ -1934,6 +1935,9 @@ def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_i
 
 
 def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) -> str:
+    llm_reply = build_llm_task_agent_chat_reply(message, agent_payload)
+    if llm_reply:
+        return llm_reply
     normalized = str(message or "").strip().lower()
     reply = str(agent_payload.get("reply") or "").strip()
     next_actions = [str(item).strip() for item in agent_payload.get("next_actions") or [] if str(item).strip()]
