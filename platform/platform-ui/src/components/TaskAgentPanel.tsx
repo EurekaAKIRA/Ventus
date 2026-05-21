@@ -1,11 +1,8 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import type { TaskDraftAgentPayload } from "../types";
 
 export type TaskAgentPanelProps = {
   payload: TaskDraftAgentPayload | null;
-  loading: boolean;
-  stale: boolean;
-  onAnalyze?: () => void;
 };
 
 type ChatMessage = {
@@ -17,7 +14,7 @@ type ChatMessage = {
 function buildSuggestionReply(payload: TaskDraftAgentPayload | null, question: string) {
   const lowerQuestion = question.toLowerCase();
   if (!payload) {
-    return "先粘贴需求或导入接口文档，然后点一下刷新分析。我会根据识别结果给你整理测试场景、断言和风险。";
+    return "你可以先在左侧填写需求或导入接口文档。我会按你写的内容，帮你整理测试场景、断言和风险。";
   }
   if (lowerQuestion.includes("断言") || question.includes("校验")) {
     const gates = payload.quality_gates?.filter((item) => item.status !== "pass").map((item) => item.label) ?? [];
@@ -48,27 +45,15 @@ function buildSuggestionReply(payload: TaskDraftAgentPayload | null, question: s
     : "建议先确认接口路径、方法、鉴权、请求参数和上下游变量，再生成 DSL 并执行冒烟测试。";
 }
 
-export default function TaskAgentPanel({ payload, loading, stale, onAnalyze }: TaskAgentPanelProps) {
+export default function TaskAgentPanel({ payload }: TaskAgentPanelProps) {
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "bot",
-      meta: "测试建议 Agent",
-      text: "我只负责聊天建议：你可以问测试场景、断言、风险、RAG 依据。不会直接创建任务或调用生成测试接口。",
+      meta: "Agent",
+      text: "你好，我是测试建议聊天助手。你可以直接问我测试场景、断言、风险或 RAG 依据。",
     },
   ]);
-
-  const quickPrompts = useMemo(
-    () => [
-      "给我测试场景建议",
-      "需要补哪些断言",
-      "当前最大风险是什么",
-      payload?.knowledge_hits?.length ? "RAG依据够不够" : "如何补充知识依据",
-    ],
-    [payload?.knowledge_hits?.length],
-  );
-
-  const statusText = loading ? "分析中" : stale ? "待刷新" : payload ? "已同步" : "待输入";
 
   const sendMessage = (text?: string) => {
     const nextText = String(text ?? draft).trim();
@@ -89,20 +74,9 @@ export default function TaskAgentPanel({ payload, loading, stale, onAnalyze }: T
       <aside className="vue-agent-dialogue is-default">
         <div className="vue-agent-dialogue__head">
           <div>
-            <span className="vue-agent-dialogue__eyebrow">Agent Chat</span>
-            <h3>测试建议聊天</h3>
+            <span className="vue-agent-dialogue__eyebrow">Agent</span>
+            <h3>聊天助手</h3>
           </div>
-          <div className="vue-agent-dialogue__head-actions">
-            <span className={`vue-agent-dialogue__state ${loading ? "is-loading" : stale ? "is-stale" : "is-ready"}`}>
-              {statusText}
-            </span>
-          </div>
-        </div>
-
-        <div className="vue-agent-dialogue__actions">
-          <button type="button" onClick={onAnalyze} disabled={loading}>
-            {payload ? "刷新分析" : "分析当前内容"}
-          </button>
         </div>
 
         <div className="vue-agent-dialogue__thread">
@@ -111,14 +85,6 @@ export default function TaskAgentPanel({ payload, loading, stale, onAnalyze }: T
               <span>{item.meta || (item.role === "bot" ? "Agent" : "你")}</span>
               <p>{item.text}</p>
             </div>
-          ))}
-        </div>
-
-        <div className="vue-agent-dialogue__quick">
-          {quickPrompts.map((item) => (
-            <button key={item} onClick={() => sendMessage(item)} type="button">
-              {item}
-            </button>
           ))}
         </div>
 

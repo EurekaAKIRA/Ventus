@@ -2244,12 +2244,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
               </div>
             </Card>
           ) : (
-            <TaskAgentPanel
-              payload={agentPayload}
-              loading={agentLoading}
-              stale={agentSuggestionStale}
-              onAnalyze={() => void handleGenerateAgentSuggestion()}
-            />
+            <TaskAgentPanel payload={agentPayload} />
           )}
         </Col>
       </Row>
