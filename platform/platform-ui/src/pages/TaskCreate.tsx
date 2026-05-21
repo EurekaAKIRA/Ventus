@@ -20,6 +20,7 @@ import {
 import { RobotOutlined, UploadOutlined } from "@ant-design/icons";
 import { createTask, DEFAULT_REQUIREMENT_RAG_ENABLED, fetchTaskDraftAgent } from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
+import VueAgentDialogueMount from "../components/VueAgentDialogueMount";
 import type { TaskDraftAgentPayload } from "../types";
 
 const { Text } = Typography;
@@ -1213,6 +1214,14 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
               <Alert type="warning" showIcon message="表单内容已变化，Agent 将自动刷新分析，请稍候。" />
             ) : null}
             <Alert type="info" showIcon message={agentPayload.reply} />
+            {isAgentStudio ? (
+              <VueAgentDialogueMount
+                payload={agentPayload}
+                loading={agentLoading}
+                stale={agentSuggestionStale}
+                activeView={agentStudioView}
+              />
+            ) : null}
             {agentPayload.diagnostic_verdict ? (
               <div className={`create-task-agent-verdict is-${agentPayload.diagnostic_verdict.severity || "default"}`}>
                 <div className="create-task-agent-verdict__head">

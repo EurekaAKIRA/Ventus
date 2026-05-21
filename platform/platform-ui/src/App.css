@@ -219,6 +219,311 @@ body {
   font-weight: 600;
 }
 
+.vue-quality-pulse-mount {
+  width: 100%;
+}
+
+.vue-quality-pulse {
+  display: grid;
+  gap: 16px;
+  color: #e5edf5;
+}
+
+.vue-quality-pulse__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vue-quality-pulse__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: #8da2b8;
+  font-size: 12px;
+}
+
+.vue-quality-pulse h3 {
+  margin: 0;
+  color: #e5edf5;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.vue-quality-pulse__badge {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.vue-quality-pulse__badge.success {
+  background: rgba(63, 185, 80, 0.14);
+  color: #8ee59d;
+}
+
+.vue-quality-pulse__badge.warning {
+  background: rgba(245, 185, 76, 0.14);
+  color: #ffd58a;
+}
+
+.vue-quality-pulse__badge.danger {
+  background: rgba(255, 107, 107, 0.14);
+  color: #ff9c9c;
+}
+
+.vue-quality-pulse__score {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.vue-quality-pulse__ring {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, #111925 0 57%, transparent 58%),
+    conic-gradient(#5865f2 var(--vue-quality-score), rgba(148, 163, 184, 0.16) 0);
+}
+
+.vue-quality-pulse__ring strong {
+  display: block;
+  color: #eef2ff;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.vue-quality-pulse__ring span {
+  margin-top: -22px;
+  color: #8da2b8;
+  font-size: 11px;
+}
+
+.vue-quality-pulse__summary {
+  display: grid;
+  gap: 8px;
+}
+
+.vue-quality-pulse__summary div,
+.vue-quality-pulse__bar-meta,
+.vue-quality-pulse__hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vue-quality-pulse__summary span,
+.vue-quality-pulse__bar-meta span,
+.vue-quality-pulse__hint {
+  color: #8da2b8;
+}
+
+.vue-quality-pulse__summary strong,
+.vue-quality-pulse__bar-meta strong,
+.vue-quality-pulse__hint strong {
+  color: #e5edf5;
+}
+
+.vue-quality-pulse__bars {
+  display: grid;
+  gap: 10px;
+}
+
+.vue-quality-pulse__bar-row {
+  display: grid;
+  gap: 6px;
+}
+
+.vue-quality-pulse__track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.vue-quality-pulse__track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.vue-quality-pulse__hint {
+  margin: 0;
+  padding-top: 2px;
+  font-size: 13px;
+}
+
+.vue-agent-dialogue-mount {
+  width: 100%;
+}
+
+.vue-agent-dialogue {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--theme-border);
+  border-radius: 18px;
+  background: rgba(9, 16, 24, 0.58);
+}
+
+.vue-agent-dialogue.is-success {
+  border-color: rgba(82, 196, 26, 0.28);
+}
+
+.vue-agent-dialogue.is-warning {
+  border-color: rgba(245, 185, 76, 0.28);
+}
+
+.vue-agent-dialogue.is-danger {
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.vue-agent-dialogue__head,
+.vue-agent-dialogue__metrics div,
+.vue-agent-dialogue__gates,
+.vue-agent-dialogue__message {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vue-agent-dialogue__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.vue-agent-dialogue h3 {
+  margin: 0;
+  color: #f5fbff;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.vue-agent-dialogue__state {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.vue-agent-dialogue__state.is-ready {
+  background: rgba(82, 196, 26, 0.12);
+  color: #8ee59d;
+}
+
+.vue-agent-dialogue__state.is-stale,
+.vue-agent-dialogue__state.is-loading {
+  background: rgba(245, 185, 76, 0.12);
+  color: #ffd58a;
+}
+
+.vue-agent-dialogue__reply,
+.vue-agent-dialogue__empty,
+.vue-agent-dialogue__message p {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.6;
+}
+
+.vue-agent-dialogue__meter {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.vue-agent-dialogue__meter-ring {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, #111925 0 57%, transparent 58%),
+    conic-gradient(#5865f2 var(--agent-ready), rgba(148, 163, 184, 0.16) 0);
+}
+
+.vue-agent-dialogue__meter-ring strong {
+  color: #eef2ff;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.vue-agent-dialogue__meter-ring span {
+  margin-top: -20px;
+  color: var(--theme-text-secondary);
+  font-size: 11px;
+}
+
+.vue-agent-dialogue__metrics {
+  display: grid;
+  gap: 8px;
+}
+
+.vue-agent-dialogue__metrics span,
+.vue-agent-dialogue__gates,
+.vue-agent-dialogue__message span {
+  color: var(--theme-text-secondary);
+}
+
+.vue-agent-dialogue__metrics strong,
+.vue-agent-dialogue__gates strong {
+  color: #f5fbff;
+}
+
+.vue-agent-dialogue__gates {
+  padding: 10px 12px;
+  border: 1px solid var(--theme-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.vue-agent-dialogue__gates span {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.vue-agent-dialogue__thread {
+  display: grid;
+  gap: 8px;
+}
+
+.vue-agent-dialogue__message {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.vue-agent-dialogue__message span {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.vue-agent-dialogue__message.is-high {
+  background: rgba(255, 107, 107, 0.08);
+}
+
+.vue-agent-dialogue__message.is-medium {
+  background: rgba(245, 185, 76, 0.08);
+}
+
+.vue-agent-dialogue__empty {
+  padding: 10px 12px;
+  border: 1px dashed var(--theme-border);
+  border-radius: 14px;
+}
+
 .step-item {
   display: flex;
   gap: 8px;
@@ -1072,6 +1377,13 @@ a:hover {
 
 .panel-card .ant-card-body {
   padding: 22px !important;
+}
+
+.subtle-card {
+  background:
+    linear-gradient(135deg, rgba(88, 101, 242, 0.1), rgba(47, 129, 247, 0.06)),
+    rgba(10, 17, 27, 0.72) !important;
+  border-color: rgba(88, 101, 242, 0.22) !important;
 }
 
 .panel-card--form .ant-form-item-label > label {
