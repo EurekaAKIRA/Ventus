@@ -1909,7 +1909,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
         align="top"
         className={`create-task-layout${isAgentStudio ? " is-agent-studio" : ""}`}
       >
-        <Col xs={24} xl={isAgentStudio ? 14 : 19}>
+        <Col xs={24} xl={isAgentStudio ? 12 : 19}>
           <Card bordered={false} className="panel-card panel-card--form create-task-card">
             {isAgentStudio ? (
               <div className="agent-studio-panel-head">
@@ -2176,7 +2176,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
           </Card>
         </Col>
 
-        <Col xs={24} xl={isAgentStudio ? 10 : 5} className="create-task-agent-column">
+        <Col xs={24} xl={isAgentStudio ? 12 : 5} className="create-task-agent-column">
           {isAgentStudio ? (
             <Card bordered={false} className="agent-studio-draft-card agent-studio-handoff-card">
               <div className="agent-studio-draft-card__head">
