@@ -66,6 +66,24 @@ function buildSuggestionReply(payload: TaskDraftAgentPayload | null, question: s
     : "建议先确认接口路径、方法、鉴权、请求参数和上下游变量，再生成 DSL 并执行冒烟测试。";
 }
 
+function formatAgentError(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+  const maybeValidationError = error as { errorFields?: Array<{ errors?: string[] }>; message?: string };
+  const firstValidationMessage = maybeValidationError.errorFields?.[0]?.errors?.[0];
+  if (firstValidationMessage) {
+    return firstValidationMessage;
+  }
+  if (maybeValidationError.message) {
+    return maybeValidationError.message;
+  }
+  return "请检查后端服务和当前表单内容。";
+}
+
 export default function TaskAgentPanel({
   payload,
   loading,
@@ -145,7 +163,7 @@ export default function TaskAgentPanel({
           {
             role: "bot",
             meta: "生成测试 API",
-            text: `生成测试失败：${(error as Error).message || "请检查后端服务和当前表单内容。"}`,
+            text: `生成测试失败：${formatAgentError(error)}`,
           },
         ];
         return nextMessages.slice(-8);

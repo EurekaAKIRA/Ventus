@@ -18,7 +18,13 @@ import {
   Segmented,
 } from "antd";
 import { RobotOutlined, UploadOutlined } from "@ant-design/icons";
-import { createTask, DEFAULT_REQUIREMENT_RAG_ENABLED, fetchTaskDraftAgent, generateTaskScenarios } from "../api/tasks";
+import {
+  createTask,
+  DEFAULT_REQUIREMENT_RAG_ENABLED,
+  fetchTaskAnalysisProgress,
+  fetchTaskDraftAgent,
+  generateTaskScenarios,
+} from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
 import TaskAgentPanel from "../components/TaskAgentPanel";
 import type { TaskDraftAgentPayload } from "../types";
@@ -362,6 +368,32 @@ function buildAgentSnapshotKey(values: {
   });
 }
 
+function extractFormValidationMessage(error: unknown) {
+  const validationError = error as { errorFields?: Array<{ errors?: string[] }> };
+  return validationError.errorFields?.[0]?.errors?.[0] || "请先补全任务名称、需求描述等必填项后再生成测试。";
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function waitForTaskAnalysisReady(taskId: string) {
+  const maxAttempts = 30;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const progress = await fetchTaskAnalysisProgress(taskId);
+    if (progress.status === "completed" || progress.percent >= 100) {
+      return progress;
+    }
+    if (progress.status === "failed") {
+      throw new Error(progress.message || "任务解析失败，暂时无法生成测试场景。");
+    }
+    await wait(attempt < 4 ? 500 : 1000);
+  }
+  throw new Error("任务解析仍在进行中，请稍后再让 Agent 生成测试。");
+}
+
 type TaskCreateProps = {
   mode?: "create" | "agent";
 };
@@ -683,7 +715,19 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
   };
 
   const handleGenerateTestsFromAgent = async (prompt: string) => {
-    const values = await form.validateFields();
+    let values: {
+      task_name?: string;
+      requirement_text?: string;
+      target_system?: string;
+      environment?: string;
+      project_id?: string;
+      rag_enabled?: boolean;
+    };
+    try {
+      values = await form.validateFields();
+    } catch (error) {
+      throw new Error(extractFormValidationMessage(error));
+    }
     const targetSystem = String(values.target_system ?? "").trim();
     if (targetSystem) {
       try {
@@ -722,12 +766,18 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
         });
         taskId = created.task_id;
         setAgentGeneratedTask({ taskId, snapshotKey });
+        message.loading({ content: "任务已创建，正在等待解析完成...", key: "agent-generate-tests" });
+        await waitForTaskAnalysisReady(taskId);
       }
       const generated = await generateTaskScenarios(taskId);
       const count = Number(generated.scenario_count ?? generated.scenarios?.length ?? 0);
-      message.success(`已生成 ${count} 个测试场景`);
+      message.success({ content: `已生成 ${count} 个测试场景`, key: "agent-generate-tests" });
       const intent = prompt ? `你刚才的指令是“${prompt}”。` : "";
       return `${intent}已调用生成测试 API，任务 ${taskId} 已生成 ${count} 个测试场景。可进入任务详情查看场景、DSL 和后续执行结果。`;
+    } catch (error) {
+      const errorMessage = error instanceof Error && error.message ? error.message : "生成测试失败，请检查后端服务和当前表单内容。";
+      message.error({ content: errorMessage, key: "agent-generate-tests" });
+      throw error;
     } finally {
       setAgentLoading(false);
     }
