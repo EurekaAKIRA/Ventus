@@ -7,6 +7,9 @@ export type VueAgentDialogueProps = {
   loading: boolean;
   stale: boolean;
   activeView: string;
+  onAnalyze?: () => void;
+  onApply?: () => void;
+  canApply?: boolean;
 };
 
 type ChatMessage = {
@@ -82,9 +85,20 @@ const VueAgentDialogue = defineComponent({
       type: String,
       default: "overview",
     },
+    onAnalyze: {
+      type: Function as PropType<() => void>,
+      default: undefined,
+    },
+    onApply: {
+      type: Function as PropType<() => void>,
+      default: undefined,
+    },
+    canApply: {
+      type: Boolean,
+      default: false,
+    },
   },
   setup(props) {
-    const minimized = ref(false);
     const draft = ref("");
     const messages = ref<ChatMessage[]>([
       {
@@ -144,26 +158,19 @@ const VueAgentDialogue = defineComponent({
       const currentTone = toneClass(verdict?.severity);
       const statusText = props.loading ? "分析中" : props.stale ? "待刷新" : payload ? "已同步" : "待输入";
 
-      if (minimized.value) {
-        return h("button", { class: ["vue-agent-bot-fab", `is-${currentTone}`], onClick: () => (minimized.value = false) }, [
-          h("span", { class: "vue-agent-bot-fab__icon" }, "AI"),
-          h("span", [
-            h("strong", "测试建议"),
-            h("small", statusText),
-          ]),
-        ]);
-      }
-
       return h("aside", { class: ["vue-agent-dialogue", `is-${currentTone}`] }, [
         h("div", { class: "vue-agent-dialogue__head" }, [
           h("div", [
-            h("span", { class: "vue-agent-dialogue__eyebrow" }, "Vue3 Test Advisor"),
-            h("h3", "测试建议机器人"),
+            h("span", { class: "vue-agent-dialogue__eyebrow" }, "Agent Mode"),
+            h("h3", "测试建议 Agent"),
           ]),
           h("div", { class: "vue-agent-dialogue__head-actions" }, [
             h("span", { class: ["vue-agent-dialogue__state", props.loading ? "is-loading" : props.stale ? "is-stale" : "is-ready"] }, statusText),
-            h("button", { class: "vue-agent-dialogue__minimize", onClick: () => (minimized.value = true), title: "最小化" }, "−"),
           ]),
+        ]),
+        h("div", { class: "vue-agent-dialogue__actions" }, [
+          h("button", { type: "button", onClick: () => props.onAnalyze?.(), disabled: props.loading }, props.payload ? "重新分析" : "生成建议"),
+          h("button", { type: "button", class: "is-primary", onClick: () => props.onApply?.(), disabled: !props.canApply || props.stale }, "一键回填"),
         ]),
         h("div", { class: "vue-agent-dialogue__snapshot" }, [
           h("div", { class: "vue-agent-dialogue__meter-ring", style: { "--agent-ready": `${readiness.value}%` } }, [

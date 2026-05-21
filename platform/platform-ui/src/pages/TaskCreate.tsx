@@ -2239,18 +2239,20 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
                 </Button>
               </div>
             </Card>
-          ) : agentPanel}
+          ) : (
+            <VueAgentDialogueMount
+              payload={agentPayload}
+              loading={agentLoading}
+              stale={agentSuggestionStale}
+              activeView={agentStudioView}
+              onAnalyze={() => void handleGenerateAgentSuggestion()}
+              onApply={handleApplyAgentSuggestion}
+              canApply={Boolean(agentPayload && Object.keys(agentPayload.form_patch ?? {}).length && !agentSuggestionStale)}
+            />
+          )}
         </Col>
       </Row>
       {isAgentStudio ? <div className="agent-studio-agent-panel">{agentPanel}</div> : null}
-      {isAgentStudio ? (
-        <VueAgentDialogueMount
-          payload={agentPayload}
-          loading={agentLoading}
-          stale={agentSuggestionStale}
-          activeView={agentStudioView}
-        />
-      ) : null}
     </Space>
   );
 }
