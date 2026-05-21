@@ -2198,7 +2198,6 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
                       <Button type="primary" htmlType="submit" loading={submitting}>
                         创建任务
                       </Button>
-                      <Button onClick={() => handleOpenAgentStudio()}>先用 Agent 诊断文档</Button>
                       <Button onClick={() => navigate("/tasks")}>取消</Button>
                     </Space>
                   </Form.Item>
@@ -2209,74 +2208,9 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
         </Col>
 
         <Col xs={24} xl={10} className="create-task-agent-column">
-          {isAgentStudio ? (
-            <Card bordered={false} className="agent-studio-draft-card agent-studio-handoff-card">
-              <div className="agent-studio-draft-card__head">
-                <div>
-                  <Text type="secondary">Handoff</Text>
-                  <Typography.Title level={4} className="agent-studio-draft-card__title">
-                    回到工作流创建
-                  </Typography.Title>
-                </div>
-                <Tag color={getAgentVerdictColor(agentPayload?.diagnostic_verdict?.severity)}>
-                  {agentPayload?.diagnostic_verdict?.label || (agentPayload?.summary?.ready_to_create ? "可交付" : "待完善")}
-                </Tag>
-              </div>
-              <Text type="secondary" className="agent-studio-handoff-card__copy">
-                {agentPayload?.diagnostic_verdict?.summary ||
-                  "Agent 只负责诊断、补全和质量门禁；任务创建、执行、重试与报告沉淀统一交给工作流。"}
-              </Text>
-              <div className="agent-studio-handoff-flow">
-                <div className="agent-studio-handoff-flow__item">
-                  <span>1</span>
-                  <Text>导入或粘贴需求文档</Text>
-                </div>
-                <div className="agent-studio-handoff-flow__item">
-                  <span>2</span>
-                  <Text>处理追问、补齐资源链路</Text>
-                </div>
-                <div className="agent-studio-handoff-flow__item">
-                  <span>3</span>
-                  <Text>带回创建页提交工作流</Text>
-                </div>
-              </div>
-              <div className="agent-studio-draft-grid">
-                <div className="agent-studio-draft-item">
-                  <Text type="secondary">任务名称</Text>
-                  <Text strong>{String(watchedTaskName || "待识别")}</Text>
-                </div>
-                <div className="agent-studio-draft-item">
-                  <Text type="secondary">所属项目</Text>
-                  <Text strong>{projects.find((item) => item.id === (watchedProjectId || currentProjectId))?.name || "未选择"}</Text>
-                </div>
-                <div className="agent-studio-draft-item">
-                  <Text type="secondary">目标系统</Text>
-                  <Text strong>{String(watchedTargetSystem || "待识别")}</Text>
-                </div>
-                <div className="agent-studio-draft-item">
-                  <Text type="secondary">执行环境</Text>
-                  <Text strong>{String(watchedEnvironment || "未选择")}</Text>
-                </div>
-                <div className="agent-studio-draft-item">
-                  <Text type="secondary">RAG</Text>
-                  <Text strong>{watchedRagEnabled ? "开启" : "关闭"}</Text>
-                </div>
-              </div>
-              <div className="agent-studio-draft-actions">
-                <Button type="primary" onClick={handleOpenCreateView}>
-                  带回创建页
-                </Button>
-                <Button onClick={() => void handleGenerateAgentSuggestion()} loading={agentLoading}>
-                  {agentPayload ? "刷新 Agent" : "启动分析"}
-                </Button>
-              </div>
-            </Card>
-          ) : (
-            <TaskAgentPanel payload={agentPayload} onSendMessage={handleTaskAgentChat} />
-          )}
+          <TaskAgentPanel payload={agentPayload} onSendMessage={handleTaskAgentChat} />
         </Col>
       </Row>
-      {isAgentStudio ? <div className="agent-studio-agent-panel">{agentPanel}</div> : null}
     </Space>
   );
 }
