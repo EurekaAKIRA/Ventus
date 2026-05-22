@@ -420,6 +420,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
   const [agentSnapshotKey, setAgentSnapshotKey] = useState("");
   const [agentAutoAppliedLabels, setAgentAutoAppliedLabels] = useState<string[]>([]);
   const [agentFocusedField, setAgentFocusedField] = useState("");
+  const [agentFloatingOpen, setAgentFloatingOpen] = useState(false);
   const [agentFollowUpAnswers, setAgentFollowUpAnswers] = useState<Record<string, string>>({});
   const [agentFollowUpHandledCount, setAgentFollowUpHandledCount] = useState(0);
   const [agentStudioView, setAgentStudioView] = useState<"overview" | "followups" | "document" | "knowledge">("overview");
@@ -1134,6 +1135,11 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
     (agentPayload?.coverage_gaps?.length ?? 0) +
     (agentPayload?.risks.length ?? 0) +
     (agentPayload?.warnings.length ?? 0);
+  const agentFloatingBadgeCount =
+    sortedFollowUpQuestions.length +
+    (agentPayload?.risk_priorities?.length ?? 0) +
+    (agentPayload?.document_actions.length ?? 0) +
+    (agentPayload?.diagnostic_verdict?.blocked_endpoint_count ?? 0);
   const activeStudioViewHasContent =
     !isAgentStudio ||
     (agentStudioView === "overview" && hasOverviewContent) ||
@@ -2116,7 +2122,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
         align="top"
         className={`create-task-layout${isAgentStudio ? " is-agent-studio" : ""}`}
       >
-        <Col xs={24} xl={14}>
+        <Col xs={24}>
           <Card bordered={false} className="panel-card panel-card--form create-task-card">
             {isAgentStudio ? (
               <div className="agent-studio-panel-head">
@@ -2382,10 +2388,39 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
           </Card>
         </Col>
 
-        <Col xs={24} xl={10} className="create-task-agent-column">
-          <TaskAgentPanel payload={agentPayload} onSendMessage={handleTaskAgentChat} />
-        </Col>
       </Row>
+      <div className={`create-task-agent-float${agentFloatingOpen ? " is-open" : ""}`}>
+        {agentFloatingOpen ? (
+          <div className="create-task-agent-float__panel">
+            <div className="create-task-agent-float__head">
+              <Space size={8}>
+                <RobotOutlined />
+                <Text strong>Agent 助手</Text>
+                <Tag color={agentLoading ? "processing" : agentPayload ? "success" : "default"}>
+                  {agentLoading ? "分析中" : agentPayload ? "已分析" : "待分析"}
+                </Tag>
+              </Space>
+              <Button size="small" type="text" onClick={() => setAgentFloatingOpen(false)}>
+                收起
+              </Button>
+            </div>
+            <div className="create-task-agent-float__body">
+              {agentPanel}
+              <TaskAgentPanel payload={agentPayload} onSendMessage={handleTaskAgentChat} />
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={`create-task-agent-float__toggle${agentFloatingBadgeCount ? " has-badge" : ""}`}
+            onClick={() => setAgentFloatingOpen(true)}
+          >
+            <RobotOutlined />
+            <span>Agent</span>
+            {agentFloatingBadgeCount ? <strong>{agentFloatingBadgeCount}</strong> : null}
+          </button>
+        )}
+      </div>
     </Space>
   );
 }

@@ -2484,6 +2484,99 @@ a:hover {
   background: rgba(245, 185, 76, 0.08);
 }
 
+.create-task-agent-float {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.create-task-agent-float__toggle,
+.create-task-agent-float__panel {
+  pointer-events: auto;
+}
+
+.create-task-agent-float__toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid rgba(88, 101, 242, 0.36);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(88, 101, 242, 0.22), rgba(47, 129, 247, 0.18)),
+    rgba(9, 16, 24, 0.92);
+  color: #f5fbff;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.34);
+  cursor: pointer;
+}
+
+.create-task-agent-float__toggle span {
+  font-weight: 700;
+}
+
+.create-task-agent-float__toggle strong {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.create-task-agent-float__panel {
+  width: min(560px, calc(100vw - 40px));
+  max-height: min(760px, calc(100vh - 80px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: rgba(9, 16, 24, 0.96);
+  box-shadow: 0 28px 68px rgba(0, 0, 0, 0.42);
+  overflow: hidden;
+  backdrop-filter: blur(18px);
+}
+
+.create-task-agent-float__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.create-task-agent-float__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.create-task-agent-float__body .create-task-agent-card {
+  min-height: auto;
+}
+
+.create-task-agent-float__body .vue-agent-dialogue-mount {
+  width: 100%;
+}
+
+.create-task-agent-float__body .vue-agent-dialogue {
+  width: 100%;
+}
+
 @media (max-width: 1600px) {
   .create-task-agent-signal-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -2550,6 +2643,16 @@ a:hover {
   .create-task-agent-plan__item .ant-btn {
     grid-column: 2;
     justify-self: flex-start;
+  }
+
+  .create-task-agent-float {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .create-task-agent-float__panel {
+    width: calc(100vw - 32px);
+    max-height: calc(100vh - 48px);
   }
 }
 
