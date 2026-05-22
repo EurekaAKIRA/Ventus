@@ -1692,10 +1692,6 @@ a:hover {
   line-height: 1.5;
 }
 
-.defect-title-cell__source {
-  font-size: 12px;
-}
-
 .defect-title-cell .mono-inline {
   flex: 0 0 auto;
   border: 1px solid rgba(148, 163, 184, 0.16);
@@ -1707,6 +1703,20 @@ a:hover {
 
 .defect-editor-form .ant-form-item {
   margin-bottom: 14px;
+}
+
+.defect-editor-source {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.defect-editor-source .ant-typography {
+  margin: 0;
 }
 
 .metric-row {

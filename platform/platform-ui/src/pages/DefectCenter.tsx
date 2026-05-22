@@ -81,6 +81,15 @@ function compactId(value?: string | null) {
   return `${raw.slice(0, 10)}...${raw.slice(-5)}`;
 }
 
+function getDescriptionPreview(value?: string | null) {
+  return String(value ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !/^来源任务[:：]/.test(line))
+    .join("\n")
+    .trim();
+}
+
 export default function DefectCenter() {
   const [form] = Form.useForm<DefectFormValues>();
   const { currentProjectId, isAuthenticated, projects } = useAuth();
@@ -415,6 +424,15 @@ export default function DefectCenter() {
                   </Form.Item>
                 </Col>
               </Row>
+              {editing?.task_id || editing?.task_name ? (
+                <div className="defect-editor-source">
+                  <Text type="secondary">来源任务</Text>
+                  <Text>
+                    {editing.task_name || "未命名任务"}
+                    {editing.task_id ? ` · ${compactId(editing.task_id)}` : ""}
+                  </Text>
+                </div>
+              ) : null}
               <Form.Item name="description" label="问题描述">
                 <TextArea rows={4} placeholder="描述缺陷现象、影响范围和上下文。" />
               </Form.Item>
@@ -474,27 +492,22 @@ export default function DefectCenter() {
               dataIndex: "title",
               key: "title",
               width: 620,
-              render: (_, record: DefectPayload) => (
-                <div className="defect-title-cell">
-                  <div className="defect-title-cell__line">
-                    <span className="mono-inline">{record.defect_key}</span>
-                    <Text strong>{record.title}</Text>
-                  </div>
-                  {record.description ? (
-                    <Text type="secondary" className="defect-title-cell__desc">
-                      {record.description}
-                    </Text>
-                  ) : null}
-                  {record.task_name || record.task_id ? (
-                    <div className="defect-title-cell__source">
-                      <Text type="secondary">
-                        来源任务：{record.task_name || "未命名任务"}
-                        {record.task_id ? ` · ${compactId(record.task_id)}` : ""}
-                      </Text>
+              render: (_, record: DefectPayload) => {
+                const preview = getDescriptionPreview(record.description);
+                return (
+                  <div className="defect-title-cell">
+                    <div className="defect-title-cell__line">
+                      <span className="mono-inline">{record.defect_key}</span>
+                      <Text strong>{record.title}</Text>
                     </div>
-                  ) : null}
-                </div>
-              ),
+                    {preview ? (
+                      <Text type="secondary" className="defect-title-cell__desc">
+                        {preview}
+                      </Text>
+                    ) : null}
+                  </div>
+                );
+              },
             },
             {
               title: "严重级别",
