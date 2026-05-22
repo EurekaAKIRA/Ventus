@@ -2570,11 +2570,18 @@ a:hover {
 }
 
 .create-task-agent-float__body .vue-agent-dialogue-mount {
+  position: static;
   width: 100%;
 }
 
 .create-task-agent-float__body .vue-agent-dialogue {
   width: 100%;
+  min-height: 280px;
+  max-height: 360px;
+}
+
+.create-task-agent-float__body .vue-agent-dialogue__thread {
+  max-height: 190px;
 }
 
 @media (max-width: 1600px) {

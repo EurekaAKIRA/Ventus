@@ -2405,8 +2405,8 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
               </Button>
             </div>
             <div className="create-task-agent-float__body">
-              {agentPanel}
               <TaskAgentPanel payload={agentPayload} onSendMessage={handleTaskAgentChat} />
+              {agentPanel}
             </div>
           </div>
         ) : (
