@@ -1558,6 +1558,137 @@ a:hover {
     rgba(11, 18, 28, 0.84) !important;
 }
 
+.defect-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.defect-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+}
+
+.defect-page-head__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.defect-page-head__title.ant-typography {
+  margin: 0 0 4px !important;
+  color: #f8fafc;
+}
+
+.defect-page-head__stats {
+  justify-content: flex-end;
+}
+
+.defect-page-head__stats span {
+  display: inline-grid;
+  gap: 2px;
+  min-width: 76px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.defect-page-head__stats strong {
+  color: #f8fafc;
+  font-size: 15px;
+}
+
+.defect-list-card.panel-card .ant-card-head {
+  min-height: 48px;
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+
+.defect-list-card.panel-card .ant-card-body {
+  padding: 14px !important;
+}
+
+.defect-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.defect-toolbar__filters {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.defect-toolbar__search {
+  width: min(280px, 100%);
+}
+
+.defect-toolbar__select {
+  width: 132px;
+}
+
+.defect-toolbar__task {
+  width: 220px;
+}
+
+.defect-toolbar__assignee {
+  width: 180px;
+}
+
+.defect-table .ant-table-thead > tr > th {
+  padding: 10px 12px !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: rgba(226, 232, 240, 0.78) !important;
+  font-size: 12px;
+  font-weight: 700 !important;
+}
+
+.defect-table .ant-table-tbody > tr > td {
+  padding: 10px 12px !important;
+  vertical-align: top;
+}
+
+.defect-table .ant-table-tbody > tr:hover > td {
+  background: rgba(88, 101, 242, 0.08) !important;
+}
+
+.defect-title-cell,
+.defect-related-task {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.defect-title-cell__line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.defect-title-cell__line .ant-typography {
+  margin: 0;
+}
+
+.defect-title-cell__desc {
+  max-width: 560px;
+  font-size: 12px;
+}
+
+.defect-editor-form .ant-form-item {
+  margin-bottom: 14px;
+}
+
 .metric-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

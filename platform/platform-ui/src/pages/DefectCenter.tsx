@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Card, Col, Empty, Form, Input, Row, Select, Space, Table, Tag, Typography, message } from "antd";
+import { Alert, Button, Card, Col, Drawer, Empty, Form, Input, Row, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { DefectPayload, ProjectMemberPayload, TaskListItem } from "../types";
 import { createDefect, fetchDefects, updateDefect } from "../api/defects";
 import { fetchProject } from "../api/auth";
 import { fetchTaskList } from "../api/tasks";
-import { MetricGrid, PageHero, PageStack } from "../components/PageLayout";
+import { PageStack } from "../components/PageLayout";
 import { useAuth } from "../auth/AuthContext";
 
 const { TextArea } = Input;
@@ -64,6 +64,14 @@ function getSeverityTagColor(severity: string) {
     default:
       return "default";
   }
+}
+
+function getStatusLabel(status: string) {
+  return STATUS_OPTIONS.find((item) => item.value === status)?.label ?? status;
+}
+
+function getSeverityLabel(severity: string) {
+  return SEVERITY_OPTIONS.find((item) => item.value === severity)?.label ?? severity;
 }
 
 export default function DefectCenter() {
@@ -223,43 +231,56 @@ export default function DefectCenter() {
     }),
     [items],
   );
+  const criticalCount = useMemo(
+    () => items.filter((item) => item.severity === "critical" || item.severity === "high").length,
+    [items],
+  );
 
   return (
     <PageStack>
-      <PageHero
-        eyebrow="Defect Tracking"
-        title="缺陷管理"
-        subtitle="从执行结果沉淀问题、跟踪处理状态，并与任务和项目成员形成闭环。"
-        meta={
-          <>
-            <div className="page-meta-chip">
-              <span className="page-meta-chip__label">当前项目</span>
-              <span className="page-meta-chip__value">{currentProject?.name || "未选择"}</span>
-            </div>
-            <div className="page-meta-chip">
-              <span className="page-meta-chip__label">筛选总数</span>
-              <span className="page-meta-chip__value">{total}</span>
-            </div>
-          </>
-        }
-      />
+      <div className="defect-page">
+      <div className="defect-page-head">
+        <div>
+          <Text className="defect-page-head__eyebrow">Defect Tracking</Text>
+          <Typography.Title level={3} className="defect-page-head__title">
+            缺陷管理
+          </Typography.Title>
+          <Text type="secondary">按项目跟踪缺陷状态、责任人和关联任务。</Text>
+        </div>
+        <Space wrap size={8} className="defect-page-head__stats">
+          <span><Text type="secondary">项目</Text><strong>{currentProject?.name || "未选择"}</strong></span>
+          <span><Text type="secondary">总数</Text><strong>{total}</strong></span>
+          <span><Text type="secondary">待处理</Text><strong>{statusCounts.open}</strong></span>
+          <span><Text type="secondary">处理中</Text><strong>{statusCounts.inProgress}</strong></span>
+          <span><Text type="secondary">高优先</Text><strong>{criticalCount}</strong></span>
+        </Space>
+      </div>
 
       {!currentProjectId ? (
         <Alert type="warning" showIcon message="请先在顶部选择项目，缺陷管理按项目维度工作。" />
       ) : null}
 
-      <MetricGrid
-        items={[
-          { title: "当前筛选总数", value: total },
-          { title: "待处理", value: statusCounts.open, color: "#f5b94c" },
-          { title: "处理中", value: statusCounts.inProgress, color: "#2f81f7" },
-          { title: "已收口", value: statusCounts.resolved, color: "#5865f2" },
-        ]}
-      />
-
-      <Card bordered={false} className="panel-card" title={`缺陷列表${currentProject ? ` · ${currentProject.name}` : ""}`}>
-        <div className="page-toolbar">
-          <div className="page-toolbar__group">
+      <Card
+        bordered={false}
+        className="panel-card defect-list-card"
+        title={
+          <Space size={8}>
+            <span>缺陷列表</span>
+            <Tag>{total} 条</Tag>
+            <Tag color="warning">{statusCounts.open + statusCounts.inProgress} 待收口</Tag>
+          </Space>
+        }
+        extra={
+          <Space size={8}>
+            <Button onClick={() => void loadDefects()}>刷新</Button>
+            <Button type="primary" disabled={!currentProjectId || !isAuthenticated} onClick={openCreateEditor}>
+              新建缺陷
+            </Button>
+          </Space>
+        }
+      >
+        <div className="defect-toolbar">
+          <div className="defect-toolbar__filters">
             <Input
               allowClear
               placeholder="搜索编号 / 标题 / 描述 / 任务"
@@ -268,7 +289,7 @@ export default function DefectCenter() {
                 setPage(1);
                 setKeyword(e.target.value);
               }}
-              style={{ width: 260 }}
+              className="defect-toolbar__search"
             />
             <Select
               allowClear
@@ -278,7 +299,7 @@ export default function DefectCenter() {
                 setPage(1);
                 setStatusFilter(String(value || ""));
               }}
-              style={{ width: 160 }}
+              className="defect-toolbar__select"
               options={STATUS_OPTIONS}
             />
             <Select
@@ -289,7 +310,7 @@ export default function DefectCenter() {
                 setPage(1);
                 setSeverityFilter(String(value || ""));
               }}
-              style={{ width: 160 }}
+              className="defect-toolbar__select"
               options={SEVERITY_OPTIONS}
             />
             <Select
@@ -302,7 +323,7 @@ export default function DefectCenter() {
                 setPage(1);
                 setTaskFilter(String(value || ""));
               }}
-              style={{ width: 240 }}
+              className="defect-toolbar__task"
               options={tasks.map((task) => ({
                 value: task.task_id,
                 label: `${task.task_name} · ${task.task_id}`,
@@ -318,34 +339,25 @@ export default function DefectCenter() {
                 setPage(1);
                 setAssigneeFilter(String(value || ""));
               }}
-              style={{ width: 220 }}
+              className="defect-toolbar__assignee"
               options={members.map((member) => ({
                 value: member.user_id,
                 label: member.display_name ? `${member.display_name} · ${member.username}` : member.username || member.user_id || "",
               }))}
             />
           </div>
-          <div className="page-toolbar__group">
-            <Button onClick={() => void loadDefects()}>刷新</Button>
-            <Button
-              type={editorOpen && !editing ? "default" : "primary"}
-              disabled={!currentProjectId || !isAuthenticated}
-              onClick={editorOpen && !editing ? resetEditor : openCreateEditor}
-            >
-              {editorOpen && !editing ? "收起新建" : "新建缺陷"}
-            </Button>
-          </div>
         </div>
-        {editorOpen ? (
-          <Card
-            bordered={false}
-            className="panel-card panel-card--form defect-inline-editor"
-            title={editing ? `编辑缺陷：${editing.defect_key}` : "新建缺陷"}
-            extra={<Button onClick={resetEditor}>收起</Button>}
-          >
+        <Drawer
+          title={editing ? `编辑缺陷：${editing.defect_key}` : "新建缺陷"}
+          open={editorOpen}
+          width={720}
+          onClose={resetEditor}
+          destroyOnClose
+        >
             <Form
               form={form}
               layout="vertical"
+              className="defect-editor-form"
               initialValues={{ severity: "medium", status: "open" }}
               onFinish={handleSave}
             >
@@ -423,13 +435,14 @@ export default function DefectCenter() {
                 <Button onClick={resetEditor}>{editing ? "取消编辑" : "取消新建"}</Button>
               </Space>
             </Form>
-          </Card>
-        ) : null}
+        </Drawer>
         <Table
-          className="platform-table"
+          className="platform-table defect-table"
+          size="middle"
           rowKey="id"
           loading={loading}
           dataSource={items}
+          scroll={{ x: 1080 }}
           locale={{
             emptyText: (
               <div className="table-empty-state">
@@ -450,61 +463,60 @@ export default function DefectCenter() {
           }}
           columns={[
             {
-              title: "编号",
-              dataIndex: "defect_key",
-              key: "defect_key",
-              width: 160,
-              render: (value: string) => <span className="mono-inline">{value}</span>,
-            },
-            {
-              title: "标题",
+              title: "缺陷",
               dataIndex: "title",
               key: "title",
+              minWidth: 360,
               render: (_, record: DefectPayload) => (
-                <Space direction="vertical" size={2}>
-                  <Text strong>{record.title}</Text>
-                  <Text type="secondary">{record.description || "无补充描述"}</Text>
-                </Space>
+                <div className="defect-title-cell">
+                  <div className="defect-title-cell__line">
+                    <span className="mono-inline">{record.defect_key}</span>
+                    <Text strong ellipsis>{record.title}</Text>
+                  </div>
+                  <Text type="secondary" ellipsis className="defect-title-cell__desc">
+                    {record.description || "无补充描述"}
+                  </Text>
+                </div>
               ),
             },
             {
               title: "关联任务",
               key: "task",
-              width: 220,
+              width: 210,
               render: (_, record: DefectPayload) => (
-                <Space direction="vertical" size={0}>
-                  <Text>{record.task_name || "未关联"}</Text>
-                  {record.task_id ? <Text type="secondary">{record.task_id}</Text> : null}
-                </Space>
+                <div className="defect-related-task">
+                  <Text ellipsis>{record.task_name || "未关联"}</Text>
+                  {record.task_id ? <Text type="secondary" ellipsis>{record.task_id}</Text> : null}
+                </div>
               ),
             },
             {
               title: "严重级别",
               dataIndex: "severity",
               key: "severity",
-              width: 120,
-              render: (value: string) => <Tag color={getSeverityTagColor(value)}>{value}</Tag>,
+              width: 96,
+              render: (value: string) => <Tag color={getSeverityTagColor(value)}>{getSeverityLabel(value)}</Tag>,
             },
             {
               title: "状态",
               dataIndex: "status",
               key: "status",
-              width: 140,
-              render: (value: string) => <Tag color={getStatusTagColor(value)}>{value}</Tag>,
+              width: 104,
+              render: (value: string) => <Tag color={getStatusTagColor(value)}>{getStatusLabel(value)}</Tag>,
             },
             {
               title: "负责人",
               key: "assignee",
-              width: 180,
+              width: 140,
               render: (_, record: DefectPayload) => (
-                <Text>{record.assignee_display_name || record.assignee_username || "未指派"}</Text>
+                <Text ellipsis>{record.assignee_display_name || record.assignee_username || "未指派"}</Text>
               ),
             },
             {
               title: "更新时间",
               dataIndex: "updated_at",
               key: "updated_at",
-              width: 180,
+              width: 150,
               render: (value?: string | null) => (value ? new Date(value).toLocaleString() : "-"),
             },
             {
@@ -520,6 +532,7 @@ export default function DefectCenter() {
           ]}
         />
       </Card>
+      </div>
     </PageStack>
   );
 }
