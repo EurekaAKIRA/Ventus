@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { TaskDraftAgentPayload } from "../types";
 
 export type TaskAgentPanelProps = {
@@ -111,6 +111,7 @@ function formatChatError(error: unknown) {
 export default function TaskAgentPanel({ payload, onSendMessage }: TaskAgentPanelProps) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const threadRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "bot",
@@ -118,6 +119,12 @@ export default function TaskAgentPanel({ payload, onSendMessage }: TaskAgentPane
       text: buildDraftModeIntro(),
     },
   ]);
+
+  useEffect(() => {
+    const thread = threadRef.current;
+    if (!thread) return;
+    thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" });
+  }, [messages]);
 
   const sendMessage = async (text?: string) => {
     const nextText = String(text ?? draft).trim();
@@ -163,7 +170,7 @@ export default function TaskAgentPanel({ payload, onSendMessage }: TaskAgentPane
           </div>
         </div>
 
-        <div className="vue-agent-dialogue__thread">
+        <div className="vue-agent-dialogue__thread" ref={threadRef}>
           {messages.map((item, index) => (
             <div key={`${item.role}-${index}-${item.text}`} className={`vue-agent-dialogue__message is-${item.role}`}>
               <span>{item.meta || (item.role === "bot" ? "Agent" : "你")}</span>
