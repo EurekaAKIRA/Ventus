@@ -1662,27 +1662,47 @@ a:hover {
   background: rgba(88, 101, 242, 0.08) !important;
 }
 
-.defect-title-cell,
-.defect-related-task {
+.defect-title-cell {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
 .defect-title-cell__line {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   min-width: 0;
 }
 
 .defect-title-cell__line .ant-typography {
   margin: 0;
+  color: #e5eef8;
+  line-height: 1.45;
+  white-space: normal;
 }
 
 .defect-title-cell__desc {
-  max-width: 560px;
+  display: -webkit-box;
+  max-width: 720px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   font-size: 12px;
+  line-height: 1.5;
+}
+
+.defect-title-cell__source {
+  font-size: 12px;
+}
+
+.defect-title-cell .mono-inline {
+  flex: 0 0 auto;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: rgba(15, 23, 42, 0.48);
+  color: #b9c7d9;
 }
 
 .defect-editor-form .ant-form-item {

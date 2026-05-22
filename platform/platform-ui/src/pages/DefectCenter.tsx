@@ -74,6 +74,13 @@ function getSeverityLabel(severity: string) {
   return SEVERITY_OPTIONS.find((item) => item.value === severity)?.label ?? severity;
 }
 
+function compactId(value?: string | null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (raw.length <= 18) return raw;
+  return `${raw.slice(0, 10)}...${raw.slice(-5)}`;
+}
+
 export default function DefectCenter() {
   const [form] = Form.useForm<DefectFormValues>();
   const { currentProjectId, isAuthenticated, projects } = useAuth();
@@ -466,27 +473,26 @@ export default function DefectCenter() {
               title: "缺陷",
               dataIndex: "title",
               key: "title",
-              minWidth: 360,
+              width: 620,
               render: (_, record: DefectPayload) => (
                 <div className="defect-title-cell">
                   <div className="defect-title-cell__line">
                     <span className="mono-inline">{record.defect_key}</span>
-                    <Text strong ellipsis>{record.title}</Text>
+                    <Text strong>{record.title}</Text>
                   </div>
-                  <Text type="secondary" ellipsis className="defect-title-cell__desc">
-                    {record.description || "无补充描述"}
-                  </Text>
-                </div>
-              ),
-            },
-            {
-              title: "关联任务",
-              key: "task",
-              width: 210,
-              render: (_, record: DefectPayload) => (
-                <div className="defect-related-task">
-                  <Text ellipsis>{record.task_name || "未关联"}</Text>
-                  {record.task_id ? <Text type="secondary" ellipsis>{record.task_id}</Text> : null}
+                  {record.description ? (
+                    <Text type="secondary" className="defect-title-cell__desc">
+                      {record.description}
+                    </Text>
+                  ) : null}
+                  {record.task_name || record.task_id ? (
+                    <div className="defect-title-cell__source">
+                      <Text type="secondary">
+                        来源任务：{record.task_name || "未命名任务"}
+                        {record.task_id ? ` · ${compactId(record.task_id)}` : ""}
+                      </Text>
+                    </div>
+                  ) : null}
                 </div>
               ),
             },
@@ -494,20 +500,20 @@ export default function DefectCenter() {
               title: "严重级别",
               dataIndex: "severity",
               key: "severity",
-              width: 96,
+              width: 100,
               render: (value: string) => <Tag color={getSeverityTagColor(value)}>{getSeverityLabel(value)}</Tag>,
             },
             {
               title: "状态",
               dataIndex: "status",
               key: "status",
-              width: 104,
+              width: 110,
               render: (value: string) => <Tag color={getStatusTagColor(value)}>{getStatusLabel(value)}</Tag>,
             },
             {
               title: "负责人",
               key: "assignee",
-              width: 140,
+              width: 150,
               render: (_, record: DefectPayload) => (
                 <Text ellipsis>{record.assignee_display_name || record.assignee_username || "未指派"}</Text>
               ),
@@ -516,7 +522,7 @@ export default function DefectCenter() {
               title: "更新时间",
               dataIndex: "updated_at",
               key: "updated_at",
-              width: 150,
+              width: 170,
               render: (value?: string | null) => (value ? new Date(value).toLocaleString() : "-"),
             },
             {
