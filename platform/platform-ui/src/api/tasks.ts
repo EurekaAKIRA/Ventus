@@ -16,6 +16,7 @@ import type {
   TaskDashboardPayload,
   TaskDetailPayload,
   TaskAgentChatPayload,
+  TaskAgentTrackingContext,
   TaskDraftAgentPayload,
   TaskListItem,
   TestCaseDSL,
@@ -517,6 +518,8 @@ export async function fetchTaskDraftAgent(payload: {
 
 export async function chatWithTaskAgent(payload: {
   message: string;
+  task_id?: string;
+  task_tracking?: TaskAgentTrackingContext;
   task_name?: string;
   requirement_text?: string;
   source_path?: string;

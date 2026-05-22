@@ -40,6 +40,8 @@ class TaskDraftAgentRequest(BaseModel):
 
 class TaskAgentChatRequest(TaskDraftAgentRequest):
     message: str = ""
+    task_id: str | None = None
+    task_tracking: dict[str, Any] | None = None
 
 
 class ExecuteTaskRequest(BaseModel):

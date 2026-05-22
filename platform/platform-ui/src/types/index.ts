@@ -75,4 +75,5 @@ export type {
   TaskDraftAgentSuggestion,
   TaskDraftAgentPayload,
   TaskAgentChatPayload,
+  TaskAgentTrackingContext,
 } from "../../api-contract";

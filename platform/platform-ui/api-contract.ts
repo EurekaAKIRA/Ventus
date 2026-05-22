@@ -901,3 +901,26 @@ export interface TaskAgentChatPayload {
   reply: string;
   agent_payload: TaskDraftAgentPayload;
 }
+
+export interface TaskAgentTrackingContext {
+  task_id?: string;
+  task_name?: string;
+  task_status?: string;
+  execution_status?: string;
+  environment?: string | null;
+  target_system?: string | null;
+  scenario_total?: number;
+  scenario_passed?: number;
+  scenario_failed?: number;
+  failed_scenarios?: unknown[];
+  failed_steps?: unknown[];
+  latest_logs?: unknown[];
+  validation_passed?: boolean;
+  validation_errors?: string[];
+  validation_warnings?: string[];
+  analysis_findings?: unknown[];
+  failure_reasons?: string[];
+  preflight_blocking?: boolean;
+  preflight_issues?: string[];
+  execution_explanations?: unknown;
+}

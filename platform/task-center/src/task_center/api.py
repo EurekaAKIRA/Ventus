@@ -2243,7 +2243,134 @@ def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_i
     }
 
 
+def _task_agent_requirement_text_from_task(task) -> str:
+    result = task.pipeline_result or {}
+    parsed = result.get("parsed_requirement") if isinstance(result.get("parsed_requirement"), dict) else {}
+    dsl = result.get("test_case_dsl") if isinstance(result.get("test_case_dsl"), dict) else {}
+    sections: list[str] = []
+    objective = str(parsed.get("objective") or "").strip()
+    if objective:
+        sections.append(f"目标：{objective}")
+    for label, key in (("动作", "actions"), ("预期", "expected_results"), ("约束", "constraints"), ("疑点", "ambiguities")):
+        values = [str(item).strip() for item in parsed.get(key) or [] if str(item).strip()]
+        if values:
+            sections.append(f"{label}：" + "；".join(values[:5]))
+    scenarios = [item for item in dsl.get("scenarios") or [] if isinstance(item, dict)]
+    if scenarios:
+        sections.append("DSL 场景：" + "；".join(str(item.get("name") or item.get("scenario_id") or "").strip() for item in scenarios[:5] if item))
+    return "\n".join(sections)
+
+
+def _build_task_agent_tracking_context(task, provided: dict[str, Any] | None = None) -> dict[str, Any]:
+    provided_context = provided if isinstance(provided, dict) else {}
+    result = task.pipeline_result or {}
+    execution_result = task.execution_result if isinstance(task.execution_result, dict) else {}
+    scenario_results = [item for item in execution_result.get("scenario_results") or [] if isinstance(item, dict)]
+    failed_scenarios = [item for item in scenario_results if str(item.get("status") or "") == "failed"]
+    passed_scenarios = [item for item in scenario_results if str(item.get("status") or "") == "passed"]
+    failed_steps: list[dict[str, Any]] = []
+    for scenario in failed_scenarios:
+        for step in scenario.get("steps") or []:
+            if isinstance(step, dict) and str(step.get("status") or "") == "failed":
+                failed_steps.append(
+                    {
+                        "scenario": scenario.get("scenario_name") or scenario.get("name") or scenario.get("scenario_id"),
+                        "step_id": step.get("step_id"),
+                        "text": step.get("text"),
+                        "message": step.get("message"),
+                        "error_category": step.get("error_category"),
+                    }
+                )
+    logs = [item for item in execution_result.get("logs") or [] if isinstance(item, dict)]
+    validation_report = result.get("validation_report") if isinstance(result.get("validation_report"), dict) else {}
+    analysis_report = result.get("analysis_report") if isinstance(result.get("analysis_report"), dict) else {}
+    tracking = {
+        "task_id": task.task_id,
+        "task_name": task.task_name,
+        "task_status": (task.task_context or {}).get("status") or task.status,
+        "execution_status": execution_result.get("status") or "not_started",
+        "environment": task.environment,
+        "target_system": task.target_system,
+        "scenario_total": len(scenario_results),
+        "scenario_passed": len(passed_scenarios),
+        "scenario_failed": len(failed_scenarios),
+        "failed_scenarios": [
+            {
+                "scenario_id": item.get("scenario_id"),
+                "name": item.get("scenario_name") or item.get("name"),
+                "failed_steps": item.get("failed_steps"),
+                "duration_ms": item.get("duration_ms"),
+            }
+            for item in failed_scenarios[:5]
+        ],
+        "failed_steps": failed_steps[:5],
+        "latest_logs": logs[-5:],
+        "validation_passed": validation_report.get("passed"),
+        "validation_errors": validation_report.get("errors") or [],
+        "validation_warnings": validation_report.get("warnings") or [],
+        "analysis_findings": analysis_report.get("findings") or [],
+        "failure_reasons": analysis_report.get("failure_reasons") or [],
+    }
+    tracking.update({key: value for key, value in provided_context.items() if value not in (None, "", [])})
+    return tracking
+
+
+def _attach_task_context_to_agent_payload(payload: TaskAgentChatRequest, agent_payload: dict[str, Any], current_user: dict[str, Any] | None) -> dict[str, Any]:
+    task_id = str(payload.task_id or "").strip()
+    if not task_id:
+        if isinstance(payload.task_tracking, dict) and payload.task_tracking:
+            agent_payload["task_tracking"] = payload.task_tracking
+        return agent_payload
+
+    task = _must_get_visible_task(task_id, current_user)
+    agent_payload["task_tracking"] = _build_task_agent_tracking_context(task, payload.task_tracking)
+    return agent_payload
+
+
+def _build_task_agent_tracking_reply(message: str, task_tracking: dict[str, Any]) -> str:
+    normalized = str(message or "").strip().lower()
+    if not task_tracking or not any(token in normalized for token in ("跟踪", "状态", "进度", "现在", "当前", "执行到哪", "失败", "下一步", "怎么办")):
+        return ""
+    execution_status = str(task_tracking.get("execution_status") or "not_started")
+    task_status = str(task_tracking.get("task_status") or "")
+    total = int(task_tracking.get("scenario_total") or 0)
+    passed = int(task_tracking.get("scenario_passed") or 0)
+    failed = int(task_tracking.get("scenario_failed") or 0)
+    failure_reasons = [str(item).strip() for item in task_tracking.get("failure_reasons") or [] if str(item).strip()]
+    failed_steps = [item for item in task_tracking.get("failed_steps") or [] if isinstance(item, dict)]
+    if execution_status == "running":
+        return (
+            f"我正在跟踪这个任务：任务状态 {task_status or 'running'}，执行仍在进行中。"
+            f"当前已汇总 {total} 个场景结果，其中通过 {passed} 个、失败 {failed} 个。"
+            "建议先观察最新日志和失败步骤，执行结束后我会优先按环境、鉴权、请求构造和断言四类帮你定位。"
+        )
+    if execution_status == "failed" or failed:
+        reason_text = "；".join(failure_reasons[:3]) if failure_reasons else ""
+        step_text = "；".join(
+            str(item.get("message") or item.get("text") or item.get("step_id") or "").strip()
+            for item in failed_steps[:3]
+            if item
+        )
+        detail = reason_text or step_text or "暂未拿到明确失败原因"
+        return (
+            f"我看到当前执行失败：共 {total} 个场景，通过 {passed} 个，失败 {failed} 个。"
+            f"优先排查：{detail}。"
+            "下一步建议先确认目标环境和鉴权，再看失败步骤的请求参数、响应状态码和断言期望是否一致。"
+        )
+    if execution_status == "passed":
+        return f"当前任务执行通过：共 {total} 个场景，通过 {passed} 个。下一步可以补边界、权限和异常参数覆盖，或把报告里的关键断言沉淀为回归用例。"
+    return (
+        f"我已经接上这个任务：任务状态 {task_status or '未知'}，执行状态 {execution_status}。"
+        "如果准备启动执行，建议先跑前置检查；如果还没生成 DSL，先确认场景和断言覆盖。"
+    )
+
+
 def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) -> str:
+    task_tracking = agent_payload.get("task_tracking") if isinstance(agent_payload.get("task_tracking"), dict) else {}
+    tracking_reply = _build_task_agent_tracking_reply(message, task_tracking)
+    if tracking_reply:
+        return tracking_reply
+
     llm_reply = build_llm_task_agent_chat_reply(message, agent_payload)
     if llm_reply:
         return llm_reply
@@ -2266,6 +2393,7 @@ def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) ->
         or str(agent_payload.get("detected_base_url") or "").strip()
         or agent_payload.get("recognized_endpoints")
         or int(summary.get("requirement_chars", 0) or 0) > 0
+        or task_tracking
     )
 
     if not has_draft_context:
@@ -4610,7 +4738,20 @@ def chat_with_task_agent(
         if current_user is None:
             raise HTTPException(status_code=401, detail="project-scoped task agent chat requires authenticated access")
         _ensure_project_access(project_id, current_user)
+    if payload.task_id:
+        task = _must_get_visible_task(str(payload.task_id), current_user)
+        if not payload.task_name:
+            payload.task_name = task.task_name
+        if not payload.target_system:
+            payload.target_system = task.target_system
+        if not payload.environment:
+            payload.environment = task.environment
+        if not payload.requirement_text:
+            payload.requirement_text = _task_agent_requirement_text_from_task(task)
+        if not project_id:
+            project_id = task.project_id
     agent_payload = _build_task_draft_agent_payload(payload, project_id=project_id)
+    agent_payload = _attach_task_context_to_agent_payload(payload, agent_payload, current_user)
     reply = _build_task_agent_chat_reply(payload.message, agent_payload)
     return _success_response(
         {

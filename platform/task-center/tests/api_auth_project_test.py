@@ -639,6 +639,49 @@ def test_task_draft_agent_endpoint_returns_suggestions(tmp_path, monkeypatch) ->
     assert request_follow_up["document_action_key"] == "request_expected_template"
 
 
+def test_task_agent_chat_tracks_existing_task_status(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    create = client.post(
+        "/api/tasks",
+        json={
+            "task_name": "登录接口跟踪",
+            "source_type": "text",
+            "requirement_text": "Base URL: https://api.example.com\nPOST /login\nExpected: 200",
+            "target_system": "https://api.example.com",
+        },
+    )
+    assert create.status_code == 201
+    task_id = create.json()["data"]["task_id"]
+
+    response = client.post(
+        "/api/tasks/agent/chat",
+        json={
+            "task_id": task_id,
+            "message": "当前任务失败了，下一步怎么办",
+            "task_tracking": {
+                "execution_status": "failed",
+                "scenario_total": 2,
+                "scenario_passed": 1,
+                "scenario_failed": 1,
+                "failed_steps": [
+                    {
+                        "scenario": "登录失败",
+                        "step_id": "login_unauthorized",
+                        "message": "Assertion failed: status_code eq 200, actual=401",
+                    }
+                ],
+            },
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["agent_payload"]["task_tracking"]["task_id"] == task_id
+    assert data["agent_payload"]["task_tracking"]["execution_status"] == "failed"
+    assert "执行失败" in data["reply"]
+    assert "401" in data["reply"]
+
+
 def test_task_draft_agent_requires_auth_for_project_scope(tmp_path, monkeypatch) -> None:
     client = _build_client(tmp_path, monkeypatch)
 

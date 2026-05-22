@@ -1,6 +1,9 @@
-﻿import { useEffect, useMemo, useRef } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
-import { Card, Empty, Progress, Space, Tag, Typography } from "antd";
+import { Button, Card, Empty, Progress, Space, Tag, Typography } from "antd";
+import { chatWithTaskAgent } from "../api/tasks";
+import TaskAgentPanel from "../components/TaskAgentPanel";
+import type { TaskAgentTrackingContext, TaskDraftAgentPayload } from "../types";
 import { ExtendedTaskDetail, StageKey, StageStatus, useTaskDetailData } from "./hooks/useTaskDetailData";
 import { useTaskExecution } from "./hooks/useTaskExecution";
 import { ExecutionCaseRow, useExecutionCaseRows } from "./hooks/useExecutionCaseRows";
@@ -20,6 +23,57 @@ const DSL_PREVIEW_SCENARIOS = 4;
 const { Text } = Typography;
 
 const PRE_SETTLED_DETAIL_POLL_MS = 12000;
+
+function buildTaskAgentTrackingContext(params: {
+  detail: ExtendedTaskDetail;
+  uiExecutionStatus: string;
+  preflightBlocking: boolean;
+  preflightResult: ReturnType<typeof useTaskExecution>["preflightResult"];
+  executionExplanations: ReturnType<typeof useTaskExecution>["executionExplanations"];
+  primaryAnalysisReport: ExtendedTaskDetail["analysis_report"] | undefined;
+}): TaskAgentTrackingContext {
+  const { detail, uiExecutionStatus, preflightBlocking, preflightResult, executionExplanations, primaryAnalysisReport } = params;
+  const scenarioResults = detail.execution_result?.scenario_results ?? [];
+  const failedScenarios = scenarioResults.filter((item) => item.status === "failed");
+  const failedSteps = failedScenarios.flatMap((scenario) =>
+    (scenario.steps ?? [])
+      .filter((step) => step.status === "failed")
+      .map((step) => ({
+        scenario: scenario.scenario_name || scenario.name || scenario.scenario_id,
+        step_id: step.step_id,
+        text: step.text,
+        message: step.message,
+        error_category: step.error_category,
+      })),
+  );
+  return {
+    task_id: detail.task_context.task_id,
+    task_name: detail.task_context.task_name,
+    task_status: detail.task_context.status,
+    execution_status: uiExecutionStatus,
+    environment: detail.environment,
+    target_system: detail.target_system,
+    scenario_total: scenarioResults.length,
+    scenario_passed: scenarioResults.filter((item) => item.status === "passed").length,
+    scenario_failed: failedScenarios.length,
+    failed_scenarios: failedScenarios.slice(0, 5).map((item) => ({
+      scenario_id: item.scenario_id,
+      name: item.scenario_name || item.name,
+      failed_steps: item.failed_steps,
+      duration_ms: item.duration_ms,
+    })),
+    failed_steps: failedSteps.slice(0, 5),
+    latest_logs: (detail.execution_result?.logs ?? []).slice(-5),
+    validation_passed: detail.validation_report?.passed,
+    validation_errors: detail.validation_report?.errors ?? [],
+    validation_warnings: detail.validation_report?.warnings ?? [],
+    analysis_findings: primaryAnalysisReport?.findings ?? [],
+    failure_reasons: ((primaryAnalysisReport as { failure_reasons?: string[] } | undefined)?.failure_reasons ?? []),
+    preflight_blocking: preflightBlocking,
+    preflight_issues: preflightResult?.blocking_issues ?? [],
+    execution_explanations: executionExplanations ?? undefined,
+  };
+}
 
 function executionStatusColor(status: string) {
   if (status === "passed") return "success";
@@ -133,6 +187,8 @@ export default function TaskDetail() {
     shouldCompareLatest,
   });
   const uiExecutionStatus = executing ? "running" : executionStatus;
+  const [taskAgentFloatingOpen, setTaskAgentFloatingOpen] = useState(false);
+  const [taskAgentPayload, setTaskAgentPayload] = useState<TaskDraftAgentPayload | null>(null);
   const { executionCaseRows, testPointGroups, filteredExecutionCaseRows } = useExecutionCaseRows({
     detail,
     streamEvents,
@@ -235,6 +291,48 @@ export default function TaskDetail() {
   const hasReport = Boolean(primaryAnalysisReport);
   const preflightBlocking = Boolean(preflightResult?.blocking);
   const canExecute = isValidHttpUrl(resolvedBaseUrl) && !preflightBlocking;
+  const taskAgentTrackingContext = buildTaskAgentTrackingContext({
+    detail,
+    uiExecutionStatus,
+    preflightBlocking,
+    preflightResult,
+    executionExplanations,
+    primaryAnalysisReport,
+  });
+  const taskAgentRequirementText = (() => {
+    const parsed = detail.parsed_requirement;
+    if (!parsed) {
+      return "";
+    }
+    return [
+      parsed.objective,
+      ...(parsed.actions ?? []),
+      ...(parsed.expected_results ?? []),
+      ...(parsed.constraints ?? []),
+    ]
+      .map((item) => String(item ?? "").trim())
+      .filter(Boolean)
+      .slice(0, 12)
+      .join("\n");
+  })();
+
+  const handleTaskAgentChat = async (messageText: string) => {
+    const result = await chatWithTaskAgent({
+      message: messageText,
+      task_id: detail.task_context.task_id,
+      task_name: detail.task_context.task_name,
+      requirement_text: taskAgentRequirementText,
+      source_path: detail.task_context.source_path ?? undefined,
+      target_system: resolvedBaseUrl || undefined,
+      environment: detail.environment,
+      project_id: detail.task_context.project_id,
+      task_tracking: taskAgentTrackingContext,
+    });
+    if (result.agent_payload) {
+      setTaskAgentPayload(result.agent_payload);
+    }
+    return { reply: result.reply, payload: result.agent_payload };
+  };
 
   const steps = [
     {
@@ -489,6 +587,36 @@ export default function TaskDetail() {
         rawDrawerData={rawDrawerData}
         onCloseRawDrawer={() => setRawDrawerOpen(false)}
       />
+
+      <div className={`create-task-agent-float task-detail-agent-float${taskAgentFloatingOpen ? " is-open" : ""}`}>
+        {taskAgentFloatingOpen ? (
+          <div className="create-task-agent-float__panel">
+            <div className="create-task-agent-float__head">
+              <Space size={8}>
+                <Text strong>Agent 跟踪</Text>
+                <Tag color={uiExecutionStatus === "running" ? "processing" : taskAgentPayload ? "success" : "default"}>
+                  {uiExecutionStatus === "running" ? "执行中" : taskAgentPayload ? "已接入" : "待询问"}
+                </Tag>
+              </Space>
+              <Button type="text" size="small" onClick={() => setTaskAgentFloatingOpen(false)}>
+                收起
+              </Button>
+            </div>
+            <div className="create-task-agent-float__body">
+              <TaskAgentPanel payload={taskAgentPayload} onSendMessage={handleTaskAgentChat} />
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={`create-task-agent-float__toggle${uiExecutionStatus === "running" || scenarioFail ? " has-badge" : ""}`}
+            onClick={() => setTaskAgentFloatingOpen(true)}
+          >
+            <span>Agent</span>
+            {scenarioFail ? <strong>{scenarioFail}</strong> : uiExecutionStatus === "running" ? <strong>RUN</strong> : null}
+          </button>
+        )}
+      </div>
 
     </Space>
   );
