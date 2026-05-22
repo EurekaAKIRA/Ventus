@@ -1260,13 +1260,15 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
 
   const agentPanel = (
     <Card bordered={false} className={`create-task-agent-card${isAgentStudio ? " create-task-agent-card--studio" : ""}`}>
-      <div className="create-task-agent-card__head">
-        <Space size={8}>
-          <RobotOutlined />
-          <Text strong>{isAgentStudio ? "Agent 工作台" : "创建助手"}</Text>
-        </Space>
-        <Tag color={agentLoading ? "processing" : "success"}>{agentLoading ? "分析中" : "在线"}</Tag>
-      </div>
+      {isAgentStudio ? (
+        <div className="create-task-agent-card__head">
+          <Space size={8}>
+            <RobotOutlined />
+            <Text strong>Agent 工作台</Text>
+          </Space>
+          <Tag color={agentLoading ? "processing" : "success"}>{agentLoading ? "分析中" : "在线"}</Tag>
+        </div>
+      ) : null}
       <div className="create-task-agent-card__body">
         <div className="create-task-agent-actions">
           <Button block onClick={() => void handleGenerateAgentSuggestion()} loading={agentLoading}>
