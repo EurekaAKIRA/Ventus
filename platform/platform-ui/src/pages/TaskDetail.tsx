@@ -462,6 +462,8 @@ export default function TaskDetail() {
     { label: "下一步", message: "当前任务下一步应该做什么" },
     { label: "失败原因", message: "当前任务失败原因是什么，如何修复", disabled: uiExecutionStatus !== "failed" && scenarioFail === 0 },
     { label: "补断言", message: "基于当前任务结果，还需要补哪些断言" },
+    { label: "证据来源", message: "你判断当前任务状态和结果时参考了哪些依据" },
+    { label: "重跑建议", message: "如果我要重跑这个任务，应该先处理哪些问题" },
   ];
   const analysisChartData = taskDashboard?.chart_data ?? primaryAnalysisReport?.chart_data;
   const chartItems = flattenNumericEntries(analysisChartData)
@@ -723,11 +725,37 @@ export default function TaskDetail() {
                   ))}
                 </div>
                 <div className="task-detail-agent-actions">
+                  <Button size="small" loading={refreshing} onClick={() => void load({ mode: "manual" })}>
+                    刷新状态
+                  </Button>
                   <Button size="small" loading={preflightLoading} onClick={() => void runPreflightCheck()}>
                     前置检查
                   </Button>
                   <Button size="small" type="primary" loading={executing} disabled={!canExecute || uiExecutionStatus === "running"} onClick={() => void runExecution()}>
                     启动执行
+                  </Button>
+                  <Button size="small" danger loading={stopping} disabled={uiExecutionStatus !== "running" || stopping || executing} onClick={() => void stopCurrentExecution()}>
+                    停止执行
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      const nextParams = new URLSearchParams(searchParams);
+                      nextParams.set("tab", "execution");
+                      setSearchParams(nextParams, { replace: true });
+                    }}
+                  >
+                    查看执行
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      const nextParams = new URLSearchParams(searchParams);
+                      nextParams.set("tab", "report");
+                      setSearchParams(nextParams, { replace: true });
+                    }}
+                  >
+                    查看报告
                   </Button>
                   <Button
                     size="small"
