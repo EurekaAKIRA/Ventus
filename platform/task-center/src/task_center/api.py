@@ -2329,7 +2329,7 @@ def _attach_task_context_to_agent_payload(payload: TaskAgentChatRequest, agent_p
 
 def _build_task_agent_tracking_reply(message: str, task_tracking: dict[str, Any]) -> str:
     normalized = str(message or "").strip().lower()
-    if not task_tracking or not any(token in normalized for token in ("跟踪", "状态", "进度", "现在", "当前", "执行到哪", "失败", "下一步", "怎么办")):
+    if not task_tracking or not any(token in normalized for token in ("跟踪", "状态", "进度", "现在", "当前", "执行到哪", "是否执行", "执行了吗", "执行", "结果", "失败", "下一步", "怎么办")):
         return ""
     execution_status = str(task_tracking.get("execution_status") or "not_started")
     task_status = str(task_tracking.get("task_status") or "")
@@ -2359,6 +2359,11 @@ def _build_task_agent_tracking_reply(message: str, task_tracking: dict[str, Any]
         )
     if execution_status == "passed":
         return f"当前任务执行通过：共 {total} 个场景，通过 {passed} 个。下一步可以补边界、权限和异常参数覆盖，或把报告里的关键断言沉淀为回归用例。"
+    if execution_status in {"not_started", "pending", ""}:
+        return (
+            f"当前任务尚未执行：任务状态 {task_status or '未知'}，还没有执行结果。"
+            "如果 DSL 和目标环境已经准备好，建议先跑前置检查，再启动主链路冒烟执行。"
+        )
     return (
         f"我已经接上这个任务：任务状态 {task_status or '未知'}，执行状态 {execution_status}。"
         "如果准备启动执行，建议先跑前置检查；如果还没生成 DSL，先确认场景和断言覆盖。"

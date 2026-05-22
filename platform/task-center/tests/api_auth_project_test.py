@@ -681,6 +681,18 @@ def test_task_agent_chat_tracks_existing_task_status(tmp_path, monkeypatch) -> N
     assert "执行失败" in data["reply"]
     assert "401" in data["reply"]
 
+    not_started = client.post(
+        "/api/tasks/agent/chat",
+        json={
+            "task_id": task_id,
+            "message": "这个任务是否执行了，结果如何",
+            "task_tracking": {"execution_status": "not_started"},
+        },
+    )
+    assert not_started.status_code == 200
+    assert "尚未执行" in not_started.json()["data"]["reply"]
+    assert "没有执行结果" in not_started.json()["data"]["reply"]
+
 
 def test_task_draft_agent_requires_auth_for_project_scope(tmp_path, monkeypatch) -> None:
     client = _build_client(tmp_path, monkeypatch)

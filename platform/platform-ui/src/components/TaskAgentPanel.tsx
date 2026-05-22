@@ -4,6 +4,7 @@ import type { TaskDraftAgentPayload } from "../types";
 export type TaskAgentPanelProps = {
   payload: TaskDraftAgentPayload | null;
   onSendMessage: (message: string) => Promise<{ reply: string; payload?: TaskDraftAgentPayload | null }>;
+  initialMessage?: string;
 };
 
 type ChatMessage = {
@@ -108,17 +109,30 @@ function formatChatError(error: unknown) {
   return "Agent 后端暂时不可用，请检查后端服务。";
 }
 
-export default function TaskAgentPanel({ payload, onSendMessage }: TaskAgentPanelProps) {
+export default function TaskAgentPanel({ payload, onSendMessage, initialMessage }: TaskAgentPanelProps) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const threadRef = useRef<HTMLDivElement | null>(null);
+  const normalizedInitialMessage = String(initialMessage || buildDraftModeIntro()).trim();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "bot",
       meta: "Agent",
-      text: buildDraftModeIntro(),
+      text: normalizedInitialMessage,
     },
   ]);
+
+  useEffect(() => {
+    setMessages((current) => {
+      if (current.length !== 1 || current[0]?.role !== "bot") {
+        return current;
+      }
+      if (current[0].text === normalizedInitialMessage) {
+        return current;
+      }
+      return [{ ...current[0], text: normalizedInitialMessage }];
+    });
+  }, [normalizedInitialMessage]);
 
   useEffect(() => {
     const thread = threadRef.current;

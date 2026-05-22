@@ -92,8 +92,68 @@ function executionStatusLabel(status: string) {
     asserting: "断言中",
     queued: "排队中",
     pending: "待执行",
+    not_started: "未执行",
   };
   return labels[status] || status || "-";
+}
+
+function taskAgentStatusColor(status: string) {
+  if (status === "passed") return "success";
+  if (status === "failed" || status === "stopped") return "error";
+  if (status === "running") return "processing";
+  if (status === "not_started" || status === "pending") return "default";
+  return "warning";
+}
+
+function buildTaskAgentExecutionSummary(params: {
+  taskName: string;
+  executionStatus: string;
+  scenarioTotal: number;
+  scenarioPass: number;
+  scenarioFail: number;
+  preflightBlocking: boolean;
+  canExecute: boolean;
+  failureReasons: string[];
+}): string {
+  const { taskName, executionStatus, scenarioTotal, scenarioPass, scenarioFail, preflightBlocking, canExecute, failureReasons } = params;
+  const displayName = taskName ? `“${taskName}”` : "当前任务";
+  if (executionStatus === "running") {
+    return [
+      `我正在跟踪任务 ${displayName}。`,
+      `执行状态：执行中。当前已收到 ${scenarioTotal} 个场景结果，通过 ${scenarioPass} 个，失败 ${scenarioFail} 个。`,
+      "执行结束后我会继续根据失败步骤、最新日志和断言结果给你定位建议。",
+    ].join("\n");
+  }
+  if (executionStatus === "passed") {
+    return [
+      `我正在跟踪任务 ${displayName}。`,
+      `执行状态：已执行，结果通过。共 ${scenarioTotal} 个场景，通过 ${scenarioPass} 个，失败 ${scenarioFail} 个。`,
+      "下一步可以补充边界、权限和异常参数覆盖，或把关键断言沉淀为回归用例。",
+    ].join("\n");
+  }
+  if (executionStatus === "failed") {
+    return [
+      `我正在跟踪任务 ${displayName}。`,
+      `执行状态：已执行，结果失败。共 ${scenarioTotal} 个场景，通过 ${scenarioPass} 个，失败 ${scenarioFail} 个。`,
+      failureReasons.length ? `优先排查：${failureReasons.slice(0, 3).join("；")}。` : "你可以问我“失败原因”，我会结合失败步骤、日志和断言结果排查。",
+    ].join("\n");
+  }
+  if (executionStatus === "stopped") {
+    return [
+      `我正在跟踪任务 ${displayName}。`,
+      `执行状态：已停止。停止前已收到 ${scenarioTotal} 个场景结果，通过 ${scenarioPass} 个，失败 ${scenarioFail} 个。`,
+      "下一步建议先确认停止原因，再决定继续执行或重跑冒烟链路。",
+    ].join("\n");
+  }
+  return [
+    `我正在跟踪任务 ${displayName}。`,
+    "执行状态：尚未执行，因此还没有执行结果。",
+    preflightBlocking
+      ? "当前前置检查存在阻断项，建议先处理环境、鉴权或连通性问题。"
+      : canExecute
+        ? "当前看起来可以启动执行。你可以先跑前置检查，再执行主链路冒烟。"
+        : "当前还不能判断可执行性，请先确认目标系统地址、环境配置和 DSL 是否已生成。",
+  ].join("\n");
 }
 
 const STAGE_LABELS: Record<StageKey, string> = {
@@ -370,6 +430,17 @@ export default function TaskDetail() {
   const scenarioPass = scenarioResults.filter((s) => s.status === "passed").length;
   const scenarioFail = scenarioResults.filter((s) => s.status === "failed").length;
   const scenarioTotal = scenarioResults.length;
+  const taskAgentFailureReasons = (primaryAnalysisReport as { failure_reasons?: string[] } | undefined)?.failure_reasons ?? [];
+  const taskAgentExecutionSummary = buildTaskAgentExecutionSummary({
+    taskName: detail.task_context.task_name,
+    executionStatus: uiExecutionStatus,
+    scenarioTotal,
+    scenarioPass,
+    scenarioFail,
+    preflightBlocking,
+    canExecute,
+    failureReasons: taskAgentFailureReasons,
+  });
   const analysisChartData = taskDashboard?.chart_data ?? primaryAnalysisReport?.chart_data;
   const chartItems = flattenNumericEntries(analysisChartData)
     .filter((item) => item.value >= 0)
@@ -594,16 +665,17 @@ export default function TaskDetail() {
             <div className="create-task-agent-float__head">
               <Space size={8}>
                 <Text strong>Agent 跟踪</Text>
-                <Tag color={uiExecutionStatus === "running" ? "processing" : taskAgentPayload ? "success" : "default"}>
-                  {uiExecutionStatus === "running" ? "执行中" : taskAgentPayload ? "已接入" : "待询问"}
+                <Tag color={taskAgentStatusColor(uiExecutionStatus)}>
+                  {executionStatusLabel(uiExecutionStatus)}
                 </Tag>
+                {scenarioTotal ? <Tag color={scenarioFail ? "error" : "success"}>{scenarioPass}/{scenarioTotal}</Tag> : null}
               </Space>
               <Button type="text" size="small" onClick={() => setTaskAgentFloatingOpen(false)}>
                 收起
               </Button>
             </div>
             <div className="create-task-agent-float__body">
-              <TaskAgentPanel payload={taskAgentPayload} onSendMessage={handleTaskAgentChat} />
+              <TaskAgentPanel payload={taskAgentPayload} onSendMessage={handleTaskAgentChat} initialMessage={taskAgentExecutionSummary} />
             </div>
           </div>
         ) : (
@@ -612,7 +684,7 @@ export default function TaskDetail() {
             className={`create-task-agent-float__toggle${uiExecutionStatus === "running" || scenarioFail ? " has-badge" : ""}`}
             onClick={() => setTaskAgentFloatingOpen(true)}
           >
-            <span>Agent</span>
+            <span>{executionStatusLabel(uiExecutionStatus)}</span>
             {scenarioFail ? <strong>{scenarioFail}</strong> : uiExecutionStatus === "running" ? <strong>RUN</strong> : null}
           </button>
         )}
