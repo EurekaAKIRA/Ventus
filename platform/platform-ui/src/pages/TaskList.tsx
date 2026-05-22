@@ -214,18 +214,12 @@ export default function TaskList() {
 
   const columns = [
     {
-      title: "任务 ID",
-      dataIndex: "task_id",
-      key: "task_id",
-      width: 220,
-      ellipsis: true,
-    },
-    {
       title: "任务名称",
       dataIndex: "task_name",
       key: "task_name",
+      width: 440,
       render: (text: string, record: TaskListItem) => (
-        <div className="table-primary-cell">
+        <div className="table-primary-cell task-list-title-cell">
           <a onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}`)}>{text}</a>
           <Text type="secondary" className="table-secondary-text">
             {record.task_id}
@@ -237,20 +231,20 @@ export default function TaskList() {
       title: "来源",
       dataIndex: "source_type",
       key: "source_type",
-      width: 100,
+      width: 90,
       render: (value: string) => <Tag>{value}</Tag>,
     },
     {
       title: "状态",
       dataIndex: "status",
       key: "status",
-      width: 120,
+      width: 110,
       render: (s: string) => <StatusTag status={s} />,
     },
     {
       title: "进度",
       key: "progress",
-      width: 170,
+      width: 120,
       render: (_: unknown, record: TaskListItem) => {
         const normalized = normalizeTaskStatus(record.status);
         return (
@@ -266,22 +260,26 @@ export default function TaskList() {
     {
       title: "下一步建议",
       key: "next_action",
-      width: 260,
-      render: (_: unknown, record: TaskListItem) => <Text type="secondary">{nextActionByTaskStatus(record.status)}</Text>,
+      width: 220,
+      render: (_: unknown, record: TaskListItem) => (
+        <Text type="secondary" className="task-list-next-action">
+          {nextActionByTaskStatus(record.status)}
+        </Text>
+      ),
     },
     {
       title: "创建时间",
       dataIndex: "created_at",
       key: "created_at",
-      width: 200,
+      width: 170,
       render: (v: string) => new Date(v).toLocaleString(),
     },
     {
       title: "操作",
       key: "actions",
-      width: 150,
+      width: 128,
       render: (_: unknown, record: TaskListItem) => (
-        <Space>
+        <Space size={4} className="task-list-actions">
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => navigate(`/tasks/${encodeURIComponent(record.task_id)}`)}>
             详情
           </Button>
@@ -427,11 +425,12 @@ export default function TaskList() {
         ) : null}
 
         <Table
-          className="platform-table"
+          className="platform-table task-list-table"
           dataSource={tasks}
           columns={columns}
           rowKey="task_id"
           loading={loading}
+          scroll={{ x: 1180 }}
           rowClassName={(record) => {
             if (isFailedStatus(record.status)) return "task-row task-row--failed";
             if (isRunningStatus(record.status)) return "task-row task-row--running";

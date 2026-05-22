@@ -1770,6 +1770,56 @@ a:hover {
   background: transparent !important;
 }
 
+.task-list-table .ant-table-thead > tr > th {
+  padding: 10px 12px !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: rgba(226, 232, 240, 0.78) !important;
+  font-size: 12px;
+  font-weight: 700 !important;
+}
+
+.task-list-table .ant-table-tbody > tr > td {
+  padding: 12px !important;
+  vertical-align: top;
+}
+
+.task-list-title-cell {
+  gap: 6px;
+}
+
+.task-list-title-cell > a {
+  color: #e5eef8;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.task-list-title-cell .table-secondary-text {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: rgba(15, 23, 42, 0.48);
+  color: #9fb0c3;
+  font-family: "Fira Code", "Consolas", monospace;
+  word-break: break-all;
+}
+
+.task-list-next-action {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.45;
+}
+
+.task-list-actions .ant-btn {
+  padding-inline: 4px;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
