@@ -81,17 +81,32 @@ function compactId(value?: string | null) {
   return `${raw.slice(0, 10)}...${raw.slice(-5)}`;
 }
 
-function getDescriptionPreview(value?: string | null) {
+function getListTextPreview(value?: string | null) {
   return String(value ?? "")
     .split(/\r?\n/)
     .map((line) => line.trim())
     .map((line) => {
-      const metadataStart = line.search(/(?:^|\s)(?:来源任务|任务\s*ID|场景|步骤|失败类别)[:：]/);
+      const metadataStart = line.search(
+        /(?:^|\s)(?:来源任务|来源|任务\s*(?:ID|Id|id)|task[_\s-]*id|场景|scenario|步骤|step|失败类别|failure[_\s-]*(?:category|type))[:：=]/i,
+      );
       return metadataStart >= 0 ? line.slice(0, metadataStart).trim() : line;
     })
     .filter(Boolean)
     .join("\n")
     .trim();
+}
+
+function getDescriptionPreview(value?: string | null) {
+  return getListTextPreview(value);
+}
+
+function getTitlePreview(value?: string | null) {
+  const raw = String(value ?? "").trim();
+  const preview = getListTextPreview(raw);
+  if (preview) return preview;
+  return /(?:来源任务|任务\s*(?:ID|Id|id)|task[_\s-]*id|场景|scenario|步骤|step|失败类别|failure[_\s-]*(?:category|type))[:：=]/i.test(raw)
+    ? "自动生成缺陷"
+    : raw;
 }
 
 export default function DefectCenter() {
@@ -497,12 +512,13 @@ export default function DefectCenter() {
               key: "title",
               width: 620,
               render: (_, record: DefectPayload) => {
+                const title = getTitlePreview(record.title);
                 const preview = getDescriptionPreview(record.description);
                 return (
                   <div className="defect-title-cell">
                     <div className="defect-title-cell__line">
                       <span className="mono-inline">{record.defect_key}</span>
-                      <Text strong>{record.title}</Text>
+                      <Text strong>{title}</Text>
                     </div>
                     {preview ? (
                       <Text type="secondary" className="defect-title-cell__desc">
