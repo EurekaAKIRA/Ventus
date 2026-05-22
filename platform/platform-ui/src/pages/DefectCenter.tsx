@@ -85,7 +85,11 @@ function getDescriptionPreview(value?: string | null) {
   return String(value ?? "")
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line && !/^来源任务[:：]/.test(line))
+    .map((line) => {
+      const metadataStart = line.search(/(?:^|\s)(?:来源任务|任务\s*ID|场景|步骤|失败类别)[:：]/);
+      return metadataStart >= 0 ? line.slice(0, metadataStart).trim() : line;
+    })
+    .filter(Boolean)
     .join("\n")
     .trim();
 }
