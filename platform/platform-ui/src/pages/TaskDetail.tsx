@@ -156,6 +156,13 @@ function buildTaskAgentExecutionSummary(params: {
   ].join("\n");
 }
 
+function taskAgentStageClass(status: string) {
+  if (status === "finish") return " is-done";
+  if (status === "process") return " is-current";
+  if (status === "error") return " is-error";
+  return "";
+}
+
 const STAGE_LABELS: Record<StageKey, string> = {
   basic: "任务基础信息",
   artifacts: "任务产物索引",
@@ -441,6 +448,21 @@ export default function TaskDetail() {
     canExecute,
     failureReasons: taskAgentFailureReasons,
   });
+  const taskAgentEvidence = [
+    hasParsedResult ? "需求解析结果" : "",
+    hasScenarios ? `测试场景 ${detail.scenarios?.length ?? 0} 个` : "",
+    detail.test_case_dsl?.scenarios?.length ? `DSL 场景 ${detail.test_case_dsl.scenarios.length} 个` : "",
+    scenarioTotal ? `执行结果 ${scenarioPass}/${scenarioTotal}` : "",
+    taskAgentFailureReasons.length ? `失败原因 ${taskAgentFailureReasons.length} 条` : "",
+    preflightResult ? `前置检查：${preflightResult.overall_status}` : "",
+    executionExplanations?.top_reasons?.length ? `失败归因 ${executionExplanations.top_reasons.length} 条` : "",
+  ].filter(Boolean);
+  const taskAgentQuickActions = [
+    { label: "是否执行", message: "这个任务是否执行了，结果如何" },
+    { label: "下一步", message: "当前任务下一步应该做什么" },
+    { label: "失败原因", message: "当前任务失败原因是什么，如何修复", disabled: uiExecutionStatus !== "failed" && scenarioFail === 0 },
+    { label: "补断言", message: "基于当前任务结果，还需要补哪些断言" },
+  ];
   const analysisChartData = taskDashboard?.chart_data ?? primaryAnalysisReport?.chart_data;
   const chartItems = flattenNumericEntries(analysisChartData)
     .filter((item) => item.value >= 0)
@@ -675,7 +697,69 @@ export default function TaskDetail() {
               </Button>
             </div>
             <div className="create-task-agent-float__body">
-              <TaskAgentPanel payload={taskAgentPayload} onSendMessage={handleTaskAgentChat} initialMessage={taskAgentExecutionSummary} />
+              <div className="task-detail-agent-brief">
+                <div className="task-detail-agent-brief__status">
+                  <div>
+                    <span>当前结论</span>
+                    <strong>{executionStatusLabel(uiExecutionStatus)}</strong>
+                  </div>
+                  {scenarioTotal ? (
+                    <div>
+                      <span>执行结果</span>
+                      <strong>{scenarioPass}/{scenarioTotal}</strong>
+                    </div>
+                  ) : (
+                    <div>
+                      <span>执行结果</span>
+                      <strong>暂无</strong>
+                    </div>
+                  )}
+                </div>
+                <div className="task-detail-agent-flow">
+                  {steps.map((item) => (
+                    <span key={item.title} className={`task-detail-agent-flow__item${taskAgentStageClass(String(item.status))}`}>
+                      {item.title}
+                    </span>
+                  ))}
+                </div>
+                <div className="task-detail-agent-actions">
+                  <Button size="small" loading={preflightLoading} onClick={() => void runPreflightCheck()}>
+                    前置检查
+                  </Button>
+                  <Button size="small" type="primary" loading={executing} disabled={!canExecute || uiExecutionStatus === "running"} onClick={() => void runExecution()}>
+                    启动执行
+                  </Button>
+                  <Button
+                    size="small"
+                    disabled={uiExecutionStatus !== "failed" && scenarioFail === 0}
+                    loading={explanationsLoading}
+                    onClick={() => {
+                      void loadExecutionExplanations();
+                      const nextParams = new URLSearchParams(searchParams);
+                      nextParams.set("tab", "report");
+                      setSearchParams(nextParams, { replace: true });
+                    }}
+                  >
+                    失败归因
+                  </Button>
+                </div>
+                {taskAgentEvidence.length ? (
+                  <div className="task-detail-agent-evidence">
+                    <span>依据</span>
+                    <div>
+                      {taskAgentEvidence.map((item) => (
+                        <Tag key={item}>{item}</Tag>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              <TaskAgentPanel
+                payload={taskAgentPayload}
+                onSendMessage={handleTaskAgentChat}
+                initialMessage={taskAgentExecutionSummary}
+                quickActions={taskAgentQuickActions}
+              />
             </div>
           </div>
         ) : (

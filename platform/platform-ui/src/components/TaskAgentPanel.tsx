@@ -5,6 +5,11 @@ export type TaskAgentPanelProps = {
   payload: TaskDraftAgentPayload | null;
   onSendMessage: (message: string) => Promise<{ reply: string; payload?: TaskDraftAgentPayload | null }>;
   initialMessage?: string;
+  quickActions?: Array<{
+    label: string;
+    message: string;
+    disabled?: boolean;
+  }>;
 };
 
 type ChatMessage = {
@@ -109,7 +114,7 @@ function formatChatError(error: unknown) {
   return "Agent 后端暂时不可用，请检查后端服务。";
 }
 
-export default function TaskAgentPanel({ payload, onSendMessage, initialMessage }: TaskAgentPanelProps) {
+export default function TaskAgentPanel({ payload, onSendMessage, initialMessage, quickActions = [] }: TaskAgentPanelProps) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const threadRef = useRef<HTMLDivElement | null>(null);
@@ -192,6 +197,16 @@ export default function TaskAgentPanel({ payload, onSendMessage, initialMessage 
             </div>
           ))}
         </div>
+
+        {quickActions.length ? (
+          <div className="vue-agent-dialogue__quick">
+            {quickActions.map((item) => (
+              <button key={item.label} type="button" disabled={item.disabled || sending} onClick={() => void sendMessage(item.message)}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <form
           className="vue-agent-dialogue__composer"
