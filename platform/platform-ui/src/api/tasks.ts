@@ -359,6 +359,80 @@ export async function fetchTaskDraftAgent(payload: {
           detail: payload.target_system && payload.environment ? "目标系统与环境已提供" : "仍需确认目标系统或执行环境",
         },
       ],
+      assertion_suggestions: [
+        {
+          key: "status_and_shape",
+          title: "状态码与响应结构",
+          scope: "all_endpoints",
+          priority: "high",
+          assertions: ["GET /demo/resource: 状态码 200，响应根类型和关键字段符合接口文档"],
+          reason: "先固定最小可执行断言，避免只验证请求可达",
+        },
+      ],
+      execution_strategy: {
+        mode: payload.target_system && payload.environment ? "ready" : "prepare",
+        smoke_path: "resource 只读查询链路",
+        data_setup: "optional",
+        rerun_policy: "修正文档或环境后先重跑冒烟链路，再展开完整回归",
+        phases: [
+          {
+            key: "preflight",
+            title: "执行前预检",
+            detail: "校验 Base URL、环境变量、鉴权配置和目标服务可达性",
+            required: true,
+          },
+          {
+            key: "smoke",
+            title: "冒烟链路",
+            detail: "先执行最小可用接口，确认响应契约",
+            required: true,
+          },
+        ],
+        notes: payload.target_system && payload.environment ? ["当前可直接进入执行链路"] : ["执行前仍需处理门禁或追问"],
+      },
+      risk_priorities: payload.target_system
+        ? []
+        : [
+            {
+              key: "coverage_1",
+              title: "覆盖缺口",
+              severity: "medium",
+              impact: "未识别到接口标识，无法可靠估算接口覆盖率",
+              mitigation: "补齐 Request/Expected、接口清单或异常分支说明",
+              source: "coverage",
+            },
+          ],
+      agent_handoff: {
+        workflow_safe: true,
+        applied_to_workflow: false,
+        handoff_status: payload.target_system ? "ready" : "draft",
+        blocked_by: [],
+        generation_context: {
+          recognized_endpoints: payload.target_system ? ["GET /demo/resource"] : [],
+          estimated_scenario_count: payload.target_system ? 1 : 0,
+          scenario_shape: payload.target_system ? "单接口/松散型" : "待补充",
+          resource_group_count: payload.target_system ? 1 : 0,
+        },
+        assertion_intents: [
+          {
+            key: "status_and_shape",
+            title: "状态码与响应结构",
+            priority: "high",
+            examples: ["GET /demo/resource: 状态码 200，响应根类型和关键字段符合接口文档"],
+          },
+        ],
+        execution_precheck: {
+          mode: payload.target_system && payload.environment ? "ready" : "prepare",
+          smoke_path: "resource 只读查询链路",
+          data_setup: "optional",
+          required_phase_keys: ["preflight", "smoke"],
+        },
+        document_snapshot: {
+          has_preview: true,
+          action_count: 1,
+          applied_action_keys: ["request_expected_template"],
+        },
+      },
       coverage_gaps: payload.target_system ? [] : ["未识别到接口标识，无法可靠估算接口覆盖率"],
       highlights: ["已生成基础草案", "可继续回填任务名称和目标系统"],
       risks: [],

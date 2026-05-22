@@ -336,6 +336,28 @@ export interface ExecutionExplanationPayload {
   task_id: string;
   execution_id?: string;
   summary?: Record<string, unknown>;
+  llm_diagnosis?: {
+    summary?: string;
+    root_cause?: string;
+    confidence?: number;
+    next_actions?: string[];
+  } | null;
+  llm_metadata?: {
+    attempted?: boolean;
+    used?: boolean;
+    fallback_reason?: string;
+    error_type?: string;
+    provider_profile?: string;
+  };
+  defect_summaries?: Array<{
+    step_id?: string;
+    title: string;
+    severity?: "low" | "medium" | "high" | "critical" | string;
+    expected_result?: string;
+    actual_result?: string;
+    reproduction_steps?: string;
+    generated_by?: "rules" | "llm" | string;
+  }>;
   failure_groups?: Array<{
     category: string;
     count: number;
@@ -720,6 +742,70 @@ export interface TaskDraftAgentQualityGate {
   detail: string;
 }
 
+export interface TaskDraftAgentAssertionSuggestion {
+  key: string;
+  title: string;
+  scope: string;
+  priority: "high" | "medium" | "low" | string;
+  assertions: string[];
+  reason?: string;
+}
+
+export interface TaskDraftAgentExecutionPhase {
+  key: string;
+  title: string;
+  detail: string;
+  required: boolean;
+}
+
+export interface TaskDraftAgentExecutionStrategy {
+  mode: "ready" | "prepare" | string;
+  smoke_path: string;
+  data_setup: "required" | "optional" | string;
+  rerun_policy: string;
+  phases: TaskDraftAgentExecutionPhase[];
+  notes: string[];
+}
+
+export interface TaskDraftAgentRiskPriority {
+  key: string;
+  title: string;
+  severity: "high" | "medium" | "low" | string;
+  impact: string;
+  mitigation: string;
+  source: "quality_gate" | "diagnostic" | "coverage" | string;
+}
+
+export interface TaskDraftAgentHandoff {
+  workflow_safe: boolean;
+  applied_to_workflow: boolean;
+  handoff_status: "ready" | "blocked" | "draft" | string;
+  blocked_by: string[];
+  generation_context: {
+    recognized_endpoints: string[];
+    estimated_scenario_count: number;
+    scenario_shape: string;
+    resource_group_count: number;
+  };
+  assertion_intents: Array<{
+    key: string;
+    title: string;
+    priority: string;
+    examples: string[];
+  }>;
+  execution_precheck: {
+    mode: string;
+    smoke_path: string;
+    data_setup: string;
+    required_phase_keys: string[];
+  };
+  document_snapshot: {
+    has_preview: boolean;
+    action_count: number;
+    applied_action_keys: string[];
+  };
+}
+
 export interface TaskDraftAgentDiagnosticVerdict {
   status: "pass" | "fixable" | "blocked" | string;
   severity: "success" | "warning" | "error" | string;
@@ -774,6 +860,10 @@ export interface TaskDraftAgentPayload {
   action_plan?: TaskDraftAgentActionPlanItem[];
   scenario_blueprint?: TaskDraftAgentScenarioBlueprint[];
   quality_gates?: TaskDraftAgentQualityGate[];
+  assertion_suggestions?: TaskDraftAgentAssertionSuggestion[];
+  execution_strategy?: TaskDraftAgentExecutionStrategy;
+  risk_priorities?: TaskDraftAgentRiskPriority[];
+  agent_handoff?: TaskDraftAgentHandoff;
   coverage_gaps?: string[];
   highlights: string[];
   risks: string[];

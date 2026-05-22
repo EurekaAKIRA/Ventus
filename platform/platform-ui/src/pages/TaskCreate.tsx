@@ -306,6 +306,43 @@ function getAgentQualityGateStatusColor(status?: string): string {
   }
 }
 
+function getAgentPriorityColor(priority?: string): string {
+  switch (priority) {
+    case "high":
+      return "error";
+    case "medium":
+      return "warning";
+    case "low":
+      return "default";
+    default:
+      return "default";
+  }
+}
+
+function getAgentPriorityLabel(priority?: string): string {
+  switch (priority) {
+    case "high":
+      return "高";
+    case "medium":
+      return "中";
+    case "low":
+      return "低";
+    default:
+      return priority || "未知";
+  }
+}
+
+function getAgentExecutionModeLabel(mode?: string): string {
+  switch (mode) {
+    case "ready":
+      return "可执行";
+    case "prepare":
+      return "需准备";
+    default:
+      return mode || "未知";
+  }
+}
+
 function getAgentVerdictColor(severity?: string): string {
   switch (severity) {
     case "success":
@@ -1062,6 +1099,10 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
       agentPayload?.action_plan?.length ||
       agentPayload?.scenario_blueprint?.length ||
       agentPayload?.quality_gates?.length ||
+      agentPayload?.assertion_suggestions?.length ||
+      agentPayload?.execution_strategy?.phases?.length ||
+      agentPayload?.risk_priorities?.length ||
+      agentPayload?.agent_handoff ||
       agentPayload?.coverage_gaps?.length ||
       agentPayload?.recognized_endpoints.length ||
       agentPayload?.highlights.length ||
@@ -1088,6 +1129,8 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
     (agentPayload?.document_actions.length ?? 0) +
     (agentPayload?.knowledge_hits.length ?? 0) +
     (agentPayload?.quality_gates?.filter((item) => item.status === "block" || item.status === "warn").length ?? 0) +
+    (agentPayload?.risk_priorities?.length ?? 0) +
+    (agentPayload?.agent_handoff?.blocked_by.length ?? 0) +
     (agentPayload?.coverage_gaps?.length ?? 0) +
     (agentPayload?.risks.length ?? 0) +
     (agentPayload?.warnings.length ?? 0);
@@ -1454,6 +1497,138 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
                       </div>
                     ))}
                   </div>
+                </div>
+              ) : null}
+              {showOverviewSections && agentPayload.assertion_suggestions?.length ? (
+                <div className="create-task-agent-section create-task-agent-section--wide">
+                  <Text strong className="create-task-agent-section__title">
+                    断言建议
+                  </Text>
+                  <div className="create-task-agent-list">
+                    {agentPayload.assertion_suggestions.map((item) => (
+                      <div key={item.key} className="create-task-agent-list__item">
+                        <div className="create-task-agent-list__row">
+                          <Text strong>{item.title}</Text>
+                          <Space size={6}>
+                            <Tag color={getAgentPriorityColor(item.priority)}>{getAgentPriorityLabel(item.priority)}</Tag>
+                            <Tag color="blue">{item.scope}</Tag>
+                          </Space>
+                        </div>
+                        {item.reason ? <Text type="secondary">{item.reason}</Text> : null}
+                        <div className="create-task-agent-list">
+                          {item.assertions.slice(0, 4).map((assertion) => (
+                            <div key={assertion} className="create-task-agent-list__item">
+                              <Text>{assertion}</Text>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {showOverviewSections && agentPayload.execution_strategy?.phases?.length ? (
+                <div className="create-task-agent-section create-task-agent-section--wide">
+                  <div className="create-task-agent-list__row">
+                    <Text strong className="create-task-agent-section__title">
+                      执行策略
+                    </Text>
+                    <Space size={6} wrap>
+                      <Tag color={agentPayload.execution_strategy.mode === "ready" ? "success" : "warning"}>
+                        {getAgentExecutionModeLabel(agentPayload.execution_strategy.mode)}
+                      </Tag>
+                      <span className="surface-chip">
+                        数据准备 <strong>{agentPayload.execution_strategy.data_setup}</strong>
+                      </span>
+                    </Space>
+                  </div>
+                  <Text type="secondary">冒烟链路：{agentPayload.execution_strategy.smoke_path}</Text>
+                  <div className="create-task-agent-plan">
+                    {agentPayload.execution_strategy.phases.map((item, index) => (
+                      <div key={item.key} className={`create-task-agent-plan__item ${item.required ? "is-next" : "is-review"}`}>
+                        <span className="create-task-agent-plan__step">{index + 1}</span>
+                        <div className="create-task-agent-plan__copy">
+                          <div className="create-task-agent-list__row">
+                            <Text strong>{item.title}</Text>
+                            <Tag color={item.required ? "processing" : "default"}>{item.required ? "必需" : "可选"}</Tag>
+                          </div>
+                          <Text type="secondary">{item.detail}</Text>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Text type="secondary">{agentPayload.execution_strategy.rerun_policy}</Text>
+                  {agentPayload.execution_strategy.notes.length ? (
+                    <div className="create-task-agent-endpoint-list">
+                      {agentPayload.execution_strategy.notes.map((item) => (
+                        <span key={item} className="surface-chip create-task-agent-endpoint-chip">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {showOverviewSections && agentPayload.risk_priorities?.length ? (
+                <div className="create-task-agent-section create-task-agent-section--wide">
+                  <Text strong className="create-task-agent-section__title">
+                    风险优先级
+                  </Text>
+                  <div className="create-task-agent-list">
+                    {agentPayload.risk_priorities.map((item) => (
+                      <div key={item.key} className={`create-task-agent-list__item${item.severity === "high" ? " is-warning" : ""}`}>
+                        <div className="create-task-agent-list__row">
+                          <Text strong>{item.title}</Text>
+                          <Space size={6}>
+                            <Tag color={getAgentPriorityColor(item.severity)}>{getAgentPriorityLabel(item.severity)}</Tag>
+                            <Tag>{item.source}</Tag>
+                          </Space>
+                        </div>
+                        <Text>{item.impact}</Text>
+                        <Text type="secondary">处理建议：{item.mitigation}</Text>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {showOverviewSections && agentPayload.agent_handoff ? (
+                <div className="create-task-agent-section create-task-agent-section--wide">
+                  <div className="create-task-agent-list__row">
+                    <Text strong className="create-task-agent-section__title">
+                      工作流交接摘要
+                    </Text>
+                    <Space size={6} wrap>
+                      <Tag color={agentPayload.agent_handoff.handoff_status === "blocked" ? "error" : "success"}>
+                        {agentPayload.agent_handoff.handoff_status}
+                      </Tag>
+                      <Tag color={agentPayload.agent_handoff.applied_to_workflow ? "processing" : "default"}>
+                        {agentPayload.agent_handoff.applied_to_workflow ? "已应用" : "未应用"}
+                      </Tag>
+                    </Space>
+                  </div>
+                  <div className="create-task-agent-meta">
+                    <span className="surface-chip">
+                      接口 <strong>{agentPayload.agent_handoff.generation_context.recognized_endpoints.length}</strong>
+                    </span>
+                    <span className="surface-chip">
+                      场景 <strong>{agentPayload.agent_handoff.generation_context.estimated_scenario_count}</strong>
+                    </span>
+                    <span className="surface-chip">
+                      资源组 <strong>{agentPayload.agent_handoff.generation_context.resource_group_count}</strong>
+                    </span>
+                    <span className="surface-chip">
+                      断言意图 <strong>{agentPayload.agent_handoff.assertion_intents.length}</strong>
+                    </span>
+                  </div>
+                  {agentPayload.agent_handoff.blocked_by.length ? (
+                    <div className="create-task-agent-list">
+                      {agentPayload.agent_handoff.blocked_by.map((item) => (
+                        <div key={item} className="create-task-agent-list__item is-warning">
+                          <Text>{item}</Text>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               {showOverviewSections && agentPayload.signals.length ? (

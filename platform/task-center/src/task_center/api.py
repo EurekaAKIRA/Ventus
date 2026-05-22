@@ -1565,6 +1565,293 @@ def _build_task_draft_scenario_blueprint(
     return blueprints
 
 
+def _build_task_draft_assertion_suggestions(*, diagnostics: dict[str, Any]) -> list[dict[str, Any]]:
+    recognized_endpoints = [str(item) for item in diagnostics.get("recognized_endpoints") or [] if str(item).strip()]
+    auth_hints = diagnostics.get("auth_hints") or []
+    has_context_flow = bool(diagnostics.get("has_context_flow"))
+    resource_groups = [item for item in diagnostics.get("resource_groups") or [] if isinstance(item, dict)]
+    has_write_endpoint = any(endpoint.startswith(("POST ", "PUT ", "PATCH ", "DELETE ")) for endpoint in recognized_endpoints)
+    has_live_resource_flow = has_context_flow or any(str(item.get("status") or "") == "complete" for item in resource_groups)
+
+    suggestions: list[dict[str, Any]] = []
+    if recognized_endpoints:
+        method_expectations: list[str] = []
+        for endpoint in recognized_endpoints[:6]:
+            method = endpoint.split(" ", 1)[0].upper()
+            if method == "POST":
+                expectation = "状态码 200/201，响应体返回资源 id 或业务成功标识"
+            elif method in {"PUT", "PATCH"}:
+                expectation = "状态码 200，响应体字段与提交变更保持一致"
+            elif method == "DELETE":
+                expectation = "状态码 200/204，并在后续查询中确认资源不可用或状态已变更"
+            else:
+                expectation = "状态码 200，响应根类型和关键字段符合接口文档"
+            method_expectations.append(f"{endpoint}: {expectation}")
+        suggestions.append(
+            {
+                "key": "status_and_shape",
+                "title": "状态码与响应结构",
+                "scope": "all_endpoints",
+                "priority": "high",
+                "assertions": method_expectations,
+                "reason": "先固定每个接口的最小可执行断言，避免只验证请求可达而漏掉响应契约",
+            }
+        )
+
+    if has_live_resource_flow or any(str(item.get("status") or "") == "needs_source" for item in resource_groups):
+        suggestions.append(
+            {
+                "key": "context_consistency",
+                "title": "上下文变量一致性",
+                "scope": "scenario",
+                "priority": "high",
+                "assertions": [
+                    "创建或列表步骤保存 resource_id / business_id 到上下文",
+                    "详情、修改、删除步骤的路径参数必须来自同一个上下文变量",
+                    "后续响应中的 id 字段应等于已保存的上下文变量",
+                ],
+                "reason": "跨步骤链路的主要风险是资源 id 来源不明或前后步骤复用了不同资源",
+            }
+        )
+
+    if auth_hints:
+        suggestions.append(
+            {
+                "key": "auth_negative",
+                "title": "鉴权与权限边界",
+                "scope": "security",
+                "priority": "medium",
+                "assertions": [
+                    "缺少 Authorization / Cookie 时返回 401 或业务未登录错误",
+                    "权限不足账号访问受限资源时返回 403 或业务权限错误",
+                    "Token 过期或格式错误时不应返回成功业务数据",
+                ],
+                "reason": "文档已出现鉴权提示，建议把登录态成功和失败分支一起纳入用例",
+            }
+        )
+
+    if has_write_endpoint:
+        suggestions.append(
+            {
+                "key": "validation_negative",
+                "title": "参数校验与异常分支",
+                "scope": "write_endpoints",
+                "priority": "medium",
+                "assertions": [
+                    "必填字段缺失返回 400/422 或明确业务错误码",
+                    "字段类型非法、枚举值非法、超长字符串应被拒绝",
+                    "重复提交或状态不允许变更时返回幂等结果或业务冲突错误",
+                ],
+                "reason": "写接口只覆盖成功路径不足以说明业务规则可控，需要补参数和状态边界",
+            }
+        )
+
+    if not suggestions:
+        suggestions.append(
+            {
+                "key": "basic_contract",
+                "title": "基础契约断言",
+                "scope": "draft",
+                "priority": "medium",
+                "assertions": [
+                    "补齐接口后至少校验状态码、响应根类型和一个关键业务字段",
+                    "补齐 Expected 后再生成更细的字段值和上下文断言",
+                ],
+                "reason": "当前接口信息不足，先保留最小断言模板，避免后续 DSL 完全无检查点",
+            }
+        )
+    return suggestions[:5]
+
+
+def _build_task_draft_execution_strategy(
+    *,
+    ready_to_execute: bool,
+    diagnostics: dict[str, Any],
+    scenario_blueprint: list[dict[str, Any]],
+) -> dict[str, Any]:
+    scenario_outlook = diagnostics.get("scenario_outlook") or {}
+    lifecycle_resource_risk = bool(diagnostics.get("lifecycle_resource_risk"))
+    auth_hints = diagnostics.get("auth_hints") or []
+    recognized_endpoints = [str(item) for item in diagnostics.get("recognized_endpoints") or [] if str(item).strip()]
+    first_ready_blueprint = next(
+        (item for item in scenario_blueprint if str(item.get("status") or "") in {"ready", "read_only", "single_step"}),
+        None,
+    )
+    smoke_path = str(first_ready_blueprint.get("title") or "") if first_ready_blueprint else (
+        recognized_endpoints[0] if recognized_endpoints else "补齐接口后生成冒烟链路"
+    )
+
+    phases = [
+        {
+            "key": "preflight",
+            "title": "执行前预检",
+            "detail": "校验 Base URL、环境变量、鉴权配置和目标服务可达性",
+            "required": True,
+        },
+        {
+            "key": "smoke",
+            "title": "冒烟链路",
+            "detail": f"优先执行“{smoke_path}”，确认最小可用路径和响应契约",
+            "required": True,
+        },
+        {
+            "key": "regression",
+            "title": "扩展回归",
+            "detail": f"在冒烟通过后展开约 {int(scenario_outlook.get('estimated_scenario_count', 0) or 0)} 个场景，覆盖异常、边界和权限分支",
+            "required": False,
+        },
+    ]
+    if lifecycle_resource_risk:
+        phases.insert(
+            1,
+            {
+                "key": "data_setup",
+                "title": "测试数据准备",
+                "detail": "先补资源来源或创建前置步骤，再执行 detail/update/delete 类接口",
+                "required": True,
+            },
+        )
+    if auth_hints:
+        phases.insert(
+            1,
+            {
+                "key": "auth_setup",
+                "title": "鉴权准备",
+                "detail": "确认 token/cookie/header 的生成和刷新方式，并加入未授权分支",
+                "required": True,
+            },
+        )
+
+    return {
+        "mode": "ready" if ready_to_execute else "prepare",
+        "smoke_path": smoke_path,
+        "data_setup": "required" if lifecycle_resource_risk else "optional",
+        "rerun_policy": "修正文档或环境后先重跑冒烟链路，再展开完整回归",
+        "phases": phases,
+        "notes": _dedupe_strings(
+            [
+                "当前可直接进入执行链路" if ready_to_execute else "执行前仍需处理门禁或追问",
+                "涉及鉴权，建议将 token/cookie 放入环境配置" if auth_hints else "",
+                "存在活资源依赖，必须先闭合资源来源" if lifecycle_resource_risk else "",
+            ]
+        ),
+    }
+
+
+def _build_task_draft_risk_priorities(
+    *,
+    diagnostics: dict[str, Any],
+    quality_gates: list[dict[str, Any]],
+    coverage_gaps: list[str],
+) -> list[dict[str, Any]]:
+    priorities: list[dict[str, Any]] = []
+    for gate in quality_gates:
+        status = str(gate.get("status") or "")
+        if status == "pass":
+            continue
+        priorities.append(
+            {
+                "key": f"gate_{gate.get('key') or len(priorities)}",
+                "title": str(gate.get("label") or "质量门禁"),
+                "severity": "high" if status == "block" else "medium",
+                "impact": str(gate.get("detail") or ""),
+                "mitigation": "先处理该门禁对应的追问或文档修正，再重新分析",
+                "source": "quality_gate",
+            }
+        )
+    for index, risk in enumerate(diagnostics.get("risks") or [], start=1):
+        priorities.append(
+            {
+                "key": f"risk_{index}",
+                "title": "文档/执行风险",
+                "severity": "high" if "活资源" in str(risk) or "目标系统" in str(risk) else "medium",
+                "impact": str(risk),
+                "mitigation": "补充资源来源、目标系统或上下文传递说明后再生成 DSL",
+                "source": "diagnostic",
+            }
+        )
+    for index, gap in enumerate(coverage_gaps, start=1):
+        priorities.append(
+            {
+                "key": f"coverage_{index}",
+                "title": "覆盖缺口",
+                "severity": "medium",
+                "impact": str(gap),
+                "mitigation": "补齐 Request/Expected、接口清单或异常分支说明",
+                "source": "coverage",
+            }
+        )
+
+    severity_rank = {"high": 0, "medium": 1, "low": 2}
+    unique: list[dict[str, Any]] = []
+    seen_impacts: set[str] = set()
+    for item in priorities:
+        impact = str(item.get("impact") or "")
+        if impact in seen_impacts:
+            continue
+        seen_impacts.add(impact)
+        unique.append(item)
+    unique.sort(key=lambda item: (severity_rank.get(str(item.get("severity") or ""), 3), str(item.get("title") or "")))
+    return unique[:6]
+
+
+def _build_task_draft_agent_handoff(
+    *,
+    diagnostics: dict[str, Any],
+    assertion_suggestions: list[dict[str, Any]],
+    execution_strategy: dict[str, Any],
+    risk_priorities: list[dict[str, Any]],
+    document_preview: dict[str, Any] | None,
+) -> dict[str, Any]:
+    scenario_outlook = diagnostics.get("scenario_outlook") or {}
+    recognized_endpoints = [str(item) for item in diagnostics.get("recognized_endpoints") or [] if str(item).strip()]
+    blocked_by = [
+        str(item.get("impact") or item.get("title") or "").strip()
+        for item in risk_priorities
+        if str(item.get("severity") or "") == "high" and str(item.get("impact") or item.get("title") or "").strip()
+    ]
+    assertion_intents: list[dict[str, Any]] = []
+    for item in assertion_suggestions:
+        assertions = [str(assertion).strip() for assertion in item.get("assertions") or [] if str(assertion).strip()]
+        assertion_intents.append(
+            {
+                "key": str(item.get("key") or ""),
+                "title": str(item.get("title") or ""),
+                "priority": str(item.get("priority") or "medium"),
+                "examples": assertions[:3],
+            }
+        )
+
+    return {
+        "workflow_safe": True,
+        "applied_to_workflow": False,
+        "handoff_status": "blocked" if blocked_by else "ready" if recognized_endpoints else "draft",
+        "blocked_by": blocked_by[:4],
+        "generation_context": {
+            "recognized_endpoints": recognized_endpoints,
+            "estimated_scenario_count": int(scenario_outlook.get("estimated_scenario_count", 0) or 0),
+            "scenario_shape": str(scenario_outlook.get("scenario_shape") or ""),
+            "resource_group_count": int(scenario_outlook.get("resource_group_count", 0) or 0),
+        },
+        "assertion_intents": assertion_intents[:5],
+        "execution_precheck": {
+            "mode": str(execution_strategy.get("mode") or "prepare"),
+            "smoke_path": str(execution_strategy.get("smoke_path") or ""),
+            "data_setup": str(execution_strategy.get("data_setup") or "optional"),
+            "required_phase_keys": [
+                str(item.get("key") or "")
+                for item in execution_strategy.get("phases") or []
+                if isinstance(item, dict) and item.get("required")
+            ],
+        },
+        "document_snapshot": {
+            "has_preview": bool(document_preview and document_preview.get("content")),
+            "action_count": int((document_preview or {}).get("action_count", 0) or 0),
+            "applied_action_keys": list((document_preview or {}).get("applied_action_keys") or []),
+        },
+    }
+
+
 def _build_task_draft_coverage_gaps(*, diagnostics: dict[str, Any]) -> list[str]:
     gaps: list[str] = []
     scenario_outlook = diagnostics.get("scenario_outlook") or {}
@@ -1816,6 +2103,24 @@ def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_i
     )
     scenario_blueprint = _build_task_draft_scenario_blueprint(diagnostics=diagnostics)
     coverage_gaps = _build_task_draft_coverage_gaps(diagnostics=diagnostics)
+    assertion_suggestions = _build_task_draft_assertion_suggestions(diagnostics=diagnostics)
+    execution_strategy = _build_task_draft_execution_strategy(
+        ready_to_execute=ready_to_execute,
+        diagnostics=diagnostics,
+        scenario_blueprint=scenario_blueprint,
+    )
+    risk_priorities = _build_task_draft_risk_priorities(
+        diagnostics=diagnostics,
+        quality_gates=quality_gates,
+        coverage_gaps=coverage_gaps,
+    )
+    agent_handoff = _build_task_draft_agent_handoff(
+        diagnostics=diagnostics,
+        assertion_suggestions=assertion_suggestions,
+        execution_strategy=execution_strategy,
+        risk_priorities=risk_priorities,
+        document_preview=document_preview,
+    )
     diagnostic_verdict = _build_task_draft_diagnostic_verdict(
         ready_to_create=ready_to_create,
         ready_to_execute=ready_to_execute,
@@ -1909,6 +2214,10 @@ def _build_task_draft_agent_payload(payload: TaskDraftAgentRequest, *, project_i
         "action_plan": action_plan,
         "scenario_blueprint": scenario_blueprint,
         "quality_gates": quality_gates,
+        "assertion_suggestions": assertion_suggestions,
+        "execution_strategy": execution_strategy,
+        "risk_priorities": risk_priorities,
+        "agent_handoff": agent_handoff,
         "coverage_gaps": coverage_gaps,
         "highlights": diagnostics["highlights"],
         "risks": diagnostics["risks"],
@@ -1945,6 +2254,9 @@ def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) ->
     warnings = [str(item).strip() for item in agent_payload.get("warnings") or [] if str(item).strip()]
     coverage_gaps = [str(item).strip() for item in agent_payload.get("coverage_gaps") or [] if str(item).strip()]
     quality_gates = [item for item in agent_payload.get("quality_gates") or [] if isinstance(item, dict)]
+    assertion_suggestions = [item for item in agent_payload.get("assertion_suggestions") or [] if isinstance(item, dict)]
+    risk_priorities = [item for item in agent_payload.get("risk_priorities") or [] if isinstance(item, dict)]
+    execution_strategy = agent_payload.get("execution_strategy") if isinstance(agent_payload.get("execution_strategy"), dict) else {}
     scenario_outlook = agent_payload.get("scenario_outlook") if isinstance(agent_payload.get("scenario_outlook"), dict) else {}
     knowledge_hits = agent_payload.get("knowledge_hits") if isinstance(agent_payload.get("knowledge_hits"), list) else []
     knowledge_summary = str(agent_payload.get("knowledge_summary") or "").strip()
@@ -1962,6 +2274,14 @@ def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) ->
             ]
         )
     if any(token in normalized for token in ("断言", "校验", "检查点")):
+        if assertion_suggestions:
+            first = assertion_suggestions[0]
+            assertions = [str(item).strip() for item in first.get("assertions") or [] if str(item).strip()]
+            return (
+                f"建议优先补“{first.get('title') or '断言'}”："
+                + "；".join(assertions[:3])
+                + (f"。原因：{first.get('reason')}" if first.get("reason") else "。")
+            )
         pending_gates = [str(item.get("label") or "").strip() for item in quality_gates if item.get("status") != "pass" and str(item.get("label") or "").strip()]
         if pending_gates:
             return "建议优先补这些断言：" + "、".join(pending_gates[:4]) + "。同时保留状态码、关键字段、上下文变量和错误分支校验。"
@@ -1973,8 +2293,20 @@ def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) ->
         suffix = "还要注意：" + "；".join(gaps) if gaps else "优先覆盖主链路、异常参数、鉴权失败、资源不存在和状态流转异常。"
         return f"{base}{suffix}"
     if any(token in normalized for token in ("风险", "问题", "缺陷", "隐患")):
+        if risk_priorities:
+            points = [f"{item.get('title')}: {item.get('impact')}" for item in risk_priorities[:3]]
+            return "风险优先级建议先看：" + "；".join(points)
         points = (risks + warnings + coverage_gaps)[:4]
         return "目前最需要关注：" + "；".join(points) if points else "当前没有明显高风险提示。建议继续检查鉴权、跨接口变量、异步回调和幂等重试。"
+    if any(token in normalized for token in ("执行", "运行", "重跑", "冒烟")):
+        phases = [item for item in execution_strategy.get("phases") or [] if isinstance(item, dict)]
+        if phases:
+            return (
+                f"建议执行策略：先跑“{execution_strategy.get('smoke_path') or '冒烟链路'}”。"
+                + "；".join(str(item.get("title") or "") for item in phases[:4] if item.get("title"))
+                + f"。重跑策略：{execution_strategy.get('rerun_policy') or '先修正再重跑冒烟链路'}"
+            )
+        return "建议先做环境预检，再执行主链路冒烟；失败后按环境、鉴权、依赖、请求、断言的顺序排查。"
     if any(token in normalized for token in ("rag", "知识", "依据", "检索")):
         if knowledge_hits:
             return f"RAG 当前命中 {len(knowledge_hits)} 条知识依据。{knowledge_summary or '建议核对知识来源是否覆盖接口约束、错误码和业务规则。'}"
@@ -2105,7 +2437,12 @@ def _derive_fallback_base_url(task) -> str:
     return ""
 
 
-def _record_execution_history(task, execution_result: dict[str, Any]) -> None:
+def _record_execution_history(
+    task,
+    execution_result: dict[str, Any],
+    *,
+    triggered_by_user_id: str | None = None,
+) -> None:
     metadata = execution_result.get("metadata") or {}
     execution_meta = metadata.get("execution") or {}
     analysis_report = (task.pipeline_result or {}).get("analysis_report") or {}
@@ -2126,6 +2463,7 @@ def _record_execution_history(task, execution_result: dict[str, Any]) -> None:
             "llm_used": bool(parse_metadata.get("llm_used", False)),
             "rag_enabled": bool(parse_metadata.get("rag_enabled", False)),
             "rag_used": bool(parse_metadata.get("rag_used", False)),
+            "triggered_by": triggered_by_user_id,
             "duration_ms": (execution_result.get("metrics") or {}).get("duration_ms"),
             "progress_snapshot": _build_runtime_progress_payload(task),
             "runtime_context_snapshot_path": (
@@ -2373,6 +2711,7 @@ def _run_async_execution_job(
     execution_mode: str,
     selected_environment: str,
     environment_config: EnvironmentConfig | None,
+    triggered_by_user_id: str | None = None,
 ) -> None:
     try:
         progress_lock = threading.Lock()
@@ -2560,7 +2899,7 @@ def _run_async_execution_job(
         task.environment = selected_environment
         task.status = execution_result.get("status", "executed")
         _build_task_analysis_report(task)
-        _record_execution_history(task, execution_result)
+        _record_execution_history(task, execution_result, triggered_by_user_id=triggered_by_user_id)
     except Exception as exc:
         task = registry.get(task_id)
         if task is None:
@@ -4568,6 +4907,7 @@ def execute_task(
             ),
         )
     dsl["execution_mode"] = payload.execution_mode
+    current_user_id = str(current_user["user"]["id"]) if current_user is not None else None
     if payload.async_mode:
         with _RUNNING_EXECUTION_LOCK:
             running_future = _RUNNING_EXECUTION_FUTURES.get(task_id)
@@ -4596,11 +4936,12 @@ def execute_task(
             payload.execution_mode,
             selected_environment,
             environment_config,
+            current_user_id,
         )
         with _RUNNING_EXECUTION_LOCK:
             _RUNNING_EXECUTION_FUTURES[task_id] = future
         _append_audit_log_safe(
-            user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+            user_id=current_user_id,
             action="task.execute.start",
             resource_type="task",
             resource_id=task_id,
@@ -4621,9 +4962,9 @@ def execute_task(
     task.environment = selected_environment
     task.status = execution_result.get("status", "executed")
     result["analysis_report"] = _build_task_analysis_report(task)
-    _record_execution_history(task, execution_result)
+    _record_execution_history(task, execution_result, triggered_by_user_id=current_user_id)
     _append_audit_log_safe(
-        user_id=str(current_user["user"]["id"]) if current_user is not None else None,
+        user_id=current_user_id,
         action="task.execute.finish",
         resource_type="task_run",
         resource_id=task_id,

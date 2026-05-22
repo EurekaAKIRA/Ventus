@@ -619,6 +619,14 @@ def test_task_draft_agent_endpoint_returns_suggestions(tmp_path, monkeypatch) ->
     assert any(item["key"] == "scenario_outlook" for item in data["signals"])
     assert data["scenario_outlook"]["estimated_scenario_count"] >= 1
     assert data["resource_groups"] == []
+    assert data["assertion_suggestions"]
+    assert any(item["priority"] in {"high", "medium"} for item in data["assertion_suggestions"])
+    assert data["execution_strategy"]["mode"] == "ready"
+    assert data["execution_strategy"]["phases"][0]["key"] == "preflight"
+    assert data["risk_priorities"]
+    assert data["agent_handoff"]["workflow_safe"] is True
+    assert data["agent_handoff"]["applied_to_workflow"] is False
+    assert data["agent_handoff"]["generation_context"]["estimated_scenario_count"] == data["scenario_outlook"]["estimated_scenario_count"]
     assert any("目标系统" in item for item in data["highlights"])
     assert any("自动场景生成覆盖率" in item for item in data["risks"])
     assert any("`METHOD /path`" in item for item in data["document_fixes"])
@@ -743,6 +751,12 @@ def test_task_draft_agent_detects_resource_lifecycle_risks(tmp_path, monkeypatch
     assert "GET /booking/{id}" in data["recognized_endpoints"]
     assert any("资源来源" in item for item in data["document_fixes"])
     assert any(item["key"] == "resource_source_template" for item in data["document_actions"])
+    assert any(item["key"] == "context_consistency" for item in data["assertion_suggestions"])
+    assert data["execution_strategy"]["data_setup"] == "required"
+    assert any(item["key"] == "data_setup" for item in data["execution_strategy"]["phases"])
+    assert any(item["severity"] == "high" for item in data["risk_priorities"])
+    assert data["agent_handoff"]["handoff_status"] == "blocked"
+    assert data["agent_handoff"]["blocked_by"]
     assert data["document_preview"]["content"]
     resource_follow_up = next(item for item in data["follow_up_questions"] if item["key"] == "resource_source")
     assert resource_follow_up["action_kind"] == "apply_document_action"

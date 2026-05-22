@@ -61,6 +61,10 @@ def _compact_agent_payload(agent_payload: dict[str, Any]) -> dict[str, Any]:
         "recognized_endpoints",
         "scenario_outlook",
         "quality_gates",
+        "assertion_suggestions",
+        "execution_strategy",
+        "risk_priorities",
+        "agent_handoff",
         "coverage_gaps",
         "risks",
         "warnings",
@@ -73,6 +77,20 @@ def _compact_agent_payload(agent_payload: dict[str, Any]) -> dict[str, Any]:
         compact["knowledge_hits"] = compact["knowledge_hits"][:5]
     if isinstance(compact.get("quality_gates"), list):
         compact["quality_gates"] = compact["quality_gates"][:8]
+    if isinstance(compact.get("assertion_suggestions"), list):
+        compact["assertion_suggestions"] = compact["assertion_suggestions"][:5]
+    if isinstance(compact.get("risk_priorities"), list):
+        compact["risk_priorities"] = compact["risk_priorities"][:6]
+    if isinstance(compact.get("execution_strategy"), dict):
+        compact["execution_strategy"] = {
+            **compact["execution_strategy"],
+            "phases": (compact["execution_strategy"].get("phases") or [])[:5],
+        }
+    if isinstance(compact.get("agent_handoff"), dict):
+        compact["agent_handoff"] = {
+            **compact["agent_handoff"],
+            "assertion_intents": (compact["agent_handoff"].get("assertion_intents") or [])[:5],
+        }
     return compact
 
 

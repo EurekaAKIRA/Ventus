@@ -48,6 +48,10 @@ function buildSuggestionReply(payload: TaskDraftAgentPayload | null, question: s
     return buildFallbackReply(lowerQuestion);
   }
   if (lowerQuestion.includes("断言") || question.includes("校验")) {
+    const firstSuggestion = payload.assertion_suggestions?.[0];
+    if (firstSuggestion?.assertions?.length) {
+      return `建议优先补“${firstSuggestion.title}”：${firstSuggestion.assertions.slice(0, 3).join("；")}。${firstSuggestion.reason || ""}`.trim();
+    }
     const gates = payload.quality_gates?.filter((item) => item.status !== "pass").map((item) => item.label) ?? [];
     return gates.length
       ? `建议先补这些断言：${gates.slice(0, 3).join("、")}。再覆盖状态码、关键字段、上下文变量一致性和错误分支。`
@@ -61,8 +65,18 @@ function buildSuggestionReply(payload: TaskDraftAgentPayload | null, question: s
       : "建议按资源生命周期组织用例：创建、查询、修改、删除，再补登录态、无效参数和边界值。";
   }
   if (lowerQuestion.includes("风险") || question.includes("问题")) {
+    const prioritized = payload.risk_priorities?.slice(0, 3).map((item) => `${item.title}: ${item.impact}`) ?? [];
+    if (prioritized.length) {
+      return `目前最需要关注：${prioritized.join("；")}。`;
+    }
     const risks = [...(payload.risks ?? []), ...(payload.warnings ?? [])].slice(0, 3);
     return risks.length ? `目前最需要关注：${risks.join("；")}。` : "当前没有明显高风险提示。可以继续检查鉴权、跨接口变量、异步回调和幂等重试。";
+  }
+  if (lowerQuestion.includes("执行") || lowerQuestion.includes("运行") || lowerQuestion.includes("冒烟") || lowerQuestion.includes("重跑")) {
+    const strategy = payload.execution_strategy;
+    return strategy?.phases?.length
+      ? `建议先跑“${strategy.smoke_path}”。执行顺序：${strategy.phases.slice(0, 4).map((item) => item.title).join("、")}。${strategy.rerun_policy}`
+      : "建议先做环境预检，再执行主链路冒烟；失败后按环境、鉴权、依赖、请求、断言的顺序排查。";
   }
   if (lowerQuestion.includes("rag") || question.includes("知识")) {
     const hits = payload.knowledge_hits?.length ?? 0;
