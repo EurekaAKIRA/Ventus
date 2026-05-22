@@ -26,6 +26,14 @@ function buildGeneralHelp() {
   ].join("\n");
 }
 
+function buildDraftModeIntro() {
+  return [
+    "当前还没有创建任务。",
+    "你可以先告诉我：要测哪个接口、目标系统地址、业务流程和预期结果。",
+    "我会先帮你整理成可创建的测试任务草稿，再提醒缺少的环境、鉴权、参数和断言信息。",
+  ].join("\n");
+}
+
 function buildFallbackReply(question: string) {
   if (includesAny(question, ["你好", "您好", "hello", "hi", "在吗"])) {
     return "你好，我在。你可以把接口需求、文档片段或想测的功能发给我，我会帮你拆测试场景和断言。";
@@ -45,7 +53,10 @@ function buildSuggestionReply(payload: TaskDraftAgentPayload | null, question: s
     return buildFallbackReply(lowerQuestion);
   }
   if (!payload) {
-    return buildFallbackReply(lowerQuestion);
+    if (includesAny(lowerQuestion, ["你好", "您好", "hello", "hi", "在吗", "帮助", "怎么用", "你会", "能做"])) {
+      return buildDraftModeIntro();
+    }
+    return `${buildDraftModeIntro()}\n\n针对你刚才的问题：${buildFallbackReply(lowerQuestion)}`;
   }
   if (lowerQuestion.includes("断言") || question.includes("校验")) {
     const firstSuggestion = payload.assertion_suggestions?.[0];
@@ -104,7 +115,7 @@ export default function TaskAgentPanel({ payload, onSendMessage }: TaskAgentPane
     {
       role: "bot",
       meta: "Agent",
-      text: "你好，我是测试建议聊天助手。你可以直接问我测试场景、断言、风险或 RAG 依据。",
+      text: buildDraftModeIntro(),
     },
   ]);
 

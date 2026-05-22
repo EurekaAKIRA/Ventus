@@ -2260,6 +2260,22 @@ def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) ->
     scenario_outlook = agent_payload.get("scenario_outlook") if isinstance(agent_payload.get("scenario_outlook"), dict) else {}
     knowledge_hits = agent_payload.get("knowledge_hits") if isinstance(agent_payload.get("knowledge_hits"), list) else []
     knowledge_summary = str(agent_payload.get("knowledge_summary") or "").strip()
+    summary = agent_payload.get("summary") if isinstance(agent_payload.get("summary"), dict) else {}
+    has_draft_context = bool(
+        str(agent_payload.get("suggested_task_name") or "").strip()
+        or str(agent_payload.get("detected_base_url") or "").strip()
+        or agent_payload.get("recognized_endpoints")
+        or int(summary.get("requirement_chars", 0) or 0) > 0
+    )
+
+    if not has_draft_context:
+        draft_intro = (
+            "当前还没有创建任务。你可以先告诉我：要测哪个接口、目标系统地址、"
+            "业务流程和预期结果。我会先帮你整理成可创建的测试任务草稿。"
+        )
+        if any(token in normalized for token in ("你好", "您好", "hello", "hi", "在吗", "帮助", "怎么用", "你会", "能做")):
+            return draft_intro
+        return f"{draft_intro} 如果你已经有接口文档，可以先粘贴 METHOD /path、Request 和 Expected。"
 
     if any(token in normalized for token in ("你好", "您好", "hello", "hi", "在吗")):
         return "你好，我在。你可以把接口需求、文档片段或要测试的业务流程发给我，我会结合当前草稿帮你拆测试场景、断言和风险点。"
