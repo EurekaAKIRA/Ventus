@@ -2596,7 +2596,6 @@ def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) ->
 def _build_task_agent_general_fallback_reply(message: str, agent_payload: dict[str, Any]) -> str:
     task_tracking = agent_payload.get("task_tracking") if isinstance(agent_payload.get("task_tracking"), dict) else {}
     normalized = str(message or "").strip().lower()
-    reply = str(agent_payload.get("reply") or "").strip()
     summary = agent_payload.get("summary") if isinstance(agent_payload.get("summary"), dict) else {}
     has_draft_context = bool(
         str(agent_payload.get("suggested_task_name") or "").strip()
@@ -2612,8 +2611,6 @@ def _build_task_agent_general_fallback_reply(message: str, agent_payload: dict[s
         return "你好，我在。你可以问通用问题，也可以给我一个接口任务让我结合上下文分析。"
     if any(token in normalized for token in ("你会", "能做", "功能", "帮助", "怎么用")):
         return "我能做任务上下文分析，也能回答普通问题。任务类问题我会看证据；普通问题优先走模型自然回答。"
-    if reply:
-        return reply
     if has_draft_context:
         return "这个问题没有命中任务诊断分支。当前没有可用模型回复普通问题，所以我不硬套模板；你可以改问具体的失败、质量、断言、执行或导入问题。"
     return "当前没有任务上下文，也没有可用模型回复普通问题。你可以补充一个具体任务，或配置模型后让我自然回答。"
@@ -4428,6 +4425,7 @@ def list_test_suite_assets(
         page=page,
         page_size=page_size,
     )
+    payload["items"] = [_expand_test_suite_asset_cases(store, item) for item in payload.get("items") or []]
     return _success_response(payload, code="TEST_SUITE_ASSETS_OK", message="test suite assets listed")
 
 
@@ -4462,6 +4460,7 @@ def create_test_suite_asset(
         detail_json={"project_id": payload.project_id, "case_count": len(case_ids)},
         ip_address=_request_ip(request),
     )
+    suite = _expand_test_suite_asset_cases(store, suite)
     return _success_response(suite, code="TEST_SUITE_ASSET_CREATED", message="test suite asset created", status_code=201)
 
 
@@ -4504,6 +4503,7 @@ def update_test_suite_asset(
         detail_json={"project_id": existing["project_id"], "changed": sorted(changes.keys())},
         ip_address=_request_ip(request),
     )
+    suite = _expand_test_suite_asset_cases(store, suite)
     return _success_response(suite, code="TEST_SUITE_ASSET_UPDATED", message="test suite asset updated")
 
 
@@ -4542,6 +4542,7 @@ def execute_test_suite_asset(
     if suite is None:
         raise HTTPException(status_code=404, detail=f"Test suite asset not found: {suite_id}")
     _ensure_project_access(str(suite["project_id"]), current_user)
+    suite = _expand_test_suite_asset_cases(store, suite)
     case_results: list[dict[str, Any]] = []
     overall_status = "passed"
     started_at = time.perf_counter()
@@ -6030,6 +6031,22 @@ def _clean_case_ids(raw_case_ids: list[str] | None) -> list[str]:
         if normalized and normalized not in output:
             output.append(normalized)
     return output
+
+
+def _expand_test_suite_asset_cases(store, suite: dict[str, Any]) -> dict[str, Any]:
+    expanded = dict(suite)
+    cases: list[dict[str, Any]] = []
+    missing_case_ids: list[str] = []
+    project_id = str(expanded.get("project_id") or "")
+    for case_id in expanded.get("case_ids") or []:
+        case = store.get_test_case_asset(str(case_id))
+        if case is None or str(case.get("project_id")) != project_id:
+            missing_case_ids.append(str(case_id))
+            continue
+        cases.append(case)
+    expanded["cases"] = cases
+    expanded["missing_case_ids"] = missing_case_ids
+    return expanded
 
 
 def _execute_case_asset_payload(

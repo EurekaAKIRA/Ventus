@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { DeleteOutlined, EditOutlined, PlayCircleOutlined, PlusOutlined, ReloadOutlined, ScheduleOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, EyeOutlined, PlayCircleOutlined, PlusOutlined, ReloadOutlined, ScheduleOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Col, Drawer, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import type { EnvironmentPayload, TestCaseAssetPayload, TestSuiteAssetExecutionPayload, TestSuiteAssetPayload } from "../types";
 import { fetchEnvironments } from "../api/system";
 import { fetchTestCaseAssets } from "../api/testCases";
 import { deleteTestSuiteAsset, executeTestSuiteAsset, fetchTestSuiteAssets, saveTestSuiteAsset, updateTestSuiteAsset } from "../api/testSuites";
+import { fetchTaskDetail } from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
 import JsonViewer from "../components/JsonViewer";
 import { MetricGrid, PageHero, PageStack } from "../components/PageLayout";
@@ -26,6 +27,12 @@ type ExecuteFormValues = {
   stop_on_failure?: string;
 };
 
+type TaskExecutionHint = {
+  taskId: string;
+  environment: string;
+  baseUrl: string;
+};
+
 const statusOptions = [
   { value: "active", label: "启用" },
   { value: "draft", label: "草稿" },
@@ -38,6 +45,16 @@ function statusColor(status: string): string {
   if (status === "draft") return "gold";
   if (status === "disabled" || status === "archived") return "red";
   return "default";
+}
+
+function taskExecutionHint(taskId: string, detail: Awaited<ReturnType<typeof fetchTaskDetail>>): TaskExecutionHint {
+  const context = detail.task_context as typeof detail.task_context & { environment?: string | null; target_system?: string | null };
+  const execution = ((detail.test_case_dsl?.metadata as Record<string, unknown> | undefined)?.execution ?? {}) as Record<string, unknown>;
+  return {
+    taskId,
+    environment: String(execution.environment || context.environment || "").trim(),
+    baseUrl: String(execution.base_url || context.target_system || "").trim(),
+  };
 }
 
 export default function TestSuiteAssetCenter() {
@@ -57,6 +74,9 @@ export default function TestSuiteAssetCenter() {
   const [executing, setExecuting] = useState(false);
   const [executeSuite, setExecuteSuite] = useState<TestSuiteAssetPayload | null>(null);
   const [executeResult, setExecuteResult] = useState<TestSuiteAssetExecutionPayload | null>(null);
+  const [executeTaskHint, setExecuteTaskHint] = useState<TaskExecutionHint | null>(null);
+  const [executeTaskHintLoading, setExecuteTaskHintLoading] = useState(false);
+  const [casePreview, setCasePreview] = useState<{ title: string; data: unknown } | null>(null);
 
   const loadSuites = async () => {
     if (!currentProjectId) {
@@ -87,14 +107,16 @@ export default function TestSuiteAssetCenter() {
       return;
     }
     try {
-      const [casePayload, envPayload] = await Promise.all([
-        fetchTestCaseAssets({ project_id: currentProjectId, status: "active", page: 1, page_size: 500 }),
-        fetchEnvironments(currentProjectId),
-      ]);
+      const casePayload = await fetchTestCaseAssets({ project_id: currentProjectId, page: 1, page_size: 200 });
       setCases(casePayload.items);
+    } catch (error) {
+      setCases([]);
+      message.warning((error as Error).message || "用例资产加载失败");
+    }
+    try {
+      const envPayload = await fetchEnvironments(currentProjectId);
       setEnvironments(envPayload);
     } catch {
-      setCases([]);
       setEnvironments([]);
     }
   };
@@ -188,11 +210,31 @@ export default function TestSuiteAssetCenter() {
 
   const openExecute = (record: TestSuiteAssetPayload) => {
     const firstEnv = environments[0];
+    const sourceTaskId = suiteCaseAssets(record)
+      .map((item) => item.source_task_id)
+      .find((value): value is string => Boolean(value));
     setExecuteSuite(record);
     setExecuteResult(null);
+    setExecuteTaskHint(null);
+    setExecuteTaskHintLoading(Boolean(sourceTaskId));
     executeForm.resetFields();
     executeForm.setFieldsValue({ environment: firstEnv?.name, base_url: firstEnv?.base_url || "", stop_on_failure: "false" });
     setExecuteOpen(true);
+    if (sourceTaskId) {
+      void fetchTaskDetail(sourceTaskId)
+        .then((detail) => {
+          const hint = taskExecutionHint(sourceTaskId, detail);
+          const matchedEnv = hint.environment ? environments.find((item) => item.name === hint.environment) : undefined;
+          executeForm.setFieldsValue({
+            environment: matchedEnv?.name || hint.environment || firstEnv?.name,
+            base_url: matchedEnv?.base_url || hint.baseUrl || firstEnv?.base_url || "",
+          });
+          setExecuteTaskHint(hint);
+          void executeForm.validateFields(["base_url"]).catch(() => undefined);
+        })
+        .catch(() => setExecuteTaskHint(null))
+        .finally(() => setExecuteTaskHintLoading(false));
+    }
   };
 
   const handleExecute = async (values: ExecuteFormValues) => {
@@ -231,6 +273,23 @@ export default function TestSuiteAssetCenter() {
     return map;
   }, [cases]);
 
+  const caseById = useMemo(() => {
+    const map = new Map<string, TestCaseAssetPayload>();
+    cases.forEach((item) => map.set(item.id, item));
+    items.forEach((suite) => {
+      (suite.cases || []).forEach((item) => map.set(item.id, item));
+    });
+    return map;
+  }, [cases, items]);
+
+  const suiteCaseAssets = (suite: TestSuiteAssetPayload | null): TestCaseAssetPayload[] => {
+    if (!suite) return [];
+    if (suite.cases?.length) return suite.cases;
+    return (suite.case_ids || [])
+      .map((caseId) => caseById.get(caseId))
+      .filter((item): item is TestCaseAssetPayload => Boolean(item));
+  };
+
   const columns: ColumnsType<TestSuiteAssetPayload> = [
     {
       title: "套件",
@@ -239,11 +298,27 @@ export default function TestSuiteAssetCenter() {
         <Space direction="vertical" size={2}>
           <Text strong>{record.name}</Text>
           <Text type="secondary">{record.description || "暂无描述"}</Text>
+          {suiteCaseAssets(record).length ? (
+            <Text type="secondary">
+              {suiteCaseAssets(record).slice(0, 3).map((item) => item.name).join(" / ")}
+              {suiteCaseAssets(record).length > 3 ? ` 等 ${suiteCaseAssets(record).length} 条` : ""}
+            </Text>
+          ) : null}
         </Space>
       ),
     },
     { title: "状态", dataIndex: "status", width: 100, render: (value: string) => <Tag color={statusColor(value)}>{value}</Tag> },
-    { title: "用例数", dataIndex: "case_ids", width: 100, render: (value: string[]) => <Text>{value?.length ?? 0}</Text> },
+    {
+      title: "用例数",
+      dataIndex: "case_ids",
+      width: 120,
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          <Text>{record.case_ids?.length ?? 0}</Text>
+          {record.missing_case_ids?.length ? <Text type="danger">缺失 {record.missing_case_ids.length}</Text> : null}
+        </Space>
+      ),
+    },
     {
       title: "标签",
       dataIndex: "tags",
@@ -316,8 +391,14 @@ export default function TestSuiteAssetCenter() {
             <Select
               mode="multiple"
               optionFilterProp="label"
-              options={cases.map((item) => ({ value: item.id, label: `${item.priority} · ${item.name}` }))}
+              options={cases.map((item) => ({
+                value: item.id,
+                label: `${item.priority} · ${item.name} · ${item.status}`,
+                disabled: item.status === "archived",
+              }))}
               placeholder="按顺序选择用例资产"
+              notFoundContent={currentProjectId ? "当前项目暂无可选用例资产" : "请先选择项目"}
+              showSearch
             />
           </Form.Item>
           <Alert type="info" showIcon message="当前第一版按选择顺序执行；后续可升级拖拽排序、并发策略、定时触发。" />
@@ -350,12 +431,48 @@ export default function TestSuiteAssetCenter() {
               </Col>
             </Row>
           </Form>
+          {executeTaskHintLoading || executeTaskHint ? (
+            <Alert
+              type={executeTaskHint?.baseUrl || executeTaskHint?.environment ? "success" : "warning"}
+              showIcon
+              message="来源任务执行配置"
+              description={
+                executeTaskHintLoading
+                  ? "正在读取导入用例对应任务的环境和 Base URL..."
+                  : executeTaskHint?.baseUrl || executeTaskHint?.environment
+                    ? `任务：${executeTaskHint.taskId}；环境：${executeTaskHint.environment || "未设置"}；Base URL：${executeTaskHint.baseUrl || "未设置"}`
+                    : "该来源任务暂未识别到环境或 Base URL，执行前仍可手动填写。"
+              }
+            />
+          ) : null}
           {executeSuite ? (
             <Card bordered={false} title="执行顺序">
-              <Space direction="vertical" size={6}>
-                {(executeSuite.case_ids || []).map((caseId, index) => (
-                  <Text key={caseId}>{index + 1}. {caseNameById.get(caseId) || caseId}</Text>
-                ))}
+              <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                {(executeSuite.case_ids || []).map((caseId, index) => {
+                  const caseAsset = caseById.get(caseId) || executeSuite.cases?.find((item) => item.id === caseId);
+                  return (
+                    <Space key={caseId} align="start" style={{ justifyContent: "space-between", width: "100%" }}>
+                      <Space direction="vertical" size={2}>
+                        <Text>{index + 1}. {caseAsset?.name || caseNameById.get(caseId) || caseId}</Text>
+                        {caseAsset ? (
+                          <Text type="secondary">
+                            {caseAsset.priority} · 断言 {(caseAsset.assertions || []).length} · 步骤 {Array.isArray((caseAsset.dsl_scenario as { steps?: unknown[] })?.steps) ? ((caseAsset.dsl_scenario as { steps?: unknown[] }).steps || []).length : 0}
+                          </Text>
+                        ) : (
+                          <Text type="danger">用例资产内容未返回</Text>
+                        )}
+                      </Space>
+                      {caseAsset ? (
+                        <Button size="small" icon={<EyeOutlined />} onClick={() => setCasePreview({ title: caseAsset.name, data: caseAsset.dsl_scenario })}>
+                          DSL
+                        </Button>
+                      ) : null}
+                    </Space>
+                  );
+                })}
+                {executeSuite.missing_case_ids?.length ? (
+                  <Alert type="warning" showIcon message={`有 ${executeSuite.missing_case_ids.length} 条用例资产已缺失或不属于当前项目`} />
+                ) : null}
               </Space>
             </Card>
           ) : null}
@@ -378,6 +495,16 @@ export default function TestSuiteAssetCenter() {
           ) : null}
         </Space>
       </Drawer>
+      <Modal
+        title={casePreview ? `用例 DSL：${casePreview.title}` : "用例 DSL"}
+        open={Boolean(casePreview)}
+        onCancel={() => setCasePreview(null)}
+        footer={null}
+        width={760}
+        destroyOnClose
+      >
+        <JsonViewer data={casePreview?.data || {}} />
+      </Modal>
     </PageStack>
   );
 }

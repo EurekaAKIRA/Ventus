@@ -694,6 +694,70 @@ def test_task_agent_chat_tracks_existing_task_status(tmp_path, monkeypatch) -> N
     assert "没有执行结果" in not_started.json()["data"]["reply"]
 
 
+def test_test_suite_assets_expand_case_contents(tmp_path, monkeypatch) -> None:
+    client = _build_client(tmp_path, monkeypatch)
+
+    client.post(
+        "/api/auth/register",
+        json={"username": "suite-owner", "password": "password123", "email": "suite-owner@example.com"},
+    )
+    login = client.post("/api/auth/login", json={"username": "suite-owner", "password": "password123"}).json()["data"]
+    headers = _auth_headers(login["access_token"])
+    project_id = login["projects"][0]["id"]
+
+    case_resp = client.post(
+        "/api/test-case-assets",
+        json={
+            "project_id": project_id,
+            "case_key": "order-create-main",
+            "name": "创建订单主链路",
+            "priority": "P0",
+            "status": "active",
+            "dsl_scenario": {
+                "name": "创建订单主链路",
+                "steps": [
+                    {
+                        "step_id": "step_01",
+                        "text": "POST /orders",
+                        "assertions": [{"source": "status_code", "op": "eq", "expected": 201}],
+                    }
+                ],
+            },
+        },
+        headers=headers,
+    )
+    assert case_resp.status_code == 201
+    case_payload = case_resp.json()["data"]
+
+    suite_resp = client.post(
+        "/api/test-suite-assets",
+        json={
+            "project_id": project_id,
+            "name": "订单回归套件",
+            "status": "active",
+            "case_ids": [case_payload["id"]],
+        },
+        headers=headers,
+    )
+    assert suite_resp.status_code == 201
+    created_suite = suite_resp.json()["data"]
+    assert created_suite["case_ids"] == [case_payload["id"]]
+    assert created_suite["cases"][0]["id"] == case_payload["id"]
+    assert created_suite["cases"][0]["dsl_scenario"]["steps"][0]["text"] == "POST /orders"
+    assert created_suite["missing_case_ids"] == []
+
+    listed = client.get(
+        "/api/test-suite-assets",
+        params={"project_id": project_id, "status": "active"},
+        headers=headers,
+    )
+    assert listed.status_code == 200
+    listed_suite = listed.json()["data"]["items"][0]
+    assert listed_suite["id"] == created_suite["id"]
+    assert listed_suite["cases"][0]["name"] == "创建订单主链路"
+    assert listed_suite["cases"][0]["assertions"][0]["source"] == "status_code"
+
+
 def test_task_draft_agent_requires_auth_for_project_scope(tmp_path, monkeypatch) -> None:
     client = _build_client(tmp_path, monkeypatch)
 

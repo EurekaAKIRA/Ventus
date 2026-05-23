@@ -608,6 +608,8 @@ export interface TestSuiteAssetPayload {
   status: "active" | "draft" | "disabled" | "archived" | string;
   source: string;
   case_ids: string[];
+  cases?: TestCaseAssetPayload[];
+  missing_case_ids?: string[];
   tags: string[];
   created_by?: string | null;
   created_at?: string | null;

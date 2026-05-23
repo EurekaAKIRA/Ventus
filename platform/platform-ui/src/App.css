@@ -3673,3 +3673,460 @@ a:hover {
     justify-content: space-between;
   }
 }
+
+html[data-theme="light"] {
+  --theme-primary: #5865f2;
+  --theme-primary-hover: #4f5edc;
+  --theme-primary-active: #2f3fc7;
+  --theme-primary-soft: #4f5edc;
+  --theme-primary-bg: rgba(88, 101, 242, 0.1);
+  --theme-surface-strong: rgba(255, 255, 255, 0.96);
+  --theme-surface: rgba(255, 255, 255, 0.88);
+  --theme-surface-soft: rgba(246, 248, 252, 0.86);
+  --theme-border: rgba(43, 55, 78, 0.13);
+  --theme-border-strong: rgba(43, 55, 78, 0.2);
+  --theme-text: #172033;
+  --theme-text-secondary: #5c6b80;
+  --theme-text-soft: #8491a3;
+  --theme-danger: #d92d20;
+  --theme-warning: #9f6b08;
+  --theme-info: #2563eb;
+  --theme-shadow: 0 18px 52px rgba(31, 45, 72, 0.1);
+}
+
+html[data-theme="light"] body {
+  color: var(--theme-text);
+  background:
+    radial-gradient(circle at top left, rgba(88, 101, 242, 0.1), transparent 23%),
+    radial-gradient(circle at top right, rgba(47, 129, 247, 0.08), transparent 22%),
+    linear-gradient(180deg, #f7f9fd 0%, #eef3f9 48%, #f9fbff 100%);
+  background-attachment: fixed;
+}
+
+html[data-theme="light"] a {
+  color: #3f4dcc;
+}
+
+html[data-theme="light"] a:hover {
+  color: #202b8f;
+}
+
+html[data-theme="light"] .app-shell__sider {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 250, 253, 0.9)) !important;
+  box-shadow: inset -1px 0 0 rgba(43, 55, 78, 0.06);
+}
+
+html[data-theme="light"] .app-shell__brand,
+html[data-theme="light"] .app-shell__sider-foot,
+html[data-theme="light"] .app-shell__header,
+html[data-theme="light"] .page-hero,
+html[data-theme="light"] .page-toolbar,
+html[data-theme="light"] .panel-card,
+html[data-theme="light"] .metric-card,
+html[data-theme="light"] .dashboard-kpi-card,
+html[data-theme="light"] .dashboard-panel-card,
+html[data-theme="light"] .github-settings-card.ant-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58)),
+    rgba(255, 255, 255, 0.86) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: var(--theme-shadow);
+}
+
+html[data-theme="light"] .app-shell__brand-mark {
+  color: #ffffff;
+  background: linear-gradient(135deg, #5865f2, #4776e6);
+  box-shadow: 0 10px 24px rgba(88, 101, 242, 0.2);
+}
+
+html[data-theme="light"] .app-shell__brand-title,
+html[data-theme="light"] .app-shell__header-title.ant-typography,
+html[data-theme="light"] .page-hero__title.ant-typography,
+html[data-theme="light"] .page-hero__heading,
+html[data-theme="light"] .page-meta-chip__value,
+html[data-theme="light"] .compact-stats__value,
+html[data-theme="light"] .surface-chip strong,
+html[data-theme="light"] .dashboard-panel-card .ant-card-head-title,
+html[data-theme="light"] .panel-card .ant-card-head-title,
+html[data-theme="light"] .defect-page-head__title.ant-typography,
+html[data-theme="light"] .defect-page-head__stats strong,
+html[data-theme="light"] .task-detail-hero__title.ant-typography,
+html[data-theme="light"] .task-detail-meta-item__value,
+html[data-theme="light"] .github-profile-card__name,
+html[data-theme="light"] .github-settings__title.ant-typography,
+html[data-theme="light"] .github-settings-card .ant-card-head-title {
+  color: var(--theme-text) !important;
+}
+
+html[data-theme="light"] .app-shell__menu .ant-menu-item {
+  color: #536176 !important;
+}
+
+html[data-theme="light"] .app-shell__menu .ant-menu-item-selected {
+  background: rgba(88, 101, 242, 0.12) !important;
+  color: #2f3fc7 !important;
+  box-shadow: inset 0 0 0 1px rgba(88, 101, 242, 0.12);
+}
+
+html[data-theme="light"] .app-shell__menu .ant-menu-item:hover {
+  color: #2f3fc7 !important;
+  background: rgba(88, 101, 242, 0.07) !important;
+}
+
+html[data-theme="light"] .app-shell__ghost-button,
+html[data-theme="light"] .app-shell__user-button {
+  background: rgba(255, 255, 255, 0.86) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-theme="light"] .app-shell__theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.app-shell__theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 14px;
+  background: rgba(15, 23, 34, 0.72);
+}
+
+.app-shell__theme-label {
+  color: var(--theme-text-secondary) !important;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+html[data-theme="light"] .page-meta-chip,
+html[data-theme="light"] .page-toolbar,
+html[data-theme="light"] .surface-chip,
+html[data-theme="light"] .compact-stats__item,
+html[data-theme="light"] .dashboard-env-row,
+html[data-theme="light"] .execution-point-sidebar,
+html[data-theme="light"] .execution-case-table-wrap,
+html[data-theme="light"] .task-detail-meta-item,
+html[data-theme="light"] .task-detail-empty,
+html[data-theme="light"] .task-detail-agent-brief,
+html[data-theme="light"] .task-detail-agent-brief__status div,
+html[data-theme="light"] .github-profile-preview,
+html[data-theme="light"] .github-project-current,
+html[data-theme="light"] .github-project-row,
+html[data-theme="light"] .github-inline-editor,
+html[data-theme="light"] .create-task-agent-card,
+html[data-theme="light"] .create-task-agent-list__item,
+html[data-theme="light"] .create-task-agent-signal-card {
+  background: rgba(255, 255, 255, 0.76) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-theme="light"] .subtle-card,
+html[data-theme="light"] .defect-inline-editor,
+html[data-theme="light"] .task-detail-hero,
+html[data-theme="light"] .create-task-agent-verdict,
+html[data-theme="light"] .create-task-agent-panel {
+  background:
+    linear-gradient(135deg, rgba(88, 101, 242, 0.08), rgba(47, 129, 247, 0.05) 58%, transparent),
+    rgba(255, 255, 255, 0.84) !important;
+  border-color: rgba(88, 101, 242, 0.16) !important;
+}
+
+html[data-theme="light"] .panel-card:hover,
+html[data-theme="light"] .metric-card:hover,
+html[data-theme="light"] .dashboard-kpi-card:hover,
+html[data-theme="light"] .dashboard-panel-card:hover,
+html[data-theme="light"] .artifact-card:hover {
+  box-shadow: 0 22px 58px rgba(31, 45, 72, 0.14);
+}
+
+html[data-theme="light"] .json-viewer,
+html[data-theme="light"] .feature-text,
+html[data-theme="light"] .raw-text-viewer,
+html[data-theme="light"] .execution-case-table-wrap,
+html[data-theme="light"] .execution-point-sidebar,
+html[data-theme="light"] .execution-plan-side,
+html[data-theme="light"] .execution-plan-main .ant-table-wrapper {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .log-panel,
+html[data-theme="light"] .create-task-agent-snippet-preview,
+html[data-theme="light"] .vue-agent-dialogue__pre {
+  background: #f4f7fb !important;
+  border: 1px solid var(--theme-border);
+  color: #26364d;
+}
+
+html[data-theme="light"] .log-line {
+  color: #26364d;
+}
+
+html[data-theme="light"] .log-line .log-time {
+  color: #238636;
+}
+
+html[data-theme="light"] .vue-quality-pulse,
+html[data-theme="light"] .vue-quality-pulse h3,
+html[data-theme="light"] .vue-quality-pulse__summary strong,
+html[data-theme="light"] .vue-quality-pulse__bar-meta strong,
+html[data-theme="light"] .vue-quality-pulse__hint strong,
+html[data-theme="light"] .vue-agent-dialogue h3,
+html[data-theme="light"] .vue-agent-dialogue__metrics strong,
+html[data-theme="light"] .vue-agent-dialogue__gates strong,
+html[data-theme="light"] .vue-agent-dialogue__tip strong,
+html[data-theme="light"] .task-detail-agent-brief__status strong,
+html[data-theme="light"] .create-task-agent-card strong,
+html[data-theme="light"] .create-task-agent-verdict strong,
+html[data-theme="light"] .create-task-agent-decision-item strong {
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .vue-quality-pulse {
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .vue-quality-pulse__eyebrow,
+html[data-theme="light"] .vue-quality-pulse__summary span,
+html[data-theme="light"] .vue-quality-pulse__bar-meta span,
+html[data-theme="light"] .vue-quality-pulse__hint,
+html[data-theme="light"] .vue-agent-dialogue__context,
+html[data-theme="light"] .vue-agent-dialogue__reply,
+html[data-theme="light"] .vue-agent-dialogue__message p,
+html[data-theme="light"] .vue-agent-dialogue__message span,
+html[data-theme="light"] .vue-agent-dialogue__tip span,
+html[data-theme="light"] .task-detail-agent-brief__status span,
+html[data-theme="light"] .task-detail-agent-evidence > span {
+  color: var(--theme-text-secondary);
+}
+
+html[data-theme="light"] .vue-quality-pulse__ring,
+html[data-theme="light"] .vue-agent-dialogue__meter-ring {
+  background:
+    radial-gradient(circle at center, #ffffff 0 57%, transparent 58%),
+    conic-gradient(#5865f2 var(--vue-quality-score, var(--agent-ready)), rgba(43, 55, 78, 0.12) 0);
+}
+
+html[data-theme="light"] .vue-quality-pulse__ring strong,
+html[data-theme="light"] .vue-agent-dialogue__meter-ring strong {
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .vue-agent-dialogue {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 48px rgba(31, 45, 72, 0.12);
+}
+
+html[data-theme="light"] .vue-agent-dialogue__focus,
+html[data-theme="light"] .vue-agent-dialogue__gates,
+html[data-theme="light"] .vue-agent-dialogue__message,
+html[data-theme="light"] .vue-agent-dialogue__tip,
+html[data-theme="light"] .vue-agent-dialogue__quick button,
+html[data-theme="light"] .vue-agent-dialogue__actions button {
+  background: rgba(246, 248, 252, 0.86);
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .vue-agent-dialogue__message.is-user,
+html[data-theme="light"] .vue-agent-dialogue__message.is-loading {
+  background: rgba(88, 101, 242, 0.1);
+}
+
+html[data-theme="light"] .vue-agent-dialogue__composer input {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .vue-agent-dialogue__composer input::placeholder {
+  color: var(--theme-text-soft);
+}
+
+html[data-theme="light"] .create-task-agent-float__toggle,
+html[data-theme="light"] .create-task-agent-float__panel {
+  background:
+    linear-gradient(135deg, rgba(88, 101, 242, 0.1), rgba(47, 129, 247, 0.06)),
+    rgba(255, 255, 255, 0.94);
+  border-color: rgba(88, 101, 242, 0.18);
+  color: var(--theme-text);
+  box-shadow: 0 22px 58px rgba(31, 45, 72, 0.16);
+}
+
+html[data-theme="light"] .create-task-agent-float__head {
+  border-bottom-color: var(--theme-border);
+}
+
+html[data-theme="light"] .create-task-agent-follow-up-answer .ant-input {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-theme="light"] .create-task-agent-empty-view {
+  background: rgba(255, 255, 255, 0.62);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="light"] .dashboard-status-track,
+html[data-theme="light"] .dashboard-trend-track,
+html[data-theme="light"] .dashboard-volume-track,
+html[data-theme="light"] .dashboard-funnel-track,
+html[data-theme="light"] .vue-quality-pulse__track {
+  background: rgba(43, 55, 78, 0.1);
+}
+
+html[data-theme="light"] .dashboard-line-svg {
+  background:
+    linear-gradient(180deg, rgba(88, 101, 242, 0.1), rgba(88, 101, 242, 0.02)),
+    rgba(255, 255, 255, 0.8);
+}
+
+html[data-theme="light"] .dashboard-funnel-pie-center {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+html[data-theme="light"] .platform-table .ant-table-tbody > tr.task-row--failed > td {
+  background: rgba(217, 45, 32, 0.05) !important;
+}
+
+html[data-theme="light"] .platform-table .ant-table-tbody > tr.task-row--running > td {
+  background: rgba(37, 99, 235, 0.05) !important;
+}
+
+html[data-theme="light"] .platform-table .ant-table-tbody > tr.task-row--pending > td {
+  background: rgba(183, 121, 31, 0.06) !important;
+}
+
+html[data-theme="light"] .ant-card .ant-card-head-title,
+html[data-theme="light"] .ant-typography,
+html[data-theme="light"] .ant-table,
+html[data-theme="light"] .ant-form-item-extra,
+html[data-theme="light"] .ant-form-item-explain,
+html[data-theme="light"] .ant-descriptions,
+html[data-theme="light"] .ant-list,
+html[data-theme="light"] .ant-tabs,
+html[data-theme="light"] .ant-segmented {
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .ant-input,
+html[data-theme="light"] .ant-input-affix-wrapper,
+html[data-theme="light"] .ant-picker,
+html[data-theme="light"] .ant-select-selector,
+html[data-theme="light"] .ant-input-number,
+html[data-theme="light"] .ant-upload-wrapper .ant-upload-drag,
+html[data-theme="light"] .ant-table-wrapper,
+html[data-theme="light"] .ant-table-container,
+html[data-theme="light"] .ant-table-header,
+html[data-theme="light"] .ant-table-tbody > tr > td,
+html[data-theme="light"] .ant-table-thead > tr > th {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-theme="light"] .ant-table-thead > tr > th {
+  background: #eef2f8 !important;
+  color: #334155 !important;
+}
+
+html[data-theme="light"] .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: rgba(88, 101, 242, 0.06) !important;
+}
+
+html[data-theme="light"] .ant-btn-default {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-theme="light"] .ant-btn-default:hover {
+  border-color: rgba(88, 101, 242, 0.52) !important;
+  color: #2f3fc7 !important;
+}
+
+html[data-theme="light"] .ant-btn-link {
+  color: #3f4dcc !important;
+}
+
+html[data-theme="light"] .ant-btn-link:hover {
+  color: #202b8f !important;
+}
+
+html[data-theme="light"] .ant-alert {
+  background: rgba(255, 255, 255, 0.86) !important;
+}
+
+html[data-theme="light"] .ant-switch {
+  background: rgba(148, 163, 184, 0.35) !important;
+}
+
+html[data-theme="light"] .ant-switch.ant-switch-checked {
+  background: rgba(88, 101, 242, 0.92) !important;
+}
+
+html[data-theme="light"] .github-settings-nav,
+html[data-theme="light"] .github-project-list {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="light"] .github-settings-nav__item,
+html[data-theme="light"] .github-project-row {
+  color: var(--theme-text);
+  border-bottom-color: var(--theme-border);
+}
+
+html[data-theme="light"] .github-settings-nav__item.is-active,
+html[data-theme="light"] .github-project-row.is-active {
+  color: #2f3fc7;
+  background: rgba(88, 101, 242, 0.09);
+}
+
+html[data-theme="light"] .github-profile-card__handle,
+html[data-theme="light"] .github-project-current__desc {
+  color: var(--theme-text-secondary);
+}
+
+html[data-theme="light"] .task-list-title-cell > a {
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .task-list-title-cell .table-secondary-text {
+  background: rgba(246, 248, 252, 0.92);
+  border-color: var(--theme-border);
+  color: #64748b !important;
+}
+
+html[data-theme="light"] .create-task-uploader,
+html[data-theme="light"] .create-task-uploader.ant-upload-wrapper .ant-upload-drag,
+html[data-theme="light"] .create-task-uploader.ant-upload-wrapper .ant-upload-drag .ant-upload,
+html[data-theme="light"] .create-task-uploader.ant-upload-wrapper .ant-upload-drag .ant-upload-btn {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(88, 101, 242, 0.2) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-theme="light"] .create-task-uploader:hover,
+html[data-theme="light"] .create-task-uploader.ant-upload-wrapper .ant-upload-drag:hover {
+  border-color: rgba(88, 101, 242, 0.5) !important;
+  background: rgba(248, 250, 255, 0.92) !important;
+}
+
+html[data-theme="light"] .github-settings-card .ant-card-head {
+  background: #f7f9fd !important;
+  border-bottom-color: var(--theme-border) !important;
+}

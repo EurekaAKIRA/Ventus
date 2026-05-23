@@ -453,7 +453,12 @@ def _build_step_payload(
 
     intent = _infer_intent(step.get("text", ""))
     uses_context = _infer_uses_context(step.get("text", ""), intent, scenario_state, parsed_requirement)
-    request = _build_request_template(step.get("text", ""), intent, parsed_requirement, uses_context)
+    request_context_text = " ".join(
+        part
+        for part in (scenario.name, scenario.goal, step.get("text", ""))
+        if str(part or "").strip()
+    )
+    request = _build_request_template(request_context_text, intent, parsed_requirement, uses_context)
     save_context = _build_save_context(step.get("text", ""), intent, request)
     prior_resource_expectations = _matching_prior_resource_expectations(request, scenario_state)
     request.pop("_matched_endpoint", None)
@@ -869,6 +874,10 @@ def _extract_body_fields(
     method: str,
     intent: str,
 ) -> dict[str, object]:
+    explicit_body = _extract_explicit_json_body(parsed_requirement, step_text, endpoint_path, method)
+    if explicit_body:
+        return explicit_body
+
     endpoint = _find_endpoint_spec(parsed_requirement, method, endpoint_path)
     if endpoint is not None and str(method or "").upper().strip() not in {"GET", "DELETE"}:
         endpoint_fields: list[str] = []
@@ -937,6 +946,113 @@ def _extract_body_fields(
         if field not in values and len(values) < 10:
             values[field] = _default_value_for_field(field)
     return values
+
+
+def _extract_explicit_json_body(
+    parsed_requirement: dict,
+    step_text: str,
+    endpoint_path: str,
+    method: str,
+) -> dict[str, object]:
+    target_method = str(method or "").upper().strip()
+    target_path = _canonicalize_endpoint_path(endpoint_path)
+    if not target_method or not target_path:
+        return {}
+
+    blocks: list[str] = []
+    for key in ("expected_results", "actions", "constraints", "preconditions"):
+        blocks.extend(str(item or "") for item in (parsed_requirement.get(key) or []))
+
+    matching_blocks = [
+        block
+        for block in blocks
+        if _sentence_matches_endpoint(block, target_path, target_method)
+        and ("json_body" in block.lower() or "请求体" in block)
+    ]
+    if not matching_blocks:
+        return {}
+
+    selected = _select_body_block_for_step(matching_blocks, step_text)
+    body = _parse_json_body_key_values(selected)
+    if not body:
+        return {}
+    return body
+
+
+def _select_body_block_for_step(blocks: list[str], step_text: str) -> str:
+    lowered_step = str(step_text or "").lower()
+    negative_hints = ("wrong", "invalid", "错误", "失败", "wrong-password")
+    positive_hints = ("success", "valid", "正确", "成功")
+    step_is_negative = any(hint in lowered_step for hint in negative_hints)
+    step_is_positive = any(hint in lowered_step for hint in positive_hints)
+
+    def score(block: str) -> tuple[int, int]:
+        lowered = block.lower()
+        value = 0
+        block_is_negative = any(hint in lowered for hint in negative_hints)
+        block_is_positive = any(hint in lowered for hint in positive_hints)
+        if step_is_negative and block_is_negative:
+            value += 5
+        if step_is_positive and block_is_positive:
+            value += 5
+        if "wrong-password" in lowered_step and "wrong-password" in lowered:
+            value += 10
+        if "123456" in lowered_step and "123456" in lowered:
+            value += 10
+        if not step_is_negative and block_is_negative:
+            value -= 8
+        if not step_is_positive and block_is_positive:
+            value += 1
+        return value, -len(block)
+
+    return max(blocks, key=score)
+
+
+def _parse_json_body_key_values(block: str) -> dict[str, object]:
+    lines = str(block or "").splitlines()
+    in_body = False
+    values: dict[str, object] = {}
+    for raw_line in lines:
+        line = raw_line.strip()
+        lowered = line.lower()
+        if "json_body" in lowered or "请求体" in line:
+            in_body = True
+            continue
+        if not in_body:
+            continue
+        if line.startswith("**") or lowered.startswith("**expected") or lowered.startswith("**wrong_expected"):
+            break
+        match = re.search(r"`([a-zA-Z_][a-zA-Z0-9_]*)`\s*[:：]\s*`?([^`]+?)`?\s*$", line)
+        if not match:
+            continue
+        key = match.group(1).strip()
+        value = _coerce_explicit_body_value(match.group(2).strip(), key)
+        values[key] = value
+    return values
+
+
+def _coerce_explicit_body_value(value: str, key: str = "") -> object:
+    cleaned = str(value or "").strip().strip(",")
+    if str(key or "").strip().lower() in {"password", "passwd", "pwd", "token", "access_token", "refresh_token"}:
+        return cleaned
+    lowered = cleaned.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+    if lowered == "null":
+        return None
+    if re.fullmatch(r"-?\d+", cleaned):
+        try:
+            return int(cleaned)
+        except ValueError:
+            return cleaned
+    if re.fullmatch(r"-?\d+\.\d+", cleaned):
+        try:
+            return float(cleaned)
+        except ValueError:
+            return cleaned
+    return cleaned
 
 
 def _extract_field_names_from_sentence(sentence: str) -> list[str]:
@@ -1556,6 +1672,10 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
     if intent == "login":
         saved: dict[str, str] = {}
         if request_url.endswith("/auth/login"):
+            if request_url.startswith("/api/"):
+                saved["access_token"] = "json.data.access_token"
+                saved["refresh_token"] = "json.data.refresh_token"
+                return saved
             saved["access_token"] = "json.accessToken"
             saved["refresh_token"] = "json.refreshToken"
             return saved

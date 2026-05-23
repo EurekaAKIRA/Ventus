@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Avatar, Button, Dropdown, Layout, Menu, Select, Space, Typography, message } from "antd";
+import { Avatar, Button, Dropdown, Layout, Menu, Select, Space, Switch, Tooltip, Typography, message } from "antd";
 import {
   DashboardOutlined,
   UnorderedListOutlined,
@@ -17,8 +17,11 @@ import {
   ApiOutlined,
   FileDoneOutlined,
   ScheduleOutlined,
+  MoonOutlined,
+  SunOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "./auth/AuthContext";
+import { usePlatformTheme } from "./theme/PlatformThemeProvider";
 
 const { Sider, Content, Footer, Header } = Layout;
 const { Text, Title } = Typography;
@@ -57,10 +60,12 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { ready, isAuthenticated, user, projects, currentProjectId, setCurrentProjectId, logout, createProject } = useAuth();
+  const { isLightMode, setMode } = usePlatformTheme();
   const visibleMenuItems = useMemo(
     () => menuItems.filter((item) => !item.adminOnly || Boolean(user?.is_platform_admin)),
     [user?.is_platform_admin],
   );
+  const navigationTheme = isLightMode ? "light" : "dark";
 
   const selectedKey =
     visibleMenuItems
@@ -117,7 +122,7 @@ export default function AppLayout() {
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
-        theme="dark"
+        theme={navigationTheme}
         width={220}
         className="app-shell__sider"
       >
@@ -133,7 +138,7 @@ export default function AppLayout() {
         </div>
         <Menu
           className="app-shell__menu"
-          theme="dark"
+          theme={navigationTheme}
           mode="inline"
           selectedKeys={[selectedKey]}
           items={visibleMenuItems}
@@ -163,6 +168,18 @@ export default function AppLayout() {
             <Button className="app-shell__ghost-button" icon={<PlusOutlined />} onClick={() => void handleCreateProject()} disabled={!isAuthenticated}>
               新建项目
             </Button>
+            <Tooltip title={isLightMode ? "切换为夜间模式" : "切换为白天模式"}>
+              <div className="app-shell__theme-toggle">
+                <Text className="app-shell__theme-label">{isLightMode ? "白天模式" : "夜间模式"}</Text>
+                <Switch
+                  checked={isLightMode}
+                  checkedChildren={<SunOutlined />}
+                  unCheckedChildren={<MoonOutlined />}
+                  aria-label="切换白天模式"
+                  onChange={(checked) => setMode(checked ? "light" : "dark")}
+                />
+              </div>
+            </Tooltip>
           </Space>
           <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
             <Button type="text" className="app-shell__user-button">

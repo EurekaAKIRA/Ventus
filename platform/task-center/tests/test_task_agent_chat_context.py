@@ -177,6 +177,29 @@ def test_agent_does_not_route_unrelated_quality_question() -> None:
     assert build_task_agent_contextual_reply("空气质量如何", {}) == ""
 
 
+def test_agent_keeps_plain_general_questions_out_of_task_diagnostics() -> None:
+    assert classify_task_agent_intent("为什么天空是蓝色的") == "general_question"
+    assert classify_task_agent_intent("这个模型多少钱") == "general_question"
+    assert classify_task_agent_intent("现在几点") == "general_question"
+
+
+def test_agent_routes_task_anchored_completion_question_to_next_action() -> None:
+    assert classify_task_agent_intent("还需不需要补齐其他用例") == "next_action"
+
+
+def test_agent_general_fallback_does_not_replay_stale_draft_reply() -> None:
+    reply = _build_task_agent_general_fallback_reply(
+        "为什么天空是蓝色的",
+        {
+            "reply": "已识别任务名“jsonplaceholder_api_requirement”和目标系统 https://jsonplaceholder.typicode.com。",
+            "suggested_task_name": "jsonplaceholder_api_requirement",
+        },
+    )
+
+    assert "已识别任务名" not in reply
+    assert "不硬套模板" in reply
+
+
 def test_agent_contextual_reply_does_not_script_general_question_from_next_actions() -> None:
     reply = build_task_agent_contextual_reply(
         "随便问个普通问题",

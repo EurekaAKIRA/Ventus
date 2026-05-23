@@ -28,25 +28,66 @@ TASK_AGENT_INTENTS = {
 
 def classify_task_agent_intent(message: str) -> str:
     normalized = str(message or "").strip().lower()
-    if any(token in normalized for token in ("llm", "大模型", "模型", "增强", "候选", "过滤", "fallback")):
+    has_task_anchor = _has_task_domain_anchor(normalized)
+    if any(token in normalized for token in ("llm", "大模型", "fallback")):
+        return "llm_usage"
+    if any(token in normalized for token in ("模型", "增强", "候选", "过滤")) and has_task_anchor:
         return "llm_usage"
     if any(token in normalized for token in ("断言", "assertion", "校验", "检查点", "误杀", "测试质量", "用例质量", "执行质量", "质量评估")):
         return "assertion_quality"
     if any(token in normalized for token in ("导入", "资产", "接口资产", "用例资产", "baseurl", "base url")):
         return "task_import"
-    if any(token in normalized for token in ("失败", "报错", "为什么", "原因", "定位", "挂了", "不通过")):
+    if any(token in normalized for token in ("失败", "报错", "定位", "挂了", "不通过")):
         return "failure_diagnosis"
-    if any(token in normalized for token in ("下一步", "怎么修", "怎么办", "建议", "修复", "处理")):
+    if any(token in normalized for token in ("为什么", "原因")) and has_task_anchor:
+        return "failure_diagnosis"
+    if any(token in normalized for token in ("下一步", "怎么修", "怎么办", "修复")):
         return "next_action"
-    if any(token in normalized for token in ("状态", "进度", "现在", "当前", "执行到哪", "结果", "是否执行", "跑完")):
+    if any(token in normalized for token in ("建议", "处理", "补齐", "补充", "还需要", "需不需要", "要不要", "是否需要")) and has_task_anchor:
+        return "next_action"
+    if any(token in normalized for token in ("进度", "执行到哪", "是否执行", "跑完")):
+        return "status_query"
+    if any(token in normalized for token in ("状态", "现在", "当前", "结果")) and has_task_anchor:
         return "status_query"
     return "general_question"
+
+
+def _has_task_domain_anchor(message: str) -> bool:
+    return any(
+        token in message
+        for token in (
+            "任务",
+            "测试",
+            "用例",
+            "场景",
+            "接口",
+            "请求",
+            "响应",
+            "断言",
+            "执行",
+            "报告",
+            "覆盖",
+            "参数",
+            "环境",
+            "鉴权",
+            "dsl",
+            "api",
+            "case",
+            "test",
+            "assert",
+            "endpoint",
+            "request",
+            "response",
+        )
+    )
 
 
 def _resolve_task_agent_intent(message: str, agent_payload: dict[str, Any]) -> str:
     intent = classify_task_agent_intent(message)
     if intent == "general_question" and _is_contextual_quality_question(message) and _has_task_agent_context(agent_payload):
         return "assertion_quality"
+    if intent == "general_question" and _is_contextual_status_question(message) and _has_task_agent_context(agent_payload):
+        return "status_query"
     if intent != "general_question":
         return intent
     normalized = str(message or "").strip().lower()
@@ -104,6 +145,11 @@ def _is_contextual_quality_question(message: str) -> bool:
         return True
     compact = re.sub(r"[\s?？。！!，,；;：:]+", "", normalized)
     return compact in {"质量如何", "质量怎样", "质量怎么样", "质量好不好", "质量行不行", "质量靠谱不", "quality"}
+
+
+def _is_contextual_status_question(message: str) -> bool:
+    compact = re.sub(r"[\s?？。！!，,；;：:]+", "", str(message or "").strip().lower())
+    return compact in {"现在怎么样", "当前怎么样", "结果怎样", "结果怎么样", "怎么样了", "咋样了", "如何了"}
 
 
 def _has_task_agent_context(agent_payload: dict[str, Any]) -> bool:

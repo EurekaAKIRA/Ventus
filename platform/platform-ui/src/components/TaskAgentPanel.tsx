@@ -51,15 +51,34 @@ function isContextualQualityQuestion(text: string, hasTaskContext = false) {
   return hasTaskContext && ["质量如何", "质量怎样", "质量怎么样", "质量好不好", "质量行不行", "质量靠谱不", "quality"].includes(compact);
 }
 
+function isContextualStatusQuestion(text: string, hasTaskContext = false) {
+  if (!hasTaskContext) return false;
+  const compact = text.toLowerCase().replace(/[\s?？。！!，,；;：:]+/g, "");
+  return ["现在怎么样", "当前怎么样", "结果怎样", "结果怎么样", "怎么样了", "咋样了", "如何了"].includes(compact);
+}
+
+function hasTaskDomainAnchor(text: string) {
+  return includesAny(text, [
+    "任务", "测试", "用例", "场景", "接口", "请求", "响应", "断言", "执行", "报告", "覆盖", "参数", "环境", "鉴权",
+    "dsl", "api", "case", "test", "assert", "endpoint", "request", "response",
+  ]);
+}
+
 function inferAgentIntent(text: string, history: ChatMessage[] = [], hasTaskContext = false): TaskAgentIntent {
   const lower = text.toLowerCase();
-  if (includesAny(lower, ["llm", "大模型", "模型", "增强", "候选", "过滤", "fallback"])) return "llm_usage";
+  const taskAnchored = hasTaskDomainAnchor(lower);
+  if (includesAny(lower, ["llm", "大模型", "fallback"])) return "llm_usage";
+  if (includesAny(lower, ["模型", "增强", "候选", "过滤"]) && taskAnchored) return "llm_usage";
   if (includesAny(lower, ["断言", "assertion", "校验", "误杀", "测试质量", "用例质量", "执行质量", "质量评估"])) return "assertion_quality";
   if (isContextualQualityQuestion(lower, hasTaskContext)) return "assertion_quality";
-  if (includesAny(lower, ["失败", "报错", "为什么", "原因", "定位", "不通过", "挂了"])) return "failure_diagnosis";
+  if (isContextualStatusQuestion(lower, hasTaskContext)) return "status_query";
+  if (includesAny(lower, ["失败", "报错", "定位", "不通过", "挂了"])) return "failure_diagnosis";
+  if (includesAny(lower, ["为什么", "原因"]) && taskAnchored) return "failure_diagnosis";
   if (includesAny(lower, ["导入", "资产", "baseurl", "base url"])) return "task_import";
-  if (includesAny(lower, ["下一步", "怎么修", "怎么办", "建议", "修复"])) return "next_action";
-  if (includesAny(lower, ["状态", "进度", "现在", "当前", "结果", "跑完"])) return "status_query";
+  if (includesAny(lower, ["下一步", "怎么修", "怎么办", "修复"])) return "next_action";
+  if (includesAny(lower, ["建议", "处理", "补齐", "补充", "还需要", "需不需要", "要不要", "是否需要"]) && taskAnchored) return "next_action";
+  if (includesAny(lower, ["进度", "执行到哪", "是否执行", "跑完"])) return "status_query";
+  if (includesAny(lower, ["状态", "现在", "当前", "结果"]) && taskAnchored) return "status_query";
   if (isContinuationMessage(lower)) {
     const recent = [...history].reverse();
     for (const item of recent.filter((entry) => entry.role === "user")) {
