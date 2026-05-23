@@ -22,7 +22,7 @@ def upgrade() -> None:
         "interface_assets",
         sa.Column("project_id", sa.CHAR(length=36), nullable=False),
         sa.Column("method", sa.String(length=16), nullable=False),
-        sa.Column("path", sa.String(length=1024), nullable=False),
+        sa.Column("path", sa.String(length=512), nullable=False),
         sa.Column("name", sa.String(length=256), nullable=True),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("source", sa.String(length=64), nullable=False),

@@ -551,7 +551,7 @@ export default function TaskDetail() {
       render: (value: number, row: ExecutionCaseRow) => (
         <Space direction="vertical" size={2} style={{ width: "100%" }}>
           <Progress percent={value} size="small" showInfo={false} />
-          <span style={{ color: "rgba(0,0,0,0.45)" }}>{row.stepProgressText}</span>
+          <span className="execution-step-progress-text">{row.stepProgressText}</span>
         </Space>
       ),
     },

@@ -16,7 +16,7 @@ class InterfaceAsset(IdMixin, TimestampMixin, Base):
 
     project_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("projects.id"), nullable=False)
     method: Mapped[str] = mapped_column(String(16), nullable=False)
-    path: Mapped[str] = mapped_column(String(1024), nullable=False)
+    path: Mapped[str] = mapped_column(String(512), nullable=False)
     name: Mapped[str | None] = mapped_column(String(256))
     description: Mapped[str | None] = mapped_column(Text)
     source: Mapped[str] = mapped_column(String(64), nullable=False, default="manual")

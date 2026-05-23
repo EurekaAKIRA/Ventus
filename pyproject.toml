@@ -32,6 +32,7 @@ lavague-gradio = "^0.2.8"
 SQLAlchemy = "^2.0.48"
 alembic = "^1.18.4"
 redis = "^6.4.0"
+PyMySQL = "^1.2.0"
 
 [tool.poetry.dev-dependencies]
 ruff = "^0.2.2"
