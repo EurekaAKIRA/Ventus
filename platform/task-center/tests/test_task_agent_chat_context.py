@@ -128,7 +128,7 @@ def test_agent_summarizes_assertion_quality_counts() -> None:
 
 
 def test_agent_treats_generic_quality_question_as_quality_review() -> None:
-    assert classify_task_agent_intent("质量如何") == "assertion_quality"
+    assert classify_task_agent_intent("质量如何") == "general_question"
 
     reply = build_task_agent_contextual_reply(
         "质量如何",
@@ -158,6 +158,19 @@ def test_agent_treats_generic_quality_question_as_quality_review() -> None:
     assert "覆盖提醒：权限失败未覆盖" in reply
     assert "断言质量：3/3 通过" in reply
     assert "弱断言步骤 1 个" in reply
+
+
+def test_agent_does_not_force_quality_template_without_task_context() -> None:
+    reply = build_task_agent_contextual_reply("质量如何", {})
+
+    assert "缺对象" in reply
+    assert "不直接套任务模板" in reply
+    assert "断言质量：" not in reply
+
+
+def test_agent_does_not_route_unrelated_quality_question() -> None:
+    assert classify_task_agent_intent("空气质量如何") == "general_question"
+    assert build_task_agent_contextual_reply("空气质量如何", {}) == ""
 
 
 def test_agent_lists_weak_assertion_steps() -> None:

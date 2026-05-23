@@ -30,7 +30,7 @@ def classify_task_agent_intent(message: str) -> str:
     normalized = str(message or "").strip().lower()
     if any(token in normalized for token in ("llm", "大模型", "模型", "增强", "候选", "过滤", "fallback")):
         return "llm_usage"
-    if any(token in normalized for token in ("断言", "assertion", "校验", "检查点", "误杀", "测试质量", "质量")):
+    if any(token in normalized for token in ("断言", "assertion", "校验", "检查点", "误杀", "测试质量", "用例质量", "执行质量", "质量评估")):
         return "assertion_quality"
     if any(token in normalized for token in ("导入", "资产", "接口资产", "用例资产", "baseurl", "base url")):
         return "task_import"
@@ -45,6 +45,8 @@ def classify_task_agent_intent(message: str) -> str:
 
 def _resolve_task_agent_intent(message: str, agent_payload: dict[str, Any]) -> str:
     intent = classify_task_agent_intent(message)
+    if intent == "general_question" and _is_contextual_quality_question(message) and _has_task_agent_context(agent_payload):
+        return "assertion_quality"
     if intent != "general_question":
         return intent
     normalized = str(message or "").strip().lower()
@@ -81,7 +83,7 @@ def _intent_from_focus_term(term: str) -> str:
     lowered = str(term or "").strip().lower()
     if any(token in lowered for token in ("llm", "大模型", "模型", "候选", "fallback", "过滤")):
         return "llm_usage"
-    if any(token in lowered for token in ("断言", "assertion", "校验", "误杀", "测试质量", "质量")):
+    if any(token in lowered for token in ("断言", "assertion", "校验", "误杀", "测试质量", "用例质量", "执行质量", "质量评估")):
         return "assertion_quality"
     if any(token in lowered for token in ("失败", "报错", "failure", "错误")):
         return "failure_diagnosis"
@@ -92,6 +94,35 @@ def _intent_from_focus_term(term: str) -> str:
     if any(token in lowered for token in ("状态", "进度", "当前")):
         return "status_query"
     return "general_question"
+
+
+def _is_contextual_quality_question(message: str) -> bool:
+    normalized = str(message or "").strip().lower()
+    if "质量" not in normalized and "quality" not in normalized:
+        return False
+    if any(token in normalized for token in ("测试", "断言", "用例", "执行", "任务", "脚本", "生成", "报告", "case", "test", "assert")):
+        return True
+    compact = re.sub(r"[\s?？。！!，,；;：:]+", "", normalized)
+    return compact in {"质量如何", "质量怎样", "质量怎么样", "质量好不好", "质量行不行", "质量靠谱不", "quality"}
+
+
+def _has_task_agent_context(agent_payload: dict[str, Any]) -> bool:
+    task_tracking = agent_payload.get("task_tracking") if isinstance(agent_payload.get("task_tracking"), dict) else {}
+    if any(
+        task_tracking.get(key)
+        for key in (
+            "task_id",
+            "task_name",
+            "task_status",
+            "execution_status",
+            "scenario_total",
+            "failed_assertions",
+            "failed_steps",
+        )
+    ):
+        return True
+    assertion_quality = task_tracking.get("assertion_quality") if isinstance(task_tracking.get("assertion_quality"), dict) else {}
+    return bool(assertion_quality.get("total") or assertion_quality.get("generated_by_counts"))
 
 
 def build_task_agent_context_summary(agent_payload: dict[str, Any], message: str = "") -> dict[str, Any]:
@@ -167,6 +198,8 @@ def build_task_agent_contextual_reply(message: str, agent_payload: dict[str, Any
     analysis = context["analysis"]
     draft = context["draft"]
     has_task_context = bool(task.get("task_id") or task.get("task_name") or execution.get("scenario_total") or assertions.get("total"))
+    if intent == "general_question" and _is_contextual_quality_question(message) and not has_task_context:
+        return "你问的“质量”还缺对象：是测试质量、断言质量、生成质量，还是某段代码/文档质量？给我对象后我再按证据评，不直接套任务模板。"
     if not has_task_context and intent != "general_question":
         return _reply_missing_context(intent)
     if analysis.get("missing_artifacts") and _missing_artifacts_block_reply(intent, context):

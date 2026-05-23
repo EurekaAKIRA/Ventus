@@ -43,10 +43,19 @@ function isContinuationMessage(text: string) {
   return includesAny(text, ["继续", "这个", "刚才", "上面", "前面", "然后", "那", "接着", "再看"]);
 }
 
-function inferAgentIntent(text: string, history: ChatMessage[] = []): TaskAgentIntent {
+function isContextualQualityQuestion(text: string, hasTaskContext = false) {
+  const lower = text.toLowerCase();
+  if (!includesAny(lower, ["质量", "quality"])) return false;
+  if (includesAny(lower, ["测试", "断言", "用例", "执行", "任务", "脚本", "生成", "报告", "case", "test", "assert"])) return true;
+  const compact = lower.replace(/[\s?？。！!，,；;：:]+/g, "");
+  return hasTaskContext && ["质量如何", "质量怎样", "质量怎么样", "质量好不好", "质量行不行", "质量靠谱不", "quality"].includes(compact);
+}
+
+function inferAgentIntent(text: string, history: ChatMessage[] = [], hasTaskContext = false): TaskAgentIntent {
   const lower = text.toLowerCase();
   if (includesAny(lower, ["llm", "大模型", "模型", "增强", "候选", "过滤", "fallback"])) return "llm_usage";
-  if (includesAny(lower, ["断言", "assertion", "校验", "误杀", "测试质量", "质量"])) return "assertion_quality";
+  if (includesAny(lower, ["断言", "assertion", "校验", "误杀", "测试质量", "用例质量", "执行质量", "质量评估"])) return "assertion_quality";
+  if (isContextualQualityQuestion(lower, hasTaskContext)) return "assertion_quality";
   if (includesAny(lower, ["失败", "报错", "为什么", "原因", "定位", "不通过", "挂了"])) return "failure_diagnosis";
   if (includesAny(lower, ["导入", "资产", "baseurl", "base url"])) return "task_import";
   if (includesAny(lower, ["下一步", "怎么修", "怎么办", "建议", "修复"])) return "next_action";
@@ -54,11 +63,11 @@ function inferAgentIntent(text: string, history: ChatMessage[] = []): TaskAgentI
   if (isContinuationMessage(lower)) {
     const recent = [...history].reverse();
     for (const item of recent.filter((entry) => entry.role === "user")) {
-      const previousIntent: TaskAgentIntent = inferAgentIntent(item.text);
+      const previousIntent: TaskAgentIntent = inferAgentIntent(item.text, [], hasTaskContext);
       if (previousIntent !== "general_question") return previousIntent;
     }
     for (const item of recent) {
-      const previousIntent: TaskAgentIntent = inferAgentIntent(item.text);
+      const previousIntent: TaskAgentIntent = inferAgentIntent(item.text, [], hasTaskContext);
       if (previousIntent !== "general_question") return previousIntent;
     }
   }
@@ -254,7 +263,7 @@ export default function TaskAgentPanel({ payload, onSendMessage, initialMessage,
     });
     setSending(true);
     const recentHistory = messages.slice(-8);
-    const intent = inferAgentIntent(nextText, recentHistory);
+    const intent = inferAgentIntent(nextText, recentHistory, Boolean(taskId));
     setLastIntent(intent);
     setLoadingLabel(buildLoadingLabel(intent));
     try {
