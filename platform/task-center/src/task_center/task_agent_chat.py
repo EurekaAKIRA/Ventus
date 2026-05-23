@@ -30,7 +30,7 @@ def classify_task_agent_intent(message: str) -> str:
     normalized = str(message or "").strip().lower()
     if any(token in normalized for token in ("llm", "大模型", "模型", "增强", "候选", "过滤", "fallback")):
         return "llm_usage"
-    if any(token in normalized for token in ("断言", "assertion", "校验", "检查点", "误杀")):
+    if any(token in normalized for token in ("断言", "assertion", "校验", "检查点", "误杀", "测试质量", "质量")):
         return "assertion_quality"
     if any(token in normalized for token in ("导入", "资产", "接口资产", "用例资产", "baseurl", "base url")):
         return "task_import"
@@ -81,7 +81,7 @@ def _intent_from_focus_term(term: str) -> str:
     lowered = str(term or "").strip().lower()
     if any(token in lowered for token in ("llm", "大模型", "模型", "候选", "fallback", "过滤")):
         return "llm_usage"
-    if any(token in lowered for token in ("断言", "assertion", "校验", "误杀")):
+    if any(token in lowered for token in ("断言", "assertion", "校验", "误杀", "测试质量", "质量")):
         return "assertion_quality"
     if any(token in lowered for token in ("失败", "报错", "failure", "错误")):
         return "failure_diagnosis"
@@ -411,15 +411,56 @@ def _reply_assertion_quality(context: dict[str, Any]) -> str:
     weak = int(assertions.get("weak_step_count") or 0)
     invalid = int(assertions.get("invalid_llm_candidate_count") or 0)
     llm_count = int(counts.get("llm") or 0) + int(counts.get("llm_repair") or 0)
+    test_quality = _format_test_quality_verdict(context, failed, weak, invalid)
     risk = _format_assertion_false_positive_risk(context, failed, llm_count)
     weak_detail = _format_weak_step_summary(assertions.get("weak_steps") or [], weak)
     next_action = _suggest_assertion_quality_next_action(context, failed, weak, invalid)
     return (
+        f"{test_quality}"
         f"断言质量：{assertions.get('passed')}/{total} 通过，失败 {failed} 条。{risk}"
         f"来源分布：rules={counts.get('rules', 0)}，llm={counts.get('llm', 0)}，llm_repair={counts.get('llm_repair', 0)}，manual={counts.get('manual', 0)}。"
         f"弱断言步骤 {weak} 个，fallback {assertions.get('fallback_count', 0)} 条，LLM 被过滤候选 {invalid} 条。"
         f"{weak_detail}{next_action}"
     )
+
+
+def _format_test_quality_verdict(context: dict[str, Any], failed: int, weak: int, invalid: int) -> str:
+    task = context["task"]
+    execution = context["execution"]
+    draft = context["draft"]
+    total = int(execution.get("scenario_total") or 0)
+    passed = int(execution.get("scenario_passed") or 0)
+    failed_scenarios = int(execution.get("scenario_failed") or 0)
+    gaps = [str(item) for item in draft.get("coverage_gaps") or [] if str(item).strip()]
+    fallback = int(context["assertions"].get("fallback_count") or 0)
+    status = str(task.get("execution_status") or "not_started")
+    quality_debits = failed_scenarios + weak + fallback + invalid + len(gaps)
+
+    if status in {"not_started", "pending", ""} and total <= 0:
+        return "测试质量：暂不能定级，当前没有执行结果；只能先看 DSL 和断言规划。"
+    if failed_scenarios:
+        level = "偏弱" if quality_debits >= 3 else "中等偏弱"
+        reason = f"场景 {passed}/{total} 通过，仍有 {failed_scenarios} 个失败场景"
+    elif weak or fallback or invalid or gaps:
+        level = "中等"
+        reason_parts: list[str] = []
+        if total:
+            reason_parts.append(f"场景 {passed}/{total} 通过")
+        if weak:
+            reason_parts.append(f"弱断言步骤 {weak} 个")
+        if fallback:
+            reason_parts.append(f"规则兜底 {fallback} 条")
+        if invalid:
+            reason_parts.append(f"LLM 过滤候选 {invalid} 条")
+        if gaps:
+            reason_parts.append(f"覆盖缺口 {len(gaps)} 项")
+        reason = "，".join(reason_parts)
+    else:
+        level = "较好"
+        reason = f"场景 {passed}/{total} 通过，暂未看到失败、弱断言或覆盖缺口" if total else "DSL 中已有断言，但还缺执行样本"
+
+    gap_text = f"覆盖提醒：{'；'.join(gaps[:2])}。" if gaps else ""
+    return f"测试质量：{level}，{reason}。{gap_text}"
 
 
 def _reply_llm_usage(context: dict[str, Any]) -> str:

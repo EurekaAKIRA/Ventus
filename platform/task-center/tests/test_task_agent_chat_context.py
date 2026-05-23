@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from task_center.api import _build_task_agent_tracking_context, _task_ids_from_agent_conversation
-from task_center.task_agent_chat import build_task_agent_contextual_reply
+from task_center.task_agent_chat import build_task_agent_contextual_reply, classify_task_agent_intent
 
 
 def _task(**overrides):
@@ -122,8 +122,42 @@ def test_agent_summarizes_assertion_quality_counts() -> None:
     reply = build_task_agent_contextual_reply("断言质量怎么样", {"task_tracking": tracking})
 
     assert tracking["assertion_quality"]["generated_by_counts"] == {"rules": 2, "llm": 1}
+    assert "测试质量" in reply
     assert "rules=2" in reply
     assert "llm=1" in reply
+
+
+def test_agent_treats_generic_quality_question_as_quality_review() -> None:
+    assert classify_task_agent_intent("质量如何") == "assertion_quality"
+
+    reply = build_task_agent_contextual_reply(
+        "质量如何",
+        {
+            "coverage_gaps": ["权限失败未覆盖"],
+            "task_tracking": {
+                "task_id": "quality_generic_20260523010101000000",
+                "task_name": "泛质量追问",
+                "execution_status": "passed",
+                "stage": "execution",
+                "scenario_total": 2,
+                "scenario_passed": 2,
+                "scenario_failed": 0,
+                "assertion_quality": {
+                    "total": 3,
+                    "passed": 3,
+                    "failed": 0,
+                    "generated_by_counts": {"rules": 2, "llm": 1},
+                    "weak_step_count": 1,
+                    "fallback_count": 1,
+                },
+            },
+        },
+    )
+
+    assert "测试质量：中等" in reply
+    assert "覆盖提醒：权限失败未覆盖" in reply
+    assert "断言质量：3/3 通过" in reply
+    assert "弱断言步骤 1 个" in reply
 
 
 def test_agent_lists_weak_assertion_steps() -> None:

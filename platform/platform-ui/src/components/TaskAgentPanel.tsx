@@ -46,7 +46,7 @@ function isContinuationMessage(text: string) {
 function inferAgentIntent(text: string, history: ChatMessage[] = []): TaskAgentIntent {
   const lower = text.toLowerCase();
   if (includesAny(lower, ["llm", "大模型", "模型", "增强", "候选", "过滤", "fallback"])) return "llm_usage";
-  if (includesAny(lower, ["断言", "assertion", "校验", "误杀"])) return "assertion_quality";
+  if (includesAny(lower, ["断言", "assertion", "校验", "误杀", "测试质量", "质量"])) return "assertion_quality";
   if (includesAny(lower, ["失败", "报错", "为什么", "原因", "定位", "不通过", "挂了"])) return "failure_diagnosis";
   if (includesAny(lower, ["导入", "资产", "baseurl", "base url"])) return "task_import";
   if (includesAny(lower, ["下一步", "怎么修", "怎么办", "建议", "修复"])) return "next_action";
@@ -67,7 +67,7 @@ function inferAgentIntent(text: string, history: ChatMessage[] = []): TaskAgentI
 
 function intentLabel(intent: TaskAgentIntent) {
   if (intent === "failure_diagnosis") return "失败诊断";
-  if (intent === "assertion_quality") return "断言质量";
+  if (intent === "assertion_quality") return "质量评估";
   if (intent === "llm_usage") return "LLM 监督";
   if (intent === "task_import") return "资产导入";
   if (intent === "next_action") return "下一步";
@@ -84,7 +84,7 @@ function compactTaskId(taskId?: string) {
 
 function buildLoadingLabel(intent: string) {
   if (intent === "failure_diagnosis") return "正在读取执行结果和失败断言...";
-  if (intent === "assertion_quality") return "正在统计断言来源和弱断言...";
+  if (intent === "assertion_quality") return "正在评估测试与断言质量...";
   if (intent === "llm_usage") return "正在检查 LLM 候选和质量门...";
   if (intent === "task_import") return "正在核对资产和环境信息...";
   if (intent === "status_query") return "正在同步当前任务状态...";
