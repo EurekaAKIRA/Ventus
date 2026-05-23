@@ -526,6 +526,7 @@ export async function chatWithTaskAgent(payload: {
   target_system?: string;
   environment?: string;
   project_id?: string;
+  conversation_history?: Array<{ role: string; text: string }>;
 }): Promise<TaskAgentChatPayload> {
   if (USE_MOCK_API) {
     await delay(240);
@@ -707,6 +708,21 @@ export async function fetchDsl(taskId: string): Promise<TestCaseDSL> {
     return await requestApi<TestCaseDSL>(`${taskApiPath(taskId)}/dsl`);
   } catch (error) {
     throw new Error(`获取 DSL 失败: ${(error as Error).message}`);
+  }
+}
+
+export async function updateTaskDsl(taskId: string, testCaseDsl: TestCaseDSL): Promise<TestCaseDSL> {
+  if (USE_MOCK_API) {
+    await delay();
+    return { ...testCaseDsl };
+  }
+  try {
+    return await requestApi<TestCaseDSL>(`${taskApiPath(taskId)}/dsl`, {
+      method: "PATCH",
+      body: JSON.stringify({ test_case_dsl: testCaseDsl }),
+    });
+  } catch (error) {
+    throw new Error(`保存 DSL 失败: ${(error as Error).message}`);
   }
 }
 

@@ -22,6 +22,24 @@ def _extend_path() -> None:
 
 
 class _Handler(BaseHTTPRequestHandler):
+    def do_POST(self) -> None:  # noqa: N802
+        if self.path.startswith("/echo"):
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(length) if length else b"{}"
+            try:
+                body = json.loads(raw.decode("utf-8"))
+            except json.JSONDecodeError:
+                body = {}
+            encoded = json.dumps({"echo": body}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+            return
+
+        self.send_error(404)
+
     def do_GET(self) -> None:  # noqa: N802
         if self.path.startswith("/text"):
             encoded = b"plain-text-response"
@@ -228,6 +246,51 @@ def main() -> int:
                 }
             ],
         }
+        complex_flow_payload = {
+            "dsl_version": "0.2.0",
+            "task_id": "edge_complex_flow",
+            "task_name": "edge_complex_flow",
+            "feature_name": "edge_complex_flow",
+            "execution_mode": "api",
+            "metadata": {
+                "execution": {
+                    "base_url": "http://127.0.0.1:8011",
+                }
+            },
+            "scenarios": [
+                {
+                    "scenario_id": "s6",
+                    "name": "data driven conditional flow",
+                    "examples": [
+                        {"case_name": "alpha", "enabled": True},
+                        {"case_name": "beta", "enabled": False},
+                    ],
+                    "setup_steps": [
+                        {
+                            "step_id": "s6_setup",
+                            "step_type": "given",
+                            "text": "seed current example",
+                            "set_context": {"case_value": "{{case_name}}"},
+                            "wait_ms": 1,
+                        }
+                    ],
+                    "steps": [
+                        {
+                            "step_id": "s6_echo",
+                            "step_type": "when",
+                            "text": "echo enabled example",
+                            "run_if": {"source": "context.enabled", "op": "eq", "expected": True},
+                            "request": {"method": "POST", "url": "/echo", "json": {"value": "{{case_value}}"}},
+                            "assertions": [
+                                {"source": "status_code", "op": "eq", "expected": 200},
+                                {"source": "json.echo.value", "op": "eq", "expected": "{{case_value}}"},
+                            ],
+                            "save_context": {"echoed_value": "json.echo.value"},
+                        }
+                    ],
+                }
+            ],
+        }
 
         assert execute_test_case_dsl(text_payload)["status"] == "passed"
         items_result = execute_test_case_dsl(items_payload)
@@ -245,6 +308,12 @@ def main() -> int:
         assert network_step["response_summary"]["parse_error"] == ""
         seeded_context_result = execute_test_case_dsl(seeded_context_payload)
         assert seeded_context_result["status"] == "passed"
+        complex_flow_result = execute_test_case_dsl(complex_flow_payload)
+        assert complex_flow_result["status"] == "passed"
+        assert complex_flow_result["metrics"]["scenario_count"] == 2
+        assert complex_flow_result["metrics"]["skipped_step_count"] == 1
+        assert complex_flow_result["metrics"]["failed_step_count"] == 0
+        assert complex_flow_result["scenario_results"][1]["steps"][1]["status"] == "skipped"
         assert any(log["event"] == "assertions_evaluated" for log in items_result["logs"])
         print("api runner edge cases test passed")
         return 0

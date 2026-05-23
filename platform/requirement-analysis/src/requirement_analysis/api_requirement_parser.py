@@ -83,6 +83,16 @@ def _extract_api_endpoints(text: str) -> list[dict]:
         if key not in seen:
             seen.add(key)
             endpoints.append({"method": method, "path": path, "description": description_map.get(key, "")})
+    for method, path, description in _extract_openapi_endpoint_pairs(text):
+        key = f"{method} {path}"
+        if key not in seen:
+            seen.add(key)
+            endpoints.append({"method": method, "path": path, "description": description or description_map.get(key, "")})
+    for method, path, description in _extract_path_only_endpoint_pairs(text):
+        key = f"{method} {path}"
+        if key not in seen:
+            seen.add(key)
+            endpoints.append({"method": method, "path": path, "description": description or description_map.get(key, "")})
     return _enrich_endpoints(endpoints, text)
 
 
@@ -332,8 +342,8 @@ def _map_paths_to_sections(text: str) -> dict[str, str]:
             mapping.setdefault(m.group(2), current_heading)
         if _TABLE_ROW_RE.match(line.strip()):
             cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if len(cells) >= 3:
-                path = cells[2].strip().strip("`").strip()
+            method, path = _method_path_from_table_cells(cells)
+            if method and path:
                 if path.startswith("/"):
                     mapping.setdefault(path, current_heading)
     return mapping
@@ -569,13 +579,22 @@ def _extract_endpoint_pairs_from_tables(text: str) -> list[tuple[str, str]]:
         if not _TABLE_ROW_RE.match(raw_line):
             continue
         cells = [cell.strip() for cell in raw_line.strip("|").split("|")]
-        if len(cells) < 3:
-            continue
-        method = cells[1].strip().strip("`").strip().upper()
-        path = cells[2].strip().strip("`").strip()
+        method, path = _method_path_from_table_cells(cells)
         if method in {"GET", "POST", "PUT", "PATCH", "DELETE"} and path.startswith("/"):
             pairs.append((method, path))
     return pairs
+
+
+def _method_path_from_table_cells(cells: list[str]) -> tuple[str, str]:
+    method = ""
+    path = ""
+    for cell in cells:
+        candidate = cell.strip().strip("`").strip()
+        if not method and candidate.upper() in {"GET", "POST", "PUT", "PATCH", "DELETE"}:
+            method = candidate.upper()
+        if not path and candidate.startswith("/"):
+            path = candidate
+    return method, path
 
 
 def _extract_endpoint_descriptions_from_tables(lines: list[str]) -> dict[str, str]:
@@ -584,17 +603,89 @@ def _extract_endpoint_descriptions_from_tables(lines: list[str]) -> dict[str, st
         if not _TABLE_ROW_RE.match(raw_line):
             continue
         cells = [cell.strip() for cell in raw_line.strip("|").split("|")]
-        if len(cells) < 3:
-            continue
-        method_candidate = cells[1].strip().strip("`").strip().upper()
-        path_candidate = cells[2].strip().strip("`").strip()
+        method_candidate, path_candidate = _method_path_from_table_cells(cells)
         if method_candidate not in {"GET", "POST", "PUT", "PATCH", "DELETE"}:
             continue
         if not path_candidate.startswith("/"):
             continue
-        description = cells[0].strip("` ").strip()
+        description = ""
+        for cell in cells:
+            cleaned = cell.strip("` ").strip()
+            if cleaned and cleaned.upper() != method_candidate and cleaned != path_candidate and cleaned not in {"---", "--"}:
+                description = cleaned
+                break
         descriptions[f"{method_candidate} {path_candidate}"] = description
     return descriptions
+
+
+def _extract_openapi_endpoint_pairs(text: str) -> list[tuple[str, str, str]]:
+    """Extract simple OpenAPI/YAML-style path and method pairs."""
+    pairs: list[tuple[str, str, str]] = []
+    current_path = ""
+    current_method = ""
+    current_summary = ""
+
+    def flush_current() -> None:
+        nonlocal current_method, current_summary
+        if current_path and current_method:
+            pairs.append((current_method.upper(), current_path, current_summary.strip()))
+        current_method = ""
+        current_summary = ""
+
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        path_match = re.match(r"^(/[\w/\-{}:.]+):\s*$", stripped)
+        if path_match:
+            flush_current()
+            current_path = path_match.group(1)
+            continue
+        method_match = re.match(r"^(get|post|put|patch|delete):\s*$", stripped, flags=re.IGNORECASE)
+        if current_path and method_match:
+            flush_current()
+            current_method = method_match.group(1).upper()
+            continue
+        if current_path and current_method and stripped.lower().startswith("summary:"):
+            current_summary = stripped.split(":", 1)[1].strip()
+    flush_current()
+    return pairs
+
+
+def _extract_path_only_endpoint_pairs(text: str) -> list[tuple[str, str, str]]:
+    """Infer methods for prose that lists paths without explicit HTTP methods."""
+    if _EXPLICIT_ENDPOINT_RE.search(text):
+        return []
+    pairs: list[tuple[str, str, str]] = []
+    seen: set[str] = set()
+    for sentence in re.split(r"[\n。；;]+", text):
+        sentence = sentence.strip()
+        if not sentence or _TABLE_ROW_RE.match(sentence):
+            continue
+        for match in re.finditer(r"(/[\w/\-{}:.]+)", sentence):
+            path = match.group(1).rstrip(".,，。")
+            if not path or path in seen:
+                continue
+            seen.add(path)
+            method = _infer_method_from_path_only_sentence(sentence, path)
+            description = _derive_description_from_sentence(sentence, method, path)
+            pairs.append((method, path, description))
+    return pairs
+
+
+def _infer_method_from_path_only_sentence(sentence: str, path: str) -> str:
+    lowered = sentence.lower()
+    if any(keyword in lowered for keyword in ("download", "下载", "查询", "查看", "获取", "读取", "list", "search")):
+        return "GET"
+    if any(keyword in lowered for keyword in ("更新", "修改", "patch")):
+        return "PATCH"
+    if any(keyword in lowered for keyword in ("删除", "取消", "delete")):
+        return "DELETE"
+    if any(keyword in lowered for keyword in ("生成", "创建", "新增", "提交", "create", "post")):
+        return "POST"
+    if path.rstrip("/").endswith(("status", "download")):
+        return "GET"
+    if re.search(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}", path):
+        return "GET"
+    return "POST"
 
 
 def _extract_endpoint_descriptions_from_sentences(lines: list[str]) -> dict[str, str]:

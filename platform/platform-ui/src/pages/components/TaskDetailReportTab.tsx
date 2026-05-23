@@ -87,6 +87,52 @@ export function TaskDetailReportTab(props: {
           </Space>
         </Card>
       ) : null}
+      <Card bordered={false} className="panel-card" title="分析报告" extra={<Button size="small" onClick={onRefreshReportSection}>刷新</Button>}>
+        {primaryAnalysisReport ? (
+          <Space direction="vertical" size={8} style={{ width: "100%" }}>
+            <Space>
+              <Text>质量状态</Text>
+              <Tag color={qualityColor}>{primaryAnalysisReport.quality_status}</Tag>
+            </Space>
+            {assertionStrengthScore !== undefined || assertionStrengthLevel !== undefined ? (
+              <Space wrap>
+                <Text>断言强度</Text>
+                <Tag color={assertionStrengthLevel === "high" ? "success" : assertionStrengthLevel === "medium" ? "processing" : "warning"}>
+                  {String(assertionStrengthScore ?? "-")} / {String(assertionStrengthLevel ?? "-")}
+                </Tag>
+                {weakAssertionStepCount !== undefined ? <Text type="secondary">弱断言步骤：{String(weakAssertionStepCount)}</Text> : null}
+              </Space>
+            ) : null}
+            <Text>任务：{primaryAnalysisReport.task_name}</Text>
+            <Button size="small" onClick={() => onOpenRawData("分析报告 JSON", primaryAnalysisReport)}>
+              查看原始数据
+            </Button>
+          </Space>
+        ) : (
+          <Empty description="暂无分析报告" />
+        )}
+      </Card>
+
+      <Card bordered={false} className="panel-card" title="分析图表（chart_data）">
+        {chartItems.length ? (
+          <Space direction="vertical" size={10} style={{ width: "100%" }}>
+            {chartItems.map((item) => (
+              <div key={item.key}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <Text>{item.label}</Text>
+                  <Text strong>{item.value}</Text>
+                </div>
+                <Progress percent={Math.round((item.value / chartMax) * 100)} strokeColor="#5865f2" showInfo={false} />
+              </div>
+            ))}
+            <Button size="small" onClick={() => onOpenRawData("chart_data JSON", analysisChartData)}>
+              查看原始数据
+            </Button>
+          </Space>
+        ) : (
+          <Empty description="chart_data 暂无可视化项" />
+        )}
+      </Card>
       <Card
         className="panel-card"
         bordered={false}
@@ -98,6 +144,18 @@ export function TaskDetailReportTab(props: {
         }
       >
         {explanationsError ? <Alert type="info" showIcon message={explanationsError} /> : null}
+        {executionExplanations?.llm_diagnosis ? (
+          <Alert
+            type="info"
+            showIcon
+            message={executionExplanations.llm_diagnosis.summary || "智能诊断已生成"}
+            description={
+              executionExplanations.llm_diagnosis.next_actions?.length
+                ? executionExplanations.llm_diagnosis.next_actions.join("；")
+                : executionExplanations.llm_diagnosis.root_cause
+            }
+          />
+        ) : null}
         {executionExplanations?.failure_groups?.length ? (
           <List
             size="small"
@@ -156,52 +214,6 @@ export function TaskDetailReportTab(props: {
           </Space>
         ) : (
           <Text type="secondary">暂无回归对比结果</Text>
-        )}
-      </Card>
-      <Card bordered={false} className="panel-card" title="分析报告" extra={<Button size="small" onClick={onRefreshReportSection}>刷新</Button>}>
-        {primaryAnalysisReport ? (
-          <Space direction="vertical" size={8} style={{ width: "100%" }}>
-            <Space>
-              <Text>质量状态</Text>
-              <Tag color={qualityColor}>{primaryAnalysisReport.quality_status}</Tag>
-            </Space>
-            {assertionStrengthScore !== undefined || assertionStrengthLevel !== undefined ? (
-              <Space wrap>
-                <Text>断言强度</Text>
-                <Tag color={assertionStrengthLevel === "high" ? "success" : assertionStrengthLevel === "medium" ? "processing" : "warning"}>
-                  {String(assertionStrengthScore ?? "-")} / {String(assertionStrengthLevel ?? "-")}
-                </Tag>
-                {weakAssertionStepCount !== undefined ? <Text type="secondary">弱断言步骤：{String(weakAssertionStepCount)}</Text> : null}
-              </Space>
-            ) : null}
-            <Text>任务：{primaryAnalysisReport.task_name}</Text>
-            <Button size="small" onClick={() => onOpenRawData("分析报告 JSON", primaryAnalysisReport)}>
-              查看原始数据
-            </Button>
-          </Space>
-        ) : (
-          <Empty description="暂无分析报告" />
-        )}
-      </Card>
-
-      <Card bordered={false} className="panel-card" title="分析图表（chart_data）">
-        {chartItems.length ? (
-          <Space direction="vertical" size={10} style={{ width: "100%" }}>
-            {chartItems.map((item) => (
-              <div key={item.key}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <Text>{item.label}</Text>
-                  <Text strong>{item.value}</Text>
-                </div>
-                <Progress percent={Math.round((item.value / chartMax) * 100)} strokeColor="#5865f2" showInfo={false} />
-              </div>
-            ))}
-            <Button size="small" onClick={() => onOpenRawData("chart_data JSON", analysisChartData)}>
-              查看原始数据
-            </Button>
-          </Space>
-        ) : (
-          <Empty description="chart_data 暂无可视化项" />
         )}
       </Card>
     </Space>

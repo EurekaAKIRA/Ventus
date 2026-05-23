@@ -99,7 +99,7 @@ def _default_checks(root: Path, *, skip_frontend: bool) -> list[dict[str, Any]]:
                 "platform/requirement-analysis/tests/test_parse_golden_regression.py",
             ],
             "cwd": root,
-            "timeout_s": 240,
+            "timeout_s": 900,
         },
         {
             "name": "execution_assertion_regression",

@@ -1,0 +1,107 @@
+{
+  "dsl_version": "0.2.0",
+  "task_id": "manual_validation_advanced_dsl",
+  "task_name": "manual_validation_advanced_dsl",
+  "feature_name": "manual_validation_advanced_dsl",
+  "execution_mode": "api",
+  "metadata": {
+    "execution": {
+      "base_url": "http://127.0.0.1:18080",
+      "default_headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "context": {
+        "token": "valid-token"
+      },
+      "step_timeout_seconds": 5,
+      "step_retries": 0
+    }
+  },
+  "scenarios": [
+    {
+      "scenario_id": "advanced_001",
+      "name": "数据驱动订单创建与条件跳过",
+      "examples": [
+        {
+          "case_name": "book",
+          "item": "book",
+          "enabled": true
+        },
+        {
+          "case_name": "pen-disabled",
+          "item": "pen",
+          "enabled": false
+        }
+      ],
+      "setup_steps": [
+        {
+          "step_id": "advanced_001_setup",
+          "step_type": "given",
+          "text": "设置数据驱动上下文",
+          "set_context": {
+            "current_item": "{{item}}"
+          },
+          "wait_ms": 1
+        }
+      ],
+      "steps": [
+        {
+          "step_id": "advanced_001_create",
+          "step_type": "when",
+          "text": "条件满足时创建订单",
+          "run_if": {
+            "source": "context.enabled",
+            "op": "eq",
+            "expected": true
+          },
+          "uses_context": [
+            "token",
+            "current_item"
+          ],
+          "request": {
+            "method": "POST",
+            "url": "/orders",
+            "auth": {
+              "type": "bearer",
+              "token_context": "token"
+            },
+            "json": {
+              "item": "{{current_item}}",
+              "quantity": 1
+            }
+          },
+          "assertions": [
+            {
+              "source": "status_code",
+              "op": "eq",
+              "expected": 201,
+              "category": "status",
+              "severity": "critical"
+            },
+            {
+              "source": "json.id",
+              "op": "type_is",
+              "expected": "string",
+              "category": "schema",
+              "severity": "major"
+            }
+          ],
+          "save_context": {
+            "order_id": "json.id"
+          }
+        }
+      ],
+      "teardown_steps": [
+        {
+          "step_id": "advanced_001_teardown",
+          "step_type": "then",
+          "text": "清理数据驱动上下文",
+          "set_context": {
+            "current_item": ""
+          }
+        }
+      ]
+    }
+  ]
+}

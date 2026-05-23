@@ -1,15 +1,32 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "Expanded RAG retrieval benchmark for thesis experiments. Cases cover platform APIs, external API domains, generation rules, and common failure patterns.",
   "cases": [
     {
       "case_id": "platform_task_create",
       "title": "Platform task create contract",
       "raw_text": "# Task Center\n\n## 场景\n`POST /api/tasks`\n创建任务并返回 task_id。",
       "cleaned_text": "# Task Center\n\n## 场景\n`POST /api/tasks`\n创建任务并返回 task_id。",
-      "query": "POST /api/tasks create task endpoint",
-      "expected_source_files": [
-        "domain/platform/task_center_api.md"
-      ],
+      "query": "POST /api/tasks create task endpoint task_id",
+      "expected_source_files": ["domain/platform/task_center_api.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "platform_task_status",
+      "title": "Platform task status query",
+      "raw_text": "任务中心需要查看任务状态，接口使用 GET /api/tasks/{task_id} 返回任务详情、状态和产物索引。",
+      "cleaned_text": "任务中心需要查看任务状态，接口使用 GET /api/tasks/{task_id} 返回任务详情、状态和产物索引。",
+      "query": "GET /api/tasks/{task_id} task status artifact detail",
+      "expected_source_files": ["domain/platform/task_center_api.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "platform_execution_start",
+      "title": "Platform execution start",
+      "raw_text": "任务中心支持启动执行，调用 POST /api/tasks/{task_id}/execution 后进入 running 状态。",
+      "cleaned_text": "任务中心支持启动执行，调用 POST /api/tasks/{task_id}/execution 后进入 running 状态。",
+      "query": "POST /api/tasks/{task_id}/execution start execution running",
+      "expected_source_files": ["domain/platform/task_center_api.md"],
       "top_k": 5
     },
     {
@@ -18,42 +35,151 @@
       "raw_text": "# Restful Booker\n\n## API\n`POST /auth`\n登录获取 token。",
       "cleaned_text": "# Restful Booker\n\n## API\n`POST /auth`\n登录获取 token。",
       "query": "POST /auth login token endpoint",
-      "expected_source_files": [
-        "domain/external/restful_booker.md"
-      ],
+      "expected_source_files": ["domain/external/restful_booker.md"],
       "top_k": 5
     },
     {
-      "case_id": "dependency_lifecycle_rule",
-      "title": "Dependency lifecycle rule",
-      "raw_text": "# API Scenario\n\n需要先创建 booking，再执行 DELETE /booking/{id}。",
-      "cleaned_text": "# API Scenario\n\n需要先创建 booking，再执行 DELETE /booking/{id}。",
-      "query": "resource lifecycle create before delete booking rule",
-      "expected_source_files": [
-        "generation_rules/dependency_lifecycle.md"
-      ],
+      "case_id": "restful_booker_create_booking",
+      "title": "Restful Booker create booking",
+      "raw_text": "Restful Booker 文档要求使用 POST /booking 创建 booking，返回 bookingid 并在后续查询中使用。",
+      "cleaned_text": "Restful Booker 文档要求使用 POST /booking 创建 booking，返回 bookingid 并在后续查询中使用。",
+      "query": "POST /booking create booking bookingid response",
+      "expected_source_files": ["domain/external/restful_booker.md"],
       "top_k": 5
     },
     {
-      "case_id": "auth_propagation_rule",
-      "title": "Auth propagation rule",
-      "raw_text": "# API Scenario\n\nPOST /auth 获取 token，之后在 Authorization header 中复用。",
-      "cleaned_text": "# API Scenario\n\nPOST /auth 获取 token，之后在 Authorization header 中复用。",
-      "query": "token propagation authorization header save_context uses_context",
-      "expected_source_files": [
-        "generation_rules/auth_propagation.md"
-      ],
+      "case_id": "restful_booker_delete_cookie",
+      "title": "Restful Booker delete with cookie token",
+      "raw_text": "需要先 POST /auth 获取 token，然后 DELETE /booking/{id} 时在 Cookie 中带 token。",
+      "cleaned_text": "需要先 POST /auth 获取 token，然后 DELETE /booking/{id} 时在 Cookie 中带 token。",
+      "query": "DELETE /booking/{id} Cookie token auth cleanup",
+      "expected_source_files": ["domain/external/restful_booker.md", "generation_rules/auth_propagation.md"],
       "top_k": 5
     },
     {
-      "case_id": "api_challenges_domain",
-      "title": "API Challenges domain",
+      "case_id": "api_challenges_token",
+      "title": "API Challenges token",
       "raw_text": "# API Challenges\n\n`POST /secret/token`\n拿 token 后请求受保护资源。",
       "cleaned_text": "# API Challenges\n\n`POST /secret/token`\n拿 token 后请求受保护资源。",
       "query": "POST /secret/token protected resource challenge",
-      "expected_source_files": [
-        "domain/external/api_challenges.md"
-      ],
+      "expected_source_files": ["domain/external/api_challenges.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "api_challenges_todos",
+      "title": "API Challenges todos",
+      "raw_text": "API Challenges 使用 /todos 资源进行列表、创建和删除测试，部分接口需要 X-CHALLENGER。",
+      "cleaned_text": "API Challenges 使用 /todos 资源进行列表、创建和删除测试，部分接口需要 X-CHALLENGER。",
+      "query": "API Challenges /todos X-CHALLENGER token protected todo resource",
+      "expected_source_files": ["domain/external/api_challenges.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "auth_propagation_authorization",
+      "title": "Authorization header propagation",
+      "raw_text": "POST /login 返回 json.token，后续 GET /profile 需要在 Authorization header 中复用该 token。",
+      "cleaned_text": "POST /login 返回 json.token，后续 GET /profile 需要在 Authorization header 中复用该 token。",
+      "query": "token propagation Authorization header save_context uses_context json.token",
+      "expected_source_files": ["generation_rules/auth_propagation.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "auth_propagation_cookie",
+      "title": "Cookie token propagation",
+      "raw_text": "登录接口返回 token，删除资源接口要求 Cookie: token={{token}}，DSL 需要声明 save_context 和 uses_context。",
+      "cleaned_text": "登录接口返回 token，删除资源接口要求 Cookie: token={{token}}，DSL 需要声明 save_context 和 uses_context。",
+      "query": "Cookie token save_context uses_context delete resource",
+      "expected_source_files": ["generation_rules/auth_propagation.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "dependency_lifecycle_create_delete",
+      "title": "Create before delete lifecycle",
+      "raw_text": "# API Scenario\n\n需要先创建 booking，再执行 DELETE /booking/{id}。",
+      "cleaned_text": "# API Scenario\n\n需要先创建 booking，再执行 DELETE /booking/{id}。",
+      "query": "resource lifecycle create before delete booking rule",
+      "expected_source_files": ["generation_rules/dependency_lifecycle.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "dependency_lifecycle_update_detail",
+      "title": "Update depends on existing resource",
+      "raw_text": "PATCH /orders/{order_id} 更新订单前，需要先从创建接口或列表接口获得 order_id。",
+      "cleaned_text": "PATCH /orders/{order_id} 更新订单前，需要先从创建接口或列表接口获得 order_id。",
+      "query": "PATCH /orders/{order_id} requires resource id from create or list dependency",
+      "expected_source_files": ["generation_rules/dependency_lifecycle.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "dependency_lifecycle_readonly",
+      "title": "Read-only resource source",
+      "raw_text": "只有 GET /users/{id} 详情接口，没有创建接口时，系统需要从列表接口或样例中寻找可用 id。",
+      "cleaned_text": "只有 GET /users/{id} 详情接口，没有创建接口时，系统需要从列表接口或样例中寻找可用 id。",
+      "query": "GET /users/{id} no create endpoint find resource source list sample id",
+      "expected_source_files": ["generation_rules/dependency_lifecycle.md", "failure_patterns/missing_resource_source.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "assertion_status_field",
+      "title": "Status and field assertion",
+      "raw_text": "接口返回 200 后还需要校验 json.code、json.data.id 和 message，不应只检查 HTTP 状态码。",
+      "cleaned_text": "接口返回 200 后还需要校验 json.code、json.data.id 和 message，不应只检查 HTTP 状态码。",
+      "query": "assertion guardrails status code field existence business response json.data.id",
+      "expected_source_files": ["generation_rules/assertion_guardrails.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "assertion_consistency",
+      "title": "Create query consistency assertion",
+      "raw_text": "创建订单后再次查询详情，断言 firstname、lastname、bookingdates 等字段与创建请求保持一致。",
+      "cleaned_text": "创建订单后再次查询详情，断言 firstname、lastname、bookingdates 等字段与创建请求保持一致。",
+      "query": "create then query consistency assertion request response fields bookingdates",
+      "expected_source_files": ["generation_rules/assertion_guardrails.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "missing_resource_source_pattern",
+      "title": "Missing resource source pattern",
+      "raw_text": "文档只写了 DELETE /coupon/{coupon_id}，没有说明 coupon_id 从哪里来，容易导致场景不可执行。",
+      "cleaned_text": "文档只写了 DELETE /coupon/{coupon_id}，没有说明 coupon_id 从哪里来，容易导致场景不可执行。",
+      "query": "missing resource source DELETE /coupon/{coupon_id} no create no list",
+      "expected_source_files": ["failure_patterns/missing_resource_source.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "placeholder_pollution_pattern",
+      "title": "Placeholder field pollution pattern",
+      "raw_text": "接口路径中包含 /orders/{id}，但断言不应该把字符串 {id} 当作真实业务字段。",
+      "cleaned_text": "接口路径中包含 /orders/{id}，但断言不应该把字符串 {id} 当作真实业务字段。",
+      "query": "placeholder path parameter pollution assertion {id} not real field",
+      "expected_source_files": ["failure_patterns/placeholder_field_pollution.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "truncated_input_detection",
+      "title": "Truncated input detection",
+      "raw_text": "需求文档只剩半段 Markdown 表格，请求体和预期结果缺失，需要提示输入可能被截断。",
+      "cleaned_text": "需求文档只剩半段 Markdown 表格，请求体和预期结果缺失，需要提示输入可能被截断。",
+      "query": "truncated input incomplete markdown table missing request expected parser warning",
+      "expected_source_files": ["failure_patterns/truncated_input_detection.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "api_requirement_markdown_table",
+      "title": "API requirement markdown table",
+      "raw_text": "| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| POST | /orders | 创建订单 |\n| GET | /orders/{id} | 查询订单详情 |",
+      "cleaned_text": "| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| POST | /orders | 创建订单 |\n| GET | /orders/{id} | 查询订单详情 |",
+      "query": "API requirement markdown table method path request expected structure",
+      "expected_source_files": ["standards/api_requirement_spec_v1.md"],
+      "top_k": 5
+    },
+    {
+      "case_id": "api_requirement_openapi_fragment",
+      "title": "OpenAPI style fragment",
+      "raw_text": "paths:\n  /payments/{payment_id}:\n    get:\n      summary: 查询支付记录\n      responses:\n        '200':\n          description: success",
+      "cleaned_text": "paths:\n  /payments/{payment_id}:\n    get:\n      summary: 查询支付记录\n      responses:\n        '200':\n          description: success",
+      "query": "OpenAPI fragment paths responses request schema API requirement spec",
+      "expected_source_files": ["standards/api_requirement_spec_v1.md"],
       "top_k": 5
     }
   ]

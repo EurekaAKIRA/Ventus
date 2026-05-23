@@ -924,3 +924,8 @@ export interface TaskAgentTrackingContext {
   preflight_issues?: string[];
   execution_explanations?: unknown;
 }
+
+export interface TaskAgentConversationItem {
+  role: string;
+  text: string;
+}

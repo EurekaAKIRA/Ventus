@@ -1,4 +1,7 @@
-import { Button, Card, Empty, List, Space, Tag, Typography } from "antd";
+import { useEffect, useState } from "react";
+import { Alert, Button, Card, Drawer, Empty, Input, List, Space, Tag, Typography, message } from "antd";
+import { updateTaskDsl } from "../../api/tasks";
+import type { TestCaseDSL } from "../../types";
 import type { ExtendedTaskDetail } from "../hooks/useTaskDetailData";
 
 const { Text } = Typography;
@@ -101,6 +104,7 @@ export function TaskDetailDslTab(props: {
   onToggleFeatureExpanded: () => void;
   featurePreviewLines: number;
   dslPreviewScenarios: number;
+  onDslUpdated: (dsl: TestCaseDSL) => void;
 }) {
   const {
     detail,
@@ -117,7 +121,46 @@ export function TaskDetailDslTab(props: {
     onToggleFeatureExpanded,
     featurePreviewLines,
     dslPreviewScenarios,
+    onDslUpdated,
   } = props;
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorText, setEditorText] = useState("");
+  const [savingDsl, setSavingDsl] = useState(false);
+
+  useEffect(() => {
+    if (!editorOpen || !detail.test_case_dsl) {
+      return;
+    }
+    setEditorText(JSON.stringify(detail.test_case_dsl, null, 2));
+  }, [detail.test_case_dsl, editorOpen]);
+
+  const handleSaveDsl = async () => {
+    if (!detail.test_case_dsl) {
+      return;
+    }
+    let parsed: TestCaseDSL;
+    try {
+      parsed = JSON.parse(editorText) as TestCaseDSL;
+    } catch (error) {
+      message.error(`JSON 格式不正确：${(error as Error).message}`);
+      return;
+    }
+    if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.scenarios)) {
+      message.error("DSL 必须是对象，并包含 scenarios 数组");
+      return;
+    }
+    setSavingDsl(true);
+    try {
+      const saved = await updateTaskDsl(detail.task_context.task_id, parsed);
+      onDslUpdated(saved);
+      setEditorOpen(false);
+      message.success("自动生成 DSL 已保存");
+    } catch (error) {
+      message.error((error as Error).message || "保存 DSL 失败");
+    } finally {
+      setSavingDsl(false);
+    }
+  };
 
   return (
     <Space direction="vertical" style={{ width: "100%" }}>
@@ -182,6 +225,7 @@ export function TaskDetailDslTab(props: {
                 </Button>
               ) : null}
               <Button size="small" onClick={() => onOpenRawData("DSL（原始 JSON）", detail.test_case_dsl)}>查看原始数据</Button>
+              <Button size="small" type="primary" onClick={() => setEditorOpen(true)}>编辑生成 DSL</Button>
             </Space>
             {hasDslOverflow ? (
               <Text type="secondary">当前为摘要视图（{dslPreviewScenarios} 个场景），可展开查看完整列表。</Text>
@@ -191,6 +235,31 @@ export function TaskDetailDslTab(props: {
           <Empty description="暂无 DSL" />
         )}
       </Card>
+
+      <Drawer
+        title="编辑自动生成 DSL"
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        width={860}
+        destroyOnClose
+        extra={<Button type="primary" loading={savingDsl} onClick={() => void handleSaveDsl()}>保存修改</Button>}
+      >
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
+          <Alert
+            type="info"
+            showIcon
+            message="保存后会覆盖当前任务的自动生成 DSL"
+            description="后续任务执行、从任务导入用例资产都会使用这个修改后的版本。重新解析任务会再次生成并覆盖。"
+          />
+          <Input.TextArea
+            value={editorText}
+            onChange={(event) => setEditorText(event.target.value)}
+            rows={28}
+            spellCheck={false}
+            style={{ fontFamily: "Consolas, 'Courier New', monospace" }}
+          />
+        </Space>
+      </Drawer>
 
       <Card bordered={false} title="功能用例（Feature）">
         {featureText ? (

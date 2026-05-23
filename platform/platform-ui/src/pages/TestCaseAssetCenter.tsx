@@ -4,7 +4,7 @@ import { Alert, Button, Card, Col, Drawer, Empty, Form, Input, Modal, Row, Selec
 import type { ColumnsType } from "antd/es/table";
 import type { EnvironmentPayload, TaskListItem, TestCaseAssetExecutionPayload, TestCaseAssetPayload } from "../types";
 import { deleteTestCaseAsset, executeTestCaseAsset, fetchTestCaseAssets, importTestCaseAssetsFromTask, saveTestCaseAsset, updateTestCaseAsset } from "../api/testCases";
-import { fetchTaskList } from "../api/tasks";
+import { fetchTaskDetail, fetchTaskList } from "../api/tasks";
 import { fetchEnvironments } from "../api/system";
 import { useAuth } from "../auth/AuthContext";
 import JsonViewer from "../components/JsonViewer";
@@ -28,6 +28,11 @@ type ExecuteFormValues = {
   base_url?: string;
 };
 
+type TaskImportHint = {
+  environment: string;
+  baseUrl: string;
+};
+
 const statusOptions = [
   { value: "active", label: "启用" },
   { value: "draft", label: "草稿" },
@@ -41,6 +46,14 @@ function statusColor(status: string): string {
   if (status === "disabled" || status === "archived") return "red";
   if (status === "draft") return "gold";
   return "default";
+}
+
+function taskExecutionHint(detail: Awaited<ReturnType<typeof fetchTaskDetail>>) {
+  const context = detail.task_context as typeof detail.task_context & { environment?: string | null };
+  return {
+    environment: context.environment || "",
+    baseUrl: context.target_system || "",
+  };
 }
 
 export default function TestCaseAssetCenter() {
@@ -58,6 +71,7 @@ export default function TestCaseAssetCenter() {
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importTaskHint, setImportTaskHint] = useState<TaskImportHint | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<unknown>(null);
   const [executeForm] = Form.useForm<ExecuteFormValues>();
@@ -122,6 +136,25 @@ export default function TestCaseAssetCenter() {
     void loadEnvironments();
   }, [currentProjectId]);
 
+  useEffect(() => {
+    if (!importOpen || !selectedTaskId) {
+      setImportTaskHint(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchTaskDetail(selectedTaskId, { detailLevel: "summary" })
+      .then((detail) => {
+        if (cancelled) return;
+        setImportTaskHint(taskExecutionHint(detail));
+      })
+      .catch(() => {
+        if (!cancelled) setImportTaskHint(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [importOpen, selectedTaskId]);
+
   const metrics = useMemo(() => {
     return {
       total: items.length,
@@ -157,6 +190,11 @@ export default function TestCaseAssetCenter() {
       dsl_scenario: JSON.stringify(record.dsl_scenario || {}, null, 2),
     });
     setDrawerOpen(true);
+  };
+
+  const openTaskImport = () => {
+    setSelectedTaskId((prev) => prev || tasks[0]?.task_id || "");
+    setImportOpen(true);
   };
 
   const parseJson = (label: string, text?: string): unknown => {
@@ -250,6 +288,18 @@ export default function TestCaseAssetCenter() {
     executeForm.resetFields();
     executeForm.setFieldsValue({ environment: firstEnv?.name, base_url: firstEnv?.base_url || "" });
     setExecuteOpen(true);
+    if (record.source_task_id) {
+      void fetchTaskDetail(record.source_task_id, { detailLevel: "summary" })
+        .then((detail) => {
+          const hint = taskExecutionHint(detail);
+          const matchedEnv = hint.environment ? environments.find((item) => item.name === hint.environment) : undefined;
+          executeForm.setFieldsValue({
+            environment: matchedEnv?.name || hint.environment || firstEnv?.name,
+            base_url: matchedEnv?.base_url || hint.baseUrl || firstEnv?.base_url || "",
+          });
+        })
+        .catch(() => undefined);
+    }
   };
 
   const handleExecute = async (values: ExecuteFormValues) => {
@@ -324,7 +374,7 @@ export default function TestCaseAssetCenter() {
         subtitle="把任务生成的 DSL 场景沉淀为可维护、可编辑、可复用的测试资产。"
         actions={
           <Space wrap>
-            <Button icon={<CloudDownloadOutlined />} onClick={() => setImportOpen(true)} disabled={!currentProjectId}>从任务导入</Button>
+            <Button icon={<CloudDownloadOutlined />} onClick={openTaskImport} disabled={!currentProjectId}>从任务导入</Button>
             <Button icon={<ReloadOutlined />} onClick={() => void loadCases()}>刷新</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!currentProjectId}>新增用例</Button>
           </Space>
@@ -376,6 +426,18 @@ export default function TestCaseAssetCenter() {
         <Space direction="vertical" size={12} style={{ width: "100%" }}>
           <Text type="secondary">会把任务生成的 DSL scenarios 按场景逐条沉淀为用例资产，并提取步骤断言。</Text>
           <Select showSearch placeholder="选择最近任务" value={selectedTaskId || undefined} onChange={setSelectedTaskId} options={tasks.map((task) => ({ value: task.task_id, label: `${task.task_name} · ${task.task_id}` }))} style={{ width: "100%" }} optionFilterProp="label" />
+          {selectedTaskId ? (
+            <Alert
+              type={importTaskHint?.baseUrl || importTaskHint?.environment ? "success" : "warning"}
+              showIcon
+              message="任务执行配置"
+              description={
+                importTaskHint?.baseUrl || importTaskHint?.environment
+                  ? `环境：${importTaskHint.environment || "未设置"}；Base URL：${importTaskHint.baseUrl || "未设置"}`
+                  : "该任务暂未识别到环境或 Base URL，导入后执行时仍可手动选择。"
+              }
+            />
+          ) : null}
         </Space>
       </Modal>
 
@@ -402,13 +464,26 @@ export default function TestCaseAssetCenter() {
                     options={environments.map((env) => ({ value: env.name, label: env.name }))}
                     onChange={(value) => {
                       const env = environments.find((item) => item.name === value);
-                      if (env?.base_url) executeForm.setFieldValue("base_url", env.base_url);
+                      executeForm.setFieldValue("base_url", env?.base_url || "");
+                      void executeForm.validateFields(["base_url"]);
                     }}
                   />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="base_url" label="Base URL" rules={[{ required: true, message: "请选择环境或填写 Base URL" }]}>
+                <Form.Item
+                  name="base_url"
+                  label="Base URL"
+                  dependencies={["environment"]}
+                  rules={[
+                    ({ getFieldValue }) => ({
+                      validator: async (_, value) => {
+                        if (String(value || "").trim() || getFieldValue("environment")) return;
+                        throw new Error("请选择环境或填写 Base URL");
+                      },
+                    }),
+                  ]}
+                >
                   <Input placeholder="http://127.0.0.1:8001" />
                 </Form.Item>
               </Col>

@@ -54,6 +54,25 @@ def test_httpx_backend_posts_json(monkeypatch: pytest.MonkeyPatch, endpoint: Mod
     assert call_kw["timeout"] == 10.0
 
 
+def test_chat_json_includes_optional_max_tokens(endpoint: ModelEndpointConfig) -> None:
+    endpoint.max_tokens = 1600
+    gw = ModelGateway(ModelGatewayConfig(llm=endpoint))
+    response = {
+        "choices": [
+            {
+                "message": {
+                    "content": '{"ok": true}',
+                }
+            }
+        ]
+    }
+    with patch.object(gw, "_request_json", return_value=response) as request_json:
+        assert gw.chat_json(system_prompt="s", user_payload={"a": 1}) == {"ok": True}
+
+    payload = request_json.call_args.args[2]
+    assert payload["max_tokens"] == 1600
+
+
 def test_forced_httpx_without_package_raises(monkeypatch: pytest.MonkeyPatch, endpoint: ModelEndpointConfig) -> None:
     monkeypatch.setenv("PLATFORM_MODEL_GATEWAY_HTTP", "httpx")
     gw = ModelGateway(ModelGatewayConfig(llm=endpoint))

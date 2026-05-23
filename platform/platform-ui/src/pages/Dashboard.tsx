@@ -29,6 +29,7 @@ import type { ExecutionHistoryItem, HistoryTaskItem, TaskListItem } from "../typ
 import { fetchExecutionHistory, fetchHistoryTasks, fetchTaskList } from "../api/tasks";
 import { useAuth } from "../auth/AuthContext";
 import StatusTag from "../components/StatusTag";
+import VueQualityPulseMount from "../components/VueQualityPulseMount";
 
 const { Text } = Typography;
 type TodoViewMode = "all" | "failed" | "running" | "pending";
@@ -947,10 +948,8 @@ export default function Dashboard() {
         </Col>
         <Col xs={24} xl={12}>
           <Card title="质量解读" bordered={false} className="dashboard-panel-card">
-            <Space direction="vertical" size={12} style={{ width: "100%" }}>
-              <Text>近窗口通过率：<Text strong>{stats.passRate}%</Text></Text>
-              <Text>近窗口失败率：<Text strong>{stats.failRate}%</Text></Text>
-              <Text>执行中任务：<Text strong>{stats.running}</Text></Text>
+            <Space direction="vertical" size={14} style={{ width: "100%" }}>
+              <VueQualityPulseMount stats={stats} statuses={statusDistribution} />
               <Button onClick={() => setDashboardView("risk")}>切换到风险诊断</Button>
             </Space>
           </Card>

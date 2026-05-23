@@ -7,6 +7,7 @@ import type {
   RegressionDiffPayload,
   TaskArtifactItem,
   TaskDashboardPayload,
+  TestCaseDSL,
 } from "../../types";
 import type { ExtendedTaskDetail } from "../hooks/useTaskDetailData";
 import type { ExecutionCaseRow } from "../hooks/useExecutionCaseRows";
@@ -71,6 +72,7 @@ export function TaskDetailTabs(props: {
   analysisChartData: unknown;
   artifacts: TaskArtifactItem[];
   onOpenArtifact: (item: TaskArtifactItem) => void | Promise<void>;
+  onDslUpdated: (dsl: TestCaseDSL) => void;
 }) {
   const {
     activeTabKey,
@@ -126,6 +128,7 @@ export function TaskDetailTabs(props: {
     analysisChartData,
     artifacts,
     onOpenArtifact,
+    onDslUpdated,
   } = props;
 
   const renderTabLabel = (label: string, badge?: number | string | null) => (
@@ -183,6 +186,7 @@ export function TaskDetailTabs(props: {
               onToggleFeatureExpanded={onToggleFeatureExpanded}
               featurePreviewLines={featurePreviewLines}
               dslPreviewScenarios={dslPreviewScenarios}
+              onDslUpdated={onDslUpdated}
             />
           ),
         },

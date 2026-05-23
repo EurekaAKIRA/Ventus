@@ -432,7 +432,56 @@ def _filter_actions(actions: list[str]) -> list[str]:
     return [action for action in actions if not _is_meta_action(action)]
 
 
-def _endpoint_requires_context(endpoint: dict) -> bool:
+def _has_global_bearer_auth(parsed_requirement: dict | None) -> bool:
+    if not parsed_requirement:
+        return False
+    endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if isinstance(endpoint, dict)]
+    if not any(_is_auth_root_endpoint(endpoint) for endpoint in endpoints):
+        return False
+    corpus: list[str] = []
+    for key in ("objective",):
+        corpus.append(str(parsed_requirement.get(key) or ""))
+    for key in ("preconditions", "actions", "expected_results", "constraints"):
+        corpus.extend(str(item or "") for item in (parsed_requirement.get(key) or []))
+    for endpoint in endpoints:
+        corpus.extend(str(endpoint.get(field) or "") for field in ("path", "description", "group"))
+        for collection_name in ("request_body_fields", "response_fields"):
+            for field in endpoint.get(collection_name) or []:
+                if isinstance(field, dict):
+                    corpus.extend(str(field.get(name) or "") for name in ("name", "description"))
+                else:
+                    corpus.append(str(field or ""))
+    haystack = "\n".join(corpus).lower()
+    has_auth_signal = any(
+        token in haystack
+        for token in (
+            "authorization",
+            "bearer",
+            "鉴权",
+        )
+    )
+    has_global_scope_signal = any(
+        token in haystack
+        for token in (
+            "全局约束",
+            "后续受保护",
+            "受保护接口",
+            "所有接口",
+            "全部接口",
+        )
+    )
+    return has_auth_signal and has_global_scope_signal
+
+
+def _endpoint_requires_global_auth(endpoint: dict, parsed_requirement: dict | None) -> bool:
+    if not _has_global_bearer_auth(parsed_requirement):
+        return False
+    if _is_auth_root_endpoint(endpoint) or _is_auth_endpoint(endpoint) or _is_stateless_parameterized_endpoint(endpoint):
+        return False
+    return _endpoint_capability(endpoint) != "health"
+
+
+def _endpoint_requires_context(endpoint: dict, parsed_requirement: dict | None = None) -> bool:
     depends_on = endpoint.get("depends_on") or []
     capability = _endpoint_capability(endpoint)
     path = _canonicalize_endpoint_path(str(endpoint.get("path", "")))
@@ -446,6 +495,7 @@ def _endpoint_requires_context(endpoint: dict) -> bool:
         or capability == "detail"
         or (capability in {"replace", "patch", "delete"} and has_placeholder)
         or (_endpoint_needs_auth_context(endpoint) and not _is_auth_root_endpoint(endpoint))
+        or _endpoint_requires_global_auth(endpoint, parsed_requirement)
     )
 
 
@@ -591,7 +641,7 @@ def _filtered_endpoints(parsed_requirement: dict, actions: list[str] | None = No
             for dependency_path in (endpoint.get("depends_on") or [])
             if str(dependency_path).strip()
         }
-        auth_needed = any(_endpoint_needs_auth_context(endpoint) for endpoint in endpoints)
+        auth_needed = any(_endpoint_needs_auth_context(endpoint) for endpoint in endpoints) or _has_global_bearer_auth(parsed_requirement)
         endpoints = [
             endpoint
             for endpoint in endpoints
@@ -599,7 +649,7 @@ def _filtered_endpoints(parsed_requirement: dict, actions: list[str] | None = No
                 not _is_low_confidence_endpoint(endpoint)
                 or _endpoint_has_action_support(endpoint, actions)
                 or _is_querystring_filter_endpoint(endpoint)
-                or _endpoint_requires_context(endpoint)
+                or _endpoint_requires_context(endpoint, parsed_requirement)
                 or any(
                     _canonicalize_endpoint_path(str(endpoint.get("path", ""))) == _canonicalize_endpoint_path(dependency_path)
                     for dependency_path in dependency_paths
@@ -741,13 +791,15 @@ def _endpoint_effectively_requires_context(
     ordered_endpoints: list[dict],
     parsed_requirement: dict | None = None,
 ) -> bool:
+    if _endpoint_requires_global_auth(endpoint, parsed_requirement):
+        return True
     if _endpoint_needs_auth_context(endpoint) and not _is_auth_root_endpoint(endpoint):
         return True
     if parsed_requirement and _endpoint_has_preloaded_resource_source(endpoint, parsed_requirement):
         return False
     if parsed_requirement and _resource_is_non_persistent(parsed_requirement, _resource_key(endpoint)) and _endpoint_can_use_preloaded_identifier(endpoint):
         return False
-    if _endpoint_requires_context(endpoint):
+    if _endpoint_requires_context(endpoint, parsed_requirement):
         return True
     if _find_resource_provider_endpoint(endpoint, ordered_endpoints, parsed_requirement) is not None:
         return True
@@ -864,11 +916,14 @@ def _resolve_dependency_chain(
         if token_provider is not None and token_provider not in chain and _resource_key(token_provider) == _resource_key(target):
             provider_chain = _resolve_dependency_chain(token_provider, ordered_endpoints, parsed_requirement)
             chain = provider_chain + chain
-    if _endpoint_needs_auth_context(target) and not any(_is_auth_root_endpoint(endpoint) for endpoint in chain):
+    if (
+        _endpoint_needs_auth_context(target)
+        or _endpoint_requires_global_auth(target, parsed_requirement)
+    ) and not any(_is_auth_root_endpoint(endpoint) for endpoint in chain):
         auth_roots = [
             endpoint
             for endpoint in ordered_endpoints
-            if _is_auth_root_endpoint(endpoint) and not _endpoint_requires_context(endpoint)
+            if _is_auth_root_endpoint(endpoint) and not _endpoint_requires_context(endpoint, parsed_requirement)
         ]
         if auth_roots:
             chain = auth_roots[:1] + chain

@@ -501,6 +501,52 @@ export function TaskDetailExecutionTab(props: {
         }
       >
         {explanationsError ? <Alert type="info" showIcon message={explanationsError} /> : null}
+        {executionExplanations?.llm_metadata ? (
+          <Alert
+            type={executionExplanations.llm_metadata.used ? "success" : "info"}
+            showIcon
+            message={
+              executionExplanations.llm_metadata.used
+                ? "LLM 已参与失败诊断"
+                : `LLM 未参与诊断：${executionExplanations.llm_metadata.fallback_reason || "未启用"}`
+            }
+          />
+        ) : null}
+        {executionExplanations?.llm_diagnosis ? (
+          <Card size="small" className="subtle-card" title="智能诊断">
+            <Space direction="vertical" size={6} style={{ width: "100%" }}>
+              <Text>{executionExplanations.llm_diagnosis.summary || "-"}</Text>
+              {executionExplanations.llm_diagnosis.root_cause ? (
+                <Text type="secondary">根因判断：{executionExplanations.llm_diagnosis.root_cause}</Text>
+              ) : null}
+              {executionExplanations.llm_diagnosis.next_actions?.length ? (
+                <Text type="secondary">建议：{executionExplanations.llm_diagnosis.next_actions.join("；")}</Text>
+              ) : null}
+            </Space>
+          </Card>
+        ) : null}
+        {executionExplanations?.defect_summaries?.length ? (
+          <Card size="small" className="subtle-card" title="缺陷摘要建议">
+            <List
+              size="small"
+              dataSource={executionExplanations.defect_summaries.slice(0, 5)}
+              renderItem={(item) => (
+                <List.Item>
+                  <Space direction="vertical" size={4} style={{ width: "100%" }}>
+                    <Space>
+                      <Tag color={item.generated_by === "llm" ? "processing" : "default"}>{item.generated_by || "rules"}</Tag>
+                      <Tag color={item.severity === "critical" ? "error" : item.severity === "high" ? "warning" : "default"}>
+                        {item.severity || "medium"}
+                      </Tag>
+                      <Text strong>{item.title}</Text>
+                    </Space>
+                    {item.actual_result ? <Text type="secondary">{item.actual_result}</Text> : null}
+                  </Space>
+                </List.Item>
+              )}
+            />
+          </Card>
+        ) : null}
         {executionExplanations?.failure_groups?.length ? (
           <List
             size="small"

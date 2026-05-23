@@ -42,6 +42,7 @@ class TaskAgentChatRequest(TaskDraftAgentRequest):
     message: str = ""
     task_id: str | None = None
     task_tracking: dict[str, Any] | None = None
+    conversation_history: list[dict[str, Any]] | None = None
 
 
 class ExecuteTaskRequest(BaseModel):
@@ -125,6 +126,10 @@ class ParseMetadata(BaseModel):
 
 class TaskParseRequest(AnalysisEnhancementOptions):
     pass
+
+
+class UpdateTaskDslRequest(BaseModel):
+    test_case_dsl: dict[str, Any] = Field(default_factory=dict)
 
 
 class AnalysisParseRequest(AnalysisEnhancementOptions):

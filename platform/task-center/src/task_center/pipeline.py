@@ -147,6 +147,7 @@ def run_analysis_pipeline(
         task_context,
         scenarios,
         parsed_requirement=parsed_requirement.to_dict(),
+        enable_assertion_enhancement=parse_options.use_llm,
     )
     detected_base_url = str(parse_bundle.get("parse_metadata", {}).get("detected_base_url", "") or "").strip()
     if detected_base_url:

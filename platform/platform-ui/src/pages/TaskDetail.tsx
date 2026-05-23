@@ -4,6 +4,7 @@ import { Button, Card, Empty, Progress, Space, Tag, Typography } from "antd";
 import { chatWithTaskAgent } from "../api/tasks";
 import TaskAgentPanel from "../components/TaskAgentPanel";
 import type { TaskAgentTrackingContext, TaskDraftAgentPayload } from "../types";
+import type { TestCaseDSL } from "../types";
 import { ExtendedTaskDetail, StageKey, StageStatus, useTaskDetailData } from "./hooks/useTaskDetailData";
 import { useTaskExecution } from "./hooks/useTaskExecution";
 import { ExecutionCaseRow, useExecutionCaseRows } from "./hooks/useExecutionCaseRows";
@@ -257,6 +258,10 @@ export default function TaskDetail() {
     caseKeyword,
   });
 
+  const handleDslUpdated = (dsl: TestCaseDSL) => {
+    setDetail((prev) => (prev ? { ...prev, test_case_dsl: dsl } : prev));
+  };
+
   const onTabChange = (tab: string) => {
     const nextTab = resolveTabKey(tab);
     const nextParams = new URLSearchParams(searchParams);
@@ -376,7 +381,7 @@ export default function TaskDetail() {
       .join("\n");
   })();
 
-  const handleTaskAgentChat = async (messageText: string) => {
+  const handleTaskAgentChat = async (messageText: string, chatContext?: { conversation_history?: Array<{ role: string; text: string }> }) => {
     const result = await chatWithTaskAgent({
       message: messageText,
       task_id: detail.task_context.task_id,
@@ -387,6 +392,7 @@ export default function TaskDetail() {
       environment: detail.environment,
       project_id: detail.task_context.project_id,
       task_tracking: taskAgentTrackingContext,
+      conversation_history: chatContext?.conversation_history,
     });
     if (result.agent_payload) {
       setTaskAgentPayload(result.agent_payload);
@@ -660,6 +666,7 @@ export default function TaskDetail() {
           analysisChartData={analysisChartData}
           artifacts={artifacts}
           onOpenArtifact={openArtifact}
+          onDslUpdated={handleDslUpdated}
         />
       )}
 
@@ -723,6 +730,8 @@ export default function TaskDetail() {
                 payload={taskAgentPayload}
                 onSendMessage={handleTaskAgentChat}
                 initialMessage={taskAgentExecutionSummary}
+                taskId={detail.task_context.task_id}
+                currentStage={executionStatusLabel(uiExecutionStatus)}
                 quickActions={taskAgentQuickActions}
               />
             </div>

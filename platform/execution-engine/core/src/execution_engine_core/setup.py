@@ -23,7 +23,7 @@ class Setup:
 
     @staticmethod
     def parse(directory: str, args: Dict) -> "Setup":
-        if args["type"] == "static":
+        if args.get("type") == "static":
             directory = os.path.join(directory, args.get("directory", "www"))
             return StaticServer(directory, args.get("port", "8000"))
 

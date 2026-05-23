@@ -70,6 +70,7 @@ from .api_models import (
     StopExecutionResponse,
     TaskListResponse,
     TaskStatus,
+    UpdateTaskDslRequest,
     UpdateDefectRequest,
     UpdateInterfaceAssetRequest,
     UpdateTestCaseAssetRequest,
@@ -87,7 +88,7 @@ from .registry import DEFAULT_ARTIFACT_TYPES, TaskRegistry
 from .runtime_store import build_runtime_state_store
 from .secure_config import mask_environment_config, merge_masked_environment_config
 from .session_store import build_session_state_store
-from .task_agent_chat import build_llm_task_agent_chat_reply
+from .task_agent_chat import build_llm_task_agent_chat_reply, build_task_agent_contextual_reply
 from requirement_analysis import AnalysisParseOptions, parse_requirement_bundle
 from requirement_analysis.knowledge_index import build_index as build_requirement_knowledge_index
 from requirement_analysis.knowledge_library import load_curated_knowledge_chunks
@@ -2264,11 +2265,17 @@ def _task_agent_requirement_text_from_task(task) -> str:
 def _build_task_agent_tracking_context(task, provided: dict[str, Any] | None = None) -> dict[str, Any]:
     provided_context = provided if isinstance(provided, dict) else {}
     result = task.pipeline_result or {}
+    dsl = result.get("test_case_dsl") if isinstance(result.get("test_case_dsl"), dict) else {}
+    dsl_metadata = dsl.get("metadata") if isinstance(dsl.get("metadata"), dict) else {}
+    dsl_execution = dsl_metadata.get("execution") if isinstance(dsl_metadata.get("execution"), dict) else {}
+    execution_base_url = str(dsl_execution.get("base_url") or "").strip()
     execution_result = task.execution_result if isinstance(task.execution_result, dict) else {}
     scenario_results = [item for item in execution_result.get("scenario_results") or [] if isinstance(item, dict)]
     failed_scenarios = [item for item in scenario_results if str(item.get("status") or "") == "failed"]
     passed_scenarios = [item for item in scenario_results if str(item.get("status") or "") == "passed"]
     failed_steps: list[dict[str, Any]] = []
+    failed_assertions: list[dict[str, Any]] = []
+    assertion_quality = _summarize_task_agent_assertion_quality(execution_result, dsl)
     for scenario in failed_scenarios:
         for step in scenario.get("steps") or []:
             if isinstance(step, dict) and str(step.get("status") or "") == "failed":
@@ -2281,16 +2288,42 @@ def _build_task_agent_tracking_context(task, provided: dict[str, Any] | None = N
                         "error_category": step.get("error_category"),
                     }
                 )
+                summary = step.get("assertion_summary") if isinstance(step.get("assertion_summary"), dict) else {}
+                for failure in summary.get("failure_details") or step.get("assertion_failures") or []:
+                    if not isinstance(failure, dict):
+                        continue
+                    failed_assertions.append(
+                        {
+                            "scenario": scenario.get("scenario_name") or scenario.get("name") or scenario.get("scenario_id"),
+                            "step": step.get("text") or step.get("step_id"),
+                            "source": failure.get("source"),
+                            "op": failure.get("op"),
+                            "expected": failure.get("expected"),
+                            "actual": failure.get("actual"),
+                            "generated_by": failure.get("generated_by"),
+                            "failure_kind": failure.get("failure_kind"),
+                            "message": failure.get("message"),
+                        }
+                    )
     logs = [item for item in execution_result.get("logs") or [] if isinstance(item, dict)]
     validation_report = result.get("validation_report") if isinstance(result.get("validation_report"), dict) else {}
     analysis_report = result.get("analysis_report") if isinstance(result.get("analysis_report"), dict) else {}
+    missing_artifacts: list[str] = []
+    if not result.get("parsed_requirement"):
+        missing_artifacts.append("parsed_requirement")
+    if not dsl:
+        missing_artifacts.append("test_case_dsl")
+    if not execution_result:
+        missing_artifacts.append("execution_result")
     tracking = {
         "task_id": task.task_id,
         "task_name": task.task_name,
         "task_status": (task.task_context or {}).get("status") or task.status,
+        "stage": _infer_task_agent_stage(result, execution_result, task.status),
         "execution_status": execution_result.get("status") or "not_started",
         "environment": task.environment,
         "target_system": task.target_system,
+        "execution_base_url": execution_base_url,
         "scenario_total": len(scenario_results),
         "scenario_passed": len(passed_scenarios),
         "scenario_failed": len(failed_scenarios),
@@ -2304,20 +2337,198 @@ def _build_task_agent_tracking_context(task, provided: dict[str, Any] | None = N
             for item in failed_scenarios[:5]
         ],
         "failed_steps": failed_steps[:5],
+        "failed_assertions": failed_assertions[:8],
         "latest_logs": logs[-5:],
+        "assertion_quality": assertion_quality,
         "validation_passed": validation_report.get("passed"),
         "validation_errors": validation_report.get("errors") or [],
         "validation_warnings": validation_report.get("warnings") or [],
         "analysis_findings": analysis_report.get("findings") or [],
         "failure_reasons": analysis_report.get("failure_reasons") or [],
+        "missing_artifacts": missing_artifacts,
     }
     tracking.update({key: value for key, value in provided_context.items() if value not in (None, "", [])})
+    tracking = _enrich_task_agent_tracking_environment(task, tracking)
+    if provided_context.get("execution_status") or provided_context.get("failed_steps") or provided_context.get("scenario_total"):
+        tracking["missing_artifacts"] = [item for item in tracking.get("missing_artifacts") or [] if item != "execution_result"]
     return tracking
+
+
+def _enrich_task_agent_tracking_environment(task, tracking: dict[str, Any]) -> dict[str, Any]:
+    environment = str(tracking.get("environment") or getattr(task, "environment", "") or "").strip()
+    if not environment or tracking.get("environment_base_url"):
+        return tracking
+    try:
+        config = registry.get_environment(environment, project_id=getattr(task, "project_id", None))
+    except Exception:
+        return tracking
+    if config is not None and str(config.base_url or "").strip():
+        tracking["environment_base_url"] = str(config.base_url).strip()
+    return tracking
+
+
+def _infer_task_agent_stage(result: dict[str, Any], execution_result: dict[str, Any], task_status: str) -> str:
+    if execution_result:
+        return "execution"
+    if result.get("test_case_dsl"):
+        return "dsl"
+    if result.get("scenarios"):
+        return "scenarios"
+    if result.get("parsed_requirement"):
+        return "parsed"
+    return str(task_status or "received")
+
+
+def _summarize_task_agent_assertion_quality(execution_result: dict[str, Any], dsl: dict[str, Any]) -> dict[str, Any]:
+    total = 0
+    passed = 0
+    failed = 0
+    generated_by_counts: dict[str, int] = {}
+    weak_step_count = 0
+    fallback_count = 0
+    weak_steps: list[dict[str, Any]] = []
+    has_execution_assertion_summary = False
+    for scenario in execution_result.get("scenario_results") or []:
+        if not isinstance(scenario, dict):
+            continue
+        for step in scenario.get("steps") or []:
+            if not isinstance(step, dict):
+                continue
+            summary = step.get("assertion_summary") if isinstance(step.get("assertion_summary"), dict) else {}
+            if summary:
+                has_execution_assertion_summary = True
+            step_total = int(summary.get("total") or 0)
+            total += step_total
+            passed += int(summary.get("passed") or 0)
+            failed += int(summary.get("failed") or 0)
+            if summary.get("weak_assertion") and step_total:
+                weak_step_count += 1
+                weak_steps.append(
+                    {
+                        "scenario": scenario.get("name") or scenario.get("scenario_id"),
+                        "step": step.get("text") or step.get("step_id"),
+                        "total": step_total,
+                        "quality_level": summary.get("quality_level"),
+                        "reasons": summary.get("quality_reasons") or [],
+                    }
+                )
+            fallback_count += int(summary.get("fallback_count") or 0)
+            for key, value in (summary.get("generated_by_counts") or {}).items():
+                generated_by_counts[str(key)] = int(generated_by_counts.get(str(key), 0)) + int(value or 0)
+
+    invalid_llm_candidate_count = 0
+    invalid_llm_candidates: list[dict[str, Any]] = []
+    llm_filter_reasons: dict[str, int] = {}
+    llm_error_type_counts: dict[str, int] = {}
+    for scenario in dsl.get("scenarios") or []:
+        if not isinstance(scenario, dict):
+            continue
+        for step in scenario.get("steps") or []:
+            if not isinstance(step, dict):
+                continue
+            quality = step.get("assertion_quality") if isinstance(step.get("assertion_quality"), dict) else {}
+            invalid_count = int(quality.get("invalid_assertion_count") or 0)
+            invalid_llm_candidate_count += invalid_count
+            error_type = str(quality.get("llm_error_type") or "").strip()
+            if error_type:
+                llm_error_type_counts[error_type] = int(llm_error_type_counts.get(error_type, 0)) + 1
+            fallback_reason = str(quality.get("fallback_reason") or "").strip()
+            if fallback_reason:
+                llm_filter_reasons[fallback_reason] = int(llm_filter_reasons.get(fallback_reason, 0)) + 1
+            invalid_details = _extract_task_agent_invalid_llm_candidates(scenario, step, quality, invalid_count, error_type, fallback_reason)
+            invalid_llm_candidates.extend(invalid_details)
+            for item in invalid_details:
+                reason = str(item.get("reason") or item.get("error_type") or "").strip()
+                if reason:
+                    llm_filter_reasons[reason] = int(llm_filter_reasons.get(reason, 0)) + 1
+            if not has_execution_assertion_summary:
+                for assertion in step.get("assertions") or []:
+                    if not isinstance(assertion, dict):
+                        continue
+                    generated_by = str(assertion.get("generated_by") or "rules")
+                    generated_by_counts[generated_by] = int(generated_by_counts.get(generated_by, 0)) + 1
+                    fallback_count += 1 if assertion.get("fallback_used") else 0
+                    total += 1
+    return {
+        "total": total,
+        "passed": passed,
+        "failed": failed,
+        "pass_rate": round((passed / total) * 100, 2) if total else None,
+        "generated_by_counts": generated_by_counts,
+        "weak_step_count": weak_step_count,
+        "fallback_count": fallback_count,
+        "invalid_llm_candidate_count": invalid_llm_candidate_count,
+        "invalid_llm_candidates": invalid_llm_candidates[:8],
+        "llm_filter_reasons": llm_filter_reasons,
+        "llm_error_type_counts": llm_error_type_counts,
+        "weak_steps": weak_steps[:8],
+    }
+
+
+def _extract_task_agent_invalid_llm_candidates(
+    scenario: dict[str, Any],
+    step: dict[str, Any],
+    quality: dict[str, Any],
+    invalid_count: int,
+    error_type: str,
+    fallback_reason: str,
+) -> list[dict[str, Any]]:
+    raw_candidates: list[Any] = []
+    for key in ("invalid_assertions", "invalid_candidates", "rejected_assertions", "filtered_candidates"):
+        value = quality.get(key)
+        if isinstance(value, list):
+            raw_candidates.extend(value)
+    scenario_name = scenario.get("name") or scenario.get("scenario_name") or scenario.get("scenario_id")
+    step_name = step.get("text") or step.get("step_id")
+    candidates: list[dict[str, Any]] = []
+    for raw in raw_candidates[:8]:
+        if isinstance(raw, dict):
+            reason = raw.get("reason") or raw.get("error") or raw.get("message") or raw.get("validation_error") or error_type or fallback_reason
+            candidates.append(
+                {
+                    "scenario": scenario_name,
+                    "step": step_name,
+                    "source": raw.get("source") or raw.get("candidate") or raw.get("path"),
+                    "op": raw.get("op"),
+                    "expected": raw.get("expected"),
+                    "reason": reason,
+                    "error_type": error_type,
+                }
+            )
+        else:
+            candidates.append(
+                {
+                    "scenario": scenario_name,
+                    "step": step_name,
+                    "source": str(raw)[:120],
+                    "reason": error_type or fallback_reason or "invalid_llm_candidate",
+                    "error_type": error_type,
+                }
+            )
+    if not candidates and invalid_count:
+        candidates.append(
+            {
+                "scenario": scenario_name,
+                "step": step_name,
+                "source": "LLM candidate",
+                "reason": error_type or fallback_reason or "invalid_llm_candidate",
+                "error_type": error_type,
+                "count": invalid_count,
+            }
+        )
+    return candidates
 
 
 def _attach_task_context_to_agent_payload(payload: TaskAgentChatRequest, agent_payload: dict[str, Any], current_user: dict[str, Any] | None) -> dict[str, Any]:
     task_id = str(payload.task_id or "").strip()
     if not task_id:
+        for candidate_task_id in reversed(_task_ids_from_agent_conversation(payload.conversation_history or [])):
+            try:
+                task = _must_get_visible_task(candidate_task_id, current_user)
+            except HTTPException:
+                continue
+            agent_payload["task_tracking"] = _build_task_agent_tracking_context(task, payload.task_tracking)
+            return agent_payload
         if isinstance(payload.task_tracking, dict) and payload.task_tracking:
             agent_payload["task_tracking"] = payload.task_tracking
         return agent_payload
@@ -2372,9 +2583,9 @@ def _build_task_agent_tracking_reply(message: str, task_tracking: dict[str, Any]
 
 def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) -> str:
     task_tracking = agent_payload.get("task_tracking") if isinstance(agent_payload.get("task_tracking"), dict) else {}
-    tracking_reply = _build_task_agent_tracking_reply(message, task_tracking)
-    if tracking_reply:
-        return tracking_reply
+    contextual_reply = build_task_agent_contextual_reply(message, agent_payload)
+    if contextual_reply:
+        return contextual_reply
 
     llm_reply = build_llm_task_agent_chat_reply(message, agent_payload)
     if llm_reply:
@@ -2584,6 +2795,38 @@ def _derive_fallback_base_url(task) -> str:
         if parsed.scheme and parsed.netloc:
             return task.target_system.rstrip("/")
     return ""
+
+
+def _resolve_asset_execution_context(
+    *,
+    project_id: str,
+    environment_name: str | None,
+    base_url: str | None,
+    source_task_id: str | None,
+    strict_environment: bool = True,
+) -> tuple[str, EnvironmentConfig | None, str]:
+    selected_environment = str(environment_name or "").strip()
+    resolved_base_url = str(base_url or "").strip()
+    environment_config: EnvironmentConfig | None = None
+    if selected_environment:
+        environment_config = registry.get_environment(selected_environment, project_id=project_id)
+        if environment_config is None and strict_environment:
+            raise HTTPException(status_code=404, detail=f"Environment not found: {selected_environment}")
+
+    source_task = registry.get(str(source_task_id or "").strip()) if source_task_id else None
+    if source_task is not None and not selected_environment and not resolved_base_url:
+        task_environment = str(getattr(source_task, "environment", "") or "").strip()
+        if task_environment:
+            candidate = registry.get_environment(task_environment, project_id=project_id)
+            if candidate is not None:
+                selected_environment = task_environment
+                environment_config = candidate
+
+    if not resolved_base_url and environment_config is not None and environment_config.base_url:
+        resolved_base_url = str(environment_config.base_url).strip()
+    if not resolved_base_url and source_task is not None:
+        resolved_base_url = _derive_fallback_base_url(source_task)
+    return selected_environment, environment_config, resolved_base_url
 
 
 def _record_execution_history(
@@ -4421,13 +4664,13 @@ def debug_interface_asset(
         raise HTTPException(status_code=404, detail=f"Interface asset not found: {asset_id}")
     _ensure_project_access(str(asset["project_id"]), current_user)
 
-    env_config: EnvironmentConfig | None = None
-    if payload.environment:
-        env_config = registry.get_environment(str(payload.environment), project_id=str(asset["project_id"]))
-        if env_config is None:
-            raise HTTPException(status_code=404, detail=f"Environment not found: {payload.environment}")
-
-    base_url = str(payload.base_url or "").strip() or (env_config.base_url if env_config else "")
+    selected_environment, env_config, base_url = _resolve_asset_execution_context(
+        project_id=str(asset["project_id"]),
+        environment_name=payload.environment,
+        base_url=payload.base_url,
+        source_task_id=str(asset.get("last_seen_task_id") or ""),
+        strict_environment=True,
+    )
     headers = _safe_debug_headers(env_config.default_headers if env_config else {})
     headers.update(_safe_debug_headers(payload.headers))
     auth_obj = _ensure_json_dict(env_config.auth if env_config else {})
@@ -4757,6 +5000,8 @@ def chat_with_task_agent(
             project_id = task.project_id
     agent_payload = _build_task_draft_agent_payload(payload, project_id=project_id)
     agent_payload = _attach_task_context_to_agent_payload(payload, agent_payload, current_user)
+    if payload.conversation_history:
+        agent_payload["conversation_memory"] = _compact_task_agent_conversation(payload.conversation_history)
     reply = _build_task_agent_chat_reply(payload.message, agent_payload)
     return _success_response(
         {
@@ -4766,6 +5011,51 @@ def chat_with_task_agent(
         code="TASK_AGENT_CHAT_OK",
         message="task agent chat reply ready",
     )
+
+
+def _compact_task_agent_conversation(history: list[dict[str, Any]]) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    mentioned_task_ids: list[str] = []
+    focus_terms: list[str] = []
+    for item in history[-8:]:
+        if not isinstance(item, dict):
+            continue
+        role = str(item.get("role") or "").strip()[:12]
+        text = str(item.get("text") or item.get("content") or "").strip()
+        if not text:
+            continue
+        items.append({"role": role or "unknown", "text": text[:300]})
+        for candidate in _task_ids_from_agent_text(text):
+            if candidate not in mentioned_task_ids:
+                mentioned_task_ids.append(candidate)
+        for token in ("失败", "断言", "LLM", "导入", "Base URL", "下一步", "重跑"):
+            if token.lower() in text.lower() and token not in focus_terms:
+                focus_terms.append(token)
+    return {
+        "recent_messages": items,
+        "mentioned_task_ids": mentioned_task_ids[-3:],
+        "focus_terms": focus_terms[-6:],
+    }
+
+
+def _task_ids_from_agent_conversation(history: list[dict[str, Any]]) -> list[str]:
+    task_ids: list[str] = []
+    for item in history[-8:]:
+        if not isinstance(item, dict):
+            continue
+        for candidate in _task_ids_from_agent_text(str(item.get("text") or item.get("content") or "")):
+            if candidate not in task_ids:
+                task_ids.append(candidate)
+    return task_ids
+
+
+def _task_ids_from_agent_text(text: str) -> list[str]:
+    candidates: list[str] = []
+    for match in re.findall(r"[A-Za-z0-9][A-Za-z0-9_（）() -]*_\d{14,}", str(text or "")):
+        candidate = match.strip().strip("，,。.;；")
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
+    return candidates
 
 
 @app.get("/api/tasks", response_model=ApiResponse)
@@ -5006,6 +5296,53 @@ def get_dsl(task_id: str, current_user: dict[str, Any] | None = Depends(_optiona
     task = _must_get_visible_task(task_id, current_user)
     result = _ensure_pipeline(task)
     return _success_response(result.get("test_case_dsl", {}), code="DSL_OK", message="dsl fetched")
+
+
+@app.patch("/api/tasks/{task_id}/dsl", response_model=ApiResponse)
+def update_dsl(
+    task_id: str,
+    payload: UpdateTaskDslRequest,
+    current_user: dict[str, Any] = Depends(_require_current_user),
+):
+    task = _must_get_visible_task(task_id, current_user)
+    if task.project_id:
+        _ensure_project_editor(task.project_id, current_user)
+    else:
+        current_user_id = str(current_user["user"]["id"])
+        if task.created_by and str(task.created_by) != current_user_id and not _is_platform_admin_user(current_user["user"]):
+            raise HTTPException(status_code=403, detail="Only task creator can update DSL")
+    dsl = payload.test_case_dsl
+    if not isinstance(dsl, dict) or not dsl:
+        raise HTTPException(status_code=400, detail="test_case_dsl must be a non-empty object")
+    scenarios = dsl.get("scenarios")
+    if scenarios is not None and not isinstance(scenarios, list):
+        raise HTTPException(status_code=400, detail="test_case_dsl.scenarios must be a list")
+
+    result = _ensure_pipeline(task)
+    result["test_case_dsl"] = dsl
+    metadata = result.get("parse_metadata")
+    if isinstance(metadata, dict):
+        metadata["manual_dsl_edited"] = True
+        metadata["manual_dsl_edited_at"] = datetime.now(timezone.utc).isoformat()
+        result["parse_metadata"] = metadata
+    task.pipeline_result = result
+    if task.artifact_dir:
+        subdirs = ensure_task_subdirs(task.artifact_dir)
+        write_json_artifact(str(Path(subdirs["scenarios"]) / "test_case_dsl.json"), dsl)
+        scenario_bundle_path = Path(subdirs["scenarios"]) / "scenario_bundle.json"
+        scenario_bundle = dict(result)
+        scenario_bundle.pop("artifact_dir", None)
+        write_json_artifact(str(scenario_bundle_path), scenario_bundle)
+    registry.save(task)
+    _append_audit_log(
+        current_user,
+        project_id=task.project_id,
+        action="task.dsl.update",
+        resource_type="task",
+        resource_id=task.task_id,
+        detail_json={"scenario_count": len(dsl.get("scenarios") or [])},
+    )
+    return _success_response(dsl, code="DSL_UPDATED", message="dsl updated")
 
 
 @app.get("/api/tasks/{task_id}/feature", response_model=ApiResponse)
@@ -5762,7 +6099,13 @@ def _execute_case_asset_payload(
     scenario = asset.get("dsl_scenario")
     if not isinstance(scenario, dict) or not scenario:
         raise HTTPException(status_code=400, detail="test case asset has no executable dsl_scenario")
-    environment_config = _resolve_project_environment_config(str(asset["project_id"]), environment)
+    selected_environment, environment_config, resolved_base_url = _resolve_asset_execution_context(
+        project_id=str(asset["project_id"]),
+        environment_name=environment,
+        base_url=base_url,
+        source_task_id=str(asset.get("source_task_id") or ""),
+        strict_environment=True,
+    )
     dsl = {
         "dsl_version": "1.0",
         "task_id": f"case_asset:{asset['id']}",
@@ -5772,25 +6115,25 @@ def _execute_case_asset_payload(
         "scenarios": [scenario],
         "metadata": {
             "execution": {
-                "base_url": str(base_url or "").strip(),
-                "environment": environment or "",
+                "base_url": resolved_base_url,
+                "environment": selected_environment,
                 "context": {"case_id": asset["id"], "case_key": asset["case_key"]},
             }
         },
     }
     dsl = _inject_environment_into_dsl(
         dsl,
-        environment,
+        selected_environment,
         environment_config,
-        fallback_base_url=str(base_url or "").strip(),
+        fallback_base_url=resolved_base_url,
     )
-    resolved_base_url = str((dsl.get("metadata") or {}).get("execution", {}).get("base_url", "")).strip()
-    if execution_mode == "api" and not resolved_base_url:
+    final_base_url = str((dsl.get("metadata") or {}).get("execution", {}).get("base_url", "")).strip()
+    if execution_mode == "api" and not final_base_url:
         raise HTTPException(status_code=400, detail="Missing base_url. Select an environment or provide base_url.")
     execution_result = _run_dsl_with_timeout(dsl, execution_mode)
     return _apply_execution_metadata(
         execution_result,
-        selected_environment=environment or "",
+        selected_environment=selected_environment,
         execution_mode=execution_mode,
         environment_config=environment_config,
         dsl=dsl,

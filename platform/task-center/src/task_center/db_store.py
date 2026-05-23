@@ -291,6 +291,8 @@ class DatabaseTaskStore:
             if row is None:
                 return False
             session.delete(row)
+            session.commit()
+            return True
 
     def _interface_asset_to_payload(self, row: InterfaceAsset) -> dict[str, Any]:
         return {
@@ -728,6 +730,7 @@ class DatabaseTaskStore:
             run = TaskRun(
                 task_id=task_row.id,
                 run_no=run_no,
+                triggered_by=self._parse_uuid(record.get("triggered_by")),
                 execution_mode=str(record.get("execution_mode") or "api"),
                 status=str(record.get("status") or task_row.status or "unknown"),
                 parse_mode=str(record.get("parse_mode") or "") or None,
@@ -780,6 +783,7 @@ class DatabaseTaskStore:
                         "llm_used": bool(run.llm_used),
                         "rag_enabled": bool(run.rag_enabled),
                         "rag_used": bool(run.rag_used),
+                        "triggered_by": str(run.triggered_by) if run.triggered_by else None,
                         "runtime_context_snapshot_path": run.runtime_context_snapshot_path,
                         "analysis_report_path": run.analysis_report_path,
                         "execution_result_path": run.execution_result_path,
@@ -1148,17 +1152,39 @@ class DatabaseTaskStore:
     ) -> dict[str, Any]:
         with self.session() as session:
             task_row = self._resolve_task_row_by_uid(session, task_uid, project_id=project_id)
+            project_uuid = self._parse_uuid(project_id)
+            normalized_source = str(source or "manual").strip() or "manual"
+            normalized_title = " ".join(str(title or "").split()).strip()
+            if normalized_source != "manual" and normalized_title:
+                stmt = select(Defect).where(
+                    Defect.project_id == project_uuid,
+                    Defect.title == normalized_title,
+                    Defect.source == normalized_source,
+                    Defect.status.in_(("open", "in_progress")),
+                )
+                if task_row is not None:
+                    stmt = stmt.where(Defect.task_id == task_row.id)
+                else:
+                    stmt = stmt.where(Defect.task_id.is_(None))
+                existing = session.scalar(stmt.order_by(Defect.created_at.desc()).limit(1))
+                if existing is not None:
+                    severity_rank = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+                    if severity and severity_rank.get(severity, 0) > severity_rank.get(existing.severity, 0):
+                        existing.severity = severity
+                        existing.updated_at = _utc_now()
+                        session.flush()
+                    return self._load_defect_payload(session, existing.id)
             defect = Defect(
                 defect_key=self._build_defect_key(),
-                project_id=self._parse_uuid(project_id),
+                project_id=project_uuid,
                 task_id=task_row.id if task_row is not None else None,
                 reporter_user_id=self._parse_uuid(reporter_user_id),
                 assignee_user_id=self._parse_uuid(assignee_user_id),
-                title=title,
+                title=normalized_title or title,
                 description=description,
                 severity=severity,
                 status=status,
-                source=source,
+                source=normalized_source,
                 reproduction_steps=reproduction_steps,
                 expected_result=expected_result,
                 actual_result=actual_result,

@@ -724,7 +724,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
     await generateAgentSuggestion();
   };
 
-  const handleTaskAgentChat = async (messageText: string) => {
+  const handleTaskAgentChat = async (messageText: string, chatContext?: { conversation_history?: Array<{ role: string; text: string }> }) => {
     const values = form.getFieldsValue(["task_name", "requirement_text", "target_system", "environment", "project_id"]);
     const result = await chatWithTaskAgent({
       message: messageText,
@@ -734,6 +734,7 @@ export default function TaskCreate({ mode = "create" }: TaskCreateProps) {
       target_system: values.target_system,
       environment: values.environment,
       project_id: values.project_id || currentProjectId || undefined,
+      conversation_history: chatContext?.conversation_history,
     });
     if (result.agent_payload) {
       setAgentPayload(result.agent_payload);

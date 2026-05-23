@@ -43,6 +43,8 @@ def execute_test_case_dsl(
     logs: list[dict] = []
     total_steps = 0
     passed_steps = 0
+    failed_steps = 0
+    skipped_steps = 0
     elapsed_samples: list[float] = []
     context = ContextBus()
     runtime_state = _build_runtime_state(test_case_dsl)
@@ -55,75 +57,88 @@ def execute_test_case_dsl(
         context.set(str(key), value)
 
     for scenario in test_case_dsl.get("scenarios", []):
-        scenario_id = scenario.get("scenario_id")
-        scenario_name = scenario.get("name")
-        step_results: list[dict] = []
-        scenario_failed = False
+        for iteration in _scenario_iterations(scenario):
+            for key, value in iteration["context"].items():
+                context.set(key, value)
+            scenario_id = iteration["scenario_id"]
+            scenario_name = iteration["scenario_name"]
+            steps = _scenario_steps(scenario)
+            step_results: list[dict] = []
+            scenario_failed = False
 
-        for step in scenario.get("steps", []):
-            total_steps += 1
-            start_log = _build_step_event_log(step, "step_start", scenario_id=scenario_id, scenario_name=scenario_name)
-            logs.append(start_log)
-            _emit_progress(progress_callback, start_log)
-            try:
-                if step.get("request"):
-                    step_result = _execute_request_step(
-                        step,
-                        context,
-                        runtime_state,
-                        logs,
-                        progress_callback,
-                        scenario_id=scenario_id,
-                        scenario_name=scenario_name,
-                    )
+            for step in steps:
+                total_steps += 1
+                start_log = _build_step_event_log(step, "step_start", scenario_id=scenario_id, scenario_name=scenario_name)
+                logs.append(start_log)
+                _emit_progress(progress_callback, start_log)
+                should_run, condition_reason = _should_run_step(step, context)
+                if not should_run:
+                    step_result = _build_skipped_step_result(step, condition_reason)
                 else:
-                    step_result = _execute_non_request_step(step, context)
-            except Exception as exc:  # pragma: no cover - defensive top-level guard
-                step_result = {
-                    "step_id": step.get("step_id"),
-                    "step_type": step.get("step_type"),
-                    "text": step.get("text"),
-                    "status": "failed",
-                    "message": str(exc),
-                    "error_category": _classify_exception(exc),
-                }
+                    try:
+                        if step.get("request"):
+                            step_result = _execute_request_step(
+                                step,
+                                context,
+                                runtime_state,
+                                logs,
+                                progress_callback,
+                                scenario_id=scenario_id,
+                                scenario_name=scenario_name,
+                            )
+                        else:
+                            step_result = _execute_non_request_step(step, context)
+                    except Exception as exc:  # pragma: no cover - defensive top-level guard
+                        step_result = {
+                            "step_id": step.get("step_id"),
+                            "step_type": step.get("step_type"),
+                            "text": step.get("text"),
+                            "status": "failed",
+                            "message": str(exc),
+                            "error_category": _classify_exception(exc),
+                        }
 
-            if step_result["status"] == "passed":
-                passed_steps += 1
-            else:
-                scenario_failed = True
-            _record_api_coverage_step(coverage_tracker, step_result)
-            response = step_result.get("response") or {}
-            if isinstance(response.get("elapsed_ms"), (int, float)):
-                elapsed_samples.append(float(response["elapsed_ms"]))
+                if step_result["status"] == "passed":
+                    passed_steps += 1
+                elif step_result["status"] == "skipped":
+                    skipped_steps += 1
+                else:
+                    failed_steps += 1
+                    scenario_failed = True
+                _record_api_coverage_step(coverage_tracker, step_result)
+                response = step_result.get("response") or {}
+                if isinstance(response.get("elapsed_ms"), (int, float)):
+                    elapsed_samples.append(float(response["elapsed_ms"]))
 
-            step_results.append(step_result)
-            step_log = _build_step_log(step_result, scenario_id=scenario_id, scenario_name=scenario_name)
-            logs.append(step_log)
-            _emit_progress(progress_callback, step_log)
+                step_results.append(step_result)
+                step_log = _build_step_log(step_result, scenario_id=scenario_id, scenario_name=scenario_name)
+                logs.append(step_log)
+                _emit_progress(progress_callback, step_log)
 
-        scenario_item = {
-            "scenario_id": scenario_id,
-            "name": scenario_name,
-            "status": "failed" if scenario_failed else "passed",
-            "steps": step_results,
-            "failed_steps": len([step for step in step_results if step.get("status") != "passed"]),
-        }
-        scenario_results.append(scenario_item)
-        _emit_progress(
-            progress_callback,
-            {
-                "level": "error" if scenario_item["status"] == "failed" else "info",
-                "event": "scenario_result",
+            scenario_item = {
                 "scenario_id": scenario_id,
-                "scenario_name": scenario_name,
-                "status": scenario_item["status"],
-                "failed_steps": scenario_item["failed_steps"],
-                "message": f"{scenario_name or scenario_id or 'scenario'} {scenario_item['status']}",
-            },
-        )
+                "name": scenario_name,
+                "status": "failed" if scenario_failed else "passed",
+                "steps": step_results,
+                "failed_steps": len([step for step in step_results if step.get("status") == "failed"]),
+                "skipped_steps": len([step for step in step_results if step.get("status") == "skipped"]),
+            }
+            scenario_results.append(scenario_item)
+            _emit_progress(
+                progress_callback,
+                {
+                    "level": "error" if scenario_item["status"] == "failed" else "info",
+                    "event": "scenario_result",
+                    "scenario_id": scenario_id,
+                    "scenario_name": scenario_name,
+                    "status": scenario_item["status"],
+                    "failed_steps": scenario_item["failed_steps"],
+                    "skipped_steps": scenario_item["skipped_steps"],
+                    "message": f"{scenario_name or scenario_id or 'scenario'} {scenario_item['status']}",
+                },
+            )
 
-    overall_status = "passed" if passed_steps == total_steps else "failed"
+    overall_status = "passed" if failed_steps == 0 else "failed"
     api_coverage = _finalize_api_coverage(coverage_tracker)
     result = ExecutionResult(
         task_id=test_case_dsl.get("task_id", "unknown_task"),
@@ -134,7 +149,8 @@ def execute_test_case_dsl(
             "scenario_count": len(scenario_results),
             "step_count": total_steps,
             "passed_step_count": passed_steps,
-            "failed_step_count": total_steps - passed_steps,
+            "failed_step_count": failed_steps,
+            "skipped_step_count": skipped_steps,
             "context_key_count": len(context.snapshot()),
             "cookie_count": _count_runtime_cookies(runtime_state),
             "avg_elapsed_ms": round(sum(elapsed_samples) / len(elapsed_samples), 2) if elapsed_samples else 0,
@@ -172,6 +188,107 @@ def _emit_progress(
         return
 
 
+def _scenario_iterations(scenario: dict[str, Any]) -> list[dict[str, Any]]:
+    examples = scenario.get("examples")
+    if examples is None:
+        examples = scenario.get("data")
+    if examples is None:
+        examples = scenario.get("parameters")
+    if not isinstance(examples, list) or not examples:
+        return [
+            {
+                "scenario_id": scenario.get("scenario_id"),
+                "scenario_name": scenario.get("name"),
+                "context": {},
+            }
+        ]
+    iterations: list[dict[str, Any]] = []
+    for index, row in enumerate(examples, start=1):
+        if not isinstance(row, dict):
+            row = {"value": row}
+        row_name = str(row.get("name") or row.get("case") or index)
+        context = {str(key): value for key, value in row.items()}
+        context["example_index"] = index
+        iterations.append(
+            {
+                "scenario_id": f"{scenario.get('scenario_id') or 'scenario'}__{index}",
+                "scenario_name": f"{scenario.get('name') or 'scenario'} [{row_name}]",
+                "context": context,
+            }
+        )
+    return iterations
+
+
+def _scenario_steps(scenario: dict[str, Any]) -> list[dict[str, Any]]:
+    steps: list[dict[str, Any]] = []
+    for key in ("setup_steps", "before_steps"):
+        value = scenario.get(key)
+        if isinstance(value, list):
+            steps.extend(item for item in value if isinstance(item, dict))
+    value = scenario.get("steps")
+    if isinstance(value, list):
+        steps.extend(item for item in value if isinstance(item, dict))
+    for key in ("teardown_steps", "after_steps"):
+        value = scenario.get(key)
+        if isinstance(value, list):
+            steps.extend(item for item in value if isinstance(item, dict))
+    return steps
+
+
+def _should_run_step(step: dict[str, Any], context: ContextBus) -> tuple[bool, str]:
+    run_if = step.get("run_if")
+    if run_if is not None and not _evaluate_condition(run_if, context):
+        return False, "run_if evaluated to false"
+    skip_if = step.get("skip_if")
+    if skip_if is not None and _evaluate_condition(skip_if, context):
+        return False, "skip_if evaluated to true"
+    return True, ""
+
+
+def _evaluate_condition(condition: Any, context: ContextBus) -> bool:
+    if isinstance(condition, bool):
+        return condition
+    if isinstance(condition, str):
+        rendered = _render_templates(condition, context).strip()
+        if rendered.lower() in {"", "0", "false", "none", "null", "no", "off"}:
+            return False
+        return True
+    if isinstance(condition, list):
+        return all(_evaluate_condition(item, context) for item in condition)
+    if not isinstance(condition, dict):
+        return bool(condition)
+    if "all" in condition and isinstance(condition["all"], list):
+        return all(_evaluate_condition(item, context) for item in condition["all"])
+    if "any" in condition and isinstance(condition["any"], list):
+        return any(_evaluate_condition(item, context) for item in condition["any"])
+    source = str(condition.get("source") or condition.get("context") or "").strip()
+    op = str(condition.get("op") or "exists").strip()
+    expected = _render_templates(condition.get("expected"), context)
+    actual = _read_condition_source(source, context)
+    return _compare(actual, op, expected)
+
+
+def _read_condition_source(source: str, context: ContextBus) -> Any:
+    if not source:
+        return None
+    if source.startswith("context."):
+        return context.get(source[8:])
+    return context.get(source)
+
+
+def _build_skipped_step_result(step: dict[str, Any], reason: str) -> dict[str, Any]:
+    return {
+        "step_id": step.get("step_id"),
+        "step_type": step.get("step_type"),
+        "text": step.get("text"),
+        "status": "skipped",
+        "message": reason or "step skipped",
+        "error_category": "",
+        "assertion_summary": _build_assertion_summary(step.get("assertions") or [], []),
+        "assertion_failures": [],
+    }
+
+
 def _execute_non_request_step(step: dict, context: ContextBus) -> dict:
     missing_context = context.require(step.get("uses_context") or [])
     if missing_context:
@@ -183,10 +300,34 @@ def _execute_non_request_step(step: dict, context: ContextBus) -> dict:
             "message": f"Missing context: {', '.join(missing_context)}",
             "error_category": "context_error",
         }
+    set_context = step.get("set_context") or step.get("context")
+    saved_context: dict[str, Any] = {}
+    if isinstance(set_context, dict):
+        for key, value in set_context.items():
+            rendered = _render_templates(value, context)
+            context.set(str(key), rendered)
+            saved_context[str(key)] = rendered
+    wait_ms = step.get("wait_ms")
+    if wait_ms is None:
+        wait_ms = step.get("sleep_ms")
+    if wait_ms is not None:
+        try:
+            time.sleep(max(float(wait_ms), 0.0) / 1000.0)
+        except (TypeError, ValueError):
+            return {
+                "step_id": step.get("step_id"),
+                "step_type": step.get("step_type"),
+                "text": step.get("text"),
+                "status": "failed",
+                "message": f"Invalid wait_ms: {wait_ms!r}",
+                "error_category": "request_validation_error",
+            }
     assertions = step.get("assertions") or []
     assertion_failures = _evaluate_assertions(assertions, {}, context)
     status = "failed" if assertion_failures else "passed"
     message = "Assertions passed" if not assertion_failures else "; ".join(item["message"] for item in assertion_failures)
+    if saved_context and not assertion_failures:
+        message = f"Context set: {', '.join(sorted(saved_context.keys()))}"
     return {
         "step_id": step.get("step_id"),
         "step_type": step.get("step_type"),
@@ -194,6 +335,8 @@ def _execute_non_request_step(step: dict, context: ContextBus) -> dict:
         "status": status,
         "message": message,
         "error_category": "assertion_error" if assertion_failures else "",
+        "saved_context": saved_context,
+        "context_snapshot": context.snapshot(),
         "assertion_summary": _build_assertion_summary(assertions, assertion_failures),
         "assertion_failures": assertion_failures,
     }
@@ -1125,12 +1268,13 @@ def _build_step_log(
     scenario_id: str | None = None,
     scenario_name: str | None = None,
 ) -> dict[str, Any]:
+    status = step_result.get("status", "")
     payload = {
-        "level": "info" if step_result["status"] == "passed" else "error",
+        "level": "error" if status == "failed" else "info",
         "event": "step_result",
         "step_id": step_result.get("step_id"),
         "message": step_result.get("message", ""),
-        "status": step_result.get("status", ""),
+        "status": status,
         "scenario_id": scenario_id,
         "scenario_name": scenario_name,
     }
