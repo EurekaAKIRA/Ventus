@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from task_center.api import _build_task_agent_tracking_context, _task_ids_from_agent_conversation
+from task_center.api import (
+    _build_task_agent_general_fallback_reply,
+    _build_task_agent_tracking_context,
+    _task_ids_from_agent_conversation,
+)
 from task_center.task_agent_chat import build_task_agent_contextual_reply, classify_task_agent_intent
 
 
@@ -171,6 +175,43 @@ def test_agent_does_not_force_quality_template_without_task_context() -> None:
 def test_agent_does_not_route_unrelated_quality_question() -> None:
     assert classify_task_agent_intent("空气质量如何") == "general_question"
     assert build_task_agent_contextual_reply("空气质量如何", {}) == ""
+
+
+def test_agent_contextual_reply_does_not_script_general_question_from_next_actions() -> None:
+    reply = build_task_agent_contextual_reply(
+        "随便问个普通问题",
+        {
+            "next_actions": ["补充断言", "执行冒烟"],
+            "task_tracking": {
+                "task_id": "general_question_20260523010101000000",
+                "task_name": "普通问题任务",
+                "execution_status": "passed",
+                "scenario_total": 1,
+                "scenario_passed": 1,
+                "assertion_quality": {"total": 1, "passed": 1, "failed": 0},
+            },
+        },
+    )
+
+    assert reply == ""
+
+
+def test_agent_general_fallback_is_minimal_without_llm() -> None:
+    reply = _build_task_agent_general_fallback_reply(
+        "随便问个普通问题",
+        {
+            "next_actions": ["补充断言", "执行冒烟"],
+            "task_tracking": {
+                "task_id": "fallback_general_20260523010101000000",
+                "task_name": "普通兜底任务",
+                "execution_status": "passed",
+            },
+        },
+    )
+
+    assert "没有命中任务诊断分支" in reply
+    assert "不硬套模板" in reply
+    assert "补充断言" not in reply
 
 
 def test_agent_lists_weak_assertion_steps() -> None:

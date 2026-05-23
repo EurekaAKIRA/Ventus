@@ -216,8 +216,6 @@ def build_task_agent_contextual_reply(message: str, agent_payload: dict[str, Any
         return _reply_task_import(context)
     if intent == "next_action":
         return _reply_next_action(context)
-    if has_task_context and draft.get("next_actions"):
-        return "我接上当前任务了。先看这几步：" + "；".join(str(item) for item in draft["next_actions"][:3])
     return ""
 
 

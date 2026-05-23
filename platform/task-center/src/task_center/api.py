@@ -2582,7 +2582,6 @@ def _build_task_agent_tracking_reply(message: str, task_tracking: dict[str, Any]
 
 
 def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) -> str:
-    task_tracking = agent_payload.get("task_tracking") if isinstance(agent_payload.get("task_tracking"), dict) else {}
     contextual_reply = build_task_agent_contextual_reply(message, agent_payload)
     if contextual_reply:
         return contextual_reply
@@ -2590,19 +2589,14 @@ def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) ->
     llm_reply = build_llm_task_agent_chat_reply(message, agent_payload)
     if llm_reply:
         return llm_reply
+
+    return _build_task_agent_general_fallback_reply(message, agent_payload)
+
+
+def _build_task_agent_general_fallback_reply(message: str, agent_payload: dict[str, Any]) -> str:
+    task_tracking = agent_payload.get("task_tracking") if isinstance(agent_payload.get("task_tracking"), dict) else {}
     normalized = str(message or "").strip().lower()
     reply = str(agent_payload.get("reply") or "").strip()
-    next_actions = [str(item).strip() for item in agent_payload.get("next_actions") or [] if str(item).strip()]
-    risks = [str(item).strip() for item in agent_payload.get("risks") or [] if str(item).strip()]
-    warnings = [str(item).strip() for item in agent_payload.get("warnings") or [] if str(item).strip()]
-    coverage_gaps = [str(item).strip() for item in agent_payload.get("coverage_gaps") or [] if str(item).strip()]
-    quality_gates = [item for item in agent_payload.get("quality_gates") or [] if isinstance(item, dict)]
-    assertion_suggestions = [item for item in agent_payload.get("assertion_suggestions") or [] if isinstance(item, dict)]
-    risk_priorities = [item for item in agent_payload.get("risk_priorities") or [] if isinstance(item, dict)]
-    execution_strategy = agent_payload.get("execution_strategy") if isinstance(agent_payload.get("execution_strategy"), dict) else {}
-    scenario_outlook = agent_payload.get("scenario_outlook") if isinstance(agent_payload.get("scenario_outlook"), dict) else {}
-    knowledge_hits = agent_payload.get("knowledge_hits") if isinstance(agent_payload.get("knowledge_hits"), list) else []
-    knowledge_summary = str(agent_payload.get("knowledge_summary") or "").strip()
     summary = agent_payload.get("summary") if isinstance(agent_payload.get("summary"), dict) else {}
     has_draft_context = bool(
         str(agent_payload.get("suggested_task_name") or "").strip()
@@ -2612,68 +2606,17 @@ def _build_task_agent_chat_reply(message: str, agent_payload: dict[str, Any]) ->
         or task_tracking
     )
 
-    if not has_draft_context:
-        draft_intro = (
-            "当前还没有创建任务。你可以先告诉我：要测哪个接口、目标系统地址、"
-            "业务流程和预期结果。我会先帮你整理成可创建的测试任务草稿。"
-        )
-        if any(token in normalized for token in ("你好", "您好", "hello", "hi", "在吗", "帮助", "怎么用", "你会", "能做")):
-            return draft_intro
-        return f"{draft_intro} 如果你已经有接口文档，可以先粘贴 METHOD /path、Request 和 Expected。"
-
     if any(token in normalized for token in ("你好", "您好", "hello", "hi", "在吗")):
-        return "你好，我在。你可以把接口需求、文档片段或要测试的业务流程发给我，我会结合当前草稿帮你拆测试场景、断言和风险点。"
+        if has_draft_context:
+            return "你好，我在。当前任务上下文我已经接上了；你可以直接问失败、质量、导入、执行或下一步。"
+        return "你好，我在。你可以问通用问题，也可以给我一个接口任务让我结合上下文分析。"
     if any(token in normalized for token in ("你会", "能做", "功能", "帮助", "怎么用")):
-        return "\n".join(
-            [
-                "我可以帮你做这些事：",
-                "1. 根据当前任务草稿整理正向、异常、边界和权限类测试场景。",
-                "2. 检查状态码、字段、业务状态、上下文变量和跨步骤一致性断言。",
-                "3. 提醒文档缺失的路径、方法、鉴权、参数和接口依赖。",
-                "4. 结合 RAG 命中结果判断知识依据是否足够。",
-            ]
-        )
-    if any(token in normalized for token in ("断言", "校验", "检查点")):
-        if assertion_suggestions:
-            first = assertion_suggestions[0]
-            assertions = [str(item).strip() for item in first.get("assertions") or [] if str(item).strip()]
-            return (
-                f"建议优先补“{first.get('title') or '断言'}”："
-                + "；".join(assertions[:3])
-                + (f"。原因：{first.get('reason')}" if first.get("reason") else "。")
-            )
-        pending_gates = [str(item.get("label") or "").strip() for item in quality_gates if item.get("status") != "pass" and str(item.get("label") or "").strip()]
-        if pending_gates:
-            return "建议优先补这些断言：" + "、".join(pending_gates[:4]) + "。同时保留状态码、关键字段、上下文变量和错误分支校验。"
-        return "当前没有明显阻断门禁。建议继续补充状态码、业务状态、资源 ID 传递、权限边界、重复提交和失败重试断言。"
-    if any(token in normalized for token in ("场景", "用例", "测试点")):
-        estimated_count = int(scenario_outlook.get("estimated_scenario_count") or 0)
-        base = f"当前预计可设计 {estimated_count} 个测试场景。" if estimated_count else "建议先按业务流程设计测试场景。"
-        gaps = coverage_gaps[:3]
-        suffix = "还要注意：" + "；".join(gaps) if gaps else "优先覆盖主链路、异常参数、鉴权失败、资源不存在和状态流转异常。"
-        return f"{base}{suffix}"
-    if any(token in normalized for token in ("风险", "问题", "缺陷", "隐患")):
-        if risk_priorities:
-            points = [f"{item.get('title')}: {item.get('impact')}" for item in risk_priorities[:3]]
-            return "风险优先级建议先看：" + "；".join(points)
-        points = (risks + warnings + coverage_gaps)[:4]
-        return "目前最需要关注：" + "；".join(points) if points else "当前没有明显高风险提示。建议继续检查鉴权、跨接口变量、异步回调和幂等重试。"
-    if any(token in normalized for token in ("执行", "运行", "重跑", "冒烟")):
-        phases = [item for item in execution_strategy.get("phases") or [] if isinstance(item, dict)]
-        if phases:
-            return (
-                f"建议执行策略：先跑“{execution_strategy.get('smoke_path') or '冒烟链路'}”。"
-                + "；".join(str(item.get("title") or "") for item in phases[:4] if item.get("title"))
-                + f"。重跑策略：{execution_strategy.get('rerun_policy') or '先修正再重跑冒烟链路'}"
-            )
-        return "建议先做环境预检，再执行主链路冒烟；失败后按环境、鉴权、依赖、请求、断言的顺序排查。"
-    if any(token in normalized for token in ("rag", "知识", "依据", "检索")):
-        if knowledge_hits:
-            return f"RAG 当前命中 {len(knowledge_hits)} 条知识依据。{knowledge_summary or '建议核对知识来源是否覆盖接口约束、错误码和业务规则。'}"
-        return "当前没有知识命中。建议补充接口规范、错误码说明、业务规则文档后重新分析。"
-    if next_actions:
-        return f"{reply} 下一步建议：" + "；".join(next_actions[:3])
-    return reply or "我已经收到。你可以继续补充接口、参数、业务流程或预期结果，我会帮你拆成测试场景、断言点和风险点。"
+        return "我能做任务上下文分析，也能回答普通问题。任务类问题我会看证据；普通问题优先走模型自然回答。"
+    if reply:
+        return reply
+    if has_draft_context:
+        return "这个问题没有命中任务诊断分支。当前没有可用模型回复普通问题，所以我不硬套模板；你可以改问具体的失败、质量、断言、执行或导入问题。"
+    return "当前没有任务上下文，也没有可用模型回复普通问题。你可以补充一个具体任务，或配置模型后让我自然回答。"
 
 
 def _parse_iso_timestamp(raw: str | None) -> datetime | None:
