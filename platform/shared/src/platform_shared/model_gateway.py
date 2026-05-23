@@ -106,6 +106,7 @@ class ModelEndpointConfig:
     api_key: str
     timeout: float = 60.0
     retries: int = 1
+    max_tokens: int | None = None
 
 
 @dataclass(slots=True)
@@ -290,6 +291,8 @@ class ModelGateway:
             ],
             "temperature": temperature,
         }
+        if endpoint.max_tokens is not None:
+            payload["max_tokens"] = endpoint.max_tokens
         response = self._request_json(endpoint, "/chat/completions", payload)
         choices = response.get("choices") or []
         if not choices:

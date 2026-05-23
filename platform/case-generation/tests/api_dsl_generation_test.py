@@ -63,6 +63,72 @@ def test_login_then_profile_query_generates_auth_context() -> None:
     assert any(assertion["source"] == "status_code" for assertion in steps[2]["assertions"] if isinstance(assertion, dict))
 
 
+def test_global_bearer_auth_wraps_protected_resource_steps() -> None:
+    from case_generation import build_scenarios, build_test_case_dsl
+    from platform_shared.models import ScenarioModel
+
+    parsed_requirement = {
+        "objective": "Order API",
+        "actors": ["admin"],
+        "entities": ["order"],
+        "preconditions": [],
+        "actions": [],
+        "expected_results": ["订单接口需要鉴权，后续受保护接口使用 Authorization: Bearer {{token}}"],
+        "constraints": ["登录成功后返回 token"],
+        "ambiguities": [],
+        "source_chunks": [],
+        "api_endpoints": [
+            {
+                "method": "POST",
+                "path": "/login",
+                "description": "登录接口",
+                "group": "鉴权与全局约束",
+                "request_body_fields": [{"name": "username"}, {"name": "password"}],
+                "response_fields": [{"name": "token"}],
+            },
+            {
+                "method": "POST",
+                "path": "/orders",
+                "description": "创建订单",
+                "group": "订单",
+                "request_body_fields": [{"name": "item"}, {"name": "quantity"}],
+                "response_fields": [{"name": "id"}, {"name": "status"}],
+            },
+            {
+                "method": "GET",
+                "path": "/orders/{id}",
+                "description": "查询订单详情",
+                "group": "订单",
+                "depends_on": ["/orders"],
+                "request_body_fields": [],
+                "response_fields": [{"name": "id"}, {"name": "status"}],
+            },
+        ],
+    }
+
+    scenarios = [ScenarioModel(**payload) for payload in build_scenarios(parsed_requirement)]
+    dsl = build_test_case_dsl(_build_task_context(), scenarios, parsed_requirement=parsed_requirement)
+
+    order_scenarios = [
+        scenario
+        for scenario in dsl["scenarios"]
+        if any((step.get("request") or {}).get("url") == "/orders" for step in scenario["steps"])
+    ]
+    assert order_scenarios
+    for scenario in order_scenarios:
+        request_steps = [step for step in scenario["steps"] if step.get("request")]
+        assert request_steps[0]["request"]["url"] == "/login"
+        login_request = request_steps[0]["request"]
+        assert login_request.get("params") is None
+        assert login_request["json"] == {"username": "demo_user", "password": "demo_pass"}
+        order_request = next(step["request"] for step in request_steps if step["request"]["url"] == "/orders")
+        assert order_request["auth"] == {"type": "bearer", "token_context": "token"}
+        assert order_request.get("params") is None
+        assert order_request["json"] == {"item": "demo_item", "quantity": 1}
+        order_step = next(step for step in request_steps if step["request"]["url"] == "/orders")
+        assert order_step["save_context"] == {"order_id": "json.id", "resource_id": "json.id"}
+
+
 def test_create_then_detail_query_generates_resource_dependency() -> None:
     from case_generation import build_scenarios, build_test_case_dsl
     from platform_shared.models import ScenarioModel
@@ -88,9 +154,9 @@ def test_create_then_detail_query_generates_resource_dependency() -> None:
     steps = dsl["scenarios"][0]["steps"]
     assert steps[1]["request"]["method"] == "POST"
     assert steps[1]["request"]["url"] == "/orders"
-    assert steps[1]["save_context"] == {"resource_id": "json.order_id"}
-    assert steps[2]["uses_context"] == ["resource_id"]
-    assert steps[2]["request"]["url"] == "/orders/{{resource_id}}"
+    assert steps[1]["save_context"] == {"order_id": "json.order_id", "resource_id": "json.order_id"}
+    assert steps[2]["uses_context"] == ["order_id", "resource_id"]
+    assert steps[2]["request"]["url"] == "/orders/{{order_id}}"
     assert any(assertion["source"] == "json" for assertion in steps[2]["assertions"] if isinstance(assertion, dict))
 
 
@@ -1362,6 +1428,48 @@ def test_restful_booker_endpoints_generate_token_and_bookingid_context() -> None
     }
     assert create_step["save_context"] == {"booking_id": "json.bookingid", "resource_id": "json.bookingid"}
     assert any(item.get("source") == "json.bookingid" for item in create_step["assertions"] if isinstance(item, dict))
+
+
+def test_restful_booker_get_after_create_asserts_created_field_values() -> None:
+    from case_generation import build_test_case_dsl
+    from platform_shared.models import ScenarioModel, ScenarioStep
+
+    scenario = ScenarioModel(
+        scenario_id="scenario_019",
+        name="restful booker create then read",
+        goal="create booking and verify detail",
+        steps=[
+            ScenarioStep(type="given", text="restful booker is reachable"),
+            ScenarioStep(type="when", text="POST /booking"),
+            ScenarioStep(type="and", text="GET /booking/{id}"),
+            ScenarioStep(type="then", text="GET /booking/{id} 应返回与创建时一致的关键字段"),
+        ],
+        assertions=["GET /booking/{id} 应返回与创建时一致的关键字段"],
+        source_chunks=[],
+        preconditions=["restful booker is reachable"],
+    )
+    parsed_requirement = {
+        "objective": "restful booker contract",
+        "actions": ["POST /booking", "GET /booking/{id}"],
+        "expected_results": ["GET /booking/{id} 应返回与创建时一致的关键字段"],
+        "api_endpoints": [
+            {"method": "POST", "path": "/booking", "description": "create booking"},
+            {"method": "GET", "path": "/booking/{id}", "description": "read booking"},
+        ],
+    }
+
+    dsl = build_test_case_dsl(
+        _build_task_context(),
+        [scenario],
+        parsed_requirement=parsed_requirement,
+        enable_assertion_enhancement=False,
+    )
+    get_step = dsl["scenarios"][0]["steps"][2]
+    assertions = [item for item in get_step["assertions"] if isinstance(item, dict)]
+
+    assert any(item.get("source") == "json.firstname" and item.get("expected") == "Jim" for item in assertions)
+    assert any(item.get("source") == "json.lastname" and item.get("expected") == "Brown" for item in assertions)
+    assert any(item.get("source") == "json.totalprice" and item.get("expected") == 111 for item in assertions)
 
 
 def test_restful_booker_known_payload_overrides_synthetic_field_extraction() -> None:
@@ -2841,6 +2949,17 @@ def test_petstore_dsl_uses_openapi_style_fields_headers_and_context() -> None:
     assert steps["POST /pet"]["request"]["headers"]["api_key"] == "special-key"
     assert steps["GET /pet/findByStatus"]["request"]["headers"]["api_key"] == "special-key"
     assert steps["GET /pet/findByStatus"]["request"]["params"]["status"] == "available"
+
+    pet_get_assertions = [item for item in steps["GET /pet/{petId}"]["assertions"] if isinstance(item, dict)]
+    assert any(item.get("source") == "json.id" and item.get("expected") == 20001 for item in pet_get_assertions)
+    assert any(item.get("source") == "json.status" and item.get("expected") == "available" for item in pet_get_assertions)
+
+    order_get_assertions = [item for item in steps["GET /store/order/{orderId}"]["assertions"] if isinstance(item, dict)]
+    assert any(item.get("source") == "json.id" and item.get("expected") == 10001 for item in order_get_assertions)
+    assert any(item.get("source") == "json.status" and item.get("expected") == "placed" for item in order_get_assertions)
+
+    pet_delete_assertions = [item for item in steps["DELETE /pet/{petId}"]["assertions"] if isinstance(item, dict)]
+    assert any(item.get("source") == "json.message" and item.get("expected") == 20001 for item in pet_delete_assertions)
 
 
 def test_dummyjson_dsl_uses_known_auth_and_todo_defaults() -> None:

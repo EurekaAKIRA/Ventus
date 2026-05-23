@@ -30,6 +30,7 @@ _API_PATH_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\s+/", re.IGNORECASE)
 _CONTEXT_PRIORITY_TITLES = ("接口", "scenario", "鉴权", "资源", "依赖", "约束")
 _CONTEXT_PRIORITY_CONTENT = ("路径：", "**涉及接口:**", "资源来源：", "资源前置条件：")
 _WRAPPED_PAYLOAD_KEYS = ("result", "data", "output", "response", "payload")
+_HTTP_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE"}
 
 
 @dataclass(slots=True)
@@ -48,6 +49,7 @@ class OpenAIEnhancementConfig:
         timeout = _resolve_float("HUNYUAN_TIMEOUT_SECONDS", "OPENAI_TIMEOUT_SECONDS", default=profile.timeout_seconds)
         embedding_retries = _resolve_int("HUNYUAN_RETRIES", "OPENAI_RETRIES", default=profile.retries)
         llm_retries = _resolve_int("HUNYUAN_LLM_RETRIES", "OPENAI_LLM_RETRIES", default=profile.llm_retries)
+        llm_max_tokens = _resolve_optional_int("HUNYUAN_LLM_MAX_TOKENS", "OPENAI_LLM_MAX_TOKENS", default=1600)
         gateway = ModelGateway(
             ModelGatewayConfig(
                 llm=ModelEndpointConfig(
@@ -57,6 +59,7 @@ class OpenAIEnhancementConfig:
                     api_key=api_key,
                     timeout=timeout,
                     retries=llm_retries,
+                    max_tokens=llm_max_tokens,
                 ),
                 embedding=ModelEndpointConfig(
                     provider="openai",
@@ -299,7 +302,10 @@ def enhance_parsed_requirement_with_metadata(
     except AttributeError:
         llm_ep = None
     if llm_ep is not None:
-        llm_label = f"model={llm_ep.model!r} base={llm_ep.api_base!r} timeout_s={llm_ep.timeout} max_attempts={llm_ep.retries + 1}"
+        llm_label = (
+            f"model={llm_ep.model!r} base={llm_ep.api_base!r} timeout_s={llm_ep.timeout} "
+            f"max_attempts={llm_ep.retries + 1} max_tokens={getattr(llm_ep, 'max_tokens', None)}"
+        )
     else:
         llm_label = "llm_endpoint=unknown"
     ctx_chars = sum(len(str(c.get("content", ""))) for c in context_preview)
@@ -487,6 +493,8 @@ def _classify_empty_payload_reason(parsed: dict[str, Any], allowed: set[str]) ->
 def _unwrap_supported_payload(parsed: dict[str, Any], allowed: set[str]) -> dict[str, Any]:
     if any(key in allowed for key in parsed.keys()):
         return parsed
+    if _looks_like_single_endpoint(parsed):
+        return {"api_endpoints": [parsed]}
     if len(parsed) != 1:
         return parsed
     wrapper_key = next(iter(parsed.keys()))
@@ -495,7 +503,15 @@ def _unwrap_supported_payload(parsed: dict[str, Any], allowed: set[str]) -> dict
     wrapped = parsed.get(wrapper_key)
     if not isinstance(wrapped, dict):
         return parsed
+    if _looks_like_single_endpoint(wrapped):
+        return {"api_endpoints": [wrapped]}
     return wrapped
+
+
+def _looks_like_single_endpoint(value: dict[str, Any]) -> bool:
+    method = str(value.get("method", "")).strip().upper()
+    path = str(value.get("path", "")).strip()
+    return method in _HTTP_METHODS and path.startswith("/")
 
 
 def _classify_gateway_error(exc: ModelGatewayError) -> tuple[str, str]:
@@ -537,6 +553,18 @@ def _first_env(*names: str) -> str:
 def _resolve_int(primary: str, fallback: str, *, default: int) -> int:
     for name in (primary, fallback):
         raw = (os.getenv(name) or "").strip()
+        if raw.isdigit():
+            return int(raw)
+    return default
+
+
+def _resolve_optional_int(primary: str, fallback: str, *, default: int | None) -> int | None:
+    for name in (primary, fallback):
+        raw = (os.getenv(name) or "").strip()
+        if not raw:
+            continue
+        if raw.lower() in {"none", "null", "off", "0"}:
+            return None
         if raw.isdigit():
             return int(raw)
     return default

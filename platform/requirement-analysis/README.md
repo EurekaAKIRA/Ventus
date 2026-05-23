@@ -66,6 +66,7 @@
 - `HUNYUAN_API_KEY=<your_api_key>`（必填，兼容 `OPENAI_API_KEY`）
 - `HUNYUAN_BASE_URL`（默认 `https://api.hunyuan.cloud.tencent.com/v1`，兼容 `OPENAI_BASE_URL`）
 - `HUNYUAN_LLM_MODEL`（默认 `hunyuan-turbos-latest`，兼容 `OPENAI_LLM_MODEL`）
+- `HUNYUAN_LLM_MAX_TOKENS`（默认 `1600`，兼容 `OPENAI_LLM_MAX_TOKENS`；设置为 `off` 可不限制）
 - `HUNYUAN_EMBEDDING_MODEL`（默认 `hunyuan-embedding`，兼容 `OPENAI_EMBEDDING_MODEL`）
 - `HUNYUAN_VISION_MODEL`（默认 `hunyuan-vision`，兼容 `OPENAI_VISION_MODEL`）
 - `HUNYUAN_TIMEOUT_SECONDS` / `HUNYUAN_RETRIES`（兼容 `OPENAI_TIMEOUT_SECONDS` / `OPENAI_RETRIES`）

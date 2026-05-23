@@ -46,6 +46,19 @@ class _WrappedPayloadGateway:
         }
 
 
+class _SingleEndpointGateway:
+    config = _StubGatewayConfig()
+
+    def chat_json(self, **kwargs: Any) -> dict[str, Any]:
+        return {
+            "method": "POST",
+            "path": "/auth",
+            "description": "使用用户名密码换取认证 token",
+            "group": "鉴权",
+            "depends_on": [],
+        }
+
+
 def test_enhancement_coerces_string_to_single_element_lists() -> None:
     payload, reason, err = enhance_parsed_requirement_with_metadata(
         requirement_text="示例",
@@ -76,3 +89,23 @@ def test_enhancement_reports_wrapped_payload_diagnostics() -> None:
     assert payload["objective"] == "目标"
     assert payload["actions"] == ["创建任务"]
     assert diagnostics == {}
+
+
+def test_enhancement_accepts_single_endpoint_payload() -> None:
+    payload, reason, err = enhance_parsed_requirement_with_metadata(
+        requirement_text="POST /auth 使用用户名密码换取认证 token",
+        retrieved_context=[],
+        rule_based_result={"objective": "x"},
+        config=OpenAIEnhancementConfig(gateway=_SingleEndpointGateway()),  # type: ignore[arg-type]
+    )
+    assert reason == ""
+    assert err == ""
+    assert payload is not None
+    assert payload["api_endpoints"] == [
+        {
+            "method": "POST",
+            "path": "/auth",
+            "description": "使用用户名密码换取认证 token",
+            "group": "鉴权",
+        }
+    ]

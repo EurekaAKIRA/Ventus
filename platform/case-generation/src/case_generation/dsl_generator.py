@@ -325,10 +325,18 @@ def build_test_case_dsl(
     dsl_scenarios: list[dict] = []
     parsed_requirement = parsed_requirement or {}
     api_scenario_count = 0
+    assertion_enhancement_summary = {
+        "enabled": bool(enable_assertion_enhancement),
+        "attempted_steps": 0,
+        "fallback_steps": 0,
+        "weak_steps": 0,
+        "generated_by_counts": {},
+        "llm_error_type_counts": {},
+    }
 
     for scenario in scenarios:
         step_payloads: list[dict] = []
-        scenario_state = {"saved_context": set()}
+        scenario_state = {"saved_context": set(), "resource_expectations": []}
         scenario_is_api = _is_api_scenario(scenario, parsed_requirement, execution_mode)
         if scenario_is_api:
             api_scenario_count += 1
@@ -357,6 +365,7 @@ def build_test_case_dsl(
             )
             step_payload_dict = dsl_step.to_dict()
             step_payload_dict["assertion_quality"] = assertion_quality
+            _accumulate_assertion_enhancement_summary(assertion_enhancement_summary, assertion_quality)
             scenario_state["saved_context"].update(save_context.keys())
             step_payloads.append(step_payload_dict)
 
@@ -386,10 +395,29 @@ def build_test_case_dsl(
                 "api_scenario_count": api_scenario_count,
                 "scenario_count": len(dsl_scenarios),
                 "parsed_entities": parsed_requirement.get("entities", []),
+                "assertion_enhancement": assertion_enhancement_summary,
             },
         },
     )
     return payload.to_dict()
+
+
+def _accumulate_assertion_enhancement_summary(summary: dict, quality: dict) -> None:
+    if not isinstance(quality, dict):
+        return
+    if quality.get("llm_attempted"):
+        summary["attempted_steps"] = int(summary.get("attempted_steps", 0)) + 1
+    if quality.get("fallback_reason"):
+        summary["fallback_steps"] = int(summary.get("fallback_steps", 0)) + 1
+    if quality.get("weak_assertion"):
+        summary["weak_steps"] = int(summary.get("weak_steps", 0)) + 1
+    generated_by_counts = summary.setdefault("generated_by_counts", {})
+    for key, value in (quality.get("generated_by_counts") or {}).items():
+        generated_by_counts[str(key)] = int(generated_by_counts.get(str(key), 0)) + int(value or 0)
+    error_type = str(quality.get("llm_error_type") or "").strip()
+    if error_type:
+        error_counts = summary.setdefault("llm_error_type_counts", {})
+        error_counts[error_type] = int(error_counts.get(error_type, 0)) + 1
 
 
 def _build_step_payload(
@@ -424,9 +452,10 @@ def _build_step_payload(
         }
 
     intent = _infer_intent(step.get("text", ""))
-    uses_context = _infer_uses_context(step.get("text", ""), intent, scenario_state)
+    uses_context = _infer_uses_context(step.get("text", ""), intent, scenario_state, parsed_requirement)
     request = _build_request_template(step.get("text", ""), intent, parsed_requirement, uses_context)
     save_context = _build_save_context(step.get("text", ""), intent, request)
+    prior_resource_expectations = _matching_prior_resource_expectations(request, scenario_state)
     request.pop("_matched_endpoint", None)
     planned = AssertionPlanner(
         task_context=task_context,
@@ -437,6 +466,8 @@ def _build_step_payload(
             "step_type": step.get("type", ""),
             "text": step.get("text", ""),
             "type": step.get("type", ""),
+            "uses_context": uses_context,
+            "prior_resource_expectations": prior_resource_expectations,
         },
         request=request,
         save_context=save_context,
@@ -444,6 +475,7 @@ def _build_step_payload(
         fallback_assertions=_build_fallback_assertions(scenario, step),
         enable_llm=enable_assertion_enhancement,
     ).build()
+    _remember_resource_expectation(scenario_state, request)
     return request, planned.assertions, uses_context, save_context, planned.quality
 
 
@@ -483,6 +515,8 @@ def _is_expectation_step(step: dict) -> bool:
         return True
     if step_type == "then":
         return True
+    if _EXPLICIT_PATH_RE.search(raw_text):
+        return False
     if _is_flow_summary_step(raw_text):
         return True
     if step_type != "and":
@@ -547,7 +581,51 @@ def _is_flow_summary_step(text: str) -> bool:
     return matched_classes >= 2
 
 
-def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[str]:
+def _has_global_bearer_auth(parsed_requirement: dict | None) -> bool:
+    if not parsed_requirement:
+        return False
+    endpoints = [endpoint for endpoint in (parsed_requirement.get("api_endpoints") or []) if isinstance(endpoint, dict)]
+    has_login_provider = any(
+        str(endpoint.get("method", "")).upper().strip() == "POST"
+        and any(token in _canonicalize_endpoint_path(str(endpoint.get("path", ""))).lower() for token in ("/login", "/auth", "/session", "/token"))
+        for endpoint in endpoints
+    )
+    if not has_login_provider:
+        return False
+    corpus: list[str] = [str(parsed_requirement.get("objective") or "")]
+    for key in ("preconditions", "actions", "expected_results", "constraints"):
+        corpus.extend(str(item or "") for item in (parsed_requirement.get(key) or []))
+    for endpoint in endpoints:
+        corpus.extend(str(endpoint.get(field) or "") for field in ("path", "description", "group"))
+        for collection_name in ("request_body_fields", "response_fields"):
+            for field in endpoint.get(collection_name) or []:
+                if isinstance(field, dict):
+                    corpus.extend(str(field.get(name) or "") for name in ("name", "description"))
+                else:
+                    corpus.append(str(field or ""))
+    haystack = "\n".join(corpus).lower()
+    return any(
+        token in haystack
+        for token in (
+            "authorization",
+            "bearer",
+            "受保护",
+            "全局约束",
+            "后续",
+            "鉴权",
+            "登录成功后返回",
+        )
+    )
+
+
+def _is_auth_request(method: str, path: str) -> bool:
+    normalized = _canonicalize_endpoint_path(path).lower()
+    return str(method or "").upper().strip() == "POST" and any(
+        token in normalized for token in ("/login", "/auth", "/session", "/token")
+    )
+
+
+def _infer_uses_context(text: str, intent: str, scenario_state: dict, parsed_requirement: dict | None = None) -> list[str]:
     lowered = text.lower()
     saved_context = scenario_state.get("saved_context", set())
     uses_context: list[str] = []
@@ -620,6 +698,13 @@ def _infer_uses_context(text: str, intent: str, scenario_state: dict) -> list[st
         uses_context.append("session_id")
     if intent in {"query", "update", "delete"} and "resource_id" in saved_context and _resource_needs_identifier(text):
         uses_context.append("resource_id")
+    if (
+        "token" in saved_context
+        and intent != "login"
+        and _has_global_bearer_auth(parsed_requirement)
+        and not re.search(r"\bpost\s+/(?:[\w/-]+/)?(?:login|auth|session|token)\b", lowered)
+    ):
+        uses_context.append("token")
     return sorted(set(uses_context))
 
 
@@ -734,6 +819,7 @@ def _build_request_template(text: str, intent: str, parsed_requirement: dict, us
         auth = {"type": "basic", "username": "demo", "password": "secret"}
     elif cookies is None and auth is None and intent != "login" and (
         "access_token" in uses_context
+        or ("token" in uses_context and _has_global_bearer_auth(parsed_requirement) and not _is_auth_request(method, url))
         or any(keyword in lowered for keyword in ("bearer", "token", "令牌"))
         or any(str(dep).lower() in {"accesstoken", "access_token"} for dep in ((matched_endpoint or {}).get("depends_on") or []))
     ):
@@ -783,6 +869,18 @@ def _extract_body_fields(
     method: str,
     intent: str,
 ) -> dict[str, object]:
+    endpoint = _find_endpoint_spec(parsed_requirement, method, endpoint_path)
+    if endpoint is not None and str(method or "").upper().strip() not in {"GET", "DELETE"}:
+        endpoint_fields: list[str] = []
+        for field in endpoint.get("request_body_fields") or []:
+            name = str(field.get("name", "") if isinstance(field, dict) else field).strip()
+            lowered = name.lower()
+            if not name or lowered in {"authorization", "cookie", "x-auth-token", "x-challenger"}:
+                continue
+            endpoint_fields.append(name)
+        if endpoint_fields:
+            return {field: _default_value_for_field(field) for field in endpoint_fields[:10]}
+
     corpus = [step_text]
     corpus.extend(parsed_requirement.get("actions", []))
     corpus.extend(parsed_requirement.get("expected_results", []))
@@ -1303,7 +1401,7 @@ def _infer_request_params(parsed_requirement: dict, path: str, method: str, text
                     params[key] = "demo_user"
     if target_path == "/pet/findByStatus" and ("status" in joined or "available" in joined):
         params["status"] = "available"
-    if endpoint is not None:
+    if endpoint is not None and target_method == "GET":
         for field in endpoint.get("request_body_fields") or []:
             name = str(field.get("name", "") if isinstance(field, dict) else field).strip()
             if not name:
@@ -1488,6 +1586,8 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
         if identifier:
             if request_url.endswith("/user") and request_method == "POST":
                 return {"username": identifier}
+            if "order" in lowered or request_url.rstrip("/").endswith("/orders"):
+                return {"order_id": identifier, "resource_id": identifier}
             if request_url.endswith("/store/order") and request_method == "POST":
                 return {"order_id": identifier, "resource_id": identifier}
             if request_url.endswith("/pet") and request_method == "POST":
@@ -1499,6 +1599,138 @@ def _build_save_context(text: str, intent: str, request: dict) -> dict[str, str]
             return {"resource_id": "json.order_id"}
         return {}
     return {}
+
+
+_RESOURCE_EXPECTATION_FIELD_MAP: dict[str, tuple[tuple[str, str], ...]] = {
+    "booking": (
+        ("json.firstname", "firstname"),
+        ("json.lastname", "lastname"),
+        ("json.totalprice", "totalprice"),
+        ("json.depositpaid", "depositpaid"),
+        ("json.additionalneeds", "additionalneeds"),
+        ("json.bookingdates.checkin", "bookingdates.checkin"),
+        ("json.bookingdates.checkout", "bookingdates.checkout"),
+    ),
+    "pet": (
+        ("json.id", "id"),
+        ("json.name", "name"),
+        ("json.status", "status"),
+    ),
+    "store_order": (
+        ("json.id", "id"),
+        ("json.petId", "petId"),
+        ("json.quantity", "quantity"),
+        ("json.status", "status"),
+        ("json.complete", "complete"),
+    ),
+    "user": (
+        ("json.id", "id"),
+        ("json.username", "username"),
+        ("json.firstName", "firstName"),
+        ("json.lastName", "lastName"),
+        ("json.email", "email"),
+        ("json.phone", "phone"),
+        ("json.userStatus", "userStatus"),
+    ),
+    "todo": (
+        ("json.todo", "todo"),
+        ("json.completed", "completed"),
+        ("json.userId", "userId"),
+    ),
+    "post": (
+        ("json.id", "id"),
+        ("json.title", "title"),
+        ("json.body", "body"),
+        ("json.userId", "userId"),
+    ),
+}
+
+
+def _matching_prior_resource_expectations(request: dict, scenario_state: dict) -> list[dict]:
+    method = str(request.get("method", "")).upper().strip()
+    if method not in {"GET", "DELETE"}:
+        return []
+    resource = _resource_expectation_key(str(request.get("url", "")))
+    if not resource:
+        return []
+    expectations = scenario_state.get("resource_expectations")
+    if not isinstance(expectations, list):
+        return []
+    for item in reversed(expectations):
+        if isinstance(item, dict) and item.get("resource") == resource:
+            return [dict(item)]
+    return []
+
+
+def _remember_resource_expectation(scenario_state: dict, request: dict) -> None:
+    method = str(request.get("method", "")).upper().strip()
+    if method not in {"POST", "PUT", "PATCH"}:
+        return
+    json_body = request.get("json")
+    if not isinstance(json_body, dict):
+        return
+    resource = _resource_expectation_key(str(request.get("url", "")))
+    field_map = _RESOURCE_EXPECTATION_FIELD_MAP.get(resource)
+    if not field_map:
+        return
+
+    fields: list[dict] = []
+    for source, body_path in field_map:
+        value = _read_body_path(json_body, body_path)
+        if not _is_assertable_resource_value(value):
+            continue
+        fields.append({"source": source, "expected": value})
+    if not fields:
+        return
+
+    expectations = scenario_state.setdefault("resource_expectations", [])
+    if not isinstance(expectations, list):
+        scenario_state["resource_expectations"] = expectations = []
+    if method == "PATCH":
+        previous = next(
+            (item for item in reversed(expectations) if isinstance(item, dict) and item.get("resource") == resource),
+            None,
+        )
+        if isinstance(previous, dict):
+            merged = {str(item.get("source")): dict(item) for item in previous.get("fields", []) if isinstance(item, dict)}
+            for item in fields:
+                merged[str(item.get("source"))] = item
+            fields = list(merged.values())
+    expectations.append({"resource": resource, "fields": fields, "method": method})
+
+
+def _resource_expectation_key(path: str) -> str:
+    canonical = _canonicalize_endpoint_path(path).lower()
+    if canonical.startswith("/store/order"):
+        return "store_order"
+    if canonical.startswith("/booking"):
+        return "booking"
+    if canonical.startswith("/pet"):
+        return "pet"
+    if canonical.startswith("/user"):
+        return "user"
+    if canonical.startswith("/todos"):
+        return "todo"
+    if canonical.startswith("/posts"):
+        return "post"
+    return ""
+
+
+def _read_body_path(payload: dict, path: str) -> object:
+    current: object = payload
+    for part in str(path or "").split("."):
+        if not isinstance(current, dict):
+            return None
+        current = current.get(part)
+    return current
+
+
+def _is_assertable_resource_value(value: object) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, (str, int, float, bool)):
+        return True
+    return False
 
 
 def _build_fallback_assertions(scenario: ScenarioModel, step: dict) -> list[dict | str]:

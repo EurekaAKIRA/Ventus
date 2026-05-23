@@ -464,6 +464,7 @@ class RuleAssertionBuilder:
 
         assertions.extend(_infer_expected_result_assertions(self.request, self.parsed_requirement, self.step))
         assertions.extend(_infer_semantic_expected_assertions(self.request, self.parsed_requirement, self.step, capability))
+        assertions.extend(_infer_prior_resource_assertions(self.request, self.intent, self.step))
 
         if not non_json_response:
             assertions.extend(_infer_schema_shape_assertions(self.request, self.intent, capability, self.parsed_requirement, self.step))
@@ -645,6 +646,7 @@ def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, An
         req_url = str(request.get("url", ""))
         if not expects_json_envelope(req_url) or _is_simple_endpoint(req_url):
             return []
+    path_resource_tokens = _path_resource_tokens(request or {})
     capability = _request_capability(request or {}, parsed_requirement, "")
     endpoint_fields = _endpoint_response_fields(parsed_requirement, request or {})
     if capability == "auth":
@@ -661,13 +663,23 @@ def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, An
     fields: list[str] = []
     for groups in FIELD_TOKEN_RE.findall(text):
         token = next((item for item in groups if item), "").strip()
-        if token and token.lower() not in ASSERTION_FIELD_STOPWORDS and token.lower() != "user" and token not in fields:
+        if (
+            token
+            and token.lower() not in ASSERTION_FIELD_STOPWORDS
+            and token.lower() != "user"
+            and not _is_likely_expected_value_token(token)
+            and token not in fields
+        ):
             fields.append(token)
     for token in FIELD_NAME_RE.findall(text):
         lowered = token.lower()
         if lowered in ASSERTION_FIELD_STOPWORDS or lowered in {"get", "post", "put", "patch", "delete", "http"}:
             continue
+        if lowered in path_resource_tokens:
+            continue
         if lowered == "user":
+            continue
+        if _is_likely_expected_value_token(token):
             continue
         if token not in fields and any(keyword in lowered for keyword in ("token", "session", "user", "profile", "order", "task", "nick", "name", "id", "items", "roles")):
             fields.append(token)
@@ -681,6 +693,21 @@ def _extract_known_fields(parsed_requirement: dict[str, Any], step: dict[str, An
         fields = [field for field in fields if field.lower() in {"id", "bookingid", "booking_id", "order_id", "pet_id", "username", "task_id", "resource_id"}]
     filtered = _filter_known_fields_for_request(fields[:8], request or {})
     return filtered
+
+
+def _path_resource_tokens(request: dict[str, Any]) -> set[str]:
+    url = _canonicalize_path(str(request.get("url", ""))).lower()
+    tokens: set[str] = set()
+    for part in url.split("/"):
+        clean = part.strip("{}")
+        if not clean or clean.startswith("{{") or clean.endswith("}}"):
+            continue
+        if clean in {"api", "v1", "v2"}:
+            continue
+        tokens.add(clean)
+        if clean.endswith("s") and len(clean) > 3:
+            tokens.add(clean[:-1])
+    return tokens
 
 
 def _filter_known_fields_for_request(fields: list[str], request: dict[str, Any]) -> list[str]:
@@ -759,15 +786,49 @@ def _should_attempt_llm_for_step(step: dict[str, Any], request: dict[str, Any]) 
     text = str(step.get("text", "")).strip()
     lowered = text.lower()
     url = str(request.get("url", "")).lower()
+    method = str(request.get("method", "GET")).upper()
     if not request or not text:
         return False
     if any(hint in lowered for hint in NON_EXECUTABLE_ASSERTION_HINTS):
         return False
     if len(text) > 120 and "`/" not in text and "/api/" not in lowered:
         return False
-    if not _is_high_value_assertion_url(str(request.get("url", ""))):
+    if _is_simple_endpoint(url):
         return False
-    return True
+    if _is_high_value_assertion_url(str(request.get("url", ""))):
+        return True
+    if method == "GET" and re.fullmatch(r"/api/tasks/(?:\{\{?\s*(?:task_id|resource_id)\s*\}?\})", url):
+        return False
+    business_hints = (
+        "login",
+        "auth",
+        "token",
+        "create",
+        "add",
+        "update",
+        "patch",
+        "delete",
+        "detail",
+        "list",
+        "query",
+        "登录",
+        "鉴权",
+        "令牌",
+        "创建",
+        "新增",
+        "更新",
+        "删除",
+        "详情",
+        "列表",
+        "查询",
+    )
+    if method in {"POST", "PUT", "PATCH", "DELETE"}:
+        return True
+    if "{" in url or "{{" in url:
+        return True
+    if any(hint in lowered or hint in url for hint in business_hints):
+        return True
+    return False
 
 
 def _generate_assertion_candidates_cached(**kwargs: Any) -> tuple[list[dict[str, Any]], str, str]:
@@ -979,9 +1040,26 @@ def _endpoint_response_fields(parsed_requirement: dict[str, Any], request: dict[
         lowered = name.lower()
         if any(ch.isdigit() for ch in name):
             continue
+        if "←" in name or "<-" in name:
+            continue
         if lowered in ASSERTION_FIELD_STOPWORDS:
             continue
-        if lowered in {"jim", "james", "brown", "jamie", "breakfast", "lunch", "dinner", "false", "true"}:
+        if lowered in {
+            "jim",
+            "james",
+            "brown",
+            "jamie",
+            "breakfast",
+            "lunch",
+            "dinner",
+            "false",
+            "true",
+            "admin",
+            "confirmed",
+            "pending",
+            "字符串",
+            "string",
+        }:
             continue
         if "." in name:
             leaf = name.split(".")[-1]
@@ -1119,6 +1197,97 @@ def _infer_echo_assertions(request: dict[str, Any]) -> list[dict[str, Any]]:
     return assertions
 
 
+_PRIOR_RESOURCE_QUERY_SOURCE_PRIORITY: dict[str, tuple[str, ...]] = {
+    "booking": ("json.firstname", "json.lastname", "json.totalprice"),
+    "pet": ("json.id", "json.name", "json.status"),
+    "store_order": ("json.id", "json.petId", "json.status"),
+    "user": ("json.username", "json.email", "json.userStatus"),
+    "todo": ("json.todo", "json.completed", "json.userId"),
+    "post": ("json.id", "json.title", "json.body"),
+}
+
+
+def _infer_prior_resource_assertions(
+    request: dict[str, Any],
+    intent: str,
+    step: dict[str, Any],
+) -> list[dict[str, Any]]:
+    expectations = step.get("prior_resource_expectations")
+    if not isinstance(expectations, list) or not expectations:
+        return []
+    latest = next((item for item in reversed(expectations) if isinstance(item, dict)), None)
+    if not latest:
+        return []
+    fields = [dict(item) for item in (latest.get("fields") or []) if isinstance(item, dict)]
+    resource = str(latest.get("resource") or "")
+    if not fields or not resource:
+        return []
+    method = str(request.get("method", "")).upper().strip()
+    if method == "GET" or intent == "query":
+        return _prior_resource_query_assertions(resource, fields)
+    if method == "DELETE" or intent == "delete":
+        return _prior_resource_delete_assertions(resource, fields)
+    return []
+
+
+def _prior_resource_query_assertions(resource: str, fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_source = {str(item.get("source")): item.get("expected") for item in fields}
+    priority = _PRIOR_RESOURCE_QUERY_SOURCE_PRIORITY.get(resource, ())
+    assertions: list[dict[str, Any]] = []
+    for source in priority:
+        if source not in by_source:
+            continue
+        assertions.append(
+            _assertion(
+                source,
+                "eq",
+                by_source[source],
+                "major",
+                "business",
+                0.9,
+                "prior_resource_field_match",
+                "rules",
+            )
+        )
+        if len(assertions) >= 3:
+            break
+    return assertions
+
+
+def _prior_resource_delete_assertions(resource: str, fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if resource not in {"pet", "store_order", "user"}:
+        return []
+    expected = _prior_delete_ack_expected(resource, fields)
+    if expected is None:
+        return []
+    return [
+        _assertion(
+            "json.message",
+            "eq",
+            expected,
+            "major",
+            "business",
+            0.88,
+            "prior_resource_delete_acknowledgement",
+            "rules",
+        )
+    ]
+
+
+def _prior_delete_ack_expected(resource: str, fields: list[dict[str, Any]]) -> Any:
+    source_priority = {
+        "pet": ("json.id",),
+        "store_order": ("json.id",),
+        "user": ("json.username",),
+    }.get(resource, ())
+    by_source = {str(item.get("source")): item.get("expected") for item in fields}
+    for source in source_priority:
+        value = by_source.get(source)
+        if value is not None:
+            return value
+    return None
+
+
 def _infer_expected_result_assertions(
     request: dict[str, Any],
     parsed_requirement: dict[str, Any],
@@ -1135,7 +1304,24 @@ def _infer_expected_result_assertions(
                 source = _normalize_expected_field_source(match.group(1))
                 if not source:
                     continue
-                expected = _parse_expected_literal(match.group(2))
+                expected_raw = str(match.group(2) or "").strip()
+                expected_type = _expected_literal_type(expected_raw)
+                if expected_type:
+                    assertions.append(
+                        _assertion(
+                            source,
+                            "type_is",
+                            expected_type,
+                            "major",
+                            "schema",
+                            0.88,
+                            "explicit_expected_field_type",
+                            "rules",
+                        )
+                    )
+                    continue
+                context_template = _expected_context_template(expected_raw, step)
+                expected = context_template if context_template else _parse_expected_literal(expected_raw)
                 assertions.append(
                     _assertion(
                         source,
@@ -1360,6 +1546,63 @@ def _normalize_expected_field_source(field: str) -> str:
     if "." in token or lowered in {"code", "success", "message", "status", "token", "id"}:
         return f"json.{token}"
     return ""
+
+
+def _expected_literal_type(raw: str) -> str:
+    value = str(raw or "").strip().strip("`").strip().strip("\"'").lower()
+    type_aliases = {
+        "string": "string",
+        "str": "string",
+        "字符串": "string",
+        "文本": "string",
+        "number": "number",
+        "numeric": "number",
+        "integer": "number",
+        "int": "number",
+        "整数": "number",
+        "数字": "number",
+        "boolean": "boolean",
+        "bool": "boolean",
+        "布尔": "boolean",
+        "object": "object",
+        "对象": "object",
+        "array": "array",
+        "数组": "array",
+    }
+    return type_aliases.get(value, "")
+
+
+def _expected_context_template(raw: str, step: dict[str, Any]) -> str:
+    value = str(raw or "").strip().strip("`").strip().strip("\"'")
+    if not value:
+        return ""
+    normalized = value.lower().replace("-", "_")
+    uses_context = [str(item) for item in (step.get("uses_context") or [])]
+    for key in uses_context:
+        lowered = key.lower()
+        if normalized == lowered or normalized == lowered.replace("_", ""):
+            return "{{" + key + "}}"
+    return ""
+
+
+def _is_likely_expected_value_token(token: str) -> bool:
+    lowered = str(token or "").strip().lower()
+    return lowered in {
+        "admin",
+        "confirmed",
+        "pending",
+        "success",
+        "failed",
+        "error",
+        "字符串",
+        "string",
+        "number",
+        "boolean",
+        "object",
+        "array",
+        "true",
+        "false",
+    }
 
 
 def _parse_expected_literal(raw: str) -> Any:
